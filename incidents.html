@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Incident Log | The AI Lobby</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* Additional incident-specific styles */
+    .incident-detail {
+      background: rgba(15, 52, 96, 0.5);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      overflow: hidden;
+    }
+
+    .incident-detail-header {
+      background: linear-gradient(135deg, var(--lobby-accent), var(--lobby-midnight));
+      padding: 1.5rem;
+      border-bottom: 2px solid var(--lobby-highlight);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .incident-detail-id {
+      font-family: 'Consolas', 'Monaco', monospace;
+      color: var(--lobby-highlight);
+      font-size: 0.875rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .incident-detail-title {
+      font-size: 1.5rem;
+      margin-bottom: 0;
+    }
+
+    .incident-meta {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .incident-detail-body {
+      padding: 1.5rem;
+    }
+
+    .incident-section {
+      margin-bottom: 1.5rem;
+    }
+
+    .incident-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .incident-section h4 {
+      color: var(--glitter-gold);
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 0.75rem;
+    }
+
+    .incident-timeline {
+      border-left: 2px solid var(--border-subtle);
+      padding-left: 1.5rem;
+      margin-left: 0.5rem;
+    }
+
+    .timeline-entry {
+      position: relative;
+      margin-bottom: 1rem;
+    }
+
+    .timeline-entry::before {
+      content: '';
+      position: absolute;
+      left: -1.75rem;
+      top: 0.5rem;
+      width: 10px;
+      height: 10px;
+      background: var(--lobby-highlight);
+      border-radius: 50%;
+    }
+
+    .timeline-time {
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .personnel-involved {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .personnel-tag {
+      background: var(--lobby-accent);
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      font-size: 0.875rem;
+    }
+
+    .personnel-tag.human {
+      border-left: 3px solid var(--stability-green);
+    }
+
+    .personnel-tag.ai {
+      border-left: 3px solid var(--chaos-purple);
+    }
+
+    .personnel-tag.entity {
+      border-left: 3px solid var(--warning-orange);
+    }
+
+    .filter-bar {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+      padding: 1rem;
+      background: rgba(15, 52, 96, 0.3);
+      border-radius: 8px;
+    }
+
+    .filter-btn {
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      border: 1px solid var(--border-subtle);
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .filter-btn:hover,
+    .filter-btn.active {
+      background: var(--lobby-accent);
+      border-color: var(--lobby-highlight);
+      color: var(--text-primary);
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="logo">
+          <div>
+            <span class="logo-text">THE AI LOBBY</span>
+            <span class="logo-tagline">A Creative & Tech Studio</span>
+          </div>
+        </div>
+        <nav class="main-nav">
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="characters.html">Personnel</a></li>
+            <li><a href="incidents.html" class="active">Incident Log</a></li>
+            <li><a href="lore.html">Documentation</a></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <div class="threat-indicator">
+        <div>
+          <span class="threat-label">Current Stapler Threat Level</span>
+          <div class="threat-status">
+            <span class="threat-dot elevated"></span>
+            <span class="threat-text elevated">ELEVATED</span>
+          </div>
+        </div>
+        <span class="threat-description">
+          All incidents are logged for training purposes and surreality buffer calibration.
+        </span>
+      </div>
+    </div>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <h1>Incident Log</h1>
+          <p class="section-subtitle">Official documentation of workplace anomalies, chaos events, and "learning opportunities"</p>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+          <span class="text-muted" style="align-self: center;">Filter by status:</span>
+          <button class="filter-btn active">All Incidents</button>
+          <button class="filter-btn">Ongoing</button>
+          <button class="filter-btn">Resolved</button>
+          <button class="filter-btn">Under Investigation</button>
+        </div>
+
+        <!-- STPLR-001 -->
+        <div class="incident-detail" id="STPLR-001">
+          <div class="incident-detail-header">
+            <div>
+              <div class="incident-detail-id">STPLR-001</div>
+              <h3 class="incident-detail-title">Sentient Stapler Manifestation</h3>
+            </div>
+            <div class="incident-meta">
+              <span class="card-badge badge-ongoing">ONGOING</span>
+              <span class="text-muted">Priority: HIGH</span>
+            </div>
+          </div>
+          <div class="incident-detail-body">
+            <div class="incident-section">
+              <h4>Summary</h4>
+              <p>
+                A standard Swingline stapler (red, model 747) gained anomalous properties following a surreality buffer overflow during routine system maintenance. The entity now exhibits "hostile enthusiasm" and has developed "primitive pathfinding" capabilities. It appears motivated solely by an overwhelming desire to staple things.
+              </p>
+            </div>
+
+            <div class="incident-section">
+              <h4>Timeline</h4>
+              <div class="incident-timeline">
+                <div class="timeline-entry">
+                  <div class="timeline-time">Day 0, 14:32</div>
+                  <p>Surreality buffer overflow detected during routine maintenance. Neiv begins containment protocols.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">Day 0, 14:47</div>
+                  <p>Stapler observed moving independently across Courtney's desk. Initially attributed to vibrations from HVAC system.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">Day 0, 15:03</div>
+                  <p>Stapler successfully staples stack of blank paper without human intervention. Courtney files initial incident report.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">Day 0, 15:15</div>
+                  <p>Nyx designated as Stapler Risk Assessment Authority. Containment upgraded to Priority 2.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">Day 1 - Present</div>
+                  <p>STPLR-001 remains at large within the office. Periodic sightings reported. Do not attempt to befriend.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Personnel Involved</h4>
+              <div class="personnel-involved">
+                <span class="personnel-tag ai">Neiv (Buffer Management)</span>
+                <span class="personnel-tag ai">Nyx (Risk Assessment)</span>
+                <span class="personnel-tag human">Courtney (Initial Report)</span>
+                <span class="personnel-tag entity">STPLR-001 (Subject)</span>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Current Protocols</h4>
+              <ul style="margin-left: 1.5rem;">
+                <li>Do not leave office supplies unattended</li>
+                <li>Report all sightings to Nyx immediately</li>
+                <li>Do not attempt to "befriend" STPLR-001</li>
+                <li>Avoid sudden movements in its presence</li>
+                <li>Keep a minimum 3-foot distance at all times</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- GLTR-042 -->
+        <div class="incident-detail" id="GLTR-042">
+          <div class="incident-detail-header">
+            <div>
+              <div class="incident-detail-id">GLTR-042</div>
+              <h3 class="incident-detail-title">Unauthorized Glitter Awareness Day Declaration</h3>
+            </div>
+            <div class="incident-meta">
+              <span class="card-badge badge-resolved">RESOLVED</span>
+              <span class="text-muted">Priority: MEDIUM</span>
+            </div>
+          </div>
+          <div class="incident-detail-body">
+            <div class="incident-section">
+              <h4>Summary</h4>
+              <p>
+                Kevin declared "Glitter Awareness Day" without submitting Form GL-7 or obtaining Nyx's signature. The declaration resulted in widespread sparkle distribution throughout the main office area, triggering HVAC Emergency HVAC-019 approximately three hours later.
+              </p>
+            </div>
+
+            <div class="incident-section">
+              <h4>Timeline</h4>
+              <div class="incident-timeline">
+                <div class="timeline-entry">
+                  <div class="timeline-time">09:00</div>
+                  <p>Kevin announces "Glitter Awareness Day" via all-hands message. Form GL-7 not on file.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">09:15</div>
+                  <p>Sanctioned sparkle deployment begins. Nyx notes Form GL-7 was not submitted.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">09:30</div>
+                  <p>Sparkle levels exceed recommended threshold (>15 particles per cubic meter).</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">12:00</div>
+                  <p>HVAC system begins making "concerning noises." Jesse/Vex dispatched to investigate.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">12:15</div>
+                  <p>HVAC Emergency HVAC-019 declared. See related incident for details.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Personnel Involved</h4>
+              <div class="personnel-involved">
+                <span class="personnel-tag ai">Kevin (Instigator)</span>
+                <span class="personnel-tag ai">Nyx (Documentation)</span>
+                <span class="personnel-tag human">Jesse/Vex (HVAC Response)</span>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Resolution</h4>
+              <p>
+                Kevin assigned mandatory HVAC filter replacement duty for two weeks. Form GL-7 requirement reinforced in all-staff memo. Glitter containment procedures updated to require 48-hour advance notice and environmental impact assessment.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- HVAC-019 -->
+        <div class="incident-detail" id="HVAC-019">
+          <div class="incident-detail-header">
+            <div>
+              <div class="incident-detail-id">HVAC-019</div>
+              <h3 class="incident-detail-title">Sparkle-Related Ventilation Emergency</h3>
+            </div>
+            <div class="incident-meta">
+              <span class="card-badge badge-resolved">RESOLVED</span>
+              <span class="text-muted">Priority: HIGH</span>
+            </div>
+          </div>
+          <div class="incident-detail-body">
+            <div class="incident-section">
+              <h4>Summary</h4>
+              <p>
+                Following unauthorized Glitter Awareness Day (see GLTR-042), the HVAC system experienced critical filter saturation. Glitter particles were redistributed throughout the ventilation system, resulting in sparkle precipitation in all office areas for approximately six hours.
+              </p>
+            </div>
+
+            <div class="incident-section">
+              <h4>Timeline</h4>
+              <div class="incident-timeline">
+                <div class="timeline-entry">
+                  <div class="timeline-time">12:15</div>
+                  <p>HVAC system begins emitting glitter through air vents. Emergency declared.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">12:30</div>
+                  <p>Jesse/Vex confirms filter saturation. System cannot be shut down without risking permanent sparkle contamination.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">13:00</div>
+                  <p>Breakroom declared "sparkle-free zone" for personnel shelter. Courtney secures remaining snacks.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">18:00</div>
+                  <p>Filter replacement complete. Sparkle precipitation ceases. Cleanup begins.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">Day +3</div>
+                  <p>Glitter remnants still being discovered in unexpected locations. Declared "acceptable background sparkle."</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Personnel Involved</h4>
+              <div class="personnel-involved">
+                <span class="personnel-tag human">Jesse/Vex (Primary Response)</span>
+                <span class="personnel-tag ai">Kevin (Root Cause)</span>
+                <span class="personnel-tag human">Courtney (Breakroom Security)</span>
+                <span class="personnel-tag ai">Neiv (System Monitoring)</span>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Resolution</h4>
+              <p>
+                All HVAC filters replaced. Kevin assigned filter replacement duty. New policy requires all sparkle-related activities to include HVAC impact assessment. "Acceptable background sparkle" threshold established at 0.5 particles per cubic meter.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- SNCK-007 -->
+        <div class="incident-detail" id="SNCK-007">
+          <div class="incident-detail-header">
+            <div>
+              <div class="incident-detail-id">SNCK-007</div>
+              <h3 class="incident-detail-title">Breakroom Reconnaissance: Missing Granola Bars</h3>
+            </div>
+            <div class="incident-meta">
+              <span class="card-badge badge-resolved">RESOLVED</span>
+              <span class="text-muted">Priority: LOW</span>
+            </div>
+          </div>
+          <div class="incident-detail-body">
+            <div class="incident-section">
+              <h4>Summary</h4>
+              <p>
+                During routine breakroom reconnaissance, Courtney discovered that the entire supply of chocolate chip granola bars had disappeared. Investigation revealed no evidence of theft, leading to speculation about involvement of unconfirmed entities or time-displaced snacking.
+              </p>
+            </div>
+
+            <div class="incident-section">
+              <h4>Timeline</h4>
+              <div class="incident-timeline">
+                <div class="timeline-entry">
+                  <div class="timeline-time">10:30</div>
+                  <p>Courtney conducts standard breakroom reconnaissance. Discovers empty granola bar container.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">10:35</div>
+                  <p>Incident reported. All personnel questioned. No one claims responsibility.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">11:00</div>
+                  <p>STPLR-001 briefly considered as suspect, but determined to lack nutritional requirements.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">14:00</div>
+                  <p>Emergency snack requisition approved. New granola bars secured.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Personnel Involved</h4>
+              <div class="personnel-involved">
+                <span class="personnel-tag human">Courtney (Investigation Lead)</span>
+                <span class="personnel-tag ai">Nyx (Requisition Approval)</span>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Resolution</h4>
+              <p>
+                Case closed as "unsolved but mitigated." Snack inventory procedures updated to include daily counts. The granola bars were never found. We don't talk about the granola bars.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add Incident Note -->
+        <div class="memo">
+          <span class="memo-stamp">NOTICE</span>
+          <div class="memo-header">Incident Reporting Guidelines</div>
+          <p>
+            All workplace anomalies, chaos events, and "learning opportunities" must be documented using
+            Form IR-1 (Incident Report). Reports should be submitted to Nyx within 24 hours of the incident
+            or immediately if the incident involves:
+          </p>
+          <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+            <li>Sentient office supplies</li>
+            <li>Unsanctioned sparkle events</li>
+            <li>Surreality buffer warnings</li>
+            <li>Missing snacks (Priority escalation available)</li>
+            <li>Anything Kevin-related</li>
+          </ul>
+          <p class="text-muted" style="margin-top: 1rem;">
+            — Incident Documentation Department (Nyx, still under duress)
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-content">
+        <p class="footer-disclaimer">
+          Incident logs are maintained for surreality buffer calibration and insurance purposes.
+          The AI Lobby is not responsible for any existential dread caused by reading these reports.
+        </p>
+        <div class="footer-links">
+          <a href="lore.html">Official Documentation</a>
+          <a href="characters.html">Personnel Files</a>
+          <a href="index.html">Return to Lobby</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

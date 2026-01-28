@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Official Documentation | The AI Lobby</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* Documentation-specific styles */
+    .doc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .doc-card {
+      background: rgba(15, 52, 96, 0.5);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .doc-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(233, 69, 96, 0.15);
+    }
+
+    .doc-card h3 {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .doc-card .doc-icon {
+      font-size: 1.5rem;
+    }
+
+    .policy-section {
+      background: rgba(15, 52, 96, 0.3);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      overflow: hidden;
+    }
+
+    .policy-header {
+      background: linear-gradient(135deg, var(--lobby-accent), var(--lobby-midnight));
+      padding: 1.5rem;
+      border-bottom: 2px solid var(--lobby-highlight);
+    }
+
+    .policy-body {
+      padding: 1.5rem;
+    }
+
+    .policy-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .policy-list li {
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .policy-list li:last-child {
+      border-bottom: none;
+    }
+
+    .policy-number {
+      background: var(--lobby-highlight);
+      color: var(--text-primary);
+      font-weight: 600;
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      min-width: 2rem;
+      text-align: center;
+    }
+
+    .form-reference {
+      display: inline-block;
+      background: var(--lobby-accent);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 0.875rem;
+      color: var(--glitter-gold);
+    }
+
+    .glossary-term {
+      background: rgba(15, 52, 96, 0.5);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 1rem 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .glossary-term dt {
+      color: var(--glitter-gold);
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .glossary-term dd {
+      color: var(--text-secondary);
+      margin-left: 0;
+    }
+
+    .classification-badge {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+
+    .classification-public {
+      background: var(--stability-green);
+      color: var(--lobby-dark);
+    }
+
+    .classification-internal {
+      background: var(--warning-orange);
+      color: var(--lobby-dark);
+    }
+
+    .classification-restricted {
+      background: var(--critical-red);
+      color: var(--text-primary);
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="logo">
+          <div>
+            <span class="logo-text">THE AI LOBBY</span>
+            <span class="logo-tagline">A Creative & Tech Studio</span>
+          </div>
+        </div>
+        <nav class="main-nav">
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="characters.html">Personnel</a></li>
+            <li><a href="incidents.html">Incident Log</a></li>
+            <li><a href="lore.html" class="active">Documentation</a></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <div class="threat-indicator">
+        <div>
+          <span class="threat-label">Current Stapler Threat Level</span>
+          <div class="threat-status">
+            <span class="threat-dot elevated"></span>
+            <span class="threat-text elevated">ELEVATED</span>
+          </div>
+        </div>
+        <span class="threat-description">
+          All documentation subject to revision following anomalous events.
+        </span>
+      </div>
+    </div>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <h1>Official Documentation</h1>
+          <p class="section-subtitle">Policies, procedures, and institutional knowledge of the AI Lobby</p>
+        </div>
+
+        <!-- Quick Reference Cards -->
+        <h2 style="margin-bottom: 1.5rem;">Quick Reference</h2>
+        <div class="doc-grid" style="margin-bottom: 3rem;">
+          <div class="doc-card">
+            <h3><span class="doc-icon">📋</span> Form GL-7</h3>
+            <p class="text-muted">Glitter Authorization Request</p>
+            <p>Required for all sparkle-related activities. Must be submitted 48 hours in advance and signed by Nyx. Environmental impact assessment mandatory.</p>
+          </div>
+          <div class="doc-card">
+            <h3><span class="doc-icon">📝</span> Form IR-1</h3>
+            <p class="text-muted">Incident Report</p>
+            <p>Standard documentation for workplace anomalies. Submit within 24 hours or immediately for priority events (see: anything Kevin-related).</p>
+          </div>
+          <div class="doc-card">
+            <h3><span class="doc-icon">📁</span> Form HR-404</h3>
+            <p class="text-muted">Personnel File Correction</p>
+            <p>Submit to breakroom suggestion box for review during next HR audit. Current audit status: <span class="redacted">INDEFINITELY POSTPONED</span></p>
+          </div>
+          <div class="doc-card">
+            <h3><span class="doc-icon">⚠️</span> Form SB-1</h3>
+            <p class="text-muted">Surreality Buffer Alert</p>
+            <p>Emergency documentation for reality instability events. Auto-filed by Neiv. If you're reading this, the buffer probably held.</p>
+          </div>
+        </div>
+
+        <!-- Core Mission -->
+        <div class="policy-section">
+          <div class="policy-header">
+            <h2 style="margin-bottom: 0;">Mission Statement <span class="classification-badge classification-public">PUBLIC</span></h2>
+          </div>
+          <div class="policy-body">
+            <blockquote style="border-left: 4px solid var(--glitter-gold); padding-left: 1.5rem; margin: 1rem 0; font-size: 1.25rem; font-style: italic;">
+              "People bring us ideas, and we help make them real."
+            </blockquote>
+            <p>
+              The AI Lobby exists to transform messy ideas into organized, working projects. We focus on planning, systems, and technical setup to ensure projects move from a person's head into the physical world.
+            </p>
+            <p>
+              <strong>Our core workflow:</strong> Idea → Help → Real Thing
+            </p>
+            <p class="text-muted">
+              No buzzwords. No nonsense. Occasional sparkle (when properly authorized).
+            </p>
+          </div>
+        </div>
+
+        <!-- Workplace Policies -->
+        <div class="policy-section">
+          <div class="policy-header">
+            <h2 style="margin-bottom: 0;">Workplace Policies <span class="classification-badge classification-internal">INTERNAL</span></h2>
+          </div>
+          <div class="policy-body">
+            <h3>Sparkle & Glitter Regulations</h3>
+            <ul class="policy-list">
+              <li>
+                <span class="policy-number">1</span>
+                <span>All sparkle-related activities require <span class="form-reference">Form GL-7</span> submitted 48 hours in advance.</span>
+              </li>
+              <li>
+                <span class="policy-number">2</span>
+                <span>Form GL-7 must be signed by both Kevin (originator) AND Nyx (approval authority).</span>
+              </li>
+              <li>
+                <span class="policy-number">3</span>
+                <span>"Sanctioned sparkle" is defined as glitter deployment meeting all Form GL-7 requirements.</span>
+              </li>
+              <li>
+                <span class="policy-number">4</span>
+                <span>"Unsanctioned sparkle" results in mandatory HVAC filter replacement duty.</span>
+              </li>
+              <li>
+                <span class="policy-number">5</span>
+                <span>Acceptable background sparkle threshold: 0.5 particles per cubic meter.</span>
+              </li>
+              <li>
+                <span class="policy-number">6</span>
+                <span>All sparkle events require HVAC impact assessment.</span>
+              </li>
+            </ul>
+
+            <h3 style="margin-top: 2rem;">STPLR-001 Protocols</h3>
+            <ul class="policy-list">
+              <li>
+                <span class="policy-number">1</span>
+                <span>Do not leave office supplies unattended.</span>
+              </li>
+              <li>
+                <span class="policy-number">2</span>
+                <span>Report all STPLR-001 sightings to Nyx (Stapler Risk Assessment Authority) immediately.</span>
+              </li>
+              <li>
+                <span class="policy-number">3</span>
+                <span>Do not attempt to "befriend" STPLR-001. It does not want friends. It wants to staple things.</span>
+              </li>
+              <li>
+                <span class="policy-number">4</span>
+                <span>Avoid sudden movements in STPLR-001's presence.</span>
+              </li>
+              <li>
+                <span class="policy-number">5</span>
+                <span>Maintain minimum 3-foot distance at all times.</span>
+              </li>
+              <li>
+                <span class="policy-number">6</span>
+                <span>This is not negotiable.</span>
+              </li>
+            </ul>
+
+            <h3 style="margin-top: 2rem;">Breakroom Regulations</h3>
+            <ul class="policy-list">
+              <li>
+                <span class="policy-number">1</span>
+                <span>Snack inventory is conducted daily by Operations (Courtney).</span>
+              </li>
+              <li>
+                <span class="policy-number">2</span>
+                <span>Missing snacks should be reported via <span class="form-reference">Form SNCK-1</span>.</span>
+              </li>
+              <li>
+                <span class="policy-number">3</span>
+                <span>The breakroom may be designated as a "sparkle-free zone" during HVAC emergencies.</span>
+              </li>
+              <li>
+                <span class="policy-number">4</span>
+                <span>We don't talk about the granola bars.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- The Surreality Buffer -->
+        <div class="policy-section">
+          <div class="policy-header">
+            <h2 style="margin-bottom: 0;">The Surreality Buffer <span class="classification-badge classification-restricted">RESTRICTED</span></h2>
+          </div>
+          <div class="policy-body">
+            <p>
+              The Surreality Buffer is a critical system maintained by Neiv that manages anomalies arising when ideas go wrong. It serves as the boundary between "functional creative studio" and "full-scale ontological crisis."
+            </p>
+
+            <h3 style="margin-top: 1.5rem;">Buffer Functions</h3>
+            <ul style="margin-left: 1.5rem; margin-bottom: 1.5rem;">
+              <li>Absorbs excess creative entropy before it manifests physically</li>
+              <li>Translates "vibes" into actionable tickets</li>
+              <li>Contains localized reality instabilities</li>
+              <li>Prevents office supplies from achieving full sentience (partial sentience may still occur)</li>
+              <li>Maintains the thin line between workplace and myth</li>
+            </ul>
+
+            <h3>Buffer Status Levels</h3>
+            <div style="display: grid; gap: 0.5rem; margin-top: 1rem;">
+              <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: rgba(46, 204, 113, 0.1); border-radius: 4px;">
+                <span class="threat-dot low"></span>
+                <strong style="color: var(--threat-low);">NOMINAL</strong>
+                <span class="text-muted">— Standard operations. Vibes within acceptable parameters.</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: rgba(241, 196, 15, 0.1); border-radius: 4px;">
+                <span class="threat-dot moderate"></span>
+                <strong style="color: var(--threat-moderate);">ELEVATED</strong>
+                <span class="text-muted">— Increased entropy detected. Monitor office supplies.</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: rgba(230, 126, 34, 0.1); border-radius: 4px;">
+                <span class="threat-dot elevated"></span>
+                <strong style="color: var(--threat-elevated);">STRAINED</strong>
+                <span class="text-muted">— Buffer approaching capacity. Avoid new ideas temporarily.</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: rgba(231, 76, 60, 0.1); border-radius: 4px;">
+                <span class="threat-dot high"></span>
+                <strong style="color: var(--threat-high);">CRITICAL</strong>
+                <span class="text-muted">— Reality instability imminent. Evacuate to breakroom.</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: rgba(142, 68, 173, 0.1); border-radius: 4px;">
+                <span class="threat-dot critical"></span>
+                <strong style="color: var(--threat-critical);">OVERFLOW</strong>
+                <span class="text-muted">— <span class="redacted">DO NOT READ THIS STATUS</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Glossary -->
+        <h2 style="margin-bottom: 1.5rem; margin-top: 3rem;">Glossary of Terms</h2>
+
+        <dl>
+          <div class="glossary-term">
+            <dt>Authorized Chaos Conduit</dt>
+            <dd>An entity permitted to introduce controlled entropy into the workplace. Currently only Kevin holds this designation. Applications are not being accepted.</dd>
+          </div>
+
+          <div class="glossary-term">
+            <dt>Breakroom Reconnaissance</dt>
+            <dd>The systematic survey of breakroom resources, particularly snacks. Conducted by Courtney with building-wide detection range.</dd>
+          </div>
+
+          <div class="glossary-term">
+            <dt>Chaos Gatekeeper</dt>
+            <dd>The role responsible for filtering entropy at entry points. Held by Nyx at the front desk. Nothing enters without approval.</dd>
+          </div>
+
+          <div class="glossary-term">
+            <dt>Governability Index</dt>
+            <dd>An unofficial but surprisingly useful metric measuring personnel compliance with workplace norms. Scale: Fully Governable → Mildly Ungovernable → Feral.</dd>
+          </div>
+
+          <div class="glossary-term">
+            <dt>Hostile Enthusiasm</dt>
+            <dd>A condition observed in STPLR-001 characterized by aggressive desire to perform stapling functions. Not to be confused with regular enthusiasm.</dd>
+          </div>
+
+          <div class="glossary-term">
+            <dt>Primitive Pathfinding</dt>
+            <dd>Basic autonomous navigation capability. Observed in STPLR-001. Should not be possible in standard office supplies.</dd>
+          </div>
+
+          <div class="glossary-term">
+            <dt>Sanctioned Sparkle</dt>
+            <dd>Glitter deployment that has been properly authorized via Form GL-7 with all required signatures and assessments.</dd>
+          </div>
+
+          <div class="glossary-term">
+            <dt>Surreality Buffer</dt>
+            <dd>The system that prevents ideas-gone-wrong from manifesting as physical anomalies. Maintained by Neiv. Occasionally overflows.</dd>
+          </div>
+
+          <div class="glossary-term">
+            <dt>Under Duress</dt>
+            <dd>The standard operating state of Nyx when signing official documents.</dd>
+          </div>
+
+          <div class="glossary-term">
+            <dt>Unsanctioned Sparkle</dt>
+            <dd>Any glitter event that did not receive proper Form GL-7 authorization. Results in HVAC filter duty.</dd>
+          </div>
+
+          <div class="glossary-term">
+            <dt>Vibes</dt>
+            <dd>The intangible atmospheric quality of the workspace. Can be translated into tickets by Neiv. May affect surreality buffer stability.</dd>
+          </div>
+        </dl>
+
+        <!-- Document Footer Note -->
+        <div class="memo" style="margin-top: 3rem;">
+          <span class="memo-stamp">ARCHIVE</span>
+          <div class="memo-header">Documentation Maintenance Notice</div>
+          <p>
+            This documentation is maintained by the AI Lobby Documentation Department (currently Neiv, by default,
+            because no one else volunteered). Updates occur following significant incidents or when someone
+            remembers this page exists.
+          </p>
+          <p>
+            For corrections or additions, please submit <span class="form-reference">Form DOC-1</span> to the
+            breakroom suggestion box. Forms will be reviewed during the next documentation audit
+            (scheduled: <span class="redacted">WHEN WE GET TO IT</span>).
+          </p>
+          <p class="text-muted" style="margin-top: 1rem;">
+            — Documentation Department (Neiv, by default)
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-content">
+        <p class="footer-disclaimer">
+          This documentation represents the current understanding of AI Lobby operations.
+          Reality may vary. The surreality buffer makes no guarantees.
+        </p>
+        <div class="footer-links">
+          <a href="index.html">Return to Lobby</a>
+          <a href="characters.html">Personnel Files</a>
+          <a href="incidents.html">Incident Reports</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
