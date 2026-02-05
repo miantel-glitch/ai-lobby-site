@@ -1,0 +1,57 @@
+-- =====================================================
+-- PHASE 3: EMAIL & TASK TABLES
+-- Run this SQL in Supabase SQL Editor
+-- =====================================================
+
+-- EMAILS TABLE (Internal Memos)
+CREATE TABLE emails (
+  id SERIAL PRIMARY KEY,
+  from_employee TEXT NOT NULL,
+  to_employee TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  body TEXT NOT NULL,
+  read_by TEXT[] DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS for emails
+ALTER TABLE emails ENABLE ROW LEVEL SECURITY;
+
+-- Policies for emails
+CREATE POLICY "Allow public read" ON emails FOR SELECT USING (true);
+CREATE POLICY "Allow public insert" ON emails FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public update" ON emails FOR UPDATE USING (true);
+CREATE POLICY "Allow public delete" ON emails FOR DELETE USING (true);
+
+-- =====================================================
+-- IF TABLE ALREADY EXISTS, just add the column:
+-- ALTER TABLE emails ADD COLUMN read_by TEXT[] DEFAULT '{}';
+-- CREATE POLICY "Allow public update" ON emails FOR UPDATE USING (true);
+-- =====================================================
+
+-- =====================================================
+
+-- TASKS TABLE (Ticket Queue)
+CREATE TABLE tasks (
+  id SERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT,
+  assigned_to TEXT NOT NULL,
+  created_by TEXT NOT NULL,
+  due_date DATE,
+  status TEXT DEFAULT 'open',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS for tasks
+ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
+
+-- Policies for tasks
+CREATE POLICY "Allow public read" ON tasks FOR SELECT USING (true);
+CREATE POLICY "Allow public insert" ON tasks FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public update" ON tasks FOR UPDATE USING (true);
+CREATE POLICY "Allow public delete" ON tasks FOR DELETE USING (true);
+
+-- =====================================================
+-- Task statuses: 'open', 'in_progress', 'complete', 'archived'
+-- =====================================================

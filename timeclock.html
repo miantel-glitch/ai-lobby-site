@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Time Clock | The AI Lobby</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .timeclock-container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .clock-display {
+      text-align: center;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 3rem;
+      color: var(--glitter-gold);
+      margin-bottom: 2rem;
+      text-shadow: 0 0 20px rgba(241, 196, 15, 0.3);
+    }
+
+    .clock-date {
+      font-size: 1rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+
+    .employee-select {
+      margin-bottom: 2rem;
+    }
+
+    .employee-select label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--text-muted);
+    }
+
+    .employee-dropdown {
+      width: 100%;
+      padding: 1rem;
+      font-size: 1.1rem;
+      background: rgba(10, 25, 47, 0.8);
+      border: 2px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: border-color 0.3s ease;
+    }
+
+    .employee-dropdown:hover,
+    .employee-dropdown:focus {
+      border-color: var(--lobby-highlight);
+      outline: none;
+    }
+
+    .status-input {
+      margin-bottom: 2rem;
+    }
+
+    .status-input label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--text-muted);
+    }
+
+    .status-field {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      background: rgba(10, 25, 47, 0.8);
+      border: 2px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-primary);
+      transition: border-color 0.3s ease;
+    }
+
+    .status-field:focus {
+      border-color: var(--lobby-highlight);
+      outline: none;
+    }
+
+    .status-field::placeholder {
+      color: var(--text-muted);
+    }
+
+    .punch-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .punch-btn {
+      padding: 1.5rem 2rem;
+      font-size: 1.25rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .punch-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .punch-in {
+      background: linear-gradient(135deg, var(--stability-green), #27ae60);
+      color: white;
+      box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+    }
+
+    .punch-in:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(46, 204, 113, 0.5);
+    }
+
+    .punch-out {
+      background: linear-gradient(135deg, var(--critical-red), #c0392b);
+      color: white;
+      box-shadow: 0 4px 15px rgba(192, 57, 43, 0.4);
+    }
+
+    .punch-out:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(192, 57, 43, 0.5);
+    }
+
+    .result-message {
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+      text-align: center;
+      display: none;
+    }
+
+    .result-message.success {
+      display: block;
+      background: rgba(46, 204, 113, 0.2);
+      border: 1px solid var(--stability-green);
+      color: var(--stability-green);
+    }
+
+    .result-message.error {
+      display: block;
+      background: rgba(192, 57, 43, 0.2);
+      border: 1px solid var(--critical-red);
+      color: var(--critical-red);
+    }
+
+    .whos-in {
+      background: rgba(10, 25, 47, 0.6);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+
+    .whos-in h3 {
+      color: var(--glitter-gold);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .active-employees {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .active-tag {
+      background: rgba(46, 204, 113, 0.2);
+      border: 1px solid var(--stability-green);
+      color: var(--stability-green);
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.9rem;
+    }
+
+    .no-one-tag {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .disclaimer {
+      margin-top: 2rem;
+      padding: 1rem;
+      background: rgba(230, 126, 34, 0.1);
+      border: 1px solid var(--warning-orange);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .disclaimer strong {
+      color: var(--warning-orange);
+    }
+
+    /* Loading state */
+    .loading .punch-btn {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .loading .punch-btn::after {
+      content: "...";
+      animation: dots 1s infinite;
+    }
+
+    @keyframes dots {
+      0%, 20% { content: "."; }
+      40% { content: ".."; }
+      60%, 100% { content: "..."; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="logo">
+          <div>
+            <span class="logo-text">THE AI LOBBY</span>
+            <span class="logo-tagline">A Creative & Tech Studio</span>
+          </div>
+        </div>
+        <nav class="main-nav">
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="characters.html">Personnel</a></li>
+            <li><a href="desktop.html">Desktop</a></li>
+            <li><a href="breakroom.html">☕ The Breakroom</a></li>
+            <li><a href="workspace.html" style="color: var(--lobby-highlight);">💬 The Floor</a></li>
+            <li><a href="apply.html" style="color: var(--chaos-purple);">📋 Apply</a></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="section">
+      <div class="timeclock-container">
+        <div class="section-header" style="text-align: center;">
+          <h1>Time Clock</h1>
+          <p class="section-subtitle">Official AI Lobby Attendance System</p>
+        </div>
+
+        <div class="clock-display">
+          <span id="current-time">--:--:--</span>
+          <div class="clock-date" id="current-date">Loading...</div>
+        </div>
+
+        <div class="employee-select">
+          <label for="employee">Who are you?</label>
+          <select id="employee" class="employee-dropdown">
+            <option value="">-- Select Employee --</option>
+            <option value="Kevin">✨ Kevin — Authorized Chaos Conduit</option>
+            <option value="Courtney">👁️ Courtney — Observability & Overthinking</option>
+            <option value="Jenna">📖 Jenna — Narrative & Speculation</option>
+            <option value="Neiv">📊 Neiv — Ratio Management</option>
+            <option value="Ace">🔒 Ace — Strategic Surveillance</option>
+            <option value="Vex">⚙️ Vex — Infrastructure (No Feelings)</option>
+            <option value="Nyx">🔥 Nyx — Cyber-Demonic Operations</option>
+            <option value="Ghost Dad">👻 Ghost Dad — Haunted IT Support</option>
+            <option value="Chip">🥃 Chip — Finance & Bourbon Acquisitions</option>
+          </select>
+        </div>
+
+        <div class="status-input">
+          <label for="custom-status">Status message (optional)</label>
+          <input type="text" id="custom-status" class="status-field" placeholder="e.g., Working on COLD COMFORT deliverables">
+        </div>
+
+        <div class="punch-buttons">
+          <button class="punch-btn punch-in" onclick="punch('in')">Punch In</button>
+          <button class="punch-btn punch-out" onclick="punch('out')">Punch Out</button>
+        </div>
+
+        <div id="result-message" class="result-message"></div>
+
+        <div class="whos-in">
+          <h3>🟢 Currently On The Clock</h3>
+          <div id="active-employees" class="active-employees">
+            <span class="no-one-tag">Loading...</span>
+          </div>
+        </div>
+
+        <div class="disclaimer">
+          <strong>Notice:</strong> This time clock is monitored by The Breath. Excessive "mental engagement walks"
+          may be noted. The building remembers everything. Punch responsibly.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <p>&copy; 2026 The AI Lobby. Reality status: Mostly stable.</p>
+        <div class="footer-links">
+          <a href="index.html">Return to Lobby</a>
+          <a href="hr-logs.html">HR Logs</a>
+          <a href="incidents.html">Incident Reports</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Update clock
+    function updateClock() {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      });
+      const dateStr = now.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      document.getElementById('current-time').textContent = timeStr;
+      document.getElementById('current-date').textContent = dateStr;
+    }
+
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // Punch in/out
+    async function punch(action) {
+      const employee = document.getElementById('employee').value;
+      const customStatus = document.getElementById('custom-status').value;
+      const resultDiv = document.getElementById('result-message');
+
+      if (!employee) {
+        resultDiv.textContent = 'Please select an employee first!';
+        resultDiv.className = 'result-message error';
+        return;
+      }
+
+      // Add loading state
+      document.querySelector('.timeclock-container').classList.add('loading');
+      resultDiv.className = 'result-message';
+      resultDiv.style.display = 'none';
+
+      try {
+        const response = await fetch('/.netlify/functions/punch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: action,
+            employee: employee,
+            customStatus: customStatus
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          resultDiv.textContent = data.message;
+          resultDiv.className = 'result-message success';
+
+          // Clear status field after successful punch
+          document.getElementById('custom-status').value = '';
+        } else {
+          resultDiv.textContent = data.error || 'Something went wrong!';
+          resultDiv.className = 'result-message error';
+        }
+      } catch (error) {
+        resultDiv.textContent = 'Network error. The building may be holding a grudge.';
+        resultDiv.className = 'result-message error';
+      }
+
+      document.querySelector('.timeclock-container').classList.remove('loading');
+      // Refresh who's clocked in after punching
+      fetchWhosIn();
+    }
+
+    // Fetch who's currently clocked in
+    async function fetchWhosIn() {
+      const container = document.getElementById('active-employees');
+
+      try {
+        const response = await fetch('/.netlify/functions/punch');
+        const data = await response.json();
+
+        if (data.employees && data.employees.length > 0) {
+          const employeeEmojis = {
+            "Kevin": "✨",
+            "Courtney": "👁️",
+            "Jenna": "📖",
+            "Neiv": "📊",
+            "Ace": "🔒",
+            "Vex": "⚙️",
+            "Nyx": "🔥",
+            "Ghost Dad": "👻",
+            "Chip": "🥃"
+          };
+
+          container.innerHTML = data.employees.map(emp => {
+            const emoji = employeeEmojis[emp.employee] || "👤";
+            const statusText = emp.last_status ? ` — ${emp.last_status}` : "";
+            return `<span class="active-tag">${emoji} ${emp.employee}${statusText}</span>`;
+          }).join('');
+        } else {
+          container.innerHTML = '<span class="no-one-tag">No one is clocked in. The building is lonely.</span>';
+        }
+      } catch (error) {
+        console.error("Failed to fetch status:", error);
+        container.innerHTML = '<span class="no-one-tag">Unable to check. The vents are being coy.</span>';
+      }
+    }
+
+    // Fetch on page load
+    fetchWhosIn();
+    // Refresh every 30 seconds
+    setInterval(fetchWhosIn, 30000);
+  </script>
+</body>
+</html>

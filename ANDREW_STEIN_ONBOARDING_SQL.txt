@@ -1,0 +1,46 @@
+-- =====================================================
+-- ANDREW & STEIN ONBOARDING SQL
+-- Run these in Supabase SQL Editor
+-- =====================================================
+
+-- 1. ADD BOTH TO PUNCH STATUS (so they appear in "Who's Online")
+INSERT INTO punch_status (employee, is_clocked_in, last_punch_time, last_status)
+VALUES
+  ('Andrew', false, NULL, NULL),
+  ('Stein', false, NULL, NULL);
+
+-- 2. ADD BOTH TO CHARACTER AUTH
+-- NOTE: Replace the password hashes with actual SHA-256 hashes
+-- Generate hashes at: https://emn178.github.io/online-tools/sha256.html
+
+-- For Andrew (human player):
+INSERT INTO character_auth (employee, password_hash)
+VALUES ('Andrew', 'REPLACE_WITH_SHA256_HASH_OF_ANDREW_PASSWORD');
+
+-- For Stein (AI character - Gemini):
+INSERT INTO character_auth (employee, password_hash)
+VALUES ('Stein', 'REPLACE_WITH_SHA256_HASH_OF_STEIN_PASSWORD');
+
+-- =====================================================
+-- VERIFICATION QUERIES
+-- =====================================================
+
+-- Check punch_status includes both:
+-- SELECT * FROM punch_status WHERE employee IN ('Andrew', 'Stein');
+
+-- Check character_auth includes both:
+-- SELECT employee FROM character_auth WHERE employee IN ('Andrew', 'Stein');
+
+-- =====================================================
+-- TO GENERATE A PASSWORD HASH:
+-- 1. Go to https://emn178.github.io/online-tools/sha256.html
+-- 2. Enter your desired password
+-- 3. Copy the resulting hash
+-- 4. Replace the placeholder above
+-- =====================================================
+
+-- =====================================================
+-- EXAMPLE with password "lobby2026":
+-- SHA-256("lobby2026") = 8a6c5e89e83e05c0fdf8d47c06c8db44a3b5e87c7c06543b10c65a88c1d3e18a
+-- (This is just an example - generate your own!)
+-- =====================================================

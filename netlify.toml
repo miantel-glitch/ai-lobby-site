@@ -1,0 +1,46 @@
+[build]
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+[build.environment]
+  NETLIFY_BLOBS_CONTEXT = "production"
+  NODE_VERSION = "18"
+
+# Scheduled function for Ghost Dad daily updates
+# Runs once per day at 9 AM EST (14:00 UTC)
+[functions."ghost-dad-scheduled"]
+  schedule = "0 14 * * *"
+
+# DEPRECATED - replaced by office-heartbeat
+# [functions."ai-auto-poke"]
+#   schedule = "* * * * *"
+
+# Office Heartbeat - Natural rhythms for AI activity
+# Runs every 2 minutes with smart time-of-day and momentum awareness
+# Mornings are busier (20% chance), nights are quiet (3% chance)
+# Respects conversation momentum - stays quiet when humans are active
+[functions."office-heartbeat"]
+  schedule = "*/2 * * * *"
+
+# Scheduled function for Narrator morning recap
+# Runs once per day at 7 AM EST (12:00 UTC) to kick off the day
+[functions."narrator-recap"]
+  schedule = "0 12 * * *"
+
+# Scheduled function for Narrator daily task assignment
+# Runs once per day at 10 AM EST (15:00 UTC) to give Courtney a story task
+[functions."narrator-task"]
+  schedule = "0 15 * * *"
+
+# Scheduled function for Character Daily Reset
+# Runs at midnight EST (5:00 UTC) to restore energy/patience
+[functions."character-daily-reset"]
+  schedule = "0 5 * * *"
+
+# Narrator Observer - Periodic ambient observations
+# Runs every 5 minutes to occasionally observe quiet moments
+# The function has its own frequency controls and will usually stay silent
+[functions."narrator-observer"]
+  schedule = "*/5 * * * *"

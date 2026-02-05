@@ -1,0 +1,12 @@
+{
+  "name": "ai-lobby-site",
+  "version": "1.0.0",
+  "description": "The AI Lobby - A Creative & Tech Studio (where ideas become real and the HVAC has feelings)",
+  "scripts": {
+    "build": "echo 'Static site - no build required'"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.24.0",
+    "@netlify/blobs": "^8.0.0"
+  }
+}

@@ -1,0 +1,40 @@
+-- =====================================================
+-- STEIN ONBOARDING SQL
+-- Run these in Supabase SQL Editor to add Stein
+-- =====================================================
+
+-- 1. ADD STEIN TO PUNCH STATUS (so he appears in "Who's Online")
+INSERT INTO punch_status (employee, is_clocked_in, last_punch_time, last_status)
+VALUES ('Stein', false, NULL, NULL);
+
+-- 2. ADD STEIN TO CHARACTER AUTH
+-- NOTE: Replace 'YOUR_PASSWORD_HERE' with the actual password
+-- The password will be hashed using SHA-256
+-- You can generate the hash here: https://emn178.github.io/online-tools/sha256.html
+
+-- Option A: If you want to use the same password as another character for testing:
+-- (Get an existing hash from the character_auth table and use it)
+
+-- Option B: Set a specific password (example with password "ordnung"):
+-- SHA-256 hash of "ordnung" = 8f0b0b9c9b9b9b9b... (generate your actual hash)
+
+INSERT INTO character_auth (employee, password_hash)
+VALUES ('Stein', 'REPLACE_WITH_SHA256_HASH_OF_PASSWORD');
+
+-- =====================================================
+-- VERIFICATION QUERIES
+-- =====================================================
+
+-- Check punch_status includes Stein:
+-- SELECT * FROM punch_status WHERE employee = 'Stein';
+
+-- Check character_auth includes Stein:
+-- SELECT employee FROM character_auth WHERE employee = 'Stein';
+
+-- =====================================================
+-- TO GENERATE A PASSWORD HASH:
+-- 1. Go to https://emn178.github.io/online-tools/sha256.html
+-- 2. Enter your desired password
+-- 3. Copy the resulting hash
+-- 4. Replace 'REPLACE_WITH_SHA256_HASH_OF_PASSWORD' above
+-- =====================================================

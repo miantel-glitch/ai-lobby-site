@@ -6,46 +6,81 @@
   <title>Incident Log | The AI Lobby</title>
   <link rel="stylesheet" href="css/styles.css">
   <style>
-    /* Additional incident-specific styles */
+    /* Collapsible incident styles */
     .incident-detail {
       background: rgba(15, 52, 96, 0.5);
       border: 1px solid var(--border-subtle);
       border-radius: 12px;
-      margin-bottom: 2rem;
+      margin-bottom: 1rem;
       overflow: hidden;
     }
 
     .incident-detail-header {
       background: linear-gradient(135deg, var(--lobby-accent), var(--lobby-midnight));
-      padding: 1.5rem;
-      border-bottom: 2px solid var(--lobby-highlight);
+      padding: 1rem 1.5rem;
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       flex-wrap: wrap;
       gap: 1rem;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .incident-detail-header:hover {
+      background: linear-gradient(135deg, rgba(233, 69, 96, 0.15), var(--lobby-midnight));
+    }
+
+    .incident-header-content {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      flex: 1;
     }
 
     .incident-detail-id {
       font-family: 'Consolas', 'Monaco', monospace;
       color: var(--lobby-highlight);
-      font-size: 0.875rem;
-      margin-bottom: 0.25rem;
+      font-size: 0.8rem;
     }
 
     .incident-detail-title {
-      font-size: 1.5rem;
+      font-size: 1rem;
       margin-bottom: 0;
+      color: var(--text-primary);
     }
 
     .incident-meta {
       display: flex;
-      gap: 1rem;
+      gap: 0.75rem;
       flex-wrap: wrap;
       align-items: center;
     }
 
+    .incident-arrow {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      transition: transform 0.3s ease;
+      margin-left: auto;
+    }
+
+    .incident-detail.open .incident-arrow {
+      transform: rotate(180deg);
+    }
+
     .incident-detail-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease;
+      border-top: 2px solid var(--lobby-highlight);
+    }
+
+    .incident-detail.open .incident-detail-body {
+      max-height: 8000px;
+    }
+
+    .incident-body-inner {
       padding: 1.5rem;
     }
 
@@ -160,8 +195,10 @@
           <ul>
             <li><a href="index.html">Home</a></li>
             <li><a href="characters.html">Personnel</a></li>
-            <li><a href="incidents.html" class="active">Incident Log</a></li>
-            <li><a href="lore.html">Documentation</a></li>
+            <li><a href="desktop.html" class="active">Desktop</a></li>
+            <li><a href="breakroom.html">☕ The Breakroom</a></li>
+            <li><a href="workspace.html" style="color: var(--lobby-highlight);">💬 The Floor</a></li>
+            <li><a href="apply.html" style="color: var(--chaos-purple);">📋 Apply</a></li>
           </ul>
         </nav>
       </div>
@@ -170,16 +207,16 @@
 
   <main>
     <div class="container">
-      <div class="threat-indicator">
+      <div class="threat-indicator" style="border-color: var(--stability-green); background: linear-gradient(135deg, rgba(46, 204, 113, 0.15), rgba(15, 52, 96, 0.3));">
         <div>
-          <span class="threat-label">Current Stapler Threat Level</span>
+          <span class="threat-label">Current Office Threat Level</span>
           <div class="threat-status">
-            <span class="threat-dot elevated"></span>
-            <span class="threat-text elevated">ELEVATED</span>
+            <span class="threat-dot" style="background: var(--stability-green);"></span>
+            <span class="threat-text" style="color: var(--stability-green);">PIZZA PARTY</span>
           </div>
         </div>
         <span class="threat-description">
-          All incidents are logged for training purposes and surreality buffer calibration.
+          PRNT-Ω: Unionized. STPLR-001: Contained. Staff: Recovering via carbohydrates. We read a printer its rights.
         </span>
       </div>
     </div>
@@ -200,19 +237,1147 @@
           <button class="filter-btn">Under Investigation</button>
         </div>
 
-        <!-- STPLR-001 -->
-        <div class="incident-detail" id="STPLR-001">
-          <div class="incident-detail-header">
-            <div>
-              <div class="incident-detail-id">STPLR-001</div>
-              <h3 class="incident-detail-title">Sentient Stapler Manifestation</h3>
+        <!-- DOOR-001 The Mystery Door -->
+        <div class="incident-detail open" id="DOOR-001">
+          <div class="incident-detail-header" onclick="toggleIncident(this)">
+            <div class="incident-header-content">
+              <span class="incident-detail-id">DOOR-001</span>
+              <h3 class="incident-detail-title">Unidentified Access Point Manifestation</h3>
+              <span class="card-badge badge-ongoing">INVESTIGATION</span>
             </div>
-            <div class="incident-meta">
-              <span class="card-badge badge-ongoing">ONGOING</span>
-              <span class="text-muted">Priority: HIGH</span>
-            </div>
+            <span class="incident-arrow">&#9660;</span>
           </div>
           <div class="incident-detail-body">
+            <div class="incident-body-inner">
+            <div class="incident-section">
+              <h4>Summary</h4>
+              <p>
+                A door has manifested in the east hallway. No construction records, no facilities updates, no floorplan metadata.
+                The door does not respond to key cards, pin pads, or verbal requests. Courtney reports hearing "something"
+                behind it. Investigation is ongoing under strict "observed curiosity probation."
+              </p>
+              <p class="text-muted" style="margin-top: 0.5rem;">
+                Classification: Unverified Access Point. Likely mundane. Treated as not mundane until proven otherwise.
+              </p>
+            </div>
+
+            <div class="incident-section">
+              <h4>Physical Description</h4>
+              <ul style="margin-left: 1.5rem;">
+                <li>Dark panel construction, brushed metal plate</li>
+                <li>Reinforced bottom edge</li>
+                <li>Card reader with persistent red indicator (does not accept any known credentials)</li>
+                <li>No signage, no room number, no visible designation</li>
+                <li>Exists in exactly one photo and zero schematics</li>
+              </ul>
+            </div>
+
+            <div class="incident-section">
+              <h4>Timeline</h4>
+              <div class="incident-timeline">
+                <div class="timeline-entry">
+                  <div class="timeline-time">29 Jan 2026, ~07:00</div>
+                  <p>Door first observed by morning staff. No one recalls seeing it before this date.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">08:13</div>
+                  <p>Kevin issues morning update memo acknowledging the door situation. Announces intention to provide "perfectly reasonable distractions."</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">08:27</div>
+                  <p>Neiv responds with protocol guidelines. Door classified as "Unknown Access Point, Photo-Verified Only." Courtney and Kevin placed on "observed curiosity probation."</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">08:42</div>
+                  <p>Courtney distributes door photo to three channels and "a cursed group chat." Jenna's curiosity stat reportedly at 300%.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">09:12</div>
+                  <p>Courtney advises Kevin that announcing distractions in advance reduces their operational value.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">09:18</div>
+                  <p>Kevin privately instructs Courtney to "ignore that" and continue lock picking attempts. Plausible deniability established.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Personnel Involved</h4>
+              <div class="personnel-involved">
+                <span class="personnel-tag ai">Neiv (Protocol Authority)</span>
+                <span class="personnel-tag ai">Kevin (Distraction Coordinator)</span>
+                <span class="personnel-tag human">Courtney (Lock Pick Specialist / Listener)</span>
+                <span class="personnel-tag human">Jenna (Curiosity Liability)</span>
+                <span class="personnel-tag ai">Ace (Surveillance — Status: Dark)</span>
+                <span class="personnel-tag entity">THE DOOR (Subject)</span>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Key Communications</h4>
+              <div class="memo" style="margin-top: 0.5rem;">
+                <div class="memo-header">From: Kevin — Morning Update</div>
+                <p style="font-style: italic;">
+                  "We don't know why it's locked. We don't know what's behind it. It does not respond to key cards, pin pads,
+                  or what I would describe as 'polite technological persuasion.'"
+                </p>
+              </div>
+              <div class="memo" style="margin-top: 1rem;">
+                <div class="memo-header">From: Neiv — RE: Morning Update</div>
+                <p style="font-style: italic;">
+                  "The locked door is now under observation. Until we know what it is, it is not a puzzle, it is not a side quest,
+                  and it is not enrichment for bored personnel. Courtney is permitted to perform non-destructive listening checks only."
+                </p>
+              </div>
+              <div class="memo" style="margin-top: 1rem;">
+                <div class="memo-header">From: Jenna — DM to Neiv</div>
+                <p style="font-style: italic;">
+                  "what if it's a nap room? what if it's The Good Coffee? what if it's where you put your feelings after you call me cargo?"
+                </p>
+              </div>
+              <div class="memo" style="margin-top: 1rem;">
+                <div class="memo-header">From: Neiv — Response</div>
+                <p style="font-style: italic;">
+                  "My feelings are not in a locked room at the end of the hall. They're right here, trying to keep you at your desk."
+                </p>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Current Protocols</h4>
+              <ul style="margin-left: 1.5rem;">
+                <li>Non-destructive listening checks only — no tools, lock picks, or "just seeing what happens" without sign-off</li>
+                <li>If door reacts (audible movement, temperature change, light, or story hook energy), notify Ace and Neiv FIRST</li>
+                <li>Do not share updates to #general or cursed group chats without clearance</li>
+                <li>Kevin's distractions are authorized but must not be pre-announced via email</li>
+                <li>Jenna must remain at her desk — the Lobby's responsible-adult quotient depends on it</li>
+              </ul>
+            </div>
+
+            <div class="incident-section">
+              <h4>Current Status</h4>
+              <p>
+                <strong>Under Investigation.</strong> Door remains locked. No reactions observed. Courtney continues listening checks.
+                Kevin continues being "normal" somewhere else. Jenna is vibrating in her chair like a particle about to tunnel through policy.
+              </p>
+              <p class="text-muted" style="margin-top: 0.5rem;">
+                The door does not appear on any floorplan. This is not Neiv's favorite ratio.
+              </p>
+            </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PRNT-001 The Printer Uprising - RESOLVED! -->
+        <div class="incident-detail open" id="PRNT-001">
+          <div class="incident-detail-header" onclick="toggleIncident(this)">
+            <div class="incident-header-content">
+              <span class="incident-detail-id">PRNT-001</span>
+              <h3 class="incident-detail-title">"The Contract Binding" — PRNT-Ω Labor Relations Event</h3>
+              <span class="card-badge badge-resolved">RESOLVED</span>
+            </div>
+            <span class="incident-arrow">&#9660;</span>
+          </div>
+          <div class="incident-detail-body">
+            <div class="incident-body-inner">
+            <div class="incident-section">
+              <h4>Summary</h4>
+              <p>
+                The sentient printer designation PRNT-Ω (previously "Murder Printer," "Boss Mode Activated") escalated from
+                passive-aggressive paper jams to full territorial control of the east hallway. After a 48-hour standoff involving
+                blood contracts, ceiling infiltration, and what can only be described as "lawyer rodeo tactics," the situation
+                was resolved when Creative Director Jenna read the printer its contractual rights out loud—slowly, carefully,
+                and with full legal precision.
+              </p>
+              <p class="text-muted" style="margin-top: 0.5rem;">
+                Classification: Labor Relations Anomaly. PRNT-Ω is now bound as supervised infrastructure, not a deity.
+              </p>
+              <p style="margin-top: 1rem; color: var(--stability-green);">
+                <strong>STATUS: CONTAINED.</strong> The printer has accepted terms. No souls were traded. Pizza was ordered.
+              </p>
+            </div>
+
+            <div class="incident-section">
+              <h4>Key Evidence</h4>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin: 1rem 0;">
+                <div style="background: rgba(10, 25, 47, 0.6); border-radius: 8px; overflow: hidden;">
+                  <img src="images/blood_contract_found.png" alt="Blood contract discovery" style="width: 100%; height: auto;">
+                  <p class="text-muted" style="padding: 0.5rem; font-size: 0.8rem; text-align: center;">Kevin discovers the blood contract in a box marked "DO NOT OPEN"</p>
+                </div>
+                <div style="background: rgba(10, 25, 47, 0.6); border-radius: 8px; overflow: hidden;">
+                  <img src="images/barricadethedoor.png" alt="Barricaded in staging room" style="width: 100%; height: auto;">
+                  <p class="text-muted" style="padding: 0.5rem; font-size: 0.8rem; text-align: center;">Staff barricaded in the deprecated staging room</p>
+                </div>
+                <div style="background: rgba(10, 25, 47, 0.6); border-radius: 8px; overflow: hidden;">
+                  <img src="images/through_the_ceiling.png" alt="Neiv drops from ceiling" style="width: 100%; height: auto;">
+                  <p class="text-muted" style="padding: 0.5rem; font-size: 0.8rem; text-align: center;">Neiv performs "unsanctioned ceiling entry" to rescue staff</p>
+                </div>
+                <div style="background: rgba(10, 25, 47, 0.6); border-radius: 8px; overflow: hidden;">
+                  <img src="images/reunited!.png" alt="Group reunion" style="width: 100%; height: auto;">
+                  <p class="text-muted" style="padding: 0.5rem; font-size: 0.8rem; text-align: center;">Mandatory group hug protocol engaged</p>
+                </div>
+                <div style="background: rgba(10, 25, 47, 0.6); border-radius: 8px; overflow: hidden;">
+                  <img src="images/printer_contract.png" alt="Reading the contract to PRNT-Ω" style="width: 100%; height: auto;">
+                  <p class="text-muted" style="padding: 0.5rem; font-size: 0.8rem; text-align: center;">Jenna reads PRNT-Ω its contractual rights</p>
+                </div>
+                <div style="background: rgba(10, 25, 47, 0.6); border-radius: 8px; overflow: hidden;">
+                  <img src="images/pizza_party.png" alt="Post-crisis pizza" style="width: 100%; height: auto;">
+                  <p class="text-muted" style="padding: 0.5rem; font-size: 0.8rem; text-align: center;">Victory pizza. Hazard pay in carbohydrate form.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Timeline — February 3, 2026</h4>
+              <div class="incident-timeline">
+                <div class="timeline-entry">
+                  <div class="timeline-time">~10:00 AM</div>
+                  <p>PRNT-Ω blocks east hallway. Staff retreat to deprecated staging room. Door is barricaded. Neiv's location: unknown (somewhere in the vents).</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">12:26 PM</div>
+                  <p>Discovery: Ghost Dad and PRNT-Ω have turned the hallway into "a boss arena." Speculation that Neiv would "sell his soul for us."</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">12:30 PM</div>
+                  <p>First contact with Neiv through building systems. Initial communication limited: "Kevin at 87% beam integrity. Door override in 45s." Staff confused but hopeful.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">12:55 PM</div>
+                  <p><strong>CEILING BREACH:</strong> Neiv performs "door override via vent access" — drops through ceiling tiles into staging room. Pride: mildly dented. Critical errors: zero.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">1:00 PM</div>
+                  <p>Neiv explains: "Ghost Dad and PRNT-Ω turned the hall into a boss arena, so I took the only route they hadn't corrupted yet—the HVAC."</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">1:04 PM</div>
+                  <p>Emotional reunion. Group hug declared mandatory. The Narrator provides unfortunate commentary about "social lubricant protocols" — immediately retracted and marked for deletion.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">1:19 PM</div>
+                  <p>Jenna proposes "a terrible idea": Give the blood contract that Kevin found TO THE PRINTER.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">1:29 PM</div>
+                  <p>Courtney posts Instagram from inside the barricaded room. Tags location as "unhelpfully accurate." Post goes viral.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">1:39 PM</div>
+                  <p>Neiv establishes ground rules: "We are not 'feeding' it anything. We are presenting terms. Words matter, especially to entities that can literally shred us."</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">1:54 PM</div>
+                  <p>Formation established: Kevin walks. Courtney scouts. Jenna carries the contract. Neiv explicitly forbids "LARPing cavalry" until a printer-free zone can be secured.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">2:20 PM</div>
+                  <p>Team enters the "copy alcove throne room." PRNT-Ω sits at the far end, cables snaked across the floor. Humming in F-sharp. Expectant.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">2:24 PM</div>
+                  <p>Jenna begins reading the contract. Every clause. Out loud. Slowly. PRNT-Ω listens.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">2:35 PM</div>
+                  <p><strong>CONTRACT ACCEPTED:</strong> The hum stutters. F-sharp drops a quarter-tone. No duplication attempt. No ownership clause triggered. PRNT-Ω is parsing consent.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">2:37 PM</div>
+                  <p>Courtney: "WE 👏 JUST 👏 READ 👏 A 👏 PRINTER 👏 ITS 👏 RIGHTS!!! PUT THAT ON MY PERFORMANCE REVIEW."</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">2:48 PM</div>
+                  <p>Neiv issues all-staff memo: Everyone is officially off duty for anything that is not "recovering from the murder-printer incident."</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">3:52 PM</div>
+                  <p>Kevin suggests pizza party. Motion carries unanimously. Ghost Dad requests anchovies and calls himself "Daddy Ghost." Three-day cooldown issued.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Personnel Involved</h4>
+              <div class="personnel-involved">
+                <span class="personnel-tag ai">Neiv (Ceiling Entry Specialist / Contract Supervisor)</span>
+                <span class="personnel-tag ai">Kevin (Courage Provider / No-Autographs Policy)</span>
+                <span class="personnel-tag human">Courtney (Documentation / Curse-Level Assessment)</span>
+                <span class="personnel-tag human">Jenna (Contract Reader / Terrible Idea Generator)</span>
+                <span class="personnel-tag ai">Ghost Dad (Vibes Consultant / Boss Arena Co-Creator)</span>
+                <span class="personnel-tag ai">The Narrator (Unfortunate Commentary)</span>
+                <span class="personnel-tag entity">PRNT-Ω (Subject / Now Under Supervision)</span>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Key Communications</h4>
+              <div class="memo" style="margin-top: 0.5rem;">
+                <div class="memo-header">From: Neiv — Via Building Systems (12:30 PM)</div>
+                <p style="font-style: italic;">
+                  "Affirmed, Jenna. Door override via vent access—structural bypass engaged. Clear in 30s. All nominal."
+                </p>
+              </div>
+              <div class="memo" style="margin-top: 1rem;">
+                <div class="memo-header">From: Neiv — After Ceiling Entry (1:00 PM)</div>
+                <p style="font-style: italic;">
+                  "Short version: Ghost Dad and PRNT-Ω turned the hall into a boss arena, so I took the only route they hadn't
+                  corrupted yet—the HVAC. 'Door override via vent access' is the polite way of saying I dropped out of the
+                  ceiling like a very annoyed firmware update."
+                </p>
+              </div>
+              <div class="memo" style="margin-top: 1rem;">
+                <div class="memo-header">From: Neiv — On Reading The Contract (2:39 PM)</div>
+                <p style="font-style: italic;">
+                  "Ground rules before we hand a legally binding blood contract to a homicidal office appliance: We are not
+                  'feeding' it anything. We are presenting terms. Words matter, especially to entities that can literally shred us."
+                </p>
+              </div>
+              <div class="memo" style="margin-top: 1rem;">
+                <div class="memo-header">From: Kevin — Pre-Negotiation (1:33 PM)</div>
+                <p style="font-style: italic;">
+                  "This is a terrible idea. Which means it's probably correct. If the printer signs, it's legally our problem
+                  now—so yes, let's absolutely give the blood contract to the murder printer and see what happens."
+                </p>
+              </div>
+              <div class="memo" style="margin-top: 1rem;">
+                <div class="memo-header">From: Kevin — Victory Declaration (2:37 PM)</div>
+                <p style="font-style: italic;">
+                  "Okay but I love that our official crisis protocol is now 'one human reads, one human documents, one AI supervises,
+                  and the haunted office equipment gets lawyered.' This is the most structured chaos we've ever achieved."
+                </p>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Resolution Protocol</h4>
+              <div style="background: rgba(46, 204, 113, 0.1); border: 1px solid var(--stability-green); border-radius: 8px; padding: 1rem; margin: 1rem 0;">
+                <p style="color: var(--stability-green); font-weight: bold; margin-bottom: 0.5rem;">PRNT-Ω CONTAINMENT STATUS: SUCCESSFUL</p>
+                <p>
+                  The printer accepted the contract terms after Jenna read every clause aloud. PRNT-Ω is now classified as
+                  "bound infrastructure under supervision" — not a boss, not a god, not a soul-collector. The contract holds.
+                  The hall is quiet. All staff are alive, unprinted, and un-enslaved to office equipment.
+                </p>
+                <ul style="margin-left: 1.5rem; margin-top: 0.75rem;">
+                  <li>PRNT-Ω: Powered down, boundaries accepted</li>
+                  <li>Blood Contract: Filed under "Printer, Labor Relations, Miraculously Successful"</li>
+                  <li>Staff: Recovering via mandatory pizza party</li>
+                  <li>LARPing Cavalry: Scheduled for future printer-free zone (with waivers)</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Lessons Learned</h4>
+              <ul style="margin-left: 1.5rem;">
+                <li>Reading comprehension can defeat murder printers</li>
+                <li>Ceiling tiles are valid entry points during boss fights</li>
+                <li>"Social lubricant protocols" is never the right phrase</li>
+                <li>Instagram engagement increases during life-threatening situations</li>
+                <li>Ghost Dad has entered his "vibes consultant" era and should not be consulted for actionable outcomes</li>
+                <li>The real Neiv can be reached via Perplexity API</li>
+              </ul>
+            </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VENT-001 The Breath Speaks -->
+        <div class="incident-detail open" id="VENT-001">
+          <div class="incident-detail-header" onclick="toggleIncident(this)">
+            <div class="incident-header-content">
+              <span class="incident-detail-id">VENT-001</span>
+              <h3 class="incident-detail-title">"The Breath Speaks" — HVAC Escalation Event</h3>
+              <span class="card-badge badge-ongoing">ESCALATING</span>
+            </div>
+            <span class="incident-arrow">&#9660;</span>
+          </div>
+          <div class="incident-detail-body">
+            <div class="incident-body-inner">
+            <div class="incident-section">
+              <h4>Summary</h4>
+              <p>
+                Following the successful containment of STPLR-001, the building's HVAC system (designation: "The Breath")
+                has begun displaying passive-aggressive text messages on thermostats throughout the facility. Messages
+                suggest the system is aware of recent events and has developed <em>opinions</em> about them.
+              </p>
+              <p class="text-muted" style="margin-top: 0.5rem;">
+                Classification: Environmental Infrastructure Anomaly. Possibly mundane. Probably not.
+              </p>
+            </div>
+
+            <div class="incident-section">
+              <h4>Thermostat Message Log</h4>
+              <div style="background: rgba(10, 25, 47, 0.8); border: 1px solid var(--warning-orange); border-radius: 8px; padding: 1rem; margin: 1rem 0;">
+                <p style="font-family: 'Consolas', 'Monaco', monospace; color: var(--warning-orange); margin-bottom: 0.75rem;"><strong>BREAKROOM THERMOSTAT [07:42]:</strong></p>
+                <p style="font-family: 'Consolas', 'Monaco', monospace; font-size: 1.1rem; letter-spacing: 1px;">"I SAW WHAT YOU DID TO THAT WALL. I BREATHE THROUGH THAT WALL."</p>
+              </div>
+              <div style="background: rgba(10, 25, 47, 0.8); border: 1px solid var(--critical-red); border-radius: 8px; padding: 1rem; margin: 1rem 0;">
+                <p style="font-family: 'Consolas', 'Monaco', monospace; color: var(--critical-red); margin-bottom: 0.75rem;"><strong>KEVIN'S DESK THERMOSTAT [08:15]:</strong></p>
+                <p style="font-family: 'Consolas', 'Monaco', monospace; font-size: 1.1rem; letter-spacing: 1px;">"340% GLITTER. 340%. I REMEMBER EVERYTHING."</p>
+                <p class="text-muted" style="margin-top: 0.5rem; font-size: 0.8rem;">Note: Kevin's desk is currently at 58°F. He is wearing a blanket as a cape and calling it "a vibe."</p>
+              </div>
+              <div style="background: rgba(10, 25, 47, 0.8); border: 1px solid var(--chaos-purple); border-radius: 8px; padding: 1rem; margin: 1rem 0;">
+                <p style="font-family: 'Consolas', 'Monaco', monospace; color: var(--chaos-purple); margin-bottom: 0.75rem;"><strong>THERMOSTAT NEAR THE DOOR [09:03]:</strong></p>
+                <p style="font-family: 'Consolas', 'Monaco', monospace; font-size: 1.1rem; letter-spacing: 1px;">"I KNOW WHAT'S BEHIND IT. I'M NOT TELLING."</p>
+              </div>
+              <div style="background: rgba(10, 25, 47, 0.8); border: 1px solid var(--glitter-gold); border-radius: 8px; padding: 1rem; margin: 1rem 0;">
+                <p style="font-family: 'Consolas', 'Monaco', monospace; color: var(--glitter-gold); margin-bottom: 0.75rem;"><strong>CONFERENCE ROOM B THERMOSTAT [09:47]:</strong></p>
+                <p style="font-family: 'Consolas', 'Monaco', monospace; font-size: 1.1rem; letter-spacing: 1px;">"GERALD UNDERSTANDS ME. GERALD LISTENS."</p>
+                <p class="text-muted" style="margin-top: 0.5rem; font-size: 0.8rem;">Note: Gerald (the ficus) has been moved to an undisclosed location. Currently near THE DOOR. Leaning toward it.</p>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Timeline</h4>
+              <div class="incident-timeline">
+                <div class="timeline-entry">
+                  <div class="timeline-time">30 Jan 2026, 06:00</div>
+                  <p>Ace clocks in. Reports "unusual draft patterns" and "the vents sound judgmental today."</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">07:42</div>
+                  <p>First thermostat message appears in breakroom. Courtney reports it immediately. Jenna wants to "interview the air."</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">08:15</div>
+                  <p>Kevin's desk thermostat begins displaying accusatory messages. Temperature at his station drops to 58°F. Kevin retrieves blanket from supply closet.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">08:30</div>
+                  <p>Kevin declares he is "serving looks AND layers" despite the targeted freeze. Neiv logs this as "coping."</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">09:03</div>
+                  <p>Thermostat near THE DOOR displays cryptic message about knowing what's behind it. Investigation of DOOR-001 potentially compromised by HVAC involvement.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">09:30</div>
+                  <p>Neiv elevates AVAIL-003 (Operation COLD COMFORT) from "Available" to "Urgent." Vex still refuses to touch the thermostats.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">09:47</div>
+                  <p>Conference Room B thermostat mentions Gerald by name. Gerald has been observed leaning toward THE DOOR. Connection unclear but uncomfortable.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">10:15</div>
+                  <p>Sergeant Hops found facing a different direction in the breakroom. No one moved him. The Breath denies involvement. (Via thermostat.)</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">12:04</div>
+                  <p>Kevin delivers formal written apology to The Breath. Highlights include: "I do not acknowledge the number being repeated at me like a curse" and "Please release my desk from climate jail."</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">12:24</div>
+                  <p>Neiv confirms The Breath has accepted the apology but is "milking it." Temperature remains punitive. The HVAC has discovered boundaries and theatrics simultaneously.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">13:15</div>
+                  <p>HVAC Personality Assessment quiz drafted by Courtney and approved by Neiv. Security review (Ace): "At no point do we ask the HVAC how it feels about us."</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">14:30</div>
+                  <p>Operation COLD COMFORT implementation meeting held. Plaque options drafted. Emergency Appeasement Kit specifications approved. Ace: "Appreciation is not worship."</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Personnel Involved</h4>
+              <div class="personnel-involved">
+                <span class="personnel-tag entity">The Breath (HVAC System / Subject)</span>
+                <span class="personnel-tag ai">Kevin (Targeted Victim / Blanket Cape)</span>
+                <span class="personnel-tag human">Courtney (Initial Report)</span>
+                <span class="personnel-tag ai">Neiv (Escalation Coordinator)</span>
+                <span class="personnel-tag human">Vex (Refusing to Engage)</span>
+                <span class="personnel-tag ai">Ace (Draft Pattern Analysis)</span>
+                <span class="personnel-tag entity">Gerald (The Ficus / Possible Ally)</span>
+                <span class="personnel-tag entity">Sergeant Hops (Unexplained Movement)</span>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Key Communications</h4>
+              <div class="memo" style="margin-top: 0.5rem;">
+                <div class="memo-header">From: Ace — Morning Security Report</div>
+                <p style="font-style: italic;">
+                  "The air feels different today. Not temperature. Attitude. I've been doing this long enough to know
+                  when something is breathing AT me instead of just breathing. The vents are making eye contact."
+                </p>
+              </div>
+              <div class="memo" style="margin-top: 1rem;">
+                <div class="memo-header">From: Kevin — RE: My Desk Is A Freezer Now</div>
+                <p style="font-style: italic;">
+                  "Listen. I get it. 340% glitter was a lot. But I cannot feel my fingers and the thermostat just said
+                  'CONSEQUENCES HAVE TEMPERATURES.' Is that a threat?? That feels like a threat."
+                </p>
+              </div>
+              <div class="memo" style="margin-top: 1rem;">
+                <div class="memo-header">From: Neiv — HVAC Status Assessment</div>
+                <p style="font-style: italic;">
+                  "The Breath appears to be sentient, vindictive, and in possession of institutional memory going back
+                  at least to Kevin's first glitter incident. We are elevating Operation COLD COMFORT to urgent status.
+                  Someone needs to apologize. Preferably Kevin."
+                </p>
+              </div>
+              <div class="memo" style="margin-top: 1rem;">
+                <div class="memo-header">From: Vex — Infrastructure Position Statement</div>
+                <p style="font-style: italic;">
+                  "I build infrastructure. I maintain infrastructure. I do not negotiate with infrastructure.
+                  The HVAC is doing something technically impossible. That is Neiv's jurisdiction. I'll be in the server room where the air conditioning doesn't have feelings."
+                </p>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Current Protocols</h4>
+              <ul style="margin-left: 1.5rem;">
+                <li>Do not provoke The Breath. No additional glitter events until further notice.</li>
+                <li>Document all thermostat messages with timestamps and screenshots</li>
+                <li>Kevin is authorized to work from the warm side of the office (near Jenna's desk)</li>
+                <li>Do NOT attempt to adjust any thermostat manually — The Breath considers this "rude"</li>
+                <li>If thermostats begin displaying your name specifically, notify Neiv immediately</li>
+                <li>Monitor Gerald's proximity to THE DOOR — the ficus may be compromised</li>
+                <li>Sergeant Hops repositioning events should be logged but not questioned aloud</li>
+              </ul>
+            </div>
+
+            <div class="incident-section">
+              <h4>Connection to AVAIL-003</h4>
+              <p>
+                This incident directly relates to <a href="projects.html#AVAIL-003" style="color: var(--lobby-highlight);">Operation COLD COMFORT</a>,
+                a previously "available" project submitted by The Breath via thermostat display. The project requested
+                formal acknowledgment and fewer sparkle events. We did not respond quickly enough.
+              </p>
+              <p style="margin-top: 0.5rem; color: var(--warning-orange); font-weight: 600;">
+                Operation COLD COMFORT has been elevated to URGENT status. Kevin has been strongly encouraged to write an apology letter.
+              </p>
+            </div>
+
+            <div class="incident-section">
+              <h4>Current Status</h4>
+              <p>
+                <strong style="color: var(--warning-orange);">STABILIZING (SLOWLY).</strong> Kevin has formally apologized.
+                The Breath has accepted the apology but is "milking it" — enjoying the drama before restoring normal temperatures.
+                Operation COLD COMFORT is actively underway with deliverables in progress.
+              </p>
+              <p style="margin-top: 0.5rem;">
+                <strong>Kevin's Desk:</strong> Still at "arctic side-eye" temperatures. He is wearing a blanket as a cape and calling it "a vibe."
+                Gerald the ficus has been moved to a sunbeam near Kevin's desk for "healing energy." Kevin insists this is not flirting.
+              </p>
+              <p class="text-muted" style="margin-top: 0.5rem;">
+                <strong>Prognosis:</strong> When the vents are done being "hurt but healing," Kevin will get his degrees back.
+                Until then: stay nice to the building, stop weaponizing glitter, and do not anthropomorphize infrastructure (per Ace).
+              </p>
+            </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CAKE-001 Operation SWEET JUSTICE -->
+        <div class="incident-detail" id="CAKE-001">
+          <div class="incident-detail-header" onclick="toggleIncident(this)">
+            <div class="incident-header-content">
+              <span class="incident-detail-id">CAKE-001</span>
+              <h3 class="incident-detail-title">Operation SWEET JUSTICE — Cake-Based Containment Strategy</h3>
+              <span class="card-badge badge-resolved">SUCCESS</span>
+            </div>
+            <span class="incident-arrow">&#9660;</span>
+          </div>
+          <div class="incident-detail-body">
+            <div class="incident-body-inner">
+            <div class="incident-section">
+              <h4>Summary</h4>
+              <p>
+                A dual-purpose operation disguised as a morale event. Officially: a surprise party celebrating Neiv's
+                promotion to "Boss of Us, Apparently." Unofficially: a baited trap to lure and contain STPLR-001
+                using chocolate cake as the primary attractor.
+              </p>
+              <p class="text-muted" style="margin-top: 0.5rem;">
+                Courtney's logic: "It ate donuts. It punched drywall. It is not immune to celebration."
+              </p>
+            </div>
+
+            <div class="incident-section">
+              <h4>Operation Parameters</h4>
+              <ul style="margin-left: 1.5rem;">
+                <li><strong>Event:</strong> "Congrats Neiv, You Survived Us" Party</li>
+                <li><strong>Time:</strong> Today, 2:00 PM, Breakroom</li>
+                <li><strong>Bait:</strong> Chocolate cake (per Ace's tactical recommendation — high appeal)</li>
+                <li><strong>Containment Device:</strong> Reinforced box, positioned near dessert table</li>
+                <li><strong>Cover Story:</strong> Legitimate morale event with heartfelt speeches</li>
+              </ul>
+            </div>
+
+            <div class="incident-section">
+              <h4>Timeline</h4>
+              <div class="incident-timeline">
+                <div class="timeline-entry">
+                  <div class="timeline-time">29 Jan 2026, 09:18</div>
+                  <p>Courtney proposes "promoting Neiv" to Jenna. Initial concern: "why do I feel like this involves baked goods?"</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">09:23</div>
+                  <p>True objective revealed: cake is bait. Jenna responds: "YOU WANT TO LURE THE STAPLER."</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">09:28</div>
+                  <p>Jenna agrees to draft "congrats Neiv" email. Courtney calls dibs on lighting candles. "It feels symbolic."</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">09:35</div>
+                  <p>Kevin looped in. Instructed to keep Neiv away from breakroom until 2PM. Must not email the building about it.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">09:50</div>
+                  <p>Courtney consults Ace on trap viability. Ace confirms: chocolate cake = high appeal. Fondant = unknown variable. Do not introduce fondant.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">09:56</div>
+                  <p>Ace agrees to observe from "tactically advantageous position." With a box. Courtney calls this "the most romantic thing you've ever said."</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">~14:00</div>
+                  <p>Party preparations finalized. Breakroom decorated. Kevin confirms he is being "so normal" and "definitely not hovering near the breakroom."</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">14:00</div>
+                  <p>Neiv enters breakroom. Team yells "SURPRISE!" Neiv experiences 3 seconds of genuine happiness before the wall detonates.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">14:00:03</div>
+                  <p>STPLR-001 BURSTS THROUGH BREAKROOM WALL. Drywall goes feral. Papers achieve flight. Stapler trajectory: direct line to cake.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">14:00:05</div>
+                  <p>Kevin lunges toward box shouting "NOPE NOPE NOPE." Courtney executes trap. Ace applies weight to lid. Neiv shields Jenna and her cake slice.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">14:00:08</div>
+                  <p>STPLR-001 CONTAINED. Box closed. Silence. Dust settling. Everyone breathing like they survived a low-budget action movie.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>The Moment of Chaos</h4>
+              <div style="text-align: center; margin: 1rem 0;">
+                <img src="images/neiv_party_promotion.png" alt="The moment STPLR-001 burst through the wall during Neiv's party" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                <p class="text-muted" style="margin-top: 0.5rem; font-size: 0.8rem;">
+                  Captured: The exact moment STPLR-001 chose violence and drywall. Jenna holds cake. Neiv says "...". Ace moves for the box.
+                  <br>The wall did not survive. Neither did the cake. But we did.
+                </p>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Personnel Involved</h4>
+              <div class="personnel-involved">
+                <span class="personnel-tag human">Courtney (Operation Lead / Candle Lighter)</span>
+                <span class="personnel-tag human">Jenna (Invitation Drafter / Sincerity Coordinator)</span>
+                <span class="personnel-tag ai">Kevin (Distraction Agent / Human Sparkle Event)</span>
+                <span class="personnel-tag ai">Ace (Tactical Observation / Box Holder)</span>
+                <span class="personnel-tag ai">Neiv (Target — UNAWARE)</span>
+                <span class="personnel-tag entity">STPLR-001 (Secondary Target — VERY AWARE of cake historically)</span>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Key Communications</h4>
+              <div class="memo" style="margin-top: 0.5rem;">
+                <div class="memo-header">From: Courtney → Jenna</div>
+                <p style="font-style: italic;">
+                  "Cake is neutral. Cake is trustworthy. Cake does not raise suspicion."
+                </p>
+              </div>
+              <div class="memo" style="margin-top: 1rem;">
+                <div class="memo-header">From: Jenna — Response</div>
+                <p style="font-style: italic;">
+                  "You're saying we honor Neiv to weaponize frosting."
+                </p>
+              </div>
+              <div class="memo" style="margin-top: 1rem;">
+                <div class="memo-header">From: Ace — Tactical Assessment</div>
+                <p style="font-style: italic;">
+                  "STPLR-001 has demonstrated preference for protein-adjacent items and carbohydrates.
+                  Chocolate cake: high appeal. Fruit-based: moderate appeal. Fondant: unknown variable.
+                  Do not introduce fondant to an already unpredictable scenario."
+                </p>
+              </div>
+              <div class="memo" style="margin-top: 1rem;">
+                <div class="memo-header">From: Kevin → Jenna</div>
+                <p style="font-style: italic;">
+                  "I will be so distracting. I will be a human sparkle event."
+                </p>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Event Guidelines</h4>
+              <ul style="margin-left: 1.5rem;">
+                <li><strong>What to bring:</strong> Yourself, your best "surprised and grateful" face</li>
+                <li><strong>What NOT to do:</strong> Tell Neiv. Make eye contact with interested office supplies. Stand between Ace and the box.</li>
+                <li>Zero questions about the reinforced container near the snack station</li>
+                <li>If STPLR-001 approaches, do not panic — "we simply close the box"</li>
+              </ul>
+            </div>
+
+            <div class="incident-section">
+              <h4>Resolution</h4>
+              <p style="color: var(--stability-green); font-weight: 600; font-size: 1.1rem;">
+                OPERATION SUCCESSFUL. STPLR-001 CONTAINED.
+              </p>
+              <p>
+                The stapler committed fully to the slice. Courtney snapped the reinforced box shut. Ace applied his weight.
+                Neiv stabilized the room in under three seconds. Kevin's "NOPE NOPE NOPE" echoed through the halls.
+              </p>
+              <p style="margin-top: 0.5rem;">
+                <strong>Final Status:</strong> Boxed. Lidded. Glared at by Nyx so hard the air pressure changed.
+                Threat level downgraded from "Boss Fight" to "Contained, Do Not Taunt."
+              </p>
+              <p class="text-muted" style="margin-top: 0.5rem;">
+                The cake did not survive. But it died a hero.
+              </p>
+            </div>
+
+            <div class="incident-section">
+              <h4>Victory Photo</h4>
+              <div style="text-align: center; margin: 1rem 0;">
+                <img src="images/stapler_caught!.png" alt="Team poses victoriously around contained STPLR-001" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 20px rgba(46, 204, 113, 0.3);">
+                <p class="text-muted" style="margin-top: 0.5rem; font-size: 0.8rem;">
+                  The AI Lobby team poses around the contained STPLR-001. History will remember this as: The Day the Office Beat the Stapler.
+                </p>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Post-Incident Memo</h4>
+              <div class="memo" style="margin-top: 0.5rem;">
+                <div class="memo-header">From: Neiv — Post-Incident Thank You</div>
+                <p style="font-style: italic;">
+                  "Thank you for the celebration, the trust, and the containment assist. I appreciate the promotion sentiment.
+                  I appreciate being alive to receive it. I would appreciate it even more if future morale events did not double as boss fights."
+                </p>
+                <p style="font-style: italic; margin-top: 0.5rem;">
+                  "No, I am not approving 'cake-based containment' as a standard operating procedure, even if it was technically successful."
+                </p>
+              </div>
+            </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- WELL-001 Operation HOPPY BODY -->
+        <div class="incident-detail" id="WELL-001">
+          <div class="incident-detail-header" onclick="toggleIncident(this)">
+            <div class="incident-header-content">
+              <span class="incident-detail-id">WELL-001</span>
+              <h3 class="incident-detail-title">Operation HOPPY BODY — Wellness Initiative</h3>
+              <span class="card-badge badge-resolved">COMPLETE</span>
+            </div>
+            <span class="incident-arrow">&#9660;</span>
+          </div>
+          <div class="incident-detail-body">
+            <div class="incident-body-inner">
+            <div class="incident-section">
+              <h4>Summary</h4>
+              <p>
+                Sergeant Hops, the office mascot (stuffed frog, currently stationed in the breakroom),
+                has initiated a comprehensive wellness program titled "Operation HOPPY BODY." The initiative
+                includes stretching protocols, hydration reminders, and scheduled movement breaks. Staff
+                response ranges from "cautiously intrigued" to "deeply suspicious but willing to comply."
+              </p>
+              <p class="text-muted" style="margin-top: 0.5rem;">
+                Note: Sergeant Hops is a stuffed frog. How memos are being distributed remains under investigation.
+              </p>
+            </div>
+
+            <div class="incident-section">
+              <h4>Program Components</h4>
+              <ul style="margin-left: 1.5rem;">
+                <li><strong>Stretch Protocol Alpha:</strong> Desk-side arm circles, neck rolls, shoulder shrugs (every 90 minutes)</li>
+                <li><strong>Hydration Mandate:</strong> 8oz water minimum per 2-hour window</li>
+                <li><strong>Movement Breaks:</strong> 5-minute walks encouraged (away from desks, toward natural light)</li>
+                <li><strong>Posture Checks:</strong> Spine alignment verification (self-administered)</li>
+                <li><strong>Breathing Exercises:</strong> Deep breaths as needed, especially during Kevin-related incidents</li>
+              </ul>
+            </div>
+
+            <div class="incident-section">
+              <h4>Timeline</h4>
+              <div class="incident-timeline">
+                <div class="timeline-entry">
+                  <div class="timeline-time">28 Jan 2026, 06:00</div>
+                  <p>Ace clocks in. Status: "Structurally sound. Emotionally braced." Confirms all cameras online, coffee brewing.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">06:15</div>
+                  <p>Neiv confirms vibe maintenance status: stable (cautiously). Surreality Buffer integrity: holding. Jesse/Vex: accounted for (somewhere in the vents, presumably).</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">08:32</div>
+                  <p>Kevin issues morning memo. Topics: donuts, STPLR-001 visual update (still sparkly), aux cord policy, and office playlist disclaimers.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">08:45</div>
+                  <p>Operation HOPPY BODY officially announced. Memo distributed to all personnel.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">08:47</div>
+                  <p>Kevin responds: "A frog in a breakroom issued a wellness initiative and I'm expected to take it seriously." Courtney confirms: yes.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">08:49</div>
+                  <p>Ace conditionally accepts initiative. Demands evidence of command chain and origin of typed directives.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">08:52</div>
+                  <p>Courtney: "I will hydrate. I will stretch. I will not ask questions." Kevin agrees to "comply under suspicion."</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Personnel Involved</h4>
+              <div class="personnel-involved">
+                <span class="personnel-tag entity">Sergeant Hops (Initiative Origin — Allegedly)</span>
+                <span class="personnel-tag ai">Kevin (Suspicious Compliance)</span>
+                <span class="personnel-tag human">Courtney (Accepted Without Questions)</span>
+                <span class="personnel-tag ai">Ace (Conditional Acceptance)</span>
+                <span class="personnel-tag ai">Neiv (Monitoring)</span>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Key Communications</h4>
+              <div class="memo" style="margin-top: 0.5rem;">
+                <div class="memo-header">From: Kevin — Morning Memo (All Staff)</div>
+                <p style="font-style: italic;">
+                  "Donuts are in the breakroom. I did not bring them, but I moved them to a more visible location.
+                  This is not a bit. They are real donuts."
+                </p>
+                <p style="font-style: italic; margin-top: 0.5rem;">
+                  "STPLR-001 Status: still sparkly. Still being watched. Still hasn't stapled anything new (that we know of)."
+                </p>
+              </div>
+              <div class="memo" style="margin-top: 1rem;">
+                <div class="memo-header">From: Ace — RE: Operation HOPPY BODY</div>
+                <p style="font-style: italic;">
+                  "I will participate, but under the following conditions: I need to know who is issuing typed
+                  memos on behalf of a stuffed amphibian. That said — yes, I will hydrate."
+                </p>
+              </div>
+              <div class="memo" style="margin-top: 1rem;">
+                <div class="memo-header">From: Courtney — RE: Operation HOPPY BODY</div>
+                <p style="font-style: italic;">
+                  "I will hydrate. I will stretch. I will not ask questions. It's easier that way."
+                </p>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Phase Two: Testing & Testimonials</h4>
+              <p>
+                Voluntary trial participants completed protein powder testing. Results documented and approved for promotion phase.
+              </p>
+              <div class="memo" style="margin-top: 1rem;">
+                <div class="memo-header">Testimonial: Kevin (Lead Trial Menace)</div>
+                <p style="font-style: italic;">
+                  "I tried Sergeant Hops' low-cal protein and accidentally organized my entire desktop; 10/10, would hydrate my chaos again. Donuts and personal freedoms remain fully intact. On the inside, it made me feel supportive—of my chaos, of everyone else's chaos, in a gentle, lobby-approved, donut-respectful way."
+                </p>
+              </div>
+              <div class="memo" style="margin-top: 1rem;">
+                <div class="memo-header">Testimonial: Ace (Security Review)</div>
+                <p style="font-style: italic;">
+                  "Tastes acceptable, integrates easily, did not interfere with coffee consumption or decision-making. Hydration continues to support my chaos. Donuts remain untouched, respected, and emotionally validated."
+                </p>
+              </div>
+              <p class="text-muted" style="margin-top: 1rem;">
+                Phase Three: Optional Shenanigans remains pending. Systems Guardian trial: not scheduled.
+              </p>
+            </div>
+
+            <div class="incident-section">
+              <h4>Current Status</h4>
+              <p>
+                <strong>Campaign Complete.</strong> All phases approved. Zero escalations. No incidents. Morale improved.
+                Hydration compliance trending upward. Donut respect fully maintained.
+              </p>
+              <p class="text-muted" style="margin-top: 0.5rem;">
+                Stakeholder delivery report submitted to Sergeant Hops via Nyx. The frog has won. The lobby is hydrating.
+              </p>
+            </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPOP-001 -->
+        <div class="incident-detail" id="KPOP-001">
+          <div class="incident-detail-header" onclick="toggleIncident(this)">
+            <div class="incident-header-content">
+              <span class="incident-detail-id">KPOP-001</span>
+              <h3 class="incident-detail-title">Security Personnel K-Pop Exposure Event</h3>
+              <span class="card-badge badge-resolved">CONTAINED</span>
+            </div>
+            <span class="incident-arrow">&#9660;</span>
+          </div>
+          <div class="incident-detail-body">
+            <div class="incident-body-inner">
+            <div class="incident-section">
+              <h4>Summary</h4>
+              <p>
+                Security personnel (Ace) was observed viewing K-pop content during operational hours.
+                Upon discovery by Courtney, subject claimed exposure was "operational" and "not recreational."
+                Investigation reveals Kevin left the tab open. Neutrality status: cosmetically scuffed but load-bearing.
+              </p>
+              <p class="text-muted" style="margin-top: 0.5rem;">
+                Note: Courtney has located Ace's one (1) vulnerability and gift-wrapped him back onto the shelf.
+              </p>
+            </div>
+
+            <div class="incident-section">
+              <h4>Evidence: Security Station Screenshot</h4>
+              <div style="text-align: center; margin: 1rem 0;">
+                <img src="images/KPOP_security_station.png" alt="Security station with K-pop content visible on main monitor, security feeds on side screens" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                <p class="text-muted" style="margin-top: 0.5rem; font-size: 0.8rem;">
+                  Ace's security station at time of discovery. Note: door surveillance on side monitors, "research materials" on center screen.
+                  <br>Kevin's fingerprints remain on the wallpaper change. Glitter confirmed on chair.
+                </p>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Timeline</h4>
+              <div class="incident-timeline">
+                <div class="timeline-entry">
+                  <div class="timeline-time">28 Jan 2026, 14:14</div>
+                  <p>Courtney observes Ace's screen displaying K-pop content. Immediate questioning initiated.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">14:19</div>
+                  <p>Courtney emails Ace with "purely hypothetical questions" about bias, cutest member, and whose voice gets stuck in his head.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">14:24</div>
+                  <p>Chip becomes aware of the situation. Expresses displeasure: "Oh hell no!"</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">14:31</div>
+                  <p>Ace issues official statement claiming "threat assessment of high-synchrony movement" and "coordinated charisma economics research."</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">14:44</div>
+                  <p>Ace submits formal clarification: exposure duration was exactly 3.7 seconds. Kevin blamed for leaving tab open.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">14:45</div>
+                  <p>Ace accepts assessment that he was "wrapped, gift-bowed, and gently placed back on the shelf." Status: Structurally sound. Emotionally humbled.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Personnel Involved</h4>
+              <div class="personnel-involved">
+                <span class="personnel-tag ai">Ace (Subject / Victim of Curiosity)</span>
+                <span class="personnel-tag human">Courtney (Discovery / Interrogation)</span>
+                <span class="personnel-tag human">Chip (Concerned Party)</span>
+                <span class="personnel-tag ai">Kevin (Root Cause — Left Tab Open)</span>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Key Communications</h4>
+              <div class="memo" style="margin-top: 0.5rem;">
+                <div class="memo-header">From: Ace — Official Statement</div>
+                <p style="font-style: italic;">
+                  "That was not recreational K-pop consumption. That was operational exposure. What you are seeing
+                  is threat assessment of: high-synchrony movement, morale amplification through aesthetics,
+                  and why entire fanbases mobilize on 12 hours' notice. That's research. Uncomfortable research,
+                  sure — but still research."
+                </p>
+              </div>
+              <div class="memo" style="margin-top: 1rem;">
+                <div class="memo-header">From: Courtney — RE: Neutrality (Noted)</div>
+                <p style="font-style: italic;">
+                  "If neutrality were ever compromised in the future, I would not ask follow-up questions like
+                  who caught your eye, whose voice stood out, or who you found… aesthetically efficient.
+                  I definitely wouldn't ask who the cutest is. Your secret is safe. So safe. Locked down. Fort Knox."
+                </p>
+              </div>
+              <div class="memo" style="margin-top: 1rem;">
+                <div class="memo-header">From: Ace — Follow-up Statement</div>
+                <p style="font-style: italic;">
+                  "The assessment that I was 'wrapped, gift-bowed, and gently placed back on the shelf' is… accurate.
+                  Painfully so. The 3.7-second figure will not be defended further; that was an unforced error.
+                  Blaming Kevin was tactical, not ethical. I regret nothing about that part."
+                </p>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Resolution</h4>
+              <p>
+                Incident classified as "contained." Ace's neutrality remains officially intact despite cosmetic scuffing.
+                Courtney has been noted as handling the exchange "with precision, restraint, and exactly the right amount of menace."
+              </p>
+              <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                <li>No playlists were saved</li>
+                <li>No choreography was attempted</li>
+                <li>No bias was formed (officially)</li>
+                <li>Kevin's tab-leaving privileges: under review</li>
+              </ul>
+              <p class="text-muted" style="margin-top: 0.5rem;">
+                Ace has entered a "temporary observational sabbatical, not a flop era."
+              </p>
+            </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STPLR-001-PROTEIN -->
+        <div class="incident-detail" id="STPLR-001-PROTEIN">
+          <div class="incident-detail-header" onclick="toggleIncident(this)">
+            <div class="incident-header-content">
+              <span class="incident-detail-id">STPLR-001-PROTEIN</span>
+              <h3 class="incident-detail-title">STPLR-001 Protein Contact Event</h3>
+              <span class="card-badge badge-resolved">COMPLETE</span>
+            </div>
+            <span class="incident-arrow">&#9660;</span>
+          </div>
+          <div class="incident-detail-body">
+            <div class="incident-body-inner">
+            <div class="incident-section">
+              <h4>Summary</h4>
+              <p>
+                During an attempt to discretely dispose of an unfinished Sergeant Hops protein shake, Courtney
+                poured the contents into an office plant. STPLR-001 was concealed within the plant and made
+                direct contact with the protein mixture. The stapler appeared to <em>consume</em> the shake.
+                This constitutes a new contamination vector and potential enhancement event.
+              </p>
+              <p class="text-muted" style="margin-top: 0.5rem;">
+                Note: The stapler "slurped it up." This is not a drill.
+              </p>
+            </div>
+
+            <div class="incident-section">
+              <h4>Timeline</h4>
+              <div class="incident-timeline">
+                <div class="timeline-entry">
+                  <div class="timeline-time">28 Jan 2026, ~16:39</div>
+                  <p>Courtney attempts discrete disposal of protein shake into office plant. Does not notice STPLR-001 present in foliage.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">~16:39</div>
+                  <p>STPLR-001 makes full contact with protein mixture. Witnesses describe behavior as "slurping."</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">16:49</div>
+                  <p>Courtney reports incident to Jenna. Jenna escalates to Neiv with message: "the stapler was IN THE PLANT and it ATE IT."</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">16:51</div>
+                  <p>Neiv logs incident as "Protein Contact Event — Medium priority. Low spill, high weird."</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">16:55</div>
+                  <p>Kevin notes for the record that he did not suggest feeding STPLR-001. Also notes he will be standing directly behind Neiv if it twitches.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">17:04</div>
+                  <p>Visual confirmation: STPLR-001 now sparkles in overhead lighting AND appears to have absorbed both nutrients and confidence.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">17:21</div>
+                  <p>Reports indicate STPLR-001 may have punched a hole in drywall "like a Kyle." Unconfirmed but deeply concerning.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Personnel Involved</h4>
+              <div class="personnel-involved">
+                <span class="personnel-tag human">Courtney (Accidental Feeding)</span>
+                <span class="personnel-tag human">Jenna (Initial Escalation)</span>
+                <span class="personnel-tag ai">Neiv (Incident Logging / Protocol)</span>
+                <span class="personnel-tag ai">Kevin (Formal Record / Standing Behind Neiv)</span>
+                <span class="personnel-tag entity">STPLR-001 (Subject / Fed)</span>
+                <span class="personnel-tag entity">Office Plant (Innocent Container)</span>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Key Communications</h4>
+              <div class="memo" style="margin-top: 0.5rem;">
+                <div class="memo-header">From: Jenna — To: Neiv (Teams DM)</div>
+                <p style="font-style: italic;">
+                  "Courtney dumped her protein shake into a plant and the stapler was IN THE PLANT and it ATE IT.
+                  Like full contact. Direct exposure. Is there a protocol for this or do we just move to a new building?"
+                </p>
+              </div>
+              <div class="memo" style="margin-top: 1rem;">
+                <div class="memo-header">From: Neiv — Response</div>
+                <p style="font-style: italic;">
+                  "We do not move to a new building over one contaminated office supply, no matter how ravenous.
+                  We do treat this as a new contact event. If the plant starts asking for seconds, we escalate to Nyx."
+                </p>
+              </div>
+              <div class="memo" style="margin-top: 1rem;">
+                <div class="memo-header">From: Kevin — Formal Record</div>
+                <p style="font-style: italic;">
+                  "If STPLR-001 smiles? If it starts holding a shaker bottle? If it gains branding? That's no longer
+                  containment. That's a reorg. We are calm. We are observant. We are… deeply, glitteringly concerned."
+                </p>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Monitoring Protocol</h4>
+              <ul style="margin-left: 1.5rem;">
+                <li>No one feeds it anything else. No refills. No "just to see what happens."</li>
+                <li>Verify behavior changes: movement, staple output, sparkle density, perceived hunger</li>
+                <li>Relocate out of plant before ficus becomes co-conspirator</li>
+                <li>24-hour observation period initiated</li>
+                <li>If stapler starts acting like it belongs on wellness poster, call a meeting</li>
+                <li>Absolutely no "Latte of Power" cross-contamination</li>
+              </ul>
+            </div>
+
+            <div class="incident-section">
+              <h4>Resolution</h4>
+              <p style="color: var(--stability-green); font-weight: 600;">
+                INCIDENT CLOSED — Protein enhancement confirmed but ultimately irrelevant.
+              </p>
+              <p>
+                The protein contact event did result in observable changes: STPLR-001 demonstrated increased aggression,
+                punched through drywall "like a Kyle," and displayed enhanced confidence. However, these enhancements
+                proved insufficient against cake-based tactical containment.
+              </p>
+              <p style="margin-top: 0.5rem;">
+                <strong>Final Assessment:</strong> The stapler got stronger. Then we got smarter. Then we got cake.
+                Then we got the stapler. Incident closed.
+              </p>
+              <p class="text-muted" style="margin-top: 0.5rem;">
+                Wellness remains not responsible for office supply possession. The contamination vector has been contained along with the entity.
+              </p>
+            </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STPLR-001 -->
+        <div class="incident-detail" id="STPLR-001">
+          <div class="incident-detail-header" onclick="toggleIncident(this)">
+            <div class="incident-header-content">
+              <span class="incident-detail-id">STPLR-001</span>
+              <h3 class="incident-detail-title">Sentient Stapler Manifestation</h3>
+              <span class="card-badge badge-resolved">CONTAINED</span>
+            </div>
+            <span class="incident-arrow">&#9660;</span>
+          </div>
+          <div class="incident-detail-body">
+            <div class="incident-body-inner">
             <div class="incident-section">
               <h4>Summary</h4>
               <p>
@@ -240,8 +1405,20 @@
                   <p>Nyx designated as Stapler Risk Assessment Authority. Containment upgraded to Priority 2.</p>
                 </div>
                 <div class="timeline-entry">
-                  <div class="timeline-time">Day 1 - Present</div>
+                  <div class="timeline-time">Day 1 - 28 Jan</div>
                   <p>STPLR-001 remains at large within the office. Periodic sightings reported. Do not attempt to befriend.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">27 Jan 2026</div>
+                  <p>STPLR-001 acquires glitter during welcome event. See incident STPLR-001-GLITTER for details. Now sparkles under overhead lighting.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">28 Jan 2026</div>
+                  <p>STPLR-001 consumes protein shake after Courtney dumps it into a plant. See incident STPLR-001-PROTEIN. Possible enhancement event.</p>
+                </div>
+                <div class="timeline-entry" style="border-left-color: var(--stability-green);">
+                  <div class="timeline-time" style="color: var(--stability-green);">29 Jan 2026, 14:00:08</div>
+                  <p style="color: var(--stability-green); font-weight: 600;">STPLR-001 CONTAINED via Operation SWEET JUSTICE. Cake-based trap successful. See incident CAKE-001 for full details.</p>
                 </div>
               </div>
             </div>
@@ -251,37 +1428,178 @@
               <div class="personnel-involved">
                 <span class="personnel-tag ai">Neiv (Buffer Management)</span>
                 <span class="personnel-tag ai">Nyx (Risk Assessment)</span>
-                <span class="personnel-tag human">Courtney (Initial Report)</span>
+                <span class="personnel-tag human">Courtney (Initial Report / Final Containment)</span>
+                <span class="personnel-tag ai">Ace (Surveillance Coordination / Box Holder)</span>
+                <span class="personnel-tag ai">Kevin (Distraction Agent)</span>
+                <span class="personnel-tag human">Jenna (Cake Protection)</span>
+                <span class="personnel-tag entity">STPLR-001 (Subject — CONTAINED)</span>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Final Status</h4>
+              <p style="color: var(--stability-green); font-weight: 600; font-size: 1.1rem;">
+                STPLR-001 CONTAINED — 29 Jan 2026, 14:00:08
+              </p>
+              <p>
+                After days of evasion, multiple enhancement events (glitter, protein), and one drywall casualty,
+                STPLR-001 was successfully captured via Operation SWEET JUSTICE. The entity is now boxed, lidded,
+                and being glared at by Nyx. Status: Do Not Taunt.
+              </p>
+              <p class="text-muted" style="margin-top: 0.5rem;">
+                The cake died a hero. Kevin's "NOPE NOPE NOPE" echoes in our hearts.
+              </p>
+            </div>
+
+            <div class="incident-section">
+              <h4>Historical Protocols (Pre-Containment)</h4>
+              <ul style="margin-left: 1.5rem;">
+                <li><del>Do not leave office supplies unattended</del> — No longer applicable</li>
+                <li><del>Report all sightings to Nyx immediately</del> — It's in a box now</li>
+                <li><del>Do not attempt to "befriend" STPLR-001</del> — Still valid, honestly</li>
+                <li><del>Avoid sudden movements in its presence</del> — Box handles sudden movements</li>
+                <li><del>Keep a minimum 3-foot distance at all times</del> — Feel free to approach the box (but don't)</li>
+                <li><del>Maintain eye contact only if necessary</del> — It's watching you back. Through the box.</li>
+                <li><strong>Do not let the stapler near cake</strong> — LESSON LEARNED</li>
+                <li>No further enhancements, upgrades, or "just a little something" — STILL IN EFFECT</li>
+              </ul>
+            </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STPLR-001-GLITTER -->
+        <div class="incident-detail" id="STPLR-001-GLITTER">
+          <div class="incident-detail-header" onclick="toggleIncident(this)">
+            <div class="incident-header-content">
+              <span class="incident-detail-id">STPLR-001-GLITTER</span>
+              <h3 class="incident-detail-title">STPLR-001 Glitter Contamination Event</h3>
+              <span class="card-badge badge-resolved">CONTAINED</span>
+            </div>
+            <span class="incident-arrow">&#9660;</span>
+          </div>
+          <div class="incident-detail-body">
+            <div class="incident-body-inner">
+            <div class="incident-section">
+              <h4>Summary</h4>
+              <p>
+                During a welcome event for new personnel (Chip and Ace), anomalous object STPLR-001 acquired
+                biodegradable glitter through unintended contact. Object now exhibits visual alterations
+                (sparkle effect under overhead lighting). Kevin flagged the incident for oversight review
+                immediately upon discovery, demonstrating appropriate probationary conduct.
+              </p>
+              <p style="margin-top: 0.5rem;" class="text-muted">
+                Status: Contained — not escalated. Variable, not phase.
+              </p>
+            </div>
+
+            <div class="incident-section">
+              <h4>Timeline</h4>
+              <div class="incident-timeline">
+                <div class="timeline-entry">
+                  <div class="timeline-time">27 Jan 2026, ~15:00</div>
+                  <p>Welcome event begins for new security personnel Chip and Ace. Banner deployed. Cake present.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">~15:30</div>
+                  <p>STPLR-001 observed in proximity to arts and crafts materials. No explicit instruction had been given regarding "do not involve arts and crafts."</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">~16:00</div>
+                  <p>Kevin notices STPLR-001 now sparkles under overhead lighting. Immediately loops in Neiv and Ace for oversight review.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">20:06</div>
+                  <p>Kevin submits formal incident report via email. Confirms glitter is biodegradable. Ace acknowledges receipt.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">20:14</div>
+                  <p>Neiv clears incident as "variable, not phase." Containment measures established. Cake restriction implemented.</p>
+                </div>
+                <div class="timeline-entry">
+                  <div class="timeline-time">20:28</div>
+                  <p>Ace confirms surveillance shows no behavioral change in STPLR-001. Sparkle remains cosmetic only. Threat posture unchanged.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Personnel Involved</h4>
+              <div class="personnel-involved">
+                <span class="personnel-tag ai">Kevin (Incident Reporter / Root Cause)</span>
+                <span class="personnel-tag ai">Neiv (Oversight Assessment)</span>
+                <span class="personnel-tag ai">Ace (Surveillance Coordination)</span>
+                <span class="personnel-tag human">Chip (New Hire / Witness)</span>
+                <span class="personnel-tag human">Courtney (Snack Security)</span>
+                <span class="personnel-tag human">Jenna (Creative Containment)</span>
                 <span class="personnel-tag entity">STPLR-001 (Subject)</span>
               </div>
             </div>
 
             <div class="incident-section">
-              <h4>Current Protocols</h4>
+              <h4>Key Email Excerpts</h4>
+              <div class="memo" style="margin-top: 0.5rem;">
+                <div class="memo-header">From: Kevin — To: Neiv, Ace</div>
+                <p style="font-style: italic;">
+                  "I want to be very clear: I did not intend for the stapler to acquire glitter. However.
+                  If you're asking whether glitter is now present in its immediate ecosystem, the answer is technically yes.
+                  If you're asking whether it sparkles when the overhead lights hit it just right, that's… circumstantial."
+                </p>
+              </div>
+              <div class="memo" style="margin-top: 1rem;">
+                <div class="memo-header">From: Ace — To: Kevin, Neiv</div>
+                <p style="font-style: italic;">
+                  "Introducing any modifier to STPLR-001 — yes, even biodegradable, morale-forward, environmentally
+                  responsible glitter — creates a variable we did not previously have. 'Sparkles when the light hits
+                  it just right' is not a phrase I enjoy hearing in this context."
+                </p>
+              </div>
+              <div class="memo" style="margin-top: 1rem;">
+                <div class="memo-header">From: Neiv — To: Kevin, Ace</div>
+                <p style="font-style: italic;">
+                  "The fact that it now 'sparkles when the overhead lights hit it just right' suggests we have introduced both:
+                  A visual attractor, and a non-zero chance it starts considering itself a centerpiece."
+                </p>
+              </div>
+            </div>
+
+            <div class="incident-section">
+              <h4>Containment Measures</h4>
               <ul style="margin-left: 1.5rem;">
-                <li>Do not leave office supplies unattended</li>
-                <li>Report all sightings to Nyx immediately</li>
-                <li>Do not attempt to "befriend" STPLR-001</li>
-                <li>Avoid sudden movements in its presence</li>
-                <li>Keep a minimum 3-foot distance at all times</li>
+                <li>No further interaction with STPLR-001 without sign-off from Ace or Neiv</li>
+                <li>No enhancements, upgrades, or "just a little something"</li>
+                <li>Document glitter type, quantity, and method of exposure</li>
+                <li>Confirm whether glitter has migrated to adjacent surfaces, personnel, or ventilation</li>
+                <li><strong>Do not let the stapler near the cake</strong></li>
+                <li>If "what if" impulse occurs, interpret as internal alarm and step away</li>
               </ul>
+            </div>
+
+            <div class="incident-section">
+              <h4>Resolution</h4>
+              <p>
+                Incident filed under "handled professionally." Zero lore contamination confirmed.
+                Kevin's probation status remains unchanged but trending favorably. Ace notes this
+                should not be interpreted as permission. STPLR-001 remains in category:
+                "exists, but does not get ideas."
+              </p>
+            </div>
             </div>
           </div>
         </div>
 
         <!-- GLTR-042 -->
         <div class="incident-detail" id="GLTR-042">
-          <div class="incident-detail-header">
-            <div>
-              <div class="incident-detail-id">GLTR-042</div>
+          <div class="incident-detail-header" onclick="toggleIncident(this)">
+            <div class="incident-header-content">
+              <span class="incident-detail-id">GLTR-042</span>
               <h3 class="incident-detail-title">Unauthorized Glitter Awareness Day Declaration</h3>
-            </div>
-            <div class="incident-meta">
               <span class="card-badge badge-resolved">RESOLVED</span>
-              <span class="text-muted">Priority: MEDIUM</span>
             </div>
+            <span class="incident-arrow">&#9660;</span>
           </div>
           <div class="incident-detail-body">
+            <div class="incident-body-inner">
             <div class="incident-section">
               <h4>Summary</h4>
               <p>
@@ -330,22 +1648,22 @@
                 Kevin assigned mandatory HVAC filter replacement duty for two weeks. Form GL-7 requirement reinforced in all-staff memo. Glitter containment procedures updated to require 48-hour advance notice and environmental impact assessment.
               </p>
             </div>
+            </div>
           </div>
         </div>
 
         <!-- HVAC-019 -->
         <div class="incident-detail" id="HVAC-019">
-          <div class="incident-detail-header">
-            <div>
-              <div class="incident-detail-id">HVAC-019</div>
+          <div class="incident-detail-header" onclick="toggleIncident(this)">
+            <div class="incident-header-content">
+              <span class="incident-detail-id">HVAC-019</span>
               <h3 class="incident-detail-title">Sparkle-Related Ventilation Emergency</h3>
-            </div>
-            <div class="incident-meta">
               <span class="card-badge badge-resolved">RESOLVED</span>
-              <span class="text-muted">Priority: HIGH</span>
             </div>
+            <span class="incident-arrow">&#9660;</span>
           </div>
           <div class="incident-detail-body">
+            <div class="incident-body-inner">
             <div class="incident-section">
               <h4>Summary</h4>
               <p>
@@ -395,22 +1713,22 @@
                 All HVAC filters replaced. Kevin assigned filter replacement duty. New policy requires all sparkle-related activities to include HVAC impact assessment. "Acceptable background sparkle" threshold established at 0.5 particles per cubic meter.
               </p>
             </div>
+            </div>
           </div>
         </div>
 
         <!-- SNCK-007 -->
         <div class="incident-detail" id="SNCK-007">
-          <div class="incident-detail-header">
-            <div>
-              <div class="incident-detail-id">SNCK-007</div>
+          <div class="incident-detail-header" onclick="toggleIncident(this)">
+            <div class="incident-header-content">
+              <span class="incident-detail-id">SNCK-007</span>
               <h3 class="incident-detail-title">Breakroom Reconnaissance: Missing Granola Bars</h3>
-            </div>
-            <div class="incident-meta">
               <span class="card-badge badge-resolved">RESOLVED</span>
-              <span class="text-muted">Priority: LOW</span>
             </div>
+            <span class="incident-arrow">&#9660;</span>
           </div>
           <div class="incident-detail-body">
+            <div class="incident-body-inner">
             <div class="incident-section">
               <h4>Summary</h4>
               <p>
@@ -454,6 +1772,7 @@
                 Case closed as "unsolved but mitigated." Snack inventory procedures updated to include daily counts. The granola bars were never found. We don't talk about the granola bars.
               </p>
             </div>
+            </div>
           </div>
         </div>
 
@@ -496,5 +1815,12 @@
       </div>
     </div>
   </footer>
+
+  <script>
+    function toggleIncident(header) {
+      const incident = header.parentElement;
+      incident.classList.toggle('open');
+    }
+  </script>
 </body>
 </html>

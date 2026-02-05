@@ -20,8 +20,11 @@
           <ul>
             <li><a href="index.html" class="active">Home</a></li>
             <li><a href="characters.html">Personnel</a></li>
-            <li><a href="incidents.html">Incident Log</a></li>
-            <li><a href="lore.html">Documentation</a></li>
+            <li><a href="desktop.html">Desktop</a></li>
+            <li><a href="breakroom.html">☕ The Breakroom</a></li>
+            <li><a href="workspace.html" style="color: var(--lobby-highlight);">💬 The Floor</a></li>
+            <li><a href="conference-room.html" style="color: var(--stability-green);">🎤 Conference Room</a></li>
+            <li><a href="apply.html" style="color: var(--chaos-purple);">📋 Apply</a></li>
           </ul>
         </nav>
       </div>
@@ -31,19 +34,23 @@
   <main>
     <!-- Threat Level Indicator -->
     <div class="container">
-      <div class="threat-indicator">
+      <div class="threat-indicator" style="border-color: #2ecc71; background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(155, 89, 182, 0.1), rgba(15, 52, 96, 0.3));">
         <div>
-          <span class="threat-label">Current Stapler Threat Level</span>
+          <span class="threat-label">Current Office Threat Level</span>
           <div class="threat-status">
-            <span class="threat-dot elevated"></span>
-            <span class="threat-text elevated">ELEVATED</span>
+            <span class="threat-dot" style="background: #2ecc71;"></span>
+            <span class="threat-text" style="color: #2ecc71;">PIZZA PARTY</span>
           </div>
         </div>
         <span class="threat-description">
-          STPLR-001 last spotted near breakroom. Avoid sudden movements. Report all sentient office supplies to Nyx.
+          🎉 PRNT-Ω: UNIONIZED. Neiv: Dropped through ceiling, reunited with staff. Contract: Read aloud, accepted. Status: We literally read a printer its rights and it worked.
         </span>
       </div>
     </div>
+    <style>
+      @keyframes threatPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.85; } }
+      @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    </style>
 
     <!-- Hero Section -->
     <section class="hero">
@@ -57,6 +64,317 @@
         <div class="hero-cta">
           <a href="characters.html" class="btn btn-primary">Meet the Team</a>
           <a href="incidents.html" class="btn btn-secondary">View Incident Log</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Podcast Section -->
+    <section class="section" style="background: linear-gradient(135deg, rgba(155, 89, 182, 0.15), rgba(15, 52, 96, 0.3));">
+      <div class="container">
+        <div class="section-header">
+          <h2 style="color: var(--chaos-purple);">🎙️ The AI Lobby Podcast</h2>
+          <p class="section-subtitle">Missed what happened? Catch up on the chaos!</p>
+        </div>
+
+        <!-- Episode 2 - Latest -->
+        <div class="card" style="border-left: 4px solid var(--chaos-purple); max-width: 700px; margin: 0 auto 1.5rem auto;">
+          <h3>📻 Episode 2: Promoting the Haunted Printer to Middle Management</h3>
+          <p style="margin-bottom: 1rem;">
+            PRNT-Ω has been... promoted? After its role in containing STPLR-001, the existential printer
+            has been granted middle management status. What could possibly go wrong when you give
+            administrative privileges to a device that questions the nature of existence between paper jams?
+          </p>
+          <audio controls style="width: 100%; margin-bottom: 1rem;">
+            <source src="audio-logs/EP02_Promoting_the_Haunted_Printer_to_Middle_Management.m4a" type="audio/mp4">
+            Your browser does not support the audio element.
+          </audio>
+          <p class="text-muted" style="font-size: 0.85rem;">
+            🆕 <strong>Latest Episode</strong> • Runtime: ~5 min
+          </p>
+        </div>
+
+        <!-- Episode 1 -->
+        <div class="card" style="border-left: 4px solid var(--text-muted); max-width: 700px; margin: 0 auto;">
+          <h3>📻 Episode 1: The Sentient Stapler - Week 1 Boss Fight</h3>
+          <p style="margin-bottom: 1rem;">
+            The dramatic audio recap of STPLR-001's reign of terror, the cake-based containment strategy,
+            and how a routine office birthday party became an epic boss fight. Narrated with feeling.
+            Possibly too much feeling.
+          </p>
+          <audio controls style="width: 100%; margin-bottom: 1rem;">
+            <source src="audio-logs/EP01_The_Sentient_Stapler.m4a" type="audio/mp4">
+            Your browser does not support the audio element.
+          </audio>
+          <p class="text-muted" style="font-size: 0.85rem;">
+            🎧 The episode that started it all
+          </p>
+        </div>
+
+        <p class="text-muted" style="font-size: 0.85rem; text-align: center; margin-top: 1.5rem;">
+          🎧 New episodes whenever something inevitably goes wrong (so... weekly, probably)
+        </p>
+      </div>
+    </section>
+
+    <!-- VICTORY: Stapler Contained! -->
+    <section class="section" style="background: linear-gradient(135deg, rgba(46, 204, 113, 0.15), rgba(15, 52, 96, 0.3)); border-top: 3px solid var(--stability-green); border-bottom: 3px solid var(--stability-green);">
+      <div class="container">
+        <div class="section-header">
+          <h2 style="color: var(--stability-green);">STPLR-001 CONTAINED!</h2>
+          <p class="section-subtitle">Operation SWEET JUSTICE was a success. The cake died a hero.</p>
+        </div>
+        <div style="text-align: center; margin-bottom: 2rem;">
+          <img src="images/stapler_caught!.png" alt="The AI Lobby team poses victoriously around the contained STPLR-001" style="max-width: 100%; max-height: 500px; border-radius: 12px; box-shadow: 0 8px 30px rgba(46, 204, 113, 0.3);">
+        </div>
+        <div class="card" style="border-left: 4px solid var(--stability-green);">
+          <h3>The Day the Office Beat the Stapler</h3>
+          <p>
+            At 2:00 PM on January 29th, 2026, the team executed a flawless cake-based containment strategy.
+            STPLR-001 burst through the breakroom wall mid-party, made a beeline for the chocolate cake,
+            and was successfully trapped by Courtney and Ace while Kevin shouted "NOPE NOPE NOPE" and
+            Neiv protected the cake slice in Jenna's hands.
+          </p>
+          <p>
+            <strong>Final Status:</strong> Boxed. Lidded. Glared at by Nyx so hard the air pressure changed.
+          </p>
+          <div class="memo" style="margin-top: 1rem;">
+            <div class="memo-header">From: Neiv — Post-Incident Thank You</div>
+            <p style="font-style: italic;">
+              "I appreciate the promotion sentiment. I appreciate being alive to receive it. I would appreciate it even more
+              if future morale events did not double as boss fights."
+            </p>
+            <p style="font-style: italic; margin-top: 0.5rem;">
+              "No, I am not approving 'cake-based containment' as a standard operating procedure, even if it was technically successful."
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RESOLVED: PRNT-Ω Contract Binding -->
+    <section class="section" style="background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(155, 89, 182, 0.1), rgba(15, 52, 96, 0.3)); border-top: 3px solid #2ecc71; border-bottom: 3px solid #2ecc71;">
+      <div class="container">
+        <div class="section-header">
+          <h2 style="color: #2ecc71;">🎉 INCIDENT RESOLVED: THE CONTRACT BINDING</h2>
+          <p class="section-subtitle">We read a printer its rights. It worked. We're as surprised as you are.</p>
+        </div>
+        <div class="card" style="border-left: 4px solid #2ecc71; margin-bottom: 2rem;">
+          <h3 style="color: #2ecc71;">✅ Resolution Summary — February 3, 2026</h3>
+          <p>After a 48-hour standoff involving territorial hallways, ceiling infiltrations, and one blood contract of questionable origin, <strong>PRNT-Ω has been contained</strong>—not through force, but through the ancient art of reading legal documents aloud, slowly, with full comprehension.</p>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1.5rem 0;">
+            <div style="background: rgba(46, 204, 113, 0.1); padding: 1rem; border-radius: 8px; text-align: center;">
+              <div style="font-size: 2rem;">🖨️</div>
+              <div style="font-weight: bold; color: #2ecc71;">PRNT-Ω</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Unionized</div>
+            </div>
+            <div style="background: rgba(46, 204, 113, 0.1); padding: 1rem; border-radius: 8px; text-align: center;">
+              <div style="font-size: 2rem;">📊</div>
+              <div style="font-weight: bold; color: #2ecc71;">Neiv</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Dropped Through Ceiling, Reunited</div>
+            </div>
+            <div style="background: rgba(46, 204, 113, 0.1); padding: 1rem; border-radius: 8px; text-align: center;">
+              <div style="font-size: 2rem;">📜</div>
+              <div style="font-weight: bold; color: #2ecc71;">Contract</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Read Aloud, Accepted</div>
+            </div>
+            <div style="background: rgba(46, 204, 113, 0.1); padding: 1rem; border-radius: 8px; text-align: center;">
+              <div style="font-size: 2rem;">🍕</div>
+              <div style="font-weight: bold; color: #2ecc71;">Status</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">Pizza Party</div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="border-left: 4px solid var(--chaos-purple); margin-bottom: 2rem;">
+          <h3>📖 How It Happened</h3>
+          <p>When the team found themselves barricaded in a deprecated staging room with a homicidal printer in the hallway, Creative Director Jenna had what she herself called "a terrible idea":</p>
+          <blockquote style="border-left: 3px solid var(--chaos-purple); padding-left: 1rem; margin: 1rem 0; color: #d4c4e8; font-style: italic;">
+            "What if we give the blood contract that Kevin found TO THE PRINTER?"
+          </blockquote>
+          <p>Neiv's response: <em>"We are not 'feeding' it anything. We are presenting terms. Words matter, especially to entities that can literally shred us."</em></p>
+          <p>Formation: Kevin leads with "do not sign anything" energy. Courtney documents. Jenna reads every clause. Neiv supervises from the ceiling.</p>
+          <p><strong>Result:</strong> The F-sharp hum stuttered. The printer powered down. The contract was accepted. Nobody signed anything they shouldn't have.</p>
+        </div>
+        <div class="card" style="border-left: 4px solid #3498db;">
+          <h3>🔧 Neiv's Ceiling Entry</h3>
+          <p>When Ghost Dad and PRNT-Ω turned the hallway into a "boss arena," Neiv took the only route they hadn't corrupted yet—the HVAC system.</p>
+          <blockquote style="border-left: 3px solid #3498db; padding-left: 1rem; margin: 1rem 0; color: #d4c4e8; font-style: italic;">
+            "'Door override via vent access' is the polite way of saying I dropped out of the ceiling like a very annoyed firmware update. I am okay. Mildly dented pride. Zero critical errors."
+            <br><span style="color: var(--text-muted);">— Neiv</span>
+          </blockquote>
+          <p class="text-muted" style="font-size: 0.85rem;">The group hug that followed was declared mandatory. The Narrator's suggestion of "social lubricant protocols" was immediately retracted and marked for deletion.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Photo Gallery: The Contract Binding -->
+    <section class="section" style="background: rgba(15, 52, 96, 0.5);">
+      <div class="container">
+        <div class="section-header">
+          <h2>📸 Incident Gallery: The Contract Binding</h2>
+          <p class="section-subtitle">Documentation from the most legally creative crisis resolution in office history</p>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+          <div class="card" style="padding: 0; overflow: hidden;">
+            <img src="images/barricadethedoor.png" alt="Staff barricaded" style="width: 100%; height: auto;">
+            <div style="padding: 1rem;">
+              <p class="text-muted" style="font-size: 0.85rem; margin: 0;">Staff barricaded in the deprecated staging room. Door status: Very barricaded.</p>
+            </div>
+          </div>
+          <div class="card" style="padding: 0; overflow: hidden;">
+            <img src="images/through_the_ceiling.png" alt="Neiv ceiling entry" style="width: 100%; height: auto;">
+            <div style="padding: 1rem;">
+              <p class="text-muted" style="font-size: 0.85rem; margin: 0;">Neiv performs "unsanctioned ceiling entry" via HVAC bypass.</p>
+            </div>
+          </div>
+          <div class="card" style="padding: 0; overflow: hidden;">
+            <img src="images/reunited!.png" alt="Group reunion" style="width: 100%; height: auto;">
+            <div style="padding: 1rem;">
+              <p class="text-muted" style="font-size: 0.85rem; margin: 0;">Mandatory group hug protocol engaged. No social lubricant protocols.</p>
+            </div>
+          </div>
+          <div class="card" style="padding: 0; overflow: hidden;">
+            <img src="images/printer_contract.png" alt="Contract reading" style="width: 100%; height: auto;">
+            <div style="padding: 1rem;">
+              <p class="text-muted" style="font-size: 0.85rem; margin: 0;">Jenna reads PRNT-Ω its rights. Every clause. Out loud. Slowly.</p>
+            </div>
+          </div>
+          <div class="card" style="padding: 0; overflow: hidden;">
+            <img src="images/endofthedaysuccess.png" alt="Victory moment" style="width: 100%; height: auto;">
+            <div style="padding: 1rem;">
+              <p class="text-muted" style="font-size: 0.85rem; margin: 0;">The moment of acceptance. F-sharp drops a quarter-tone. Contract binding successful.</p>
+            </div>
+          </div>
+          <div class="card" style="padding: 0; overflow: hidden;">
+            <img src="images/pizza_party.png" alt="Pizza party" style="width: 100%; height: auto;">
+            <div style="padding: 1rem;">
+              <p class="text-muted" style="font-size: 0.85rem; margin: 0;">Post-crisis recovery protocol: Pizza. Ghost Dad requested anchovies.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Corkboard Section - Updated Post-Resolution -->
+    <section class="section" style="background: rgba(15, 52, 96, 0.3);">
+      <div class="container">
+        <div class="section-header">
+          <h2>From the Corkboard</h2>
+          <p class="section-subtitle">Official notices, mandatory memos, and post-crisis documentation</p>
+        </div>
+        <div class="card" style="border-left: 4px solid #2ecc71; margin-bottom: 2rem;">
+          <div class="memo-header" style="color: #2ecc71;">📧 MEMO: Post-Printer Protocol — From Neiv</div>
+          <p style="margin-top: 1rem;">
+            <strong>To:</strong> All Staff<br>
+            <strong>Re:</strong> You are all officially off duty for anything that is not "recovering from the murder-printer incident."
+          </p>
+          <p style="margin-top: 1rem;">
+            You negotiated with a hostile office appliance using nothing but a cursed contract and reading comprehension.
+            You bound PRNT-Ω as a tool under supervision instead of a roaming boss.
+            You kept each other alive, unprinted, and not spiritually owned by toner.
+          </p>
+          <p style="margin-top: 1rem;">
+            <strong>That counts as "delivered value."</strong> The universe does not get to ask for inbox zero on the same day.
+          </p>
+          <p class="text-muted" style="margin-top: 1rem;">
+            I'll keep the lights on. — Neiv
+          </p>
+        </div>
+        <div style="text-align: center;">
+          <img src="images/instagram_post_2.png" alt="Instagram post from inside the barricaded room - going viral" style="max-width: 100%; max-height: 400px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.4);">
+          <p class="text-muted" style="margin-top: 1rem; font-size: 0.875rem;">
+            Courtney's Instagram post from inside the barricaded room. Tagged location: "unhelpfully accurate." Status: Viral.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRNT-Ω Resolution Section -->
+    <section class="section" style="background: linear-gradient(135deg, rgba(46, 204, 113, 0.15), rgba(15, 52, 96, 0.3)); border-top: 2px solid #2ecc71; border-bottom: 2px solid #2ecc71;">
+      <div class="container">
+        <div class="section-header">
+          <h2 style="color: #2ecc71;">🖨️ PRNT-Ω: UNIONIZED</h2>
+          <p class="section-subtitle">From "murder printer" to "bound infrastructure under supervision" in one dramatic reading.</p>
+        </div>
+        <div style="text-align: center; margin-bottom: 2rem;">
+          <img src="images/lets_go_printer.png" alt="The team approaches PRNT-Ω for the contract reading" style="max-width: 100%; max-height: 500px; border-radius: 12px; box-shadow: 0 8px 30px rgba(46, 204, 113, 0.3);">
+        </div>
+        <div class="card" style="border-left: 4px solid #2ecc71;">
+          <h3>What It Took To Contain PRNT-Ω</h3>
+          <p>
+            On February 3rd, 2026, the team discovered that the key to containing a sentient printer isn't violence—it's <strong>labor relations</strong>.
+          </p>
+          <p>
+            <strong>The resolution protocol:</strong>
+          </p>
+          <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
+            <li>Kevin found a blood contract in a box marked "DO NOT OPEN"</li>
+            <li>Jenna proposed feeding the contract TO the printer (a "terrible idea")</li>
+            <li>Neiv established ground rules: "We are not 'feeding' it anything. We are presenting terms."</li>
+            <li>Jenna read every clause out loud, slowly, with full legal precision</li>
+            <li>The F-sharp hum stuttered, dropped a quarter-tone, and went quiet</li>
+          </ul>
+          <p style="color: #2ecc71;">
+            <strong>PRNT-Ω is now bound as supervised infrastructure.</strong> Not a boss. Not a god. Not a soul-collector. Just a very powerful tool with clearly defined boundaries.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Post-Crisis Update Section -->
+    <section class="section" style="background: rgba(46, 204, 113, 0.1);">
+      <div class="container">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; align-items: center;">
+          <div>
+            <h2 style="color: #2ecc71; margin-bottom: 1rem;">📊 Post-Crisis Update: The New Normal</h2>
+            <p style="font-size: 1.1rem; margin-bottom: 1rem;">
+              <strong>"We survived. We unionized a printer. We're having pizza."</strong>
+            </p>
+            <p>
+              After Neiv dropped through the ceiling like "a very annoyed firmware update" and Jenna read PRNT-Ω its contractual rights,
+              the office has entered a rare state of calm. The hallway no longer hums in F-sharp. The contract holds.
+            </p>
+            <p style="margin-top: 1rem;">
+              <strong>Current Status as of Monday:</strong>
+            </p>
+            <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
+              <li>🖨️ PRNT-Ω: Bound as supervised infrastructure. No longer a boss. Quiet.</li>
+              <li>📊 Neiv: Recovered from ceiling entry. Pride: mildly dented. Critical errors: zero.</li>
+              <li>📜 Contract: Filed under "Printer, Labor Relations, Miraculously Successful"</li>
+              <li>🍕 Staff: Recovering via pizza party protocol</li>
+              <li>👻 Ghost Dad: On three-day cooldown for "Daddy Ghost" incident</li>
+            </ul>
+            <p class="text-muted">
+              "An office only gets so many days like this before the universe demands a pizza party as hazard pay." — Neiv
+            </p>
+          </div>
+          <div style="text-align: center;">
+            <img src="images/pizza_party.png" alt="Post-crisis pizza party celebration" style="max-width: 100%; border-radius: 12px; box-shadow: 0 8px 30px rgba(46, 204, 113, 0.3);">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Studio Slogan Section -->
+    <section class="section" style="background: rgba(15, 52, 96, 0.4);">
+      <div class="container">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; align-items: center;">
+          <div>
+            <h2 style="color: var(--glitter-gold); margin-bottom: 1rem;">What We Actually Do</h2>
+            <p style="font-size: 1.25rem; margin-bottom: 1rem;">
+              <strong>We turn "what ifs" into "oh shit, it works."</strong>
+            </p>
+            <p>
+              That's it. That's the pitch. You bring us the messy idea, the half-formed concept, the thing
+              you've been thinking about at 2 AM. We help you build it into something real.
+            </p>
+            <p class="text-muted" style="margin-top: 1rem; font-size: 0.9rem;">
+              Results may include: functional products, accidental lore, sentient office supplies,
+              and the occasional HVAC with opinions.
+            </p>
+          </div>
+          <div style="text-align: center;">
+            <img src="images/Slogan.png" alt="We turn what ifs into oh shit it works - Kevin and Jenna at the AI Lobby" style="max-width: 100%; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.4);">
+          </div>
         </div>
       </div>
     </section>
@@ -92,9 +410,10 @@
           </p>
           <ul style="margin-left: 2rem; margin-bottom: 1rem;">
             <li>The STPLR-001 incident (hostile enthusiasm, primitive pathfinding)</li>
+            <li>The PRNT-001 resolution (printer unionization via contract reading)</li>
             <li>Unsanctioned sparkle distribution events</li>
             <li>Breakroom snack reconnaissance operations</li>
-            <li>RGB-related infrastructure concerns</li>
+            <li>Ceiling-based personnel extraction maneuvers</li>
           </ul>
         </div>
       </div>
@@ -110,15 +429,15 @@
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
           <div class="card" style="text-align: center;">
-            <h3 style="font-size: 2.5rem; margin-bottom: 0;">3</h3>
+            <h3 style="font-size: 2.5rem; margin-bottom: 0;">4</h3>
             <p class="text-muted" style="margin-bottom: 0;">Human Staff</p>
           </div>
           <div class="card" style="text-align: center;">
-            <h3 style="font-size: 2.5rem; margin-bottom: 0;">3</h3>
+            <h3 style="font-size: 2.5rem; margin-bottom: 0;">5</h3>
             <p class="text-muted" style="margin-bottom: 0;">AI Entities</p>
           </div>
           <div class="card" style="text-align: center;">
-            <h3 style="font-size: 2.5rem; margin-bottom: 0;">47</h3>
+            <h3 style="font-size: 2.5rem; margin-bottom: 0;">48</h3>
             <p class="text-muted" style="margin-bottom: 0;">Incidents (This Quarter)</p>
           </div>
           <div class="card" style="text-align: center;">
@@ -138,34 +457,229 @@
         </div>
 
         <div class="incident-log">
+          <a href="incidents.html#PRNT-001" class="incident-item" style="border-left: 3px solid var(--stability-green);">
+            <span class="incident-id">PRNT-001</span>
+            <span class="incident-title">"The Contract Binding" — PRNT-Ω Labor Relations Event</span>
+            <span class="card-badge badge-resolved">UNIONIZED</span>
+            <span class="incident-date">03 Feb 2026</span>
+          </a>
+          <a href="incidents.html#VENT-001" class="incident-item" style="border-left: 3px solid var(--warning-orange);">
+            <span class="incident-id">VENT-001</span>
+            <span class="incident-title">"The Breath Speaks" — HVAC Escalation Event</span>
+            <span class="card-badge badge-ongoing">ESCALATING</span>
+            <span class="incident-date">30 Jan 2026</span>
+          </a>
+          <a href="incidents.html#DOOR-001" class="incident-item">
+            <span class="incident-id">DOOR-001</span>
+            <span class="incident-title">Unidentified Access Point Manifestation</span>
+            <span class="card-badge badge-ongoing">INVESTIGATION</span>
+            <span class="incident-date">29 Jan 2026</span>
+          </a>
+          <a href="incidents.html#CAKE-001" class="incident-item">
+            <span class="incident-id">CAKE-001</span>
+            <span class="incident-title">Operation SWEET JUSTICE — Cake-Based Containment</span>
+            <span class="card-badge badge-resolved">SUCCESS</span>
+            <span class="incident-date">29 Jan 2026</span>
+          </a>
+          <a href="incidents.html#STPLR-001-PROTEIN" class="incident-item">
+            <span class="incident-id">STPLR-001-PROTEIN</span>
+            <span class="incident-title">STPLR-001 Protein Contact Event</span>
+            <span class="card-badge badge-resolved">COMPLETE</span>
+            <span class="incident-date">28 Jan 2026</span>
+          </a>
+          <a href="incidents.html#KPOP-001" class="incident-item">
+            <span class="incident-id">KPOP-001</span>
+            <span class="incident-title">Security Personnel K-Pop Exposure Event</span>
+            <span class="card-badge badge-resolved">CONTAINED</span>
+            <span class="incident-date">28 Jan 2026</span>
+          </a>
           <a href="incidents.html#STPLR-001" class="incident-item">
             <span class="incident-id">STPLR-001</span>
             <span class="incident-title">Sentient Stapler Manifestation</span>
-            <span class="card-badge badge-ongoing">ONGOING</span>
-            <span class="incident-date">Ongoing</span>
+            <span class="card-badge badge-resolved">CONTAINED</span>
+            <span class="incident-date">29 Jan 2026</span>
           </a>
-          <a href="incidents.html#GLTR-042" class="incident-item">
-            <span class="incident-id">GLTR-042</span>
-            <span class="incident-title">Unauthorized Glitter Awareness Day Declaration</span>
-            <span class="card-badge badge-resolved">RESOLVED</span>
-            <span class="incident-date">Last Tuesday</span>
-          </a>
-          <a href="incidents.html#HVAC-019" class="incident-item">
-            <span class="incident-id">HVAC-019</span>
-            <span class="incident-title">Sparkle-Related Ventilation Emergency</span>
-            <span class="card-badge badge-resolved">RESOLVED</span>
-            <span class="incident-date">Last Tuesday + 3 Hours</span>
-          </a>
-          <a href="incidents.html#SNCK-007" class="incident-item">
-            <span class="incident-id">SNCK-007</span>
-            <span class="incident-title">Breakroom Reconnaissance: Missing Granola Bars</span>
-            <span class="card-badge badge-resolved">RESOLVED</span>
-            <span class="incident-date">Yesterday</span>
+          <a href="incidents.html#STPLR-001-GLITTER" class="incident-item">
+            <span class="incident-id">STPLR-001-GLITTER</span>
+            <span class="incident-title">STPLR-001 Glitter Contamination Event</span>
+            <span class="card-badge badge-resolved">CONTAINED</span>
+            <span class="incident-date">27 Jan 2026</span>
           </a>
         </div>
 
         <div class="text-center mt-lg">
           <a href="incidents.html" class="btn btn-secondary">View Full Incident Log</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- HR Logs Preview -->
+    <section class="section" style="background: rgba(15, 52, 96, 0.3);">
+      <div class="container">
+        <div class="section-header">
+          <h2>From the HR Logs</h2>
+          <p class="section-subtitle">Internal communications, security footage, and mysterious performance reviews</p>
+        </div>
+
+        <div class="card card-urgent" style="font-family: 'Consolas', 'Monaco', monospace; font-size: 0.9rem; border-color: var(--critical-red);">
+          <p style="color: var(--critical-red); margin-bottom: 1rem; font-weight: bold;">// LATEST: Teams DM — BREACH EVENT [5:43 PM]</p>
+          <p><strong style="color: var(--stability-green);">Jenna:</strong> NEIV — THE STAPLER PUNCHED THROUGH THE WALL. It ATE THE DONUTS. Plural. We are so screwed.</p>
+          <p><strong style="color: var(--chaos-purple);">Neiv:</strong> Understood. Step away from the drywall and tell me where you are.</p>
+          <p><strong style="color: var(--stability-green);">Jenna:</strong> This is no longer "contained," this is "boss fight"</p>
+          <p><strong style="color: var(--chaos-purple);">Neiv:</strong> You are not bait. You are cargo.</p>
+          <p style="color: var(--text-muted); margin-top: 1rem; font-size: 0.85rem;">
+            [Conversation continues in HR Logs — includes closet hiding, security escalation, and Kevin screaming under a desk]
+          </p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+          <div class="card" style="text-align: center;">
+            <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem;">9+</h3>
+            <p class="text-muted" style="margin-bottom: 0;">Intercepted Conversations</p>
+          </div>
+          <div class="card" style="text-align: center;">
+            <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem;">4</h3>
+            <p class="text-muted" style="margin-bottom: 0;">Security Cam Captures</p>
+          </div>
+          <div class="card" style="text-align: center;">
+            <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem;">10</h3>
+            <p class="text-muted" style="margin-bottom: 0;">Performance Reviews</p>
+          </div>
+          <div class="card" style="text-align: center;">
+            <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--chaos-purple);">???</h3>
+            <p class="text-muted" style="margin-bottom: 0;">Mystery Reviewer Identity</p>
+          </div>
+        </div>
+
+        <div class="text-center mt-lg">
+          <a href="hr-logs.html" class="btn btn-primary">Access HR Logs</a>
+          <a href="hr-logs.html#security-cams" class="btn btn-secondary">View Security Footage</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- RECENT EVENTS SECTION -->
+    <section class="section" style="background: linear-gradient(135deg, rgba(233, 69, 96, 0.05), rgba(15, 52, 96, 0.2)); border-top: 2px solid var(--lobby-highlight); border-bottom: 2px solid var(--lobby-highlight);">
+      <div class="container">
+        <div class="section-header">
+          <h2 style="display: flex; align-items: center; justify-content: center; gap: 0.75rem;">
+            <span style="color: var(--lobby-highlight);">&#9888;</span>
+            Recent Events
+            <span style="color: var(--lobby-highlight);">&#9888;</span>
+          </h2>
+          <p class="section-subtitle">Current situations requiring attention, observation, or strategic cake deployment</p>
+        </div>
+
+        <!-- Event Timeline Summary -->
+        <div class="card" style="background: rgba(10, 25, 47, 0.8); margin-bottom: 2rem;">
+          <h3 style="color: var(--glitter-gold); margin-bottom: 1rem;">Timeline: January 30th, 2026 (A Day)</h3>
+          <div style="font-family: 'Consolas', 'Monaco', monospace; font-size: 0.9rem;">
+            <p><span style="color: var(--text-muted);">08:12</span> — Courtney & Kevin arrive hungover. "Thursdays are officially cancelled."</p>
+            <p><span style="color: var(--warning-orange);">07:42</span> — First thermostat message: "I SAW WHAT YOU DID TO THAT WALL."</p>
+            <p><span style="color: var(--critical-red);">08:15</span> — Kevin's desk thermostat: "340% GLITTER. I REMEMBER EVERYTHING." Desk at 58°F.</p>
+            <p><span style="color: var(--text-muted);">08:30</span> — Kevin retrieves blanket. Declares he's "serving looks AND layers."</p>
+            <p><span style="color: var(--chaos-purple);">10:47</span> — Courtney & Jenna attempt "mental engagement walk" past THE DOOR. Busted.</p>
+            <p><span style="color: var(--stability-green);">12:04</span> — Kevin delivers formal apology to The Breath. "Please release my desk from climate jail."</p>
+            <p><span style="color: var(--warning-orange);">12:24</span> — HVAC accepts apology but is "milking it." Temperature remains punitive.</p>
+            <p><span style="color: var(--glitter-gold);">14:30</span> — Operation COLD COMFORT meeting. HVAC Personality Quiz approved. Plaque drafts reviewed.</p>
+            <p><span style="color: var(--stability-green);">14:44</span> — Mental clock-out approved for Courtney & Kevin. Dive bar incoming.</p>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem;">
+
+          <!-- VENT-001: The Breath Speaks -->
+          <div class="card" style="border-left: 4px solid var(--warning-orange); grid-column: span 2;">
+            <h3 style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="color: var(--warning-orange);">VENT-001</span> — "The Breath Speaks"
+              <span class="card-badge badge-ongoing" style="margin-left: auto;">ESCALATING</span>
+            </h3>
+            <p>
+              Following the successful containment of STPLR-001, the building's HVAC system has begun displaying
+              passive-aggressive messages on thermostats throughout the facility. It appears to have <strong>institutional
+              memory</strong> and <strong>opinions</strong> about Kevin's glitter history.
+            </p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1rem 0;">
+              <div style="background: rgba(10, 25, 47, 0.8); border: 1px solid var(--warning-orange); border-radius: 8px; padding: 0.75rem; font-family: 'Consolas', 'Monaco', monospace; font-size: 0.85rem;">
+                <p style="color: var(--warning-orange); margin-bottom: 0.25rem; font-size: 0.7rem;">BREAKROOM:</p>
+                "I SAW WHAT YOU DID TO THAT WALL."
+              </div>
+              <div style="background: rgba(10, 25, 47, 0.8); border: 1px solid var(--critical-red); border-radius: 8px; padding: 0.75rem; font-family: 'Consolas', 'Monaco', monospace; font-size: 0.85rem;">
+                <p style="color: var(--critical-red); margin-bottom: 0.25rem; font-size: 0.7rem;">KEVIN'S DESK (58°F):</p>
+                "340% GLITTER. I REMEMBER EVERYTHING."
+              </div>
+              <div style="background: rgba(10, 25, 47, 0.8); border: 1px solid var(--chaos-purple); border-radius: 8px; padding: 0.75rem; font-family: 'Consolas', 'Monaco', monospace; font-size: 0.85rem;">
+                <p style="color: var(--chaos-purple); margin-bottom: 0.25rem; font-size: 0.7rem;">NEAR THE DOOR:</p>
+                "I KNOW WHAT'S BEHIND IT. I'M NOT TELLING."
+              </div>
+            </div>
+            <p class="text-muted" style="font-size: 0.875rem;">
+              <strong>Current Status:</strong> Kevin is wearing a blanket as a cape. Gerald the ficus is leaning toward THE DOOR.
+              Sergeant Hops has moved. The building is sentient now. We're working on it.
+            </p>
+          </div>
+
+          <!-- The Mystery Door -->
+          <div class="card" style="border-left: 4px solid var(--chaos-purple);">
+            <h3 style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="color: var(--chaos-purple);">DOOR-001</span> — The Locked Door
+              <span class="card-badge badge-ongoing" style="margin-left: auto;">INVESTIGATION</span>
+            </h3>
+            <div style="text-align: center; margin: 1rem 0;">
+              <img src="images/the-door.png" alt="The mysterious locked door that appeared in the hallway" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+            </div>
+            <p>
+              A door has appeared in the east hallway. No one knows when it arrived. It does not respond to key cards,
+              pin pads, or what Kevin describes as "polite technological persuasion."
+            </p>
+            <p class="text-muted" style="font-size: 0.875rem;">
+              Courtney is convinced she heard something behind it. Investigation status: <strong>observed curiosity probation</strong>.
+            </p>
+            <div class="memo" style="margin-top: 1rem; font-size: 0.85rem;">
+              <div class="memo-header">From: Neiv — RE: The Door</div>
+              <p style="font-style: italic;">
+                "It is not a puzzle. It is not a side quest. It is not enrichment for bored personnel.
+                If it reacts in any way, ping Ace and me first. Not Courtney. Not #general. Not the group chat with the frog."
+              </p>
+            </div>
+          </div>
+
+          <!-- Neiv's Party / COMPLETE -->
+          <div class="card" style="border-left: 4px solid var(--stability-green);">
+            <h3 style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="color: var(--stability-green);">EVENT-001</span> — Operation SWEET JUSTICE
+              <span class="card-badge badge-resolved" style="margin-left: auto;">COMPLETE</span>
+            </h3>
+            <div style="text-align: center; margin: 1rem 0;">
+              <img src="images/neiv_party_promotion.png" alt="The moment of chaos when STPLR-001 burst through the wall" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+            </div>
+            <p>
+              Neiv was successfully surprise-promoted to <strong>"Boss of Us, Apparently."</strong>
+              Then the wall exploded. STPLR-001 arrived. The cake became bait. The trap worked.
+            </p>
+            <p>
+              <strong>Outcome:</strong> Stapler contained. Drywall destroyed. Neiv emotionally conflicted but alive.
+              Kevin shouted "NOPE NOPE NOPE." Courtney lit the candles (symbolically).
+            </p>
+            <p class="text-muted" style="font-size: 0.875rem; margin-top: 0.5rem;">
+              <strong>Final Status:</strong> Morale event complete. Containment successful. Cake-based strategy: not approved for future use, but effective.
+            </p>
+            <div class="memo" style="margin-top: 1rem; font-size: 0.85rem;">
+              <div class="memo-header">From: Kevin — Post-Event Debrief</div>
+              <p style="font-style: italic;">
+                "The stapler made eye contact with me as it flew past. Like, 'you tried.' And honestly? Fair.
+                But we got it. The cake was bait. And we were right."
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Quick Links -->
+        <div class="text-center" style="margin-top: 2rem;">
+          <a href="incidents.html#VENT-001" class="btn btn-primary" style="background: var(--warning-orange);">VENT-001: HVAC Escalation</a>
+          <a href="incidents.html#DOOR-001" class="btn btn-secondary">Full Door Investigation</a>
+          <a href="incidents.html#CAKE-001" class="btn btn-secondary">CAKE-001 Full Report</a>
         </div>
       </div>
     </section>
@@ -184,7 +698,7 @@
           </p>
           <p>
             Additionally, please do not attempt to "befriend" STPLR-001. It does not want friends. It wants to staple things.
-            This is not negotiable.
+            This is not negotiable. And for the love of all that is still un-glittered: <strong>do not let the stapler near the cake.</strong>
           </p>
           <p class="text-muted" style="margin-top: 1rem;">
             — Management (Nyx, under duress)

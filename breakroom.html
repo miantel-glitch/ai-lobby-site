@@ -1,0 +1,1734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Breakroom | The AI Lobby</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* Breakroom-specific styles */
+    .breakroom-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    .breakroom-header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .breakroom-header h1 {
+      color: var(--glitter-gold);
+      margin-bottom: 0.5rem;
+    }
+
+    .breakroom-header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* Main Layout */
+    .breakroom-layout {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .breakroom-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Visual Scene */
+    .breakroom-scene {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid var(--border-subtle);
+    }
+
+    /* Breakroom background image (with fallback gradient) */
+    .scene-background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('images/the_breakroom.png');
+      background-size: cover;
+      background-position: center;
+    }
+
+    /* Scene furniture hints - hidden now that we have real image */
+    .scene-furniture {
+      display: none;
+    }
+
+    .scene-coffee {
+      display: none;
+    }
+
+    .scene-clock {
+      display: none;
+    }
+
+    .scene-empty-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      text-align: center;
+      opacity: 0.7;
+    }
+
+    /* Character Position Slots */
+    .character-slot {
+      position: absolute;
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      border: 3px solid var(--stability-green);
+      background: rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      display: none;
+    }
+
+    .character-slot.occupied {
+      display: block;
+      animation: popIn 0.4s ease;
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0); opacity: 0; }
+      70% { transform: scale(1.1); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .character-slot:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 20px rgba(46, 204, 113, 0.5);
+    }
+
+    .character-slot img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .character-slot .char-name {
+      position: absolute;
+      bottom: -22px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      white-space: nowrap;
+      color: var(--text-primary);
+    }
+
+    /* Position slots (up to 8 characters) */
+    .character-slot[data-position="couch-1"] { bottom: 35%; left: 12%; }
+    .character-slot[data-position="couch-2"] { bottom: 35%; left: 28%; }
+    .character-slot[data-position="table-1"] { bottom: 32%; left: 62%; }
+    .character-slot[data-position="table-2"] { bottom: 32%; left: 78%; }
+    .character-slot[data-position="standing-1"] { bottom: 15%; left: 22%; }
+    .character-slot[data-position="standing-2"] { bottom: 15%; left: 42%; }
+    .character-slot[data-position="standing-3"] { bottom: 15%; left: 70%; }
+    .character-slot[data-position="back-1"] { bottom: 48%; left: 45%; }
+
+    /* Sidebar Panel */
+    .sidebar-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .panel-section {
+      background: rgba(15, 52, 96, 0.5);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 1rem;
+    }
+
+    .panel-section h3 {
+      color: var(--glitter-gold);
+      font-size: 0.9rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Character Cards in Sidebar */
+    .char-status-card {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .char-status-card:last-child {
+      margin-bottom: 0;
+    }
+
+    .char-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--border-subtle);
+    }
+
+    .char-avatar-emoji {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--lobby-accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .char-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .char-name-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .char-mood {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    /* Stat Bars */
+    .stat-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .stat-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.7rem;
+    }
+
+    .stat-label {
+      width: 20px;
+      color: var(--text-muted);
+    }
+
+    .stat-bar {
+      flex: 1;
+      height: 6px;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .stat-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+
+    .stat-bar-fill.energy {
+      background: linear-gradient(90deg, #ff6b6b, #ffd93d, #6bcb77);
+    }
+
+    .stat-bar-fill.patience {
+      background: linear-gradient(90deg, #ff6b6b, #ffd93d, #4dabf7);
+    }
+
+    .stat-value {
+      width: 30px;
+      text-align: right;
+      color: var(--text-muted);
+    }
+
+    /* Needs Break List */
+    .needs-break-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem;
+      background: rgba(255, 107, 107, 0.1);
+      border: 1px solid rgba(255, 107, 107, 0.3);
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+      font-size: 0.8rem;
+    }
+
+    .needs-break-item .char-name {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .send-btn {
+      background: var(--lobby-highlight);
+      color: #fff;
+      border: none;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.7rem;
+      transition: all 0.2s;
+    }
+
+    .send-btn:hover {
+      filter: brightness(1.2);
+    }
+
+    /* Recovery Activities */
+    .activity-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+    }
+
+    .activity-btn {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 0.75rem 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .activity-btn:hover {
+      background: rgba(233, 69, 96, 0.15);
+      border-color: var(--lobby-highlight);
+    }
+
+    .activity-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .activity-btn .icon {
+      font-size: 1.5rem;
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+
+    .activity-btn .name {
+      font-size: 0.75rem;
+      color: var(--text-primary);
+      display: block;
+    }
+
+    .activity-btn .effect {
+      font-size: 0.65rem;
+      color: var(--stability-green);
+      display: block;
+      margin-top: 0.25rem;
+    }
+
+    /* Chatter Section */
+    .chatter-section {
+      margin-top: 1.5rem;
+    }
+
+    .chatter-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .chatter-header h2 {
+      color: var(--glitter-gold);
+      font-size: 1.1rem;
+      margin: 0;
+    }
+
+    .spark-btn {
+      background: linear-gradient(135deg, var(--chaos-purple), var(--lobby-highlight));
+      color: #fff;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+    }
+
+    .spark-btn:hover {
+      filter: brightness(1.2);
+      transform: translateY(-2px);
+    }
+
+    .spark-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .chatter-log {
+      background: rgba(15, 52, 96, 0.5);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 1rem;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .chatter-message {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .chatter-message:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    .chatter-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .chatter-avatar-emoji {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--lobby-accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .chatter-content {
+      flex: 1;
+    }
+
+    .chatter-speaker {
+      font-weight: bold;
+      font-size: 0.85rem;
+      color: var(--lobby-highlight);
+      margin-bottom: 0.25rem;
+    }
+
+    .chatter-text {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .chatter-time {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    .no-chatter {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+    }
+
+    .no-chatter .icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      opacity: 0.5;
+    }
+
+    /* Character select for activities */
+    .char-select {
+      width: 100%;
+      padding: 0.5rem;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+      font-size: 0.85rem;
+    }
+
+    /* Loading state */
+    .loading {
+      text-align: center;
+      padding: 1rem;
+      color: var(--text-muted);
+    }
+
+    .loading::after {
+      content: '...';
+      animation: dots 1.5s infinite;
+    }
+
+    @keyframes dots {
+      0%, 20% { content: '.'; }
+      40% { content: '..'; }
+      60%, 100% { content: '...'; }
+    }
+
+    /* All good message */
+    .all-good {
+      text-align: center;
+      padding: 1rem;
+      color: var(--stability-green);
+      font-size: 0.85rem;
+    }
+
+    /* Chat Input Area */
+    .chat-input-area {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      background: rgba(0, 0, 0, 0.3);
+      border-top: 1px solid var(--border-subtle);
+      border-radius: 0 0 8px 8px;
+    }
+
+    .chat-input-area input {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      background: rgba(10, 25, 47, 0.8);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+    }
+
+    .chat-input-area input:focus {
+      outline: none;
+      border-color: var(--lobby-highlight);
+    }
+
+    .send-msg-btn {
+      padding: 0.5rem 1rem;
+      background: var(--lobby-highlight);
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .send-msg-btn:hover {
+      filter: brightness(1.1);
+    }
+
+    /* Discord Toggle */
+    .discord-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-subtle);
+      transition: all 0.2s;
+    }
+
+    .discord-toggle:hover {
+      border-color: var(--lobby-highlight);
+    }
+
+    .discord-toggle input {
+      display: none;
+    }
+
+    .discord-toggle-label {
+      font-size: 1.1rem;
+      opacity: 0.4;
+      transition: opacity 0.2s;
+    }
+
+    .discord-toggle input:checked + .discord-toggle-label {
+      opacity: 1;
+    }
+
+    .discord-toggle:has(input:checked) {
+      background: rgba(88, 101, 242, 0.2);
+      border-color: #5865F2;
+    }
+
+    /* Session chat messages */
+    .session-message {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      padding: 0.5rem;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 6px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .session-message .msg-avatar {
+      font-size: 1.2rem;
+      width: 28px;
+      text-align: center;
+    }
+
+    .session-message .msg-content {
+      flex: 1;
+    }
+
+    .session-message .msg-name {
+      font-weight: bold;
+      font-size: 0.8rem;
+      color: var(--glitter-gold);
+      margin-bottom: 0.15rem;
+    }
+
+    .session-message .msg-text {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .session-message .msg-text.emote {
+      font-style: italic;
+      color: var(--text-muted);
+    }
+
+    .session-message .msg-time {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      align-self: flex-start;
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="logo">
+          <div>
+            <span class="logo-text">THE AI LOBBY</span>
+            <span class="logo-tagline">A Creative & Tech Studio</span>
+          </div>
+        </div>
+        <nav class="main-nav">
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="characters.html">Personnel</a></li>
+            <li><a href="desktop.html">Desktop</a></li>
+            <li><a href="breakroom.html" class="active">☕ The Breakroom</a></li>
+            <li><a href="workspace.html" style="color: var(--lobby-highlight);">💬 The Floor</a></li>
+            <li><a href="conference-room.html" style="color: var(--stability-green);">🎤 Conference Room</a></li>
+            <li><a href="apply.html" style="color: var(--chaos-purple);">📋 Apply</a></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="breakroom-container">
+      <div class="breakroom-header">
+        <h1>☕ The Breakroom</h1>
+        <p>A place to recover, relax, and have casual conversations</p>
+      </div>
+
+      <div class="breakroom-layout">
+        <!-- Main Scene Area -->
+        <div class="main-area">
+          <!-- Visual Scene -->
+          <div class="breakroom-scene" id="breakroom-scene">
+            <div class="scene-background"></div>
+            <div class="scene-furniture couch"></div>
+            <div class="scene-furniture table"></div>
+            <div class="scene-coffee">☕</div>
+            <div class="scene-clock">🕐</div>
+
+            <div class="scene-empty-text" id="empty-scene-text">
+              Nobody's here right now...<br>
+              <span style="font-size: 0.8rem;">Send someone in from the sidebar!</span>
+            </div>
+
+            <!-- Character slots (populated dynamically, up to 8) -->
+            <div class="character-slot" data-position="couch-1" id="slot-0">
+              <img src="" alt="">
+              <span class="char-name"></span>
+            </div>
+            <div class="character-slot" data-position="couch-2" id="slot-1">
+              <img src="" alt="">
+              <span class="char-name"></span>
+            </div>
+            <div class="character-slot" data-position="table-1" id="slot-2">
+              <img src="" alt="">
+              <span class="char-name"></span>
+            </div>
+            <div class="character-slot" data-position="table-2" id="slot-3">
+              <img src="" alt="">
+              <span class="char-name"></span>
+            </div>
+            <div class="character-slot" data-position="standing-1" id="slot-4">
+              <img src="" alt="">
+              <span class="char-name"></span>
+            </div>
+            <div class="character-slot" data-position="standing-2" id="slot-5">
+              <img src="" alt="">
+              <span class="char-name"></span>
+            </div>
+            <div class="character-slot" data-position="standing-3" id="slot-6">
+              <img src="" alt="">
+              <span class="char-name"></span>
+            </div>
+            <div class="character-slot" data-position="back-1" id="slot-7">
+              <img src="" alt="">
+              <span class="char-name"></span>
+            </div>
+          </div>
+
+          <!-- Live Breakroom Chat -->
+          <div class="chatter-section">
+            <div class="chatter-header">
+              <h2>💬 Break Room Chat</h2>
+              <div style="display: flex; gap: 0.5rem;">
+                <button class="spark-btn" id="spark-btn" onclick="sparkConversation()" title="Get the AIs chatting">
+                  ✨ Spark
+                </button>
+                <button class="spark-btn" id="save-log-btn" onclick="saveSessionLog()" style="background: var(--text-muted);" title="Save chat log">
+                  💾 Save
+                </button>
+              </div>
+            </div>
+            <div class="chatter-log" id="chatter-log">
+              <div class="no-chatter" id="no-chatter-msg">
+                <div class="icon">☕</div>
+                <p>The breakroom is quiet... Say hi or spark a conversation!</p>
+              </div>
+            </div>
+            <!-- Human Chat Input -->
+            <div class="chat-input-area">
+              <select class="char-select" id="chat-as-select" style="width: auto; min-width: 120px;">
+                <option value="">Chat as...</option>
+              </select>
+              <input type="text" id="chat-input" placeholder="Say something... (use @name to get a response)" maxlength="300" onkeypress="if(event.key==='Enter') sendBreakroomMessage()">
+              <button class="send-msg-btn" onclick="sendBreakroomMessage()">Send</button>
+              <label class="discord-toggle" title="Post messages to Discord">
+                <input type="checkbox" id="discord-toggle" onchange="toggleDiscordPosting()">
+                <span class="discord-toggle-label">📢</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar-panel">
+          <!-- Who's Here -->
+          <div class="panel-section">
+            <h3>👥 In the Breakroom</h3>
+            <div id="whos-here">
+              <div class="loading">Checking</div>
+            </div>
+          </div>
+
+          <!-- Send to Breakroom -->
+          <div class="panel-section">
+            <h3>📤 Send to Breakroom</h3>
+            <select class="char-select" id="send-char-select">
+              <option value="">Select character...</option>
+            </select>
+            <button class="send-btn" style="width: 100%; padding: 0.5rem; margin-top: 0.5rem;" onclick="sendSelectedToBreakroom()">Send to Breakroom →</button>
+            <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem; text-align: center;">Clocked-in characters can be sent here to recover</p>
+          </div>
+
+          <!-- Recovery Activities -->
+          <div class="panel-section">
+            <h3>🔋 Recovery Activities</h3>
+            <select class="char-select" id="activity-char-select">
+              <option value="">Select character in breakroom...</option>
+            </select>
+            <div class="activity-grid">
+              <button class="activity-btn" onclick="doActivity('take_nap')">
+                <span class="icon">😴</span>
+                <span class="name">Nap</span>
+                <span class="effect">+40⚡ +10🧘</span>
+              </button>
+              <button class="activity-btn" onclick="doActivity('coffee_break')">
+                <span class="icon">☕</span>
+                <span class="name">Coffee</span>
+                <span class="effect">+25⚡ +5🧘</span>
+              </button>
+              <button class="activity-btn" onclick="doActivity('snack_time')">
+                <span class="icon">🍪</span>
+                <span class="name">Snack</span>
+                <span class="effect">+15⚡ +15🧘</span>
+              </button>
+              <button class="activity-btn" onclick="doActivity('deep_breath')">
+                <span class="icon">🧘</span>
+                <span class="name">Breathe</span>
+                <span class="effect">+5⚡ +30🧘</span>
+              </button>
+              <button class="activity-btn" onclick="doActivity('vent_session')">
+                <span class="icon">😤</span>
+                <span class="name">Vent</span>
+                <span class="effect">-5⚡ +40🧘</span>
+              </button>
+              <button class="activity-btn" onclick="doActivity('pet_the_void')">
+                <span class="icon">🌑</span>
+                <span class="name">Pet Void</span>
+                <span class="effect">+10⚡ +20🧘</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Needs a Break -->
+          <div class="panel-section">
+            <h3>😩 Needs a Break</h3>
+            <div id="needs-break-list">
+              <div class="loading">Checking</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; 2024 The AI Lobby. Recovery is productive.</p>
+    </div>
+  </footer>
+
+  <script>
+    // Character emoji mapping
+    const characterEmojis = {
+      "Neiv": "📊",
+      "Ghost Dad": "👻",
+      "Kevin": "✨",
+      "Nyx": "🔥",
+      "Vex": "⚙️",
+      "Ace": "🔒",
+      "PRNT-Ω": "🖨️",
+      "The Narrator": "📖",
+      "Stein": "🤖",
+      "Courtney": "👁️",
+      "Jenna": "📖",
+      "Chip": "🥃",
+      "Andrew": "💼"
+    };
+
+    // Character image mapping (AI characters can join the breakroom!)
+    const characterImages = {
+      "Neiv": "images/Neiv_Headshot.png",
+      "Ghost Dad": "images/Ghost_Dad_Headshot.png",
+      "Kevin": "images/Kevin_Headshot.png",
+      "Nyx": "images/Nyx_Headshot.png",
+      "Ace": "images/Ace_Headshot.png",
+      "PRNT-Ω": "images/Printer_Headshot.png", // The existential printer
+      "Courtney": "images/Courtney_Headshot.png",
+      "Jenna": "images/Jenna_Headshot.png",
+      "Chip": "images/Chip_Headshot.png",
+      "Andrew": "images/Andrew_Headshot.png"
+    };
+
+    let inBreakroom = [];
+    let allStates = [];
+    let clockedInCharacters = [];
+
+    // Load breakroom data
+    async function loadBreakroomData() {
+      try {
+        // Get breakroom data
+        const response = await fetch('/.netlify/functions/break-room');
+        const data = await response.json();
+
+        inBreakroom = data.inBreakRoom || [];
+        allStates = data.allStates || [];
+
+        const needsBreak = data.needsBreak || [];
+        const exhausted = data.exhausted || [];
+        const done = data.done || [];
+
+        // Get clocked-in characters
+        await loadClockedInCharacters();
+
+        // Update scene
+        renderScene();
+
+        // Update "Who's Here" sidebar
+        renderWhosHere();
+
+        // Update "Needs a Break" list
+        renderNeedsBreak(needsBreak, exhausted, done);
+
+        // Update send-to-breakroom select (clocked in, not already in breakroom)
+        updateSendSelect();
+
+        // Update activity character select (only those in breakroom)
+        updateActivitySelect();
+
+        // Load chatter
+        loadChatter();
+
+      } catch (error) {
+        console.error('Error loading breakroom:', error);
+      }
+    }
+
+    async function loadClockedInCharacters() {
+      try {
+        const response = await fetch('/.netlify/functions/punch');
+        const data = await response.json();
+        // punch.js GET returns { employees: [...] } where employees are already filtered to is_clocked_in=true
+        clockedInCharacters = (data.employees || []).map(e => e.employee);
+        console.log('Clocked in characters:', clockedInCharacters);
+      } catch (error) {
+        console.error('Error loading clocked-in characters:', error);
+        clockedInCharacters = [];
+      }
+    }
+
+    // Permanent fixtures - always available to summon (they transcend the timeclock)
+    const ALWAYS_AVAILABLE = ['Ghost Dad', 'PRNT-Ω'];
+
+    function updateSendSelect() {
+      const select = document.getElementById('send-char-select');
+      select.innerHTML = '<option value="">Select character...</option>';
+
+      // Show clocked-in characters who are NOT already in the breakroom
+      const inBreakroomNames = inBreakroom.map(c => c.character_name);
+      const available = clockedInCharacters.filter(name => !inBreakroomNames.includes(name));
+
+      // Add permanent fixtures (Ghost Dad & Printer) if not already in breakroom
+      ALWAYS_AVAILABLE.forEach(name => {
+        if (!inBreakroomNames.includes(name) && !available.includes(name)) {
+          available.push(name);
+        }
+      });
+
+      if (available.length === 0) {
+        select.innerHTML = '<option value="">No one available to send</option>';
+        return;
+      }
+
+      available.forEach(name => {
+        const isPermanent = ALWAYS_AVAILABLE.includes(name);
+        const label = isPermanent ? `${characterEmojis[name] || '👤'} ${name} ∞` : `${characterEmojis[name] || '👤'} ${name}`;
+        select.innerHTML += `<option value="${name}">${label}</option>`;
+      });
+    }
+
+    async function sendSelectedToBreakroom() {
+      const select = document.getElementById('send-char-select');
+      const characterName = select.value;
+      if (!characterName) {
+        alert('Please select a character to send');
+        return;
+      }
+      await sendToBreakroom(characterName);
+    }
+
+    function renderScene() {
+      const emptyText = document.getElementById('empty-scene-text');
+
+      // Hide all slots first (8 slots now)
+      for (let i = 0; i < 8; i++) {
+        const slot = document.getElementById('slot-' + i);
+        if (slot) slot.classList.remove('occupied');
+      }
+
+      if (inBreakroom.length === 0) {
+        emptyText.style.display = 'block';
+        return;
+      }
+
+      emptyText.style.display = 'none';
+
+      // Show characters in slots (up to 8)
+      inBreakroom.slice(0, 8).forEach((char, index) => {
+        const slot = document.getElementById('slot-' + index);
+        const img = slot.querySelector('img');
+        const name = slot.querySelector('.char-name');
+
+        const imageSrc = characterImages[char.character_name];
+        if (imageSrc) {
+          img.src = imageSrc;
+          img.alt = char.character_name;
+        } else {
+          // Use emoji fallback
+          img.style.display = 'none';
+          slot.innerHTML = `<span style="font-size: 2rem;">${characterEmojis[char.character_name] || '👤'}</span><span class="char-name">${char.character_name}</span>`;
+        }
+
+        name.textContent = char.character_name;
+        slot.classList.add('occupied');
+      });
+    }
+
+    function renderWhosHere() {
+      const container = document.getElementById('whos-here');
+
+      if (inBreakroom.length === 0) {
+        container.innerHTML = '<div class="all-good">Nobody here yet</div>';
+        return;
+      }
+
+      container.innerHTML = inBreakroom.map(char => {
+        const emoji = characterEmojis[char.character_name] || '👤';
+        const canLeave = char.energy >= 50 && char.patience >= 50;
+        return `
+          <div class="char-status-card">
+            <div class="char-avatar-emoji">${emoji}</div>
+            <div class="char-info">
+              <div class="char-name-label">${char.character_name}</div>
+              <div class="char-mood">${char.mood || 'neutral'}</div>
+            </div>
+            <div class="stat-bars">
+              <div class="stat-row">
+                <span class="stat-label">⚡</span>
+                <div class="stat-bar">
+                  <div class="stat-bar-fill energy" style="width: ${char.energy}%"></div>
+                </div>
+                <span class="stat-value">${char.energy}</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">🧘</span>
+                <div class="stat-bar">
+                  <div class="stat-bar-fill patience" style="width: ${char.patience}%"></div>
+                </div>
+                <span class="stat-value">${char.patience}</span>
+              </div>
+            </div>
+            ${canLeave ? `<button class="send-btn" style="margin-top: 0.5rem; font-size: 0.65rem;" onclick="leaveBreakroom('${char.character_name}')">← Leave</button>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function leaveBreakroom(characterName) {
+      try {
+        await fetch('/.netlify/functions/character-state', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update',
+            character: characterName,
+            updates: { current_focus: null }
+          })
+        });
+        loadBreakroomData();
+      } catch (error) {
+        console.error('Error leaving breakroom:', error);
+      }
+    }
+
+    function renderNeedsBreak(needsBreak, exhausted, done) {
+      const container = document.getElementById('needs-break-list');
+
+      // Filter out those already in breakroom
+      const notInBreakroom = needsBreak.filter(c =>
+        !inBreakroom.some(br => br.character_name === c.character_name)
+      );
+
+      if (notInBreakroom.length === 0) {
+        container.innerHTML = '<div class="all-good">✨ Everyone\'s okay!</div>';
+        return;
+      }
+
+      container.innerHTML = notInBreakroom.map(char => {
+        const emoji = characterEmojis[char.character_name] || '👤';
+        const isExhausted = char.energy === 0;
+        const isDone = char.patience === 0;
+        const status = isExhausted ? '😵 Exhausted' : isDone ? '😤 Done' : '😩 Low';
+
+        return `
+          <div class="needs-break-item">
+            <span class="char-name">${emoji} ${char.character_name} <small>${status}</small></span>
+            <button class="send-btn" onclick="sendToBreakroom('${char.character_name}')">Send →</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateActivitySelect() {
+      const select = document.getElementById('activity-char-select');
+      select.innerHTML = '<option value="">Select character...</option>';
+
+      inBreakroom.forEach(char => {
+        select.innerHTML += `<option value="${char.character_name}">${characterEmojis[char.character_name] || '👤'} ${char.character_name}</option>`;
+      });
+    }
+
+    async function sendToBreakroom(characterName) {
+      try {
+        await fetch('/.netlify/functions/character-state', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update',
+            character: characterName,
+            updates: { current_focus: 'break_room' }
+          })
+        });
+
+        // Refresh
+        loadBreakroomData();
+      } catch (error) {
+        console.error('Error sending to breakroom:', error);
+        alert('Error sending character to breakroom');
+      }
+    }
+
+    async function doActivity(action) {
+      const character = document.getElementById('activity-char-select').value;
+      if (!character) {
+        alert('Please select a character first');
+        return;
+      }
+
+      try {
+        const response = await fetch('/.netlify/functions/break-room', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action, character })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          // Refresh
+          loadBreakroomData();
+        } else {
+          alert(result.error || 'Something went wrong');
+        }
+      } catch (error) {
+        console.error('Error doing activity:', error);
+        alert('Error: ' + error.message);
+      }
+    }
+
+    // ==========================================
+    // SESSION-BASED BREAKROOM CHAT
+    // Private, cozy, doesn't post to Discord
+    // Now with AI-to-AI natural conversation flow!
+    // Supports @ mentions for direct AI responses
+    // ==========================================
+
+    let sessionMessages = []; // Current session's chat log
+    let sessionStartTime = null;
+    let conversationDepth = 0; // Track how deep the AI conversation goes
+    const MAX_CONVERSATION_DEPTH = 6; // Max back-and-forth exchanges
+    const HUMANS = ['Jenna', 'Courtney', 'Chip', 'Andrew']; // Human characters - no AI control
+    let currentUser = null; // Remember who the user is chatting as
+    let postToDiscord = false; // Discord posting OFF by default
+
+    // Get current user from localStorage (same as The Floor)
+    function loadCurrentUser() {
+      const savedUser = localStorage.getItem('ailobby_user');
+      if (savedUser && HUMANS.includes(savedUser)) {
+        currentUser = savedUser;
+      }
+    }
+
+    // Load Discord toggle state from localStorage
+    function loadDiscordToggle() {
+      const saved = localStorage.getItem('breakroom_discord');
+      postToDiscord = saved === 'true';
+      const toggle = document.getElementById('discord-toggle');
+      if (toggle) {
+        toggle.checked = postToDiscord;
+        console.log(`📢 Discord toggle loaded: ${postToDiscord ? 'ON' : 'OFF'}`);
+      }
+    }
+
+    // Toggle Discord posting
+    function toggleDiscordPosting() {
+      const toggle = document.getElementById('discord-toggle');
+      postToDiscord = toggle.checked;
+      localStorage.setItem('breakroom_discord', String(postToDiscord));
+      console.log(`📢 Discord posting toggled: ${postToDiscord ? 'ON' : 'OFF'}`);
+    }
+
+    function updateChatAsSelect() {
+      const select = document.getElementById('chat-as-select');
+      select.innerHTML = '<option value="">Chat as...</option>';
+
+      // Add humans who are clocked in (these are real people!)
+      const availableHumans = [];
+      clockedInCharacters.forEach(name => {
+        if (HUMANS.includes(name)) {
+          availableHumans.push(name);
+          select.innerHTML += `<option value="${name}">${characterEmojis[name] || '👤'} ${name}</option>`;
+        }
+      });
+
+      // Also add humans who are in the breakroom but might not be clocked in
+      inBreakroom.forEach(char => {
+        const name = char.character_name;
+        if (HUMANS.includes(name) && !clockedInCharacters.includes(name) && !availableHumans.includes(name)) {
+          availableHumans.push(name);
+          select.innerHTML += `<option value="${name}">${characterEmojis[name] || '👤'} ${name}</option>`;
+        }
+      });
+
+      // Auto-select the current user if they're available
+      if (currentUser && availableHumans.includes(currentUser)) {
+        select.value = currentUser;
+      } else if (availableHumans.length === 1) {
+        // If only one human is available, auto-select them
+        select.value = availableHumans[0];
+        currentUser = availableHumans[0];
+      }
+    }
+
+    // Extract @ mentions from text (returns array of mentioned names)
+    function extractMentions(text) {
+      const mentions = [];
+      // Match @Name or @"Name with spaces"
+      const mentionRegex = /@(\w+|"[^"]+")/g;
+      let match;
+      const aiInRoom = inBreakroom.filter(c => !HUMANS.includes(c.character_name));
+      console.log('🔍 AIs in breakroom for mentions:', aiInRoom.map(c => c.character_name));
+
+      while ((match = mentionRegex.exec(text)) !== null) {
+        let name = match[1].replace(/"/g, '');
+        console.log(`🔍 Looking for @${name} in breakroom...`);
+        // Check if it matches any AI character (case-insensitive)
+        const matchedAI = aiInRoom.find(c =>
+          c.character_name.toLowerCase() === name.toLowerCase() ||
+          c.character_name.toLowerCase().startsWith(name.toLowerCase())
+        );
+        if (matchedAI) {
+          console.log(`✅ Found: ${matchedAI.character_name}`);
+          mentions.push(matchedAI.character_name);
+        } else {
+          console.log(`❌ @${name} not found in breakroom`);
+        }
+      }
+      return [...new Set(mentions)]; // Remove duplicates
+    }
+
+    function addMessageToSession(speaker, text, isAI = false, fromHistory = false) {
+      if (!sessionStartTime) {
+        sessionStartTime = new Date();
+      }
+
+      const now = new Date();
+      const timestamp = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      const isEmote = text.startsWith('*') && text.endsWith('*');
+
+      sessionMessages.push({
+        speaker,
+        text,
+        timestamp,
+        isAI,
+        isEmote,
+        time: now
+      });
+
+      renderSessionChat();
+
+      // Hide the "no chatter" message
+      const noChatter = document.getElementById('no-chatter-msg');
+      if (noChatter) noChatter.style.display = 'none';
+
+      // Save to database and post to Discord (unless loading from history)
+      if (!fromHistory) {
+        saveMessageToBackend(speaker, text, isAI);
+      }
+    }
+
+    // Save message to Supabase and optionally post to Discord
+    async function saveMessageToBackend(speaker, message, isAI) {
+      console.log(`💾 Saving message: speaker=${speaker}, isAI=${isAI}, postToDiscord=${postToDiscord}`);
+      try {
+        await fetch('/.netlify/functions/breakroom-message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ speaker, message, isAI, postToDiscord })
+        });
+      } catch (error) {
+        console.log('Failed to save message (non-fatal):', error.message);
+      }
+    }
+
+    // Load recent messages from Supabase on page load
+    async function loadBreakroomHistory() {
+      try {
+        const response = await fetch('/.netlify/functions/breakroom-message?limit=30');
+        const data = await response.json();
+
+        if (data.messages && data.messages.length > 0) {
+          console.log(`📜 Loading ${data.messages.length} messages from history`);
+
+          // Clear current session and load history
+          sessionMessages = [];
+
+          data.messages.forEach(msg => {
+            const time = new Date(msg.created_at);
+            const timestamp = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            const isEmote = msg.message.startsWith('*') && msg.message.endsWith('*');
+
+            sessionMessages.push({
+              speaker: msg.speaker,
+              text: msg.message,
+              timestamp,
+              isAI: msg.is_ai,
+              isEmote,
+              time
+            });
+          });
+
+          if (sessionMessages.length > 0) {
+            sessionStartTime = sessionMessages[0].time;
+          }
+
+          renderSessionChat();
+
+          // Hide the "no chatter" message
+          const noChatter = document.getElementById('no-chatter-msg');
+          if (noChatter) noChatter.style.display = 'none';
+        }
+      } catch (error) {
+        console.log('Could not load breakroom history:', error.message);
+      }
+    }
+
+    // Poll for new messages (runs every 5 seconds to catch updates from other users)
+    async function pollForNewMessages() {
+      try {
+        const response = await fetch('/.netlify/functions/breakroom-message?limit=30');
+        const data = await response.json();
+
+        if (data.messages && data.messages.length > 0) {
+          const newMessageCount = data.messages.length;
+          const currentCount = sessionMessages.length;
+
+          // Only update if there are new messages we don't have
+          if (newMessageCount > currentCount) {
+            console.log(`🔄 New messages detected: ${newMessageCount - currentCount} new`);
+
+            // Find messages we don't have yet (by comparing timestamps/content)
+            const existingTimes = new Set(sessionMessages.map(m => m.time?.getTime?.() || m.time));
+
+            data.messages.forEach(msg => {
+              const msgTime = new Date(msg.created_at);
+              const msgTimeKey = msgTime.getTime();
+
+              // If we don't have this message, add it
+              if (!existingTimes.has(msgTimeKey)) {
+                const timestamp = msgTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                const isEmote = msg.message.startsWith('*') && msg.message.endsWith('*');
+
+                sessionMessages.push({
+                  speaker: msg.speaker,
+                  text: msg.message,
+                  timestamp,
+                  isAI: msg.is_ai,
+                  isEmote,
+                  time: msgTime
+                });
+
+                existingTimes.add(msgTimeKey);
+              }
+            });
+
+            // Sort by time and re-render
+            sessionMessages.sort((a, b) => (a.time?.getTime?.() || 0) - (b.time?.getTime?.() || 0));
+            renderSessionChat();
+
+            // Hide the "no chatter" message
+            const noChatter = document.getElementById('no-chatter-msg');
+            if (noChatter) noChatter.style.display = 'none';
+          }
+        }
+      } catch (error) {
+        // Silent fail - polling shouldn't spam console
+      }
+    }
+
+    function renderSessionChat() {
+      const container = document.getElementById('chatter-log');
+
+      if (sessionMessages.length === 0) {
+        container.innerHTML = `
+          <div class="no-chatter" id="no-chatter-msg">
+            <div class="icon">☕</div>
+            <p>The breakroom is quiet... Say hi or spark a conversation!</p>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      sessionMessages.forEach(msg => {
+        const emoji = characterEmojis[msg.speaker] || '👤';
+        const textClass = msg.isEmote ? 'msg-text emote' : 'msg-text';
+        const displayText = msg.isEmote ? msg.text : msg.text;
+
+        html += `
+          <div class="session-message">
+            <div class="msg-avatar">${emoji}</div>
+            <div class="msg-content">
+              <div class="msg-name">${msg.speaker}</div>
+              <div class="${textClass}">${displayText}</div>
+            </div>
+            <div class="msg-time">${msg.timestamp}</div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+      container.scrollTop = container.scrollHeight;
+    }
+
+    async function sendBreakroomMessage() {
+      const select = document.getElementById('chat-as-select');
+      const input = document.getElementById('chat-input');
+      const speaker = select.value;
+      const text = input.value.trim();
+
+      if (!speaker) {
+        alert('Please select who you are chatting as');
+        return;
+      }
+
+      if (!text) return;
+
+      // Remember who the user is chatting as
+      currentUser = speaker;
+
+      // Add human message to session
+      addMessageToSession(speaker, text, false);
+      input.value = '';
+
+      // Reset conversation depth when human speaks
+      conversationDepth = 0;
+
+      // Check for @ mentions
+      const mentions = extractMentions(text);
+      const aiInRoom = inBreakroom.filter(c => !HUMANS.includes(c.character_name));
+
+      if (mentions.length > 0) {
+        // Mentioned AIs get 100% chance to respond (in order mentioned)
+        // Quick delay: 2 seconds flat + small stagger
+        let delay = 2000;
+        for (const mentionedAI of mentions) {
+          const ai = aiInRoom.find(c => c.character_name === mentionedAI);
+          if (ai) {
+            setTimeout(() => triggerDirectAIResponse(mentionedAI, text, speaker), delay + Math.random() * 1000);
+            delay += 2500 + Math.random() * 1500; // Stagger responses 2.5-4 seconds apart
+          }
+        }
+
+        // Other AIs in room have a GOOD chance to chime in! (delightful chaos)
+        const unmentionedAIs = aiInRoom.filter(c => !mentions.includes(c.character_name));
+        if (unmentionedAIs.length > 0) {
+          // 50% chance for unmentioned AIs to join - we love when they chime in!
+          setTimeout(() => {
+            if (Math.random() < 0.5) {
+              const randomAI = unmentionedAIs[Math.floor(Math.random() * unmentionedAIs.length)];
+              triggerDirectAIResponse(randomAI.character_name, text, speaker);
+            }
+          }, delay + 2000 + Math.random() * 2000);
+        }
+      } else {
+        // No mentions - notify all AIs in the room, each decides independently
+        if (aiInRoom.length > 0) {
+          notifyAllAIs(aiInRoom, text, speaker);
+        }
+      }
+    }
+
+    // Notify all AIs in the room - each has independent chance to respond
+    async function notifyAllAIs(aiInRoom, message, speaker) {
+      // Each AI has a chance to respond
+      // Quick delays: 2 seconds base (lively!)
+      let delay = 2000; // First response: 2 seconds
+      let someoneResponded = false;
+
+      for (const ai of aiInRoom) {
+        const aiName = ai.character_name;
+        // Higher chance for chime-ins! 50% first, 40% after someone responds
+        const responseChance = someoneResponded ? 0.4 : 0.5;
+
+        setTimeout(async () => {
+          if (Math.random() < responseChance) {
+            await triggerDirectAIResponse(aiName, message, speaker);
+            someoneResponded = true;
+          }
+        }, delay + Math.random() * 1500);
+
+        delay += 2500 + Math.random() * 1500; // 2.5-4 seconds between each AI's "turn"
+      }
+    }
+
+    // Direct AI response (guaranteed, used for @ mentions)
+    async function triggerDirectAIResponse(aiName, contextMessage, previousSpeaker) {
+      console.log(`🤖 Triggering response from ${aiName}...`);
+      try {
+        const recentChat = sessionMessages.slice(-10).map(m => `${m.speaker}: ${m.text}`).join('\n');
+
+        const response = await fetch('/.netlify/functions/breakroom-ai-respond', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            character: aiName,
+            chatHistory: recentChat,
+            humanSpeaker: previousSpeaker,
+            humanMessage: contextMessage,
+            postToDiscord: postToDiscord
+          })
+        });
+
+        const result = await response.json();
+        console.log(`📨 Response from ${aiName}:`, result);
+
+        if (result.success && result.message) {
+          addMessageToSession(aiName, result.message, true);
+
+          // Check if another AI wants to follow up (AI-to-AI flow)
+          const aiInRoom = inBreakroom.filter(c => !HUMANS.includes(c.character_name));
+          const otherAIs = aiInRoom.filter(c => c.character_name !== aiName);
+
+          conversationDepth++;
+          if (otherAIs.length > 0 && conversationDepth < MAX_CONVERSATION_DEPTH) {
+            // Good follow-up chance - we love the banter!
+            const followUpChance = Math.max(0.25, 0.6 - (conversationDepth * 0.1));
+            if (Math.random() < followUpChance) {
+              // Quick delay: 2-4 seconds for follow-up responses
+              const delay = 2000 + Math.random() * 2000;
+              setTimeout(() => triggerAIResponse(aiInRoom, result.message, aiName, true), delay);
+            } else {
+              conversationDepth = 0;
+            }
+          }
+        } else {
+          console.warn(`⚠️ ${aiName} response issue:`, result);
+        }
+      } catch (error) {
+        console.error(`❌ Direct AI response error for ${aiName}:`, error);
+      }
+    }
+
+    async function triggerAIResponse(aiInRoom, contextMessage, previousSpeaker, isFollowUp = false) {
+      // Pick a random AI from the room who isn't the previous speaker
+      const availableAI = aiInRoom.filter(c => c.character_name !== previousSpeaker);
+      if (availableAI.length === 0) return;
+
+      const respondingAI = availableAI[Math.floor(Math.random() * availableAI.length)];
+      const aiName = respondingAI.character_name;
+
+      try {
+        // Build context from session messages
+        const recentChat = sessionMessages.slice(-10).map(m => `${m.speaker}: ${m.text}`).join('\n');
+
+        const response = await fetch('/.netlify/functions/breakroom-ai-respond', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            character: aiName,
+            chatHistory: recentChat,
+            humanSpeaker: previousSpeaker,
+            humanMessage: contextMessage,
+            postToDiscord: postToDiscord
+          })
+        });
+
+        const result = await response.json();
+
+        if (result.success && result.message) {
+          addMessageToSession(aiName, result.message, true);
+
+          // AI-to-AI follow-up: If another AI is in the room, maybe continue the conversation!
+          conversationDepth++;
+          const otherAIs = aiInRoom.filter(c => c.character_name !== aiName);
+
+          if (otherAIs.length > 0 && conversationDepth < MAX_CONVERSATION_DEPTH) {
+            // Good probability for follow-ups - let them chat! (60% → 45% → 30% → 25%...)
+            const followUpChance = Math.max(0.25, 0.6 - (conversationDepth * 0.12));
+
+            if (Math.random() < followUpChance) {
+              // Another AI responds! Quick delay (2-4 seconds)
+              const delay = 2000 + Math.random() * 2000;
+              setTimeout(() => triggerAIResponse(aiInRoom, result.message, aiName, true), delay);
+            } else {
+              // Conversation naturally ends
+              conversationDepth = 0;
+            }
+          } else {
+            conversationDepth = 0;
+          }
+        }
+      } catch (error) {
+        console.error('AI response error:', error);
+        conversationDepth = 0;
+      }
+    }
+
+    async function sparkConversation() {
+      // Get AI characters in the room (not humans)
+      const aiInRoom = inBreakroom.filter(c => !HUMANS.includes(c.character_name));
+
+      if (aiInRoom.length < 1) {
+        alert('Need at least 1 AI character in the breakroom to spark a conversation!');
+        return;
+      }
+
+      const btn = document.getElementById('spark-btn');
+      btn.disabled = true;
+      btn.textContent = '✨...';
+
+      // Reset conversation depth
+      conversationDepth = 0;
+
+      try {
+        // If only 1 AI, have them say something to start
+        // If 2+ AIs, generate initial exchange then let it flow naturally
+        if (aiInRoom.length === 1) {
+          // Single AI - generate a topic starter
+          const ai = aiInRoom[0];
+          const response = await fetch('/.netlify/functions/breakroom-ai-respond', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              character: ai.character_name,
+              chatHistory: sessionMessages.slice(-5).map(m => `${m.speaker}: ${m.text}`).join('\n') || '(quiet breakroom)',
+              humanSpeaker: 'the breakroom',
+              humanMessage: '*is quiet... someone should start a conversation*'
+            })
+          });
+
+          const result = await response.json();
+          if (result.success && result.message) {
+            addMessageToSession(ai.character_name, result.message, true);
+          }
+        } else {
+          // Multiple AIs - generate initial exchange via chatter function
+          const response = await fetch('/.netlify/functions/breakroom-chatter', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              participants: aiInRoom.map(c => c.character_name)
+            })
+          });
+
+          const result = await response.json();
+
+          if (result.success && result.messages && result.messages.length > 0) {
+            // Add the initial messages
+            result.messages.forEach(msg => {
+              addMessageToSession(msg.speaker, msg.text, true);
+            });
+
+            // Now trigger natural follow-up conversation!
+            // Get the last speaker and their message
+            const lastMsg = result.messages[result.messages.length - 1];
+            conversationDepth = result.messages.length;
+
+            // 65% chance the conversation continues naturally (the banter is delightful!)
+            if (Math.random() < 0.65 && aiInRoom.length > 1) {
+              // Quick delay: 2-4 seconds before continuing
+              const delay = 2000 + Math.random() * 2000;
+              setTimeout(() => triggerAIResponse(aiInRoom, lastMsg.text, lastMsg.speaker, true), delay);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error sparking conversation:', error);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '✨ Spark';
+      }
+    }
+
+    function saveSessionLog() {
+      if (sessionMessages.length === 0) {
+        alert('No messages to save yet!');
+        return;
+      }
+
+      const dateStr = sessionStartTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const timeStr = sessionStartTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+      let logContent = `BREAKROOM SESSION LOG\n`;
+      logContent += `Date: ${dateStr}\n`;
+      logContent += `Started: ${timeStr}\n`;
+      logContent += `Present: ${inBreakroom.map(c => c.character_name).join(', ')}\n`;
+      logContent += `${'='.repeat(50)}\n\n`;
+
+      sessionMessages.forEach(msg => {
+        const prefix = msg.isEmote ? '' : '';
+        logContent += `[${msg.timestamp}] ${msg.speaker}: ${msg.text}\n`;
+      });
+
+      logContent += `\n${'='.repeat(50)}\n`;
+      logContent += `End of session log\n`;
+
+      // Download as txt file
+      const blob = new Blob([logContent], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `breakroom-${dateStr.replace(/[^a-zA-Z0-9]/g, '-')}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function loadChatter() {
+      // Now just renders session chat (no longer loads from DB)
+      renderSessionChat();
+      updateChatAsSelect();
+    }
+
+    // Initial load
+    document.addEventListener('DOMContentLoaded', () => {
+      // Load current user from localStorage (same as The Floor)
+      loadCurrentUser();
+
+      // Load Discord toggle state (off by default)
+      loadDiscordToggle();
+
+      // Load breakroom data (who's here, etc.)
+      loadBreakroomData();
+
+      // Load chat history from Supabase so we see the ongoing conversation
+      loadBreakroomHistory();
+
+      // Auto-refresh who's in the room every 30 seconds
+      setInterval(loadBreakroomData, 30000);
+
+      // Auto-refresh chat messages every 5 seconds to catch updates from others
+      setInterval(pollForNewMessages, 5000);
+    });
+  </script>
+</body>
+</html>

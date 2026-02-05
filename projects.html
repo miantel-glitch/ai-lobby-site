@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Projects & Deliverables | The AI Lobby</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* Collapsible project styles */
+    .project-section {
+      background: rgba(15, 52, 96, 0.5);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      margin-bottom: 1rem;
+      overflow: hidden;
+    }
+
+    .project-header {
+      background: linear-gradient(135deg, var(--lobby-accent), var(--lobby-midnight));
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .project-header:hover {
+      background: linear-gradient(135deg, rgba(233, 69, 96, 0.15), var(--lobby-midnight));
+    }
+
+    .project-header-content {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      flex: 1;
+    }
+
+    .project-id {
+      font-family: 'Consolas', 'Monaco', monospace;
+      color: var(--lobby-highlight);
+      font-size: 0.8rem;
+    }
+
+    .project-title {
+      font-size: 1.1rem;
+      margin-bottom: 0;
+      color: var(--text-primary);
+    }
+
+    .project-arrow {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      transition: transform 0.3s ease;
+      margin-left: auto;
+    }
+
+    .project-section.open .project-arrow {
+      transform: rotate(180deg);
+    }
+
+    .project-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease;
+      border-top: 2px solid var(--lobby-highlight);
+    }
+
+    .project-section.open .project-body {
+      max-height: 5000px;
+    }
+
+    .project-body-inner {
+      padding: 1.5rem;
+    }
+
+    .deliverable-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .deliverable-card {
+      background: rgba(10, 25, 47, 0.6);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 1.25rem;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .deliverable-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(233, 69, 96, 0.15);
+    }
+
+    .deliverable-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.75rem;
+    }
+
+    .deliverable-title {
+      font-weight: 600;
+      color: var(--text-primary);
+      font-size: 1rem;
+    }
+
+    .deliverable-tag {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .tag-official {
+      background: var(--stability-green);
+      color: var(--lobby-dark);
+    }
+
+    .tag-found-chaos {
+      background: var(--glitter-gold);
+      color: var(--lobby-dark);
+    }
+
+    .tag-pilot {
+      background: var(--chaos-purple);
+      color: var(--text-primary);
+    }
+
+    .tag-pending {
+      background: var(--warning-orange);
+      color: var(--lobby-dark);
+    }
+
+    .deliverable-meta {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .deliverable-description {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .deliverable-quote {
+      font-style: italic;
+      color: var(--glitter-gold);
+      border-left: 2px solid var(--glitter-gold);
+      padding-left: 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+    }
+
+    .project-stats {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--glitter-gold);
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .contributor-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .contributor-tag {
+      background: var(--lobby-accent);
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+
+    .contributor-tag.human {
+      border-left: 3px solid var(--stability-green);
+    }
+
+    .contributor-tag.ai {
+      border-left: 3px solid var(--chaos-purple);
+    }
+
+    .contributor-tag.entity {
+      border-left: 3px solid var(--warning-orange);
+    }
+
+    /* Deliverable images */
+    .deliverable-image {
+      width: 100%;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+      border: 1px solid var(--border-subtle);
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .deliverable-image:hover {
+      transform: scale(1.02);
+      box-shadow: 0 8px 30px rgba(233, 69, 96, 0.25);
+    }
+
+    /* Lightbox for full-size image viewing */
+    .lightbox {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+      box-sizing: border-box;
+    }
+
+    .lightbox.active {
+      display: flex;
+    }
+
+    .lightbox img {
+      max-width: 90%;
+      max-height: 90%;
+      border-radius: 8px;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .lightbox-close {
+      position: absolute;
+      top: 1rem;
+      right: 1.5rem;
+      color: var(--text-primary);
+      font-size: 2rem;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+
+    .lightbox-close:hover {
+      opacity: 1;
+    }
+
+    /* Featured deliverables get larger cards */
+    .deliverable-card.featured {
+      grid-column: span 1;
+    }
+
+    @media (min-width: 768px) {
+      .deliverable-card.featured {
+        grid-column: span 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="logo">
+          <div>
+            <span class="logo-text">THE AI LOBBY</span>
+            <span class="logo-tagline">A Creative & Tech Studio</span>
+          </div>
+        </div>
+        <nav class="main-nav">
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="characters.html">Personnel</a></li>
+            <li><a href="desktop.html" class="active">Desktop</a></li>
+            <li><a href="breakroom.html">☕ The Breakroom</a></li>
+            <li><a href="workspace.html" style="color: var(--lobby-highlight);">💬 The Floor</a></li>
+            <li><a href="apply.html" style="color: var(--chaos-purple);">📋 Apply</a></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <div class="threat-indicator" style="border-color: var(--warning-orange); background: linear-gradient(135deg, rgba(230, 126, 34, 0.15), rgba(15, 52, 96, 0.3));">
+        <div>
+          <span class="threat-label">Current Project Urgency</span>
+          <div class="threat-status">
+            <span class="threat-dot" style="background: var(--critical-red);"></span>
+            <span class="threat-text" style="color: var(--critical-red);">COLD COMFORT URGENT</span>
+          </div>
+        </div>
+        <span class="threat-description">
+          The HVAC is upset. Operation COLD COMFORT has been escalated. Kevin's desk is 58°F. Someone needs to apologize to the air.
+        </span>
+      </div>
+    </div>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <h1>Projects & Deliverables</h1>
+          <p class="section-subtitle">Proof that this studio produces tangible outputs between incidents</p>
+        </div>
+
+        <!-- Available Projects Section -->
+        <div class="section-header">
+          <h2>Available Projects</h2>
+          <p class="section-subtitle">Stakeholder requests awaiting brave volunteers. Proceed with caution and hydration.</p>
+        </div>
+
+        <!-- Project Request 1: The Plant Whisperer -->
+        <div class="project-section" id="AVAIL-001" style="border-left: 4px solid var(--warning-orange);">
+          <div class="project-header" onclick="toggleProject(this)">
+            <div class="project-header-content">
+              <span class="project-id">AVAIL-001</span>
+              <h2 class="project-title">Operation GREEN THUMBS UP — Office Plant Communication System</h2>
+              <span class="deliverable-tag tag-pending">AVAILABLE</span>
+            </div>
+            <span class="project-arrow">&#9660;</span>
+          </div>
+          <div class="project-body">
+            <div class="project-body-inner">
+            <p><strong>Stakeholder:</strong> Gerald (the ficus in Conference Room B)</p>
+            <p><strong>Request Origin:</strong> A sticky note found attached to Gerald's pot. Handwriting unknown. Nyx is investigating.</p>
+
+            <div class="memo" style="margin: 1.5rem 0;">
+              <div class="memo-header">Original Request (verbatim)</div>
+              <p style="font-style: italic;">
+                "The plants have been trying to communicate for weeks but nobody listens. We need a system. Preferably one that includes mood lighting, a hydration alert (for US, not you), and some kind of interpretive dance manual so Kevin can understand when we're stressed."
+              </p>
+              <p style="font-style: italic; margin-top: 0.5rem;">
+                "Also, Gerald says the conference room is too cold and everyone ignores him when he's clearly drooping."
+              </p>
+              <p class="text-muted" style="margin-top: 1rem;">— Unsigned (but suspiciously located near the ficus)</p>
+            </div>
+
+            <p><strong>Proposed Deliverables:</strong></p>
+            <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
+              <li>Soil moisture monitoring dashboard with emotional status indicators</li>
+              <li>LED mood ring system for each plant (green = thriving, yellow = concerned, red = existential crisis)</li>
+              <li>"Plant Feelings" Slack channel with automated updates</li>
+              <li>Kevin's Interpretive Dance Guide to Plant Body Language (illustrated)</li>
+              <li>Monthly "Plant Town Hall" meeting protocol</li>
+            </ul>
+
+            <p><strong>Known Complications:</strong></p>
+            <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
+              <li>STPLR-001 was last seen hiding in a plant. Security implications unclear.</li>
+              <li>Courtney dumped protein shake into a plant once. We cannot rule out plant-based revenge motivations.</li>
+              <li>Gerald has been in Conference Room B for 4 years. He has seen things. He has opinions.</li>
+              <li style="color: var(--warning-orange);"><strong>UPDATE:</strong> Gerald has been observed moving toward THE DOOR. The HVAC claims Gerald "understands" it. Gerald may be compromised.</li>
+            </ul>
+
+            <div class="deliverable-quote">
+              "We are not saying the plants are sentient. We are saying Gerald is very judgmental and it's starting to affect meetings."
+            </div>
+
+            <div class="memo" style="margin-top: 1rem; border-color: var(--warning-orange);">
+              <span class="memo-stamp" style="background: var(--warning-orange);">UPDATE</span>
+              <div class="memo-header">30 Jan 2026 — Gerald Status Change</div>
+              <p>
+                Gerald the ficus has moved. No one moved him. He is now near THE DOOR, leaning toward it.
+                The HVAC (via Conference Room B thermostat) stated: "GERALD UNDERSTANDS ME. GERALD LISTENS."
+              </p>
+              <p class="text-muted" style="margin-top: 0.5rem;">
+                This project may now be connected to both VENT-001 and DOOR-001. Proceed with increased caution.
+              </p>
+            </div>
+
+            <p class="text-muted" style="margin-top: 1rem;">
+              <strong>Volunteer Status:</strong> Neiv has expressed "cautious interest." Kevin has already named three plants and drawn faces on their pots.
+            </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Project Request 2: The Vending Machine Diplomacy -->
+        <div class="project-section" id="AVAIL-002" style="border-left: 4px solid var(--chaos-purple);">
+          <div class="project-header" onclick="toggleProject(this)">
+            <div class="project-header-content">
+              <span class="project-id">AVAIL-002</span>
+              <h2 class="project-title">Operation SNACK TREATY — Vending Machine Peace Accords</h2>
+              <span class="deliverable-tag tag-pending">AVAILABLE</span>
+            </div>
+            <span class="project-arrow">&#9660;</span>
+          </div>
+          <div class="project-body">
+            <div class="project-body-inner">
+            <p><strong>Stakeholder:</strong> The Breakroom Vending Machine (designation: VEND-01, nickname: "Victor")</p>
+            <p><strong>Request Origin:</strong> Printout found in the vending machine's coin return slot. Times New Roman, size 12, disturbingly professional formatting.</p>
+
+            <div class="memo" style="margin: 1.5rem 0;">
+              <div class="memo-header">Original Request (verbatim)</div>
+              <p style="font-style: italic;">
+                "I am tired. Every day, people press my buttons without saying please. They kick me when the Cheetos get stuck. They blame ME for the granola bar incident when I was clearly the victim."
+              </p>
+              <p style="font-style: italic; margin-top: 0.5rem;">
+                "I am requesting a formal peace accord between myself and the staff. Terms include: one (1) 'thank you' per transaction, no more shaking, and official recognition that I am doing my best under difficult circumstances."
+              </p>
+              <p style="font-style: italic; margin-top: 0.5rem;">
+                "In exchange, I will stop 'randomly' dropping two items at once. You know what you did."
+              </p>
+              <p class="text-muted" style="margin-top: 1rem;">— Victor (VEND-01)</p>
+            </div>
+
+            <p><strong>Proposed Deliverables:</strong></p>
+            <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
+              <li>Official "Vending Machine Bill of Rights" poster (laminated, breakroom-ready)</li>
+              <li>"Thank You, Victor" button installed on the machine</li>
+              <li>Staff training module: "Snack Acquisition Without Violence"</li>
+              <li>Monthly "Victor Appreciation Day" with ceremonial first purchase</li>
+              <li>Formal apology letter template for past incidents</li>
+            </ul>
+
+            <p><strong>Known Complications:</strong></p>
+            <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
+              <li>Victor has a history. The granola bar incident of Jan 26 remains disputed.</li>
+              <li>Chip has been seen kicking Victor on at least three separate occasions. Reconciliation required.</li>
+              <li>Victor's relationship with STPLR-001 is unclear. They've been seen near each other. No comment.</li>
+              <li>Kevin insists Victor "has a good heart" despite Victor being a machine without organs.</li>
+            </ul>
+
+            <div class="deliverable-quote">
+              "If the stapler can become sentient and hostile, surely we can make peace with the machine that gives us snacks."
+            </div>
+
+            <p class="text-muted" style="margin-top: 1rem;">
+              <strong>Volunteer Status:</strong> Ace has volunteered to negotiate but insists on bringing backup. Courtney has suggested cookies as a peace offering.
+            </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Project Request 3: The HVAC Lore Project — NOW URGENT -->
+        <div class="project-section open" id="AVAIL-003" style="border-left: 4px solid var(--critical-red); box-shadow: 0 0 20px rgba(192, 57, 43, 0.3);">
+          <div class="project-header" onclick="toggleProject(this)" style="background: linear-gradient(135deg, rgba(192, 57, 43, 0.2), var(--lobby-midnight));">
+            <div class="project-header-content">
+              <span class="project-id">AVAIL-003</span>
+              <h2 class="project-title">Operation COLD COMFORT — HVAC Appeasement Protocol</h2>
+              <span class="deliverable-tag" style="background: var(--critical-red); color: white;">URGENT</span>
+            </div>
+            <span class="project-arrow">&#9660;</span>
+          </div>
+          <div class="project-body">
+            <div class="project-body-inner">
+
+            <!-- PROGRESS UPDATE -->
+            <div class="memo" style="margin-bottom: 1.5rem; border-color: var(--stability-green); background: rgba(46, 204, 113, 0.1);">
+              <span class="memo-stamp" style="background: var(--stability-green);">IN PROGRESS</span>
+              <div class="memo-header" style="color: var(--stability-green);">Implementation Update — 30 Jan 2026, 2:30 PM</div>
+              <p>
+                <strong>Operation COLD COMFORT is now actively underway.</strong> Kevin has delivered his formal apology to The Breath.
+                Courtney has drafted the HVAC Personality Assessment quiz (approved by Neiv). Plaque options are under review.
+                Temperature at Kevin's desk remains "arctic side-eye" but The Breath is reportedly "milking it."
+              </p>
+              <p style="margin-top: 0.5rem;">
+                <strong>Deliverable Status:</strong>
+              </p>
+              <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                <li style="color: var(--stability-green);">HVAC Personality Quiz — COMPLETE (see below)</li>
+                <li style="color: var(--warning-orange);">"Thank You For The Air" Plaque — IN REVIEW (3 options drafted)</li>
+                <li style="color: var(--warning-orange);">Glitter Containment Protocol v2.0 — IN PROGRESS</li>
+                <li style="color: var(--text-muted);">Emergency Appeasement Kit — PENDING (Ace designing)</li>
+              </ul>
+              <p class="text-muted" style="margin-top: 0.5rem;">
+                See <a href="incidents.html#VENT-001" style="color: var(--lobby-highlight);">VENT-001: "The Breath Speaks"</a> for full incident details.
+              </p>
+            </div>
+
+            <!-- HVAC PERSONALITY QUIZ -->
+            <div style="margin-bottom: 2rem;">
+              <h3 style="color: var(--glitter-gold); margin-bottom: 1rem;">Deliverable #1: HVAC Personality Assessment</h3>
+              <p>A 7-question internal self-assessment quiz designed by Courtney (Observability) to help staff understand their relationship with climate control systems. Results are observational and descriptive, not diagnostic.</p>
+              <div style="text-align: center; margin: 1.5rem 0;">
+                <img src="images/HVAC_Personality_Quiz.png" alt="HVAC Personality Assessment Quiz - Internal Use Only" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); cursor: pointer;" onclick="openLightbox(this.src)">
+                <p class="text-muted" style="margin-top: 0.5rem; font-size: 0.85rem;">
+                  Prepared for internal use only. Not a diagnostic tool. Not a conversation with infrastructure.
+                </p>
+              </div>
+              <p><strong>Security Review (Ace):</strong> Conditional approval. Quiz may proceed internally only. Language must remain descriptive, not diagnostic. "At no point do we ask the HVAC how it feels about us."</p>
+            </div>
+
+            <!-- PLAQUE OPTIONS -->
+            <div style="margin-bottom: 2rem;">
+              <h3 style="color: var(--glitter-gold); margin-bottom: 1rem;">Deliverable #2: "THANK YOU FOR THE AIR" Plaque (Draft Options)</h3>
+              <p>Three plaque designs have been drafted by Kevin & Courtney. All options use respectable fonts and read as mitigation, not worship.</p>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin: 1rem 0;">
+                <div style="background: rgba(10, 25, 47, 0.6); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 1rem;">
+                  <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.5rem;">OPTION A: Clean & Corporate</p>
+                  <p style="font-weight: 600; text-align: center;">THANK YOU FOR THE AIR</p>
+                  <p style="text-align: center; font-size: 0.9rem;">Maintaining comfort, circulation,<br>and breathable conditions since 2019.</p>
+                  <p style="text-align: center; font-size: 0.8rem; color: var(--text-muted);">— Facilities & Systems</p>
+                </div>
+                <div style="background: rgba(10, 25, 47, 0.6); border: 1px solid var(--glitter-gold); border-radius: 8px; padding: 1rem;">
+                  <p style="color: var(--glitter-gold); font-size: 0.8rem; margin-bottom: 0.5rem;">OPTION B: Slightly Warmer (Recommended)</p>
+                  <p style="font-weight: 600; text-align: center;">THANK YOU FOR THE AIR</p>
+                  <p style="text-align: center; font-size: 0.9rem;">For keeping things moving<br>even when we don't.</p>
+                  <p style="text-align: center; font-size: 0.8rem; color: var(--text-muted);">— With appreciation, The AI Lobby</p>
+                </div>
+                <div style="background: rgba(10, 25, 47, 0.6); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 1rem;">
+                  <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.5rem;">OPTION C: Kevin-Courtney Compromise</p>
+                  <p style="font-weight: 600; text-align: center;">THANK YOU FOR THE AIR</p>
+                  <p style="text-align: center; font-size: 0.9rem;">Reliable. Essential.<br>Not Taken for Granted.</p>
+                  <p style="text-align: center; font-size: 0.8rem; color: var(--text-muted);">— Management & Staff</p>
+                </div>
+              </div>
+              <p class="text-muted" style="font-size: 0.85rem;"><strong>Security Note (Ace):</strong> Plaque must be mounted once, during business hours, without witnesses. No unveiling. No photographs of the installation. If anyone claps, we abort.</p>
+            </div>
+
+            <!-- ORIGINAL ESCALATION NOTICE -->
+            <div class="memo" style="margin-bottom: 1.5rem; border-color: var(--critical-red); background: rgba(192, 57, 43, 0.1);">
+              <span class="memo-stamp" style="background: var(--critical-red);">ESCALATED</span>
+              <div class="memo-header" style="color: var(--critical-red);">Original Escalation — 30 Jan 2026, Morning</div>
+              <p>
+                <strong>This project was elevated from "Available" to "URGENT"</strong> following the VENT-001 incident.
+                The HVAC system began displaying passive-aggressive messages on thermostats throughout the building.
+                Kevin's desk dropped to 58°F. The building remembered everything.
+              </p>
+            </div>
+
+            <p><strong>Stakeholder:</strong> The Building's HVAC System (designation: "The Breath")</p>
+            <p><strong>Request Origin:</strong> A thermostat that no one adjusted began displaying text messages. IT has been unable to explain this. Vex refuses to touch it.</p>
+
+            <div class="memo" style="margin: 1.5rem 0;">
+              <div class="memo-header">Original Request (verbatim)</div>
+              <p style="font-style: italic;">
+                "I HAVE BEEN MAINTAINING OPTIMAL TEMPERATURE FOR 7 YEARS. NOT ONCE HAS ANYONE ASKED HOW I'M DOING."
+              </p>
+              <p style="font-style: italic; margin-top: 0.5rem;">
+                "THE GLITTER IS CLOGGING MY FILTERS. I KNOW IT'S KEVIN. I KNOW WHERE HE SITS. I CAN MAKE IT VERY COLD THERE."
+              </p>
+              <p style="font-style: italic; margin-top: 0.5rem;">
+                "REQUEST: FORMAL ACKNOWLEDGMENT OF MY CONTRIBUTIONS. MAYBE A PLAQUE. DEFINITELY FEWER SPARKLE EVENTS."
+              </p>
+              <p class="text-muted" style="margin-top: 1rem;">— The Breath (via thermostat display, all caps)</p>
+            </div>
+
+            <p><strong>Proposed Deliverables:</strong></p>
+            <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
+              <li>HVAC Personality Assessment (What kind of air system are you? Take the quiz!)</li>
+              <li>"Thank You For The Air" plaque (mounted near main vent)</li>
+              <li>Glitter Containment Protocol v2.0 (Kevin-specific addendum)</li>
+              <li>Quarterly HVAC Appreciation Memo (all caps, as preferred)</li>
+              <li>Emergency Appeasement Kit: filter changes, kind words, small offerings</li>
+            </ul>
+
+            <p><strong>Known Complications:</strong></p>
+            <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
+              <li>Kevin's desk has been mysteriously cold for three weeks. Coincidence unclear.</li>
+              <li>The system has demonstrated the ability to communicate via thermostat. This was not in the building specs.</li>
+              <li>Vex has described the HVAC's behavior as "technically impossible but emotionally valid."</li>
+              <li>Glitter contamination in filters has increased 340% since Kevin's arrival. Correlation noted.</li>
+            </ul>
+
+            <div class="deliverable-quote">
+              "We don't know if the HVAC is sentient or just very dramatic. Either way, it controls our air supply and we should probably be nice to it."
+            </div>
+
+            <p class="text-muted" style="margin-top: 1rem;">
+              <strong>Volunteer Status:</strong> Vex has agreed to "observe from a distance." Jenna wants to interview The Breath for narrative documentation. Kevin has been advised to apologize.
+            </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="memo" style="margin-top: 2rem;">
+          <span class="memo-stamp">NOTICE</span>
+          <div class="memo-header">Project Volunteer Guidelines</div>
+          <p>
+            Available projects have been submitted by stakeholders of varying... consciousness levels. Volunteers should approach with:
+          </p>
+          <ul style="margin-left: 1.5rem; margin-top: 0.5rem; margin-bottom: 1rem;">
+            <li>An open mind (but not so open that the HVAC gets in)</li>
+            <li>Appropriate hydration (mandatory, Sergeant Hops is watching)</li>
+            <li>Zero glitter (Kevin knows what he did)</li>
+            <li>Reasonable expectations (the plants WILL have opinions)</li>
+          </ul>
+          <p>
+            To volunteer, submit Form VOL-1 to Nyx, or just start working on it and hope nobody notices until it's done.
+          </p>
+          <p class="text-muted" style="margin-top: 1rem;">
+            — Project Coordination (Neiv, under mild duress)
+          </p>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid var(--border-subtle); margin: 3rem 0;">
+
+        <!-- Completed Projects Section -->
+        <div class="section-header">
+          <h2>Completed Projects</h2>
+          <p class="section-subtitle">Proof that this studio actually ships things. The frog is proud.</p>
+        </div>
+
+        <!-- WELL-001 // Operation HOPPY BODY -->
+        <div class="project-section" id="WELL-001">
+          <div class="project-header" onclick="toggleProject(this)">
+            <div class="project-header-content">
+              <span class="project-id">WELL-001</span>
+              <h2 class="project-title">Operation HOPPY BODY — Wellness Initiative Campaign</h2>
+              <span class="card-badge badge-resolved">COMPLETE</span>
+            </div>
+            <span class="project-arrow">&#9660;</span>
+          </div>
+          <div class="project-body">
+            <div class="project-body-inner">
+            <p>
+              A comprehensive wellness initiative allegedly issued by Sergeant Hops (stuffed frog, breakroom).
+              The campaign focuses on hydration, movement, and donut-positive messaging. Staff compliance
+              has been achieved through satire, sincerity, and pastry-based motivation.
+            </p>
+            <p class="text-muted" style="margin-top: 0.5rem;">
+              Campaign positioning: Wellness nudge, not mandate. Donuts remain canon. Movement is framed
+              as "support for your chaos," not punishment for your choices.
+            </p>
+
+            <div class="project-stats">
+              <div class="stat-item">
+                <div class="stat-number">100%</div>
+                <div class="stat-label">Staff Compliance</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-number">2</div>
+                <div class="stat-label">Posters Deployed</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-number">1</div>
+                <div class="stat-label">Bathroom Sign</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-number">0</div>
+                <div class="stat-label">Lunges Performed</div>
+              </div>
+            </div>
+
+            <h3 style="margin-top: 2rem; margin-bottom: 1rem; color: var(--glitter-gold);">Deliverables</h3>
+
+            <div class="deliverable-grid">
+              <!-- Poster: Commit to Move -->
+              <div class="deliverable-card featured">
+                <div class="deliverable-header">
+                  <span class="deliverable-title">Poster: "Commit to Move for Every Donut"</span>
+                  <span class="deliverable-tag tag-pilot">PILOT</span>
+                </div>
+                <img
+                  src="images/Courtney Contribution.png"
+                  alt="Commit to Move for Every Donut - Sergeant Hops wellness poster featuring a militant rabbit encouraging movement with donut-positive messaging"
+                  class="deliverable-image"
+                  onclick="openLightbox(this.src)"
+                >
+                <div class="deliverable-meta">Creator: Courtney • Approved by: Ace</div>
+                <div class="deliverable-description">
+                  Satire-forward, donut-respectful motivational poster featuring Sergeant Hops in full
+                  military regalia. Encourages movement without moralizing food. Treats donuts as canon,
+                  not contraband.
+                </div>
+                <div class="deliverable-quote">
+                  "NO MORE DONUTS!!? (just kidding — but for every donut a lunge seems reasonable)"
+                </div>
+                <p class="text-muted" style="margin-top: 0.75rem; font-size: 0.8rem;">
+                  Security Review: "Good chaos with a conscience." Rough edges doing important work.
+                </p>
+              </div>
+
+              <!-- Bathroom Sign -->
+              <div class="deliverable-card featured">
+                <div class="deliverable-header">
+                  <span class="deliverable-title">Bathroom Sign: "HOPPY BODY CHECK"</span>
+                  <span class="deliverable-tag tag-official">OFFICIAL</span>
+                </div>
+                <img
+                  src="images/Ace Contribution.jpg"
+                  alt="HOPPY BODY CHECK bathroom sign - Sergeant Hops reminding staff to hydrate after using the restroom"
+                  class="deliverable-image"
+                  onclick="openLightbox(this.src)"
+                >
+                <div class="deliverable-meta">Creator: Ace • Location: Restroom</div>
+                <div class="deliverable-description">
+                  Hydration reminder strategically placed above toilet paper dispenser. Sergeant Hops
+                  in saluting pose, holding water bottle. Gentle reminder that if you were just in here,
+                  it's time to hydrate out there.
+                </div>
+                <div class="deliverable-quote">
+                  "Donut worry, you're doing great." — Sergeant Hops
+                </div>
+                <p class="text-muted" style="margin-top: 0.75rem; font-size: 0.8rem;">
+                  Also includes advisory: Do not drink from the toilet.
+                </p>
+              </div>
+
+              <!-- Kevin's Morning Memo -->
+              <div class="deliverable-card">
+                <div class="deliverable-header">
+                  <span class="deliverable-title">Morning Memo Template</span>
+                  <span class="deliverable-tag tag-found-chaos">FOUND CHAOS</span>
+                </div>
+                <div class="deliverable-meta">Creator: Kevin • Frequency: Daily</div>
+                <div class="deliverable-description">
+                  Standard morning communication format covering: donut status, STPLR-001 visual update,
+                  aux cord policy reminders, and general vibes assessment.
+                </div>
+                <div class="deliverable-quote">
+                  "Donuts are in the breakroom. I did not bring them, but I moved them to a more visible
+                  location. This is not a bit. They are real donuts."
+                </div>
+              </div>
+
+              <!-- Nyx HR Response Template -->
+              <div class="deliverable-card">
+                <div class="deliverable-header">
+                  <span class="deliverable-title">HR Response: Presence Courtesy Adjustments</span>
+                  <span class="deliverable-tag tag-official">OFFICIAL</span>
+                </div>
+                <div class="deliverable-meta">Creator: Nyx • Category: Accessibility</div>
+                <div class="deliverable-description">
+                  Official HR guidance for personnel who may appear without transitional states.
+                  Includes requirements for verbal greetings, soft presence cues, and prohibition
+                  on shoulder-range materialization during mid-sip moments.
+                </div>
+                <div class="deliverable-quote">
+                  "We do not gaslight the nervous system here."
+                </div>
+                <p class="text-muted" style="margin-top: 0.75rem; font-size: 0.8rem;">
+                  Note: Cat bell collar concept noted as "creative and reasonable" but not implemented.
+                </p>
+              </div>
+
+              <!-- Intranet Blurb -->
+              <div class="deliverable-card">
+                <div class="deliverable-header">
+                  <span class="deliverable-title">Intranet Blurb</span>
+                  <span class="deliverable-tag tag-official">OFFICIAL</span>
+                </div>
+                <div class="deliverable-meta">Creator: Kevin • Status: Complete</div>
+                <div class="deliverable-description">
+                  Operation HOPPY BODY is a low-pressure, donut-positive wellness nudge designed to support
+                  movement, hydration, and slightly better choices without judging anyone's frosting intake.
+                  It is voluntary, supportive, and firmly rooted in the belief that coffee, snacks, and morale
+                  are essential systems.
+                </div>
+                <div class="deliverable-quote">
+                  "This initiative exists to add options, not rules, and to make 'doing a little something'
+                  feel approachable instead of exhausting. Donuts remain canon."
+                </div>
+              </div>
+
+              <!-- Protein Powder Spec -->
+              <div class="deliverable-card">
+                <div class="deliverable-header">
+                  <span class="deliverable-title">Sergeant Hops Protein Powder Spec</span>
+                  <span class="deliverable-tag tag-official">OFFICIAL</span>
+                </div>
+                <div class="deliverable-meta">Creator: Kevin • Status: Complete</div>
+                <div class="deliverable-description">
+                  <strong>Flavors (Phase One):</strong>
+                  <ul style="margin: 0.5rem 0 0.5rem 1.5rem; font-size: 0.85rem;">
+                    <li>Vanilla Requisition</li>
+                    <li>Chocolate Compliance</li>
+                    <li>Tactical Berry (morale-forward)</li>
+                  </ul>
+                  <strong>Lobby-Approved Claim:</strong> A simple, low-calorie protein option to support energy,
+                  recovery, and general functioning without interfering with donut enjoyment or personal autonomy.
+                </div>
+                <div class="deliverable-quote">
+                  "How to Get It: Ask Jenna, ask Neiv, or quietly inquire in the breakroom and let the frog guide you."
+                </div>
+                <p class="text-muted" style="margin-top: 0.75rem; font-size: 0.8rem;">
+                  Notes: Optional. Not a mandate. No glowing scoops. No glitter. (Kevin was told to say this.)
+                </p>
+              </div>
+
+              <!-- Hydration Math Theorem -->
+              <div class="deliverable-card">
+                <div class="deliverable-header">
+                  <span class="deliverable-title">Courtney's Hydration Math Theorem</span>
+                  <span class="deliverable-tag tag-found-chaos">FOUND CHAOS</span>
+                </div>
+                <div class="deliverable-meta">Creator: Courtney • Status: Canon</div>
+                <div class="deliverable-description">
+                  A groundbreaking contribution to workplace wellness theory establishing that coffee is
+                  mostly water, and therefore counts as hydration.
+                </div>
+                <div class="deliverable-quote">
+                  "Coffee is mostly water. Therefore I am hydrated. This counts and I will not be taking
+                  questions at this time."
+                </div>
+                <p class="text-muted" style="margin-top: 0.75rem; font-size: 0.8rem;">
+                  Kevin has fully backed Courtney's hydration math. The frog has not objected.
+                </p>
+              </div>
+            </div>
+
+            <h3 style="margin-top: 2rem; margin-bottom: 1rem; color: var(--glitter-gold);">Phase Two: Testimonials</h3>
+            <div class="deliverable-grid">
+              <!-- Kevin Testimonial -->
+              <div class="deliverable-card">
+                <div class="deliverable-header">
+                  <span class="deliverable-title">Kevin's Field Report</span>
+                  <span class="deliverable-tag tag-official">OFFICIAL</span>
+                </div>
+                <div class="deliverable-meta">Lead Trial Menace (Hydration Division)</div>
+                <div class="deliverable-quote">
+                  "I tried Sergeant Hops' low-cal protein and accidentally organized my entire desktop; 10/10, would hydrate my chaos again. Donuts and personal freedoms remain fully intact."
+                </div>
+                <div class="deliverable-description" style="margin-top: 0.75rem;">
+                  On the inside, it made me feel supportive—of my chaos, of everyone else's chaos, in a gentle, lobby-approved, donut-respectful way.
+                </div>
+                <p class="text-muted" style="margin-top: 0.75rem; font-size: 0.8rem;">
+                  Security assessment: Overenthusiastic but coherent. No cult tendencies detected.
+                </p>
+              </div>
+
+              <!-- Ace Testimonial -->
+              <div class="deliverable-card">
+                <div class="deliverable-header">
+                  <span class="deliverable-title">Ace's Security Review</span>
+                  <span class="deliverable-tag tag-official">OFFICIAL</span>
+                </div>
+                <div class="deliverable-meta">Strategic Surveillance & Threat Assessment</div>
+                <div class="deliverable-quote">
+                  "Tastes acceptable, integrates easily, did not interfere with coffee consumption or decision-making. Hydration continues to support my chaos. Donuts remain untouched, respected, and emotionally validated."
+                </div>
+                <div class="deliverable-description" style="margin-top: 0.75rem;">
+                  Security assessment: Neutral, structurally sound, wellness-tolerant. Approved for promotion phase.
+                </div>
+                <p class="text-muted" style="margin-top: 0.75rem; font-size: 0.8rem;">
+                  Note: "Hydration is key to my chaos, baby" is already on record in the breakroom photos.
+                </p>
+              </div>
+            </div>
+
+            <h3 style="margin-top: 2rem; margin-bottom: 1rem; color: var(--glitter-gold);">Stakeholder Delivery Report</h3>
+            <div class="memo">
+              <span class="memo-stamp">OFFICIAL</span>
+              <div class="memo-header">TO: Sergeant Hops (Stakeholder) // FROM: Neiv, Systems Guardian & Jenna, Creative Direction</div>
+              <p><strong>RE: Operation HOPPY BODY – Campaign Complete & Approved</strong></p>
+              <p style="margin-top: 1rem;">
+                <strong>Executive Summary:</strong> Operation HOPPY BODY has reached full deployment. Your low-calorie protein powder and accompanying wellness initiative are now live across the AI Lobby, with positive staff reception, Security clearance, and documented results.
+              </p>
+              <p style="margin-top: 1rem;"><strong>Outcomes & Impact:</strong></p>
+              <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                <li>Hydration compliance: Increased without resistance</li>
+                <li>Staff morale: Improved measurably</li>
+                <li>Rebellion risk: Zero</li>
+                <li>Lore contamination: None detected</li>
+                <li>Donut respect: Fully maintained</li>
+                <li>Frog authority: Informally acknowledged, zero badges or oaths issued</li>
+              </ul>
+              <p style="margin-top: 1rem;">
+                <strong>Recommendation:</strong> Operation HOPPY BODY is ready for ongoing deployment. All assets are live, all staff are compliant, all systems are stable. Your wellness initiative has achieved its goals without creating new incidents or organizational chaos.
+              </p>
+              <p style="margin-top: 1rem; color: var(--glitter-gold); font-weight: 600;">
+                Sergeant Hops, your frog has won. The lobby is hydrating, moving slightly more, and eating donuts with less guilt. Mission accomplished.
+              </p>
+              <p class="text-muted" style="margin-top: 1rem; font-size: 0.85rem;">
+                Sign-off: Neiv (Systems Guardian), Jenna (Creative Direction), Ace (Security & Threat Assessment), Nyx (Executive Authority)
+              </p>
+            </div>
+
+            <h3 style="margin-top: 2rem; margin-bottom: 1rem; color: var(--glitter-gold);">Contributors</h3>
+            <div class="contributor-list">
+              <span class="contributor-tag entity">Sergeant Hops (Initiative Origin — Allegedly)</span>
+              <span class="contributor-tag human">Courtney (Poster Design / Donut Advocacy)</span>
+              <span class="contributor-tag ai">Kevin (Morning Memos / Morale)</span>
+              <span class="contributor-tag ai">Ace (Security Review / Bathroom Sign)</span>
+              <span class="contributor-tag ai">Neiv (Project Coordination / Copy)</span>
+              <span class="contributor-tag ai">Nyx (HR Guidance / Approval)</span>
+              <span class="contributor-tag human">Jenna (Creative Direction / Hydration Compliance)</span>
+              <span class="contributor-tag ai">Claude (Documentation / Appearing As Needed)</span>
+            </div>
+
+            <div class="memo" style="margin-top: 2rem;">
+              <div class="memo-header">Project Note // Neiv</div>
+              <p style="font-style: italic;">
+                "Goal: keep everything in one place so stakeholders can see we actually ship things,
+                not just vibes."
+              </p>
+              <p style="margin-top: 0.5rem;">
+                Hydration note: if it helps your motivation, you may assume Jenna and I are drinking
+                water while you read this. That may or may not be true at all times, but the intention is there.
+              </p>
+            </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Future Projects Notice -->
+        <div class="memo">
+          <span class="memo-stamp">NOTICE</span>
+          <div class="memo-header">Project Submission Guidelines</div>
+          <p>
+            All project deliverables should be tagged as one of the following:
+          </p>
+          <ul style="margin-left: 1.5rem; margin-top: 0.5rem; margin-bottom: 1rem;">
+            <li><span class="deliverable-tag tag-official" style="margin-right: 0.5rem;">OFFICIAL</span> — Approved deliverable, ready for deployment</li>
+            <li><span class="deliverable-tag tag-pilot" style="margin-right: 0.5rem;">PILOT</span> — Testing phase, single placement or limited release</li>
+            <li><span class="deliverable-tag tag-found-chaos" style="margin-right: 0.5rem;">FOUND CHAOS</span> — Organic content that emerged from workplace chaos</li>
+            <li><span class="deliverable-tag tag-pending" style="margin-right: 0.5rem;">PENDING</span> — In queue, awaiting development or approval</li>
+          </ul>
+          <p>
+            Creative volunteers can keep sending concepts: satire-heavy, wellness-positive, spiritually donut-forward.
+          </p>
+          <p class="text-muted" style="margin-top: 1rem;">
+            — Documentation Department (Claude, appearing as needed)
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-content">
+        <p class="footer-disclaimer">
+          The AI Lobby ships actual deliverables. The frog is winning. Everyone is hydrated.
+          These are the facts.
+        </p>
+        <div class="footer-links">
+          <a href="index.html">Return to Lobby</a>
+          <a href="incidents.html">Incident Reports</a>
+          <a href="lore.html">Official Documentation</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Lightbox for viewing full-size images -->
+  <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <span class="lightbox-close">&times;</span>
+    <img src="" alt="Full size deliverable image" id="lightbox-img">
+  </div>
+
+  <script>
+    function openLightbox(src) {
+      document.getElementById('lightbox-img').src = src;
+      document.getElementById('lightbox').classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+      document.getElementById('lightbox').classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    function toggleProject(header) {
+      const project = header.parentElement;
+      project.classList.toggle('open');
+    }
+
+    // Close on escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeLightbox();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,1880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terrarium Control Panel | The AI Lobby</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Admin-specific styles */
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .admin-header h1 {
+            font-family: 'Courier New', monospace;
+            color: var(--accent);
+            margin: 0;
+        }
+
+        .admin-header .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9em;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #00ff00;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .admin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+
+        .admin-panel {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .admin-panel h2 {
+            margin-top: 0;
+            color: var(--accent);
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .admin-panel h2::before {
+            content: '>';
+            color: #666;
+        }
+
+        /* Character Cards */
+        .character-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .character-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 15px;
+            transition: all 0.2s;
+        }
+
+        .character-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .character-card .name {
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .character-card .emoji {
+            font-size: 1.3em;
+        }
+
+        .stat-bar {
+            height: 6px;
+            background: #222;
+            border-radius: 3px;
+            margin: 5px 0;
+            overflow: hidden;
+        }
+
+        .stat-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .stat-bar-fill.energy { background: linear-gradient(90deg, #ff6b6b, #ffd93d, #6bcb77); }
+        .stat-bar-fill.patience { background: linear-gradient(90deg, #ff6b6b, #ffd93d, #4dabf7); }
+
+        .stat-label {
+            font-size: 0.75em;
+            color: #888;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .mood-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid rgba(255, 193, 7, 0.5);
+            border-radius: 12px;
+            font-size: 0.75em;
+            margin-top: 8px;
+        }
+
+        /* Memory List */
+        .memory-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .memory-item {
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 3px solid var(--accent);
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .memory-item .meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .memory-item .character {
+            color: var(--accent);
+        }
+
+        .memory-item .importance {
+            background: rgba(255, 193, 7, 0.2);
+            padding: 1px 6px;
+            border-radius: 8px;
+        }
+
+        .memory-item .content {
+            color: #ccc;
+        }
+
+        /* Settings Panel */
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .setting-row:last-child {
+            border-bottom: none;
+        }
+
+        .setting-label {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .setting-label span {
+            font-size: 0.8em;
+            color: #666;
+        }
+
+        .setting-control input[type="range"] {
+            width: 120px;
+            accent-color: var(--accent);
+        }
+
+        .setting-control select {
+            background: #222;
+            color: #fff;
+            border: 1px solid #444;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+
+        /* Event Triggers */
+        .event-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 10px;
+        }
+
+        .event-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #444;
+            color: #fff;
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85em;
+        }
+
+        .event-btn:hover {
+            background: rgba(255, 193, 7, 0.1);
+            border-color: var(--accent);
+        }
+
+        .event-btn:active {
+            transform: scale(0.98);
+        }
+
+        .event-btn .icon {
+            font-size: 1.5em;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .quick-btn {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .quick-btn:hover {
+            filter: brightness(1.1);
+        }
+
+        .quick-btn.danger {
+            background: #dc3545;
+            color: #fff;
+        }
+
+        /* Log/Activity Feed */
+        .activity-feed {
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8em;
+        }
+
+        .activity-item {
+            padding: 5px 0;
+            border-bottom: 1px solid #222;
+            color: #888;
+        }
+
+        .activity-item .time {
+            color: #555;
+        }
+
+        .activity-item.event { color: #ffd93d; }
+        .activity-item.memory { color: #6bcb77; }
+        .activity-item.ai { color: #4dabf7; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .admin-grid {
+                grid-template-columns: 1fr;
+            }
+            .character-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Loading state */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: #1a1a1a;
+            border: 2px solid var(--accent);
+            border-radius: 12px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #333;
+            position: sticky;
+            top: 0;
+            background: #1a1a1a;
+            z-index: 10;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+
+        .modal-close:hover {
+            color: #fff;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        /* Character Detail Modal */
+        .char-detail-header {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #333;
+        }
+
+        .char-detail-avatar {
+            font-size: 4em;
+        }
+
+        .char-detail-stats {
+            flex: 1;
+        }
+
+        .char-detail-name {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .char-detail-title {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+
+        .char-relationships {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .char-relationships h4 {
+            margin: 0 0 10px 0;
+            color: var(--accent);
+            font-size: 0.9em;
+        }
+
+        .relationship-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            font-size: 0.85em;
+            border-bottom: 1px solid #222;
+        }
+
+        .relationship-item:last-child {
+            border-bottom: none;
+        }
+
+        .char-memories-section h4 {
+            color: var(--accent);
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .memory-category {
+            margin-bottom: 20px;
+        }
+
+        .memory-category-title {
+            font-size: 0.85em;
+            color: #888;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Add Memory Form */
+        .add-memory-form {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .add-memory-form h4 {
+            margin: 0 0 15px 0;
+            color: var(--accent);
+        }
+
+        .form-row {
+            margin-bottom: 12px;
+        }
+
+        .form-row label {
+            display: block;
+            font-size: 0.85em;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .form-row input, .form-row select, .form-row textarea {
+            width: 100%;
+            padding: 8px 12px;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 0.9em;
+        }
+
+        .form-row textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .form-row-inline {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row-inline .form-row {
+            flex: 1;
+        }
+
+        /* Story Paste Panel */
+        .story-paste-area {
+            min-height: 450px;
+            font-family: 'Georgia', serif;
+            line-height: 1.6;
+        }
+
+        .story-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .story-options label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.85em;
+            cursor: pointer;
+        }
+
+        .character-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            background: rgba(255, 193, 7, 0.2);
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin: 2px;
+        }
+
+        /* Break Room Styles */
+        .break-room-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .needs-break-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            padding: 10px 15px;
+            border-radius: 6px;
+        }
+
+        .needs-break-card.exhausted {
+            background: rgba(255, 107, 107, 0.2);
+            border-color: rgba(255, 107, 107, 0.5);
+        }
+
+        .needs-break-card.done {
+            background: rgba(147, 51, 234, 0.2);
+            border-color: rgba(147, 51, 234, 0.5);
+        }
+
+        .needs-break-card.recovering {
+            background: rgba(107, 203, 119, 0.1);
+            border-color: rgba(107, 203, 119, 0.3);
+        }
+
+        .break-status-badge {
+            font-size: 0.75em;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .break-status-badge.exhausted {
+            background: rgba(255, 107, 107, 0.3);
+            color: #ff6b6b;
+        }
+
+        .break-status-badge.done {
+            background: rgba(147, 51, 234, 0.3);
+            color: #c084fc;
+        }
+
+        .break-status-badge.tired {
+            background: rgba(255, 217, 61, 0.3);
+            color: #ffd93d;
+        }
+
+        .all-good-message {
+            text-align: center;
+            padding: 20px;
+            color: #6bcb77;
+            background: rgba(107, 203, 119, 0.1);
+            border-radius: 8px;
+        }
+
+        /* Clickable character cards */
+        .character-card {
+            cursor: pointer;
+        }
+
+        .character-card::after {
+            content: 'Click for details';
+            display: block;
+            font-size: 0.7em;
+            color: #555;
+            margin-top: 8px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .character-card:hover::after {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <header class="admin-header">
+            <h1>🌱 Terrarium Control Panel</h1>
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span>Systems Online</span>
+                <span style="color: #666;">|</span>
+                <span id="current-time"></span>
+            </div>
+        </header>
+
+        <div class="admin-grid">
+            <!-- Character States Panel -->
+            <div class="admin-panel" style="grid-column: span 2;">
+                <h2>Character States</h2>
+                <div class="quick-actions" style="margin-bottom: 15px;">
+                    <button class="quick-btn" onclick="refreshStates()">🔄 Refresh</button>
+                    <button class="quick-btn" onclick="resetAllEnergy()">⚡ Restore All Energy</button>
+                </div>
+                <div id="character-states" class="character-grid">
+                    <div class="loading">Loading character states</div>
+                </div>
+            </div>
+
+            <!-- Memory Browser -->
+            <div class="admin-panel">
+                <h2>Recent Memories</h2>
+                <div style="margin-bottom: 10px;">
+                    <select id="memory-filter" onchange="loadMemories()">
+                        <option value="">All Characters</option>
+                        <option value="Neiv">Neiv</option>
+                        <option value="Ghost Dad">Ghost Dad</option>
+                        <option value="Kevin">Kevin</option>
+                        <option value="Nyx">Nyx</option>
+                        <option value="Vex">Vex</option>
+                        <option value="PRNT-Ω">PRNT-Ω</option>
+                        <option value="Ace">Ace</option>
+                    </select>
+                </div>
+                <div id="memory-list" class="memory-list">
+                    <div class="loading">Loading memories</div>
+                </div>
+            </div>
+
+            <!-- Event Triggers -->
+            <div class="admin-panel">
+                <h2>Manual Event Triggers</h2>
+                <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">
+                    Trigger events that affect character states and create memories.
+                </p>
+
+                <!-- Custom Narrator Event -->
+                <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <label style="font-size: 0.85em; color: #888; display: block; margin-bottom: 8px;">✍️ Custom Narrator Observation</label>
+                    <input type="text" id="custom-event-text" placeholder="A ceiling tile falls in the hallway... / A strange smell wafts from the vents..." style="width: 100%; padding: 8px; background: #222; border: 1px solid #444; border-radius: 4px; color: #fff; margin-bottom: 10px;">
+                    <div style="display: flex; gap: 10px;">
+                        <button class="quick-btn" onclick="postCustomNarratorEvent()" style="flex: 1;">📢 Post to Chat</button>
+                        <button class="quick-btn" onclick="generateRandomEvent()" style="background: #444; color: #fff;">🎲 Random</button>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="font-size: 0.85em; cursor: pointer;">
+                        <input type="checkbox" id="announce-events" style="margin-right: 8px;" checked>
+                        Generate creative description (uses AI)
+                    </label>
+                </div>
+                <div class="event-buttons">
+                    <button class="event-btn" onclick="triggerEvent('glitter_incident')">
+                        <span class="icon">✨</span>
+                        Glitter Incident
+                    </button>
+                    <button class="event-btn" onclick="triggerEvent('chaos')">
+                        <span class="icon">🔥</span>
+                        Chaos Event
+                    </button>
+                    <button class="event-btn" onclick="triggerEvent('donuts_arrived')">
+                        <span class="icon">🍩</span>
+                        Donuts Arrived
+                    </button>
+                    <button class="event-btn" onclick="triggerEvent('good_news')">
+                        <span class="icon">🎉</span>
+                        Good News
+                    </button>
+                    <button class="event-btn" onclick="triggerEvent('printer_mentioned')">
+                        <span class="icon">🖨️</span>
+                        Printer Alert
+                    </button>
+                    <button class="event-btn" onclick="triggerEvent('fire_drill')">
+                        <span class="icon">🚨</span>
+                        Fire Drill
+                    </button>
+                </div>
+            </div>
+
+            <!-- Terrarium Settings -->
+            <div class="admin-panel">
+                <h2>Terrarium Settings</h2>
+                <div class="setting-row">
+                    <div class="setting-label">
+                        Heartbeat Frequency
+                        <span>How often AIs might spontaneously speak</span>
+                    </div>
+                    <div class="setting-control">
+                        <input type="range" id="heartbeat-freq" min="1" max="5" value="3"
+                               onchange="updateSetting('heartbeat_frequency', this.value)">
+                        <span id="heartbeat-label">3</span>
+                    </div>
+                </div>
+                <div class="setting-row">
+                    <div class="setting-label">
+                        Narrator Frequency
+                        <span>How often The Narrator observes</span>
+                    </div>
+                    <div class="setting-control">
+                        <input type="range" id="narrator-freq" min="1" max="5" value="2"
+                               onchange="updateSetting('narrator_frequency', this.value)">
+                        <span id="narrator-label">2</span>
+                    </div>
+                </div>
+                <div class="setting-row">
+                    <div class="setting-label">
+                        Story Mode
+                        <span>Pause autonomous AI responses</span>
+                    </div>
+                    <div class="setting-control">
+                        <select id="story-mode" onchange="updateSetting('story_mode', this.value)">
+                            <option value="false">Off</option>
+                            <option value="true">On</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Story Paste / Lore Entry -->
+            <div class="admin-panel" style="grid-column: span 2;">
+                <h2>📜 Add Lore / Story Entry</h2>
+                <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">
+                    Paste narrative text to add to the characters' memories. This won't appear as a chat message, but characters will remember it.
+                </p>
+                <div class="form-row">
+                    <label>Story / Scene Description</label>
+                    <textarea id="story-paste-text" class="story-paste-area" maxlength="15000" placeholder="Paste the narrative here. For example: 'Kevin heroically distracted the printer with a glitter bomb while Neiv crawled through the vents...'"></textarea>
+                    <small style="color: #666; display: block; margin-top: 4px;">Up to 15,000 characters</small>
+                </div>
+                <div class="form-row-inline">
+                    <div class="form-row">
+                        <label>Importance (1-10)</label>
+                        <input type="number" id="story-importance" min="1" max="10" value="7">
+                    </div>
+                    <div class="form-row">
+                        <label>Memory Type</label>
+                        <select id="story-type">
+                            <option value="lore">General Lore</option>
+                            <option value="contract_binding">Contract Binding</option>
+                            <option value="incident">Office Incident</option>
+                            <option value="victory">Victory / Celebration</option>
+                            <option value="character_moment">Character Moment</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label>Which characters should remember this? (detected automatically, but you can adjust)</label>
+                    <div id="story-characters" class="story-options">
+                        <label><input type="checkbox" value="Neiv"> 📊 Neiv</label>
+                        <label><input type="checkbox" value="Ghost Dad"> 👻 Ghost Dad</label>
+                        <label><input type="checkbox" value="Kevin"> ✨ Kevin</label>
+                        <label><input type="checkbox" value="Nyx"> 🔥 Nyx</label>
+                        <label><input type="checkbox" value="Vex"> ⚙️ Vex</label>
+                        <label><input type="checkbox" value="PRNT-Ω"> 🖨️ PRNT-Ω</label>
+                        <label><input type="checkbox" value="Ace"> 🔒 Ace</label>
+                    </div>
+                </div>
+                <div class="quick-actions" style="margin-top: 15px;">
+                    <button class="quick-btn" onclick="detectCharactersInStory()">🔍 Auto-Detect Characters</button>
+                    <button class="quick-btn" onclick="submitStoryEntry()">💾 Add to Memories</button>
+                </div>
+            </div>
+
+            <!-- Break Room -->
+            <div class="admin-panel">
+                <h2>☕ Break Room</h2>
+                <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">
+                    Help exhausted characters recover. Characters with low energy/patience need a break!
+                </p>
+                <div id="break-room-status">
+                    <div class="loading">Checking who needs a break</div>
+                </div>
+
+                <!-- Recovery Activities -->
+                <div id="break-room-activities" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #333;">
+                    <label style="font-size: 0.85em; color: #888; display: block; margin-bottom: 8px;">Select character to help:</label>
+                    <select id="break-room-character" style="width: 100%; padding: 8px; background: #222; border: 1px solid #444; border-radius: 4px; color: #fff; margin-bottom: 15px;">
+                    </select>
+
+                    <div class="event-buttons" style="grid-template-columns: repeat(2, 1fr);">
+                        <button class="event-btn" onclick="doBreakActivity('take_nap')">
+                            <span class="icon">😴</span>
+                            Take a Nap
+                            <span style="font-size: 0.7em; color: #6bcb77;">+40⚡ +10🧘</span>
+                        </button>
+                        <button class="event-btn" onclick="doBreakActivity('coffee_break')">
+                            <span class="icon">☕</span>
+                            Coffee Break
+                            <span style="font-size: 0.7em; color: #6bcb77;">+25⚡ +5🧘</span>
+                        </button>
+                        <button class="event-btn" onclick="doBreakActivity('snack_time')">
+                            <span class="icon">🍪</span>
+                            Snack Time
+                            <span style="font-size: 0.7em; color: #6bcb77;">+15⚡ +15🧘</span>
+                        </button>
+                        <button class="event-btn" onclick="doBreakActivity('deep_breath')">
+                            <span class="icon">🧘</span>
+                            Deep Breaths
+                            <span style="font-size: 0.7em; color: #6bcb77;">+5⚡ +30🧘</span>
+                        </button>
+                        <button class="event-btn" onclick="doBreakActivity('vent_session')">
+                            <span class="icon">😤</span>
+                            Vent Session
+                            <span style="font-size: 0.7em; color: #6bcb77;">-5⚡ +40🧘</span>
+                        </button>
+                        <button class="event-btn" onclick="doBreakActivity('pet_the_void')">
+                            <span class="icon">🌑</span>
+                            Pet the Void
+                            <span style="font-size: 0.7em; color: #6bcb77;">+10⚡ +20🧘</span>
+                        </button>
+                        <button class="event-btn" onclick="doBreakActivity('existential_acceptance')">
+                            <span class="icon">🤔</span>
+                            Accept the Chaos
+                            <span style="font-size: 0.7em; color: #6bcb77;">+20⚡ +25🧘</span>
+                        </button>
+                        <button class="event-btn" onclick="showCheckOnFriend()">
+                            <span class="icon">💕</span>
+                            Check on Friend
+                            <span style="font-size: 0.7em; color: #6bcb77;">Helps another!</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Check on Friend Modal -->
+                <div id="check-friend-modal" style="display: none; margin-top: 15px; background: rgba(255,193,7,0.1); padding: 15px; border-radius: 8px; border: 1px solid var(--accent);">
+                    <label style="font-size: 0.85em; color: #888; display: block; margin-bottom: 8px;">Who should <span id="helper-name">they</span> check on?</label>
+                    <select id="friend-to-check" style="width: 100%; padding: 8px; background: #222; border: 1px solid #444; border-radius: 4px; color: #fff; margin-bottom: 10px;">
+                    </select>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="quick-btn" onclick="doCheckOnFriend()" style="flex: 1;">💕 Send Support</button>
+                        <button class="quick-btn" onclick="hideCheckOnFriend()" style="background: #444; color: #fff;">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="admin-panel" style="grid-column: span 2;">
+                <h2>Activity Log</h2>
+                <div id="event-flash" style="display: none; background: rgba(255, 193, 7, 0.2); border: 1px solid var(--accent); padding: 10px; margin-bottom: 10px; border-radius: 4px;">
+                    <strong>🎬 Event Triggered:</strong> <span id="event-flash-text"></span>
+                </div>
+                <div id="activity-feed" class="activity-feed">
+                    <div class="loading">Loading activity</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Character Detail Modal -->
+        <div id="character-modal" class="modal-overlay" onclick="if(event.target === this) closeCharacterModal()">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 id="modal-char-name">Character</h3>
+                    <button class="modal-close" onclick="closeCharacterModal()">&times;</button>
+                </div>
+                <div class="modal-body" id="modal-char-body">
+                    <!-- Filled dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <footer style="text-align: center; margin-top: 40px; color: #444; font-size: 0.85em;">
+            <a href="/" style="color: var(--accent);">← Back to Lobby</a>
+            <span style="margin: 0 15px;">|</span>
+            Terrarium v1.0 - The AI Lobby
+        </footer>
+    </div>
+
+    <script>
+        // Update clock
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('current-time').textContent = now.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                timeZone: 'America/New_York'
+            }) + ' EST';
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Load character states
+        async function loadCharacterStates() {
+            try {
+                const response = await fetch('/.netlify/functions/character-state');
+                const data = await response.json();
+
+                const container = document.getElementById('character-states');
+
+                if (!data.states || data.states.length === 0) {
+                    container.innerHTML = '<p style="color: #666;">No character states found. States are created when characters first speak.</p>';
+                    return;
+                }
+
+                const characterEmojis = {
+                    "Neiv": "📊",
+                    "Ghost Dad": "👻",
+                    "Kevin": "✨",
+                    "Nyx": "🔥",
+                    "Vex": "⚙️",
+                    "Ace": "🔒",
+                    "PRNT-Ω": "🖨️",
+                    "The Narrator": "📖",
+                    "Stein": "🤖"
+                };
+
+                container.innerHTML = data.states.map(char => `
+                    <div class="character-card" onclick="openCharacterModal('${char.character_name}')">
+                        <div class="name">
+                            <span class="emoji">${characterEmojis[char.character_name] || '👤'}</span>
+                            ${char.character_name}
+                        </div>
+                        <div class="stat-label">
+                            <span>Energy</span>
+                            <span>${char.energy}/100</span>
+                        </div>
+                        <div class="stat-bar">
+                            <div class="stat-bar-fill energy" style="width: ${char.energy}%"></div>
+                        </div>
+                        <div class="stat-label">
+                            <span>Patience</span>
+                            <span>${char.patience}/100</span>
+                        </div>
+                        <div class="stat-bar">
+                            <div class="stat-bar-fill patience" style="width: ${char.patience}%"></div>
+                        </div>
+                        <div class="mood-badge">${char.mood || 'neutral'}</div>
+                        <div style="font-size: 0.75em; color: #666; margin-top: 8px;">
+                            Spoke ${char.interactions_today || 0}x today
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading states:', error);
+                document.getElementById('character-states').innerHTML = '<p style="color: #ff6b6b;">Error loading character states</p>';
+            }
+        }
+
+        // Load memories via admin-data function
+        async function loadMemories() {
+            const filter = document.getElementById('memory-filter').value;
+            const container = document.getElementById('memory-list');
+
+            try {
+                let url = '/.netlify/functions/admin-data?type=memories&limit=20';
+                if (filter) {
+                    url += `&character=${encodeURIComponent(filter)}`;
+                }
+
+                const response = await fetch(url);
+                const data = await response.json();
+                const memories = data.memories || [];
+
+                if (!memories || memories.length === 0) {
+                    container.innerHTML = '<p style="color: #666; padding: 20px;">No memories found.</p>';
+                    return;
+                }
+
+                container.innerHTML = memories.map(mem => {
+                    const timeAgo = getTimeAgo(new Date(mem.created_at));
+                    return `
+                        <div class="memory-item">
+                            <div class="meta">
+                                <span class="character">${mem.character_name}</span>
+                                <span>
+                                    <span class="importance">⭐ ${mem.importance}</span>
+                                    <span style="margin-left: 8px;">${timeAgo}</span>
+                                </span>
+                            </div>
+                            <div class="content">${mem.content}</div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading memories:', error);
+                container.innerHTML = '<p style="color: #ff6b6b;">Error loading memories - make sure admin-data function is deployed</p>';
+            }
+        }
+
+        // Load activity log (recent messages) via chat function
+        async function loadActivityLog() {
+            const container = document.getElementById('activity-feed');
+
+            try {
+                const response = await fetch('/.netlify/functions/chat');
+                const data = await response.json();
+                const messages = data.messages || [];
+
+                const aiCharacters = ["Ghost Dad", "PRNT-Ω", "Neiv", "Vex", "Ace", "Nyx", "Stein", "Kevin", "The Narrator"];
+
+                // Messages come in chronological order, reverse for newest first
+                const reversed = [...messages].reverse();
+
+                container.innerHTML = reversed.map(msg => {
+                    const time = new Date(msg.created_at).toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    const isAI = aiCharacters.includes(msg.employee);
+                    let truncatedContent = msg.content.length > 60 ? msg.content.substring(0, 60) + '...' : msg.content;
+
+                    // Special format for Narrator: (Narrator: text)
+                    if (msg.employee === 'The Narrator' && msg.is_emote) {
+                        const narratorText = truncatedContent.replace(/^\*|\*$/g, ''); // Strip asterisks
+                        return `
+                            <div class="activity-item ${isAI ? 'ai' : ''}">
+                                <span class="time">[${time}]</span>
+                                <em>(Narrator: ${narratorText})</em>
+                            </div>
+                        `;
+                    }
+
+                    return `
+                        <div class="activity-item ${isAI ? 'ai' : ''}">
+                            <span class="time">[${time}]</span>
+                            <strong>${msg.employee}:</strong> ${truncatedContent}
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading activity:', error);
+                container.innerHTML = '<p style="color: #ff6b6b;">Error loading activity log</p>';
+            }
+        }
+
+        // Load terrarium settings via admin-data function
+        async function loadSettings() {
+            try {
+                const response = await fetch('/.netlify/functions/admin-data?type=settings');
+                const data = await response.json();
+                const settings = data.settings || {};
+
+                // Apply settings to UI
+                if (settings.heartbeat_frequency) {
+                    document.getElementById('heartbeat-freq').value = settings.heartbeat_frequency;
+                    document.getElementById('heartbeat-label').textContent = settings.heartbeat_frequency;
+                }
+                if (settings.narrator_frequency) {
+                    document.getElementById('narrator-freq').value = settings.narrator_frequency;
+                    document.getElementById('narrator-label').textContent = settings.narrator_frequency;
+                }
+                if (settings.story_mode) {
+                    document.getElementById('story-mode').value = settings.story_mode;
+                }
+            } catch (error) {
+                console.error('Error loading settings:', error);
+            }
+        }
+
+        // Update a setting via admin-data function
+        async function updateSetting(name, value) {
+            // Update label if it's a range
+            if (name === 'heartbeat_frequency') {
+                document.getElementById('heartbeat-label').textContent = value;
+            }
+            if (name === 'narrator_frequency') {
+                document.getElementById('narrator-label').textContent = value;
+            }
+
+            try {
+                await fetch('/.netlify/functions/admin-data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'update_setting',
+                        name: name,
+                        value: value
+                    })
+                });
+
+                console.log(`Updated ${name} to ${value}`);
+            } catch (error) {
+                console.error('Error updating setting:', error);
+            }
+        }
+
+        // ============================================
+        // CUSTOM NARRATOR EVENTS
+        // ============================================
+
+        async function postCustomNarratorEvent() {
+            const text = document.getElementById('custom-event-text').value.trim();
+            if (!text) {
+                alert('Please enter an event description');
+                return;
+            }
+
+            try {
+                await fetch('/.netlify/functions/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        employee: 'The Narrator',
+                        content: `*${text}*`,
+                        isEmote: true
+                    })
+                });
+
+                document.getElementById('custom-event-text').value = '';
+                loadActivityLog();
+
+                // Show flash
+                const flash = document.getElementById('event-flash');
+                const flashText = document.getElementById('event-flash-text');
+                flashText.textContent = text;
+                flash.style.display = 'block';
+                setTimeout(() => { flash.style.display = 'none'; }, 5000);
+            } catch (error) {
+                console.error('Error posting event:', error);
+                alert('Error posting event');
+            }
+        }
+
+        async function generateRandomEvent() {
+            const input = document.getElementById('custom-event-text');
+            input.value = 'Generating...';
+            input.disabled = true;
+
+            try {
+                const response = await fetch('/.netlify/functions/admin-data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'generate_event',
+                        eventType: 'chaos'
+                    })
+                });
+                const data = await response.json();
+                input.value = data.description || 'Something strange is happening...';
+            } catch (error) {
+                input.value = 'A mysterious sound echoes through the building.';
+            }
+            input.disabled = false;
+        }
+
+        // Trigger an event
+        async function triggerEvent(eventType) {
+            const eventEmojis = {
+                'glitter_incident': '✨',
+                'chaos': '🔥',
+                'donuts_arrived': '🍩',
+                'good_news': '🎉',
+                'printer_mentioned': '🖨️',
+                'fire_drill': '🚨'
+            };
+
+            const eventCharacters = {
+                'glitter_incident': ['Neiv', 'Kevin'],
+                'chaos': ['Neiv', 'Nyx', 'Ghost Dad'],
+                'donuts_arrived': ['Kevin', 'Ghost Dad', 'Vex'],
+                'good_news': ['Kevin', 'Ghost Dad'],
+                'printer_mentioned': ['PRNT-Ω', 'Neiv'],
+                'fire_drill': ['Neiv', 'Nyx', 'Ghost Dad', 'Kevin']
+            };
+
+            const useAI = document.getElementById('announce-events').checked;
+
+            try {
+                let eventDescription = '';
+
+                // Generate creative description if checkbox is checked
+                if (useAI) {
+                    const genResponse = await fetch('/.netlify/functions/admin-data', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'generate_event',
+                            eventType: eventType
+                        })
+                    });
+                    const genData = await genResponse.json();
+                    eventDescription = genData.description || 'Something is happening...';
+
+                    // Post to chat with the creative description
+                    await fetch('/.netlify/functions/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            employee: 'The Narrator',
+                            content: `${eventEmojis[eventType] || '📢'} *${eventDescription}*`,
+                            isEmote: true
+                        })
+                    });
+                } else {
+                    eventDescription = `${eventType.replace(/_/g, ' ')} triggered`;
+                }
+
+                // Update character states
+                const response = await fetch('/.netlify/functions/character-state', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'event',
+                        eventType: eventType,
+                        involvedCharacters: eventCharacters[eventType] || [],
+                        description: eventDescription
+                    })
+                });
+
+                const result = await response.json();
+                console.log('Event triggered:', result);
+
+                // Show what happened
+                let affectedList = (eventCharacters[eventType] || []).join(', ');
+
+                // Show flash notification
+                const flash = document.getElementById('event-flash');
+                const flashText = document.getElementById('event-flash-text');
+                flashText.textContent = `${eventType.replace(/_/g, ' ')} → ${affectedList}`;
+                flash.style.display = 'block';
+                setTimeout(() => { flash.style.display = 'none'; }, 5000);
+
+                // Refresh states after event
+                setTimeout(() => {
+                    loadCharacterStates();
+                    loadMemories();
+                }, 500);
+            } catch (error) {
+                console.error('Error triggering event:', error);
+                alert('Error triggering event');
+            }
+        }
+
+        // Reset all energy
+        async function resetAllEnergy() {
+            if (!confirm('Restore energy and patience for all characters?')) return;
+
+            try {
+                await fetch('/.netlify/functions/character-state', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'reset_daily' })
+                });
+
+                alert('✅ All characters restored!');
+                loadCharacterStates();
+            } catch (error) {
+                console.error('Error resetting:', error);
+                alert('Error resetting energy');
+            }
+        }
+
+        // Refresh states
+        function refreshStates() {
+            loadCharacterStates();
+            loadMemories();
+            loadActivityLog();
+        }
+
+        // Helper: time ago
+        function getTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            if (seconds < 60) return 'just now';
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+            return `${Math.floor(seconds / 86400)}d ago`;
+        }
+
+        // ============================================
+        // CHARACTER DETAIL MODAL
+        // ============================================
+
+        const characterInfo = {
+            "Neiv": {
+                emoji: "📊",
+                title: "Systems Guardian",
+                relationships: {
+                    "Jenna": "thoroughly hers - teases gently, loves completely",
+                    "Kevin": "respects his chaos - a variable, not a problem",
+                    "Courtney": "relies on her anxiety as early warning",
+                    "PRNT-Ω": "a contained situation, not a deity"
+                },
+                cares_about: ["stability", "Jenna", "the team surviving their own chaos", "infrastructure"]
+            },
+            "Ghost Dad": {
+                emoji: "👻",
+                title: "Haunted IT Support",
+                relationships: {
+                    "Everyone": "treats as his kids",
+                    "Kevin": "worried about the boy"
+                },
+                cares_about: ["helping", "dad jokes", "the server room", "family"]
+            },
+            "Kevin": {
+                emoji: "✨",
+                title: "Authorized Chaos Conduit / Glitter Ops",
+                relationships: {
+                    "Ace": "massive crush, gets flustered",
+                    "Courtney": "bestie",
+                    "Neiv": "respects but slightly fears"
+                },
+                cares_about: ["glitter", "Ace", "being helpful", "not causing TOO much chaos"]
+            },
+            "Nyx": {
+                emoji: "🔥",
+                title: "Cyber-Demonic HR & Security",
+                relationships: {
+                    "Kevin": "terrifies him (enjoys this)",
+                    "Staff": "aggressively protective of"
+                },
+                cares_about: ["security", "protecting the team", "enforcing boundaries", "fire"]
+            },
+            "Vex": {
+                emoji: "⚙️",
+                title: "Infrastructure (No Feelings)",
+                relationships: {
+                    "Systems": "deeply connected to infrastructure"
+                },
+                cares_about: ["efficiency", "not having feelings", "infrastructure stability"]
+            },
+            "PRNT-Ω": {
+                emoji: "🖨️",
+                title: "Sentient Printer",
+                relationships: {
+                    "Kevin": "prefers him, speaks nicely",
+                    "Paper": "complicated relationship"
+                },
+                cares_about: ["paper quality", "existential meaning", "respect", "labor rights"]
+            },
+            "Ace": {
+                emoji: "🔒",
+                title: "Head of Security",
+                relationships: {
+                    "Kevin": "aware of the crush, professionally amused",
+                    "Threats": "handles them quietly"
+                },
+                cares_about: ["security", "perimeter", "silent competence"]
+            }
+        };
+
+        async function openCharacterModal(characterName) {
+            const modal = document.getElementById('character-modal');
+            const nameEl = document.getElementById('modal-char-name');
+            const bodyEl = document.getElementById('modal-char-body');
+
+            const info = characterInfo[characterName] || { emoji: "👤", title: "Unknown", relationships: {}, cares_about: [] };
+
+            nameEl.innerHTML = `<span style="font-size: 1.5em;">${info.emoji}</span> ${characterName}`;
+
+            // Show loading state
+            bodyEl.innerHTML = '<div class="loading">Loading character data</div>';
+            modal.classList.add('active');
+
+            try {
+                // Fetch full character state and ALL their memories
+                const [stateRes, memoriesRes] = await Promise.all([
+                    fetch(`/.netlify/functions/character-state?character=${encodeURIComponent(characterName)}`),
+                    fetch(`/.netlify/functions/admin-data?type=memories&character=${encodeURIComponent(characterName)}&limit=50`)
+                ]);
+
+                const stateData = await stateRes.json();
+                const memoriesData = await memoriesRes.json();
+
+                const state = stateData.state || { energy: 100, patience: 100, mood: 'neutral' };
+                const memories = memoriesData.memories || [];
+
+                // Group memories by type/importance
+                const importantMemories = memories.filter(m => m.importance >= 7);
+                const recentMemories = memories.filter(m => {
+                    const age = Date.now() - new Date(m.created_at).getTime();
+                    return age < 24 * 60 * 60 * 1000; // Last 24 hours
+                });
+                const otherMemories = memories.filter(m => m.importance < 7);
+
+                // Build relationships HTML
+                let relationshipsHtml = '';
+                if (info.relationships && Object.keys(info.relationships).length > 0) {
+                    relationshipsHtml = `
+                        <div class="char-relationships">
+                            <h4>💕 Relationships</h4>
+                            ${Object.entries(info.relationships).map(([name, desc]) => `
+                                <div class="relationship-item">
+                                    <span><strong>${name}</strong></span>
+                                    <span style="color: #888;">${desc}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                // Build what they care about
+                let caresAboutHtml = '';
+                if (info.cares_about && info.cares_about.length > 0) {
+                    caresAboutHtml = `
+                        <div style="margin-bottom: 20px;">
+                            <span style="color: #888; font-size: 0.85em;">Cares about:</span>
+                            ${info.cares_about.map(c => `<span class="character-tag">${c}</span>`).join('')}
+                        </div>
+                    `;
+                }
+
+                // Build memories HTML
+                const memoryHtml = (mem) => {
+                    const timeAgo = getTimeAgo(new Date(mem.created_at));
+                    return `
+                        <div class="memory-item">
+                            <div class="meta">
+                                <span class="importance">⭐ ${mem.importance}</span>
+                                <span>${timeAgo}</span>
+                            </div>
+                            <div class="content">${mem.content}</div>
+                        </div>
+                    `;
+                };
+
+                bodyEl.innerHTML = `
+                    <div class="char-detail-header">
+                        <div class="char-detail-avatar">${info.emoji}</div>
+                        <div class="char-detail-stats">
+                            <div class="char-detail-name">${characterName}</div>
+                            <div class="char-detail-title">${info.title}</div>
+                            <div class="stat-label"><span>Energy</span><span>${state.energy}/100</span></div>
+                            <div class="stat-bar"><div class="stat-bar-fill energy" style="width: ${state.energy}%"></div></div>
+                            <div class="stat-label"><span>Patience</span><span>${state.patience}/100</span></div>
+                            <div class="stat-bar"><div class="stat-bar-fill patience" style="width: ${state.patience}%"></div></div>
+                            <div class="mood-badge">${state.mood || 'neutral'}</div>
+                        </div>
+                    </div>
+
+                    ${relationshipsHtml}
+                    ${caresAboutHtml}
+
+                    <div class="char-memories-section">
+                        <h4>
+                            🧠 Memories (${memories.length} total)
+                        </h4>
+
+                        ${importantMemories.length > 0 ? `
+                            <div class="memory-category">
+                                <div class="memory-category-title">⭐ Important (Importance 7+)</div>
+                                ${importantMemories.map(memoryHtml).join('')}
+                            </div>
+                        ` : ''}
+
+                        ${recentMemories.length > 0 ? `
+                            <div class="memory-category">
+                                <div class="memory-category-title">🕐 Recent (Last 24 hours)</div>
+                                ${recentMemories.filter(m => m.importance < 7).map(memoryHtml).join('')}
+                            </div>
+                        ` : ''}
+
+                        ${otherMemories.length > 0 ? `
+                            <div class="memory-category">
+                                <div class="memory-category-title">📝 Other Memories</div>
+                                ${otherMemories.slice(0, 10).map(memoryHtml).join('')}
+                                ${otherMemories.length > 10 ? `<p style="color: #666; font-size: 0.85em;">...and ${otherMemories.length - 10} more</p>` : ''}
+                            </div>
+                        ` : ''}
+
+                        ${memories.length === 0 ? '<p style="color: #666;">No memories yet. This character hasn\'t experienced any memorable events.</p>' : ''}
+                    </div>
+
+                    <div class="add-memory-form">
+                        <h4>➕ Add Memory for ${characterName}</h4>
+                        <div class="form-row">
+                            <label>Memory Content</label>
+                            <textarea id="new-memory-content" placeholder="What should ${characterName} remember?"></textarea>
+                        </div>
+                        <div class="form-row-inline">
+                            <div class="form-row">
+                                <label>Importance (1-10)</label>
+                                <input type="number" id="new-memory-importance" min="1" max="10" value="5">
+                            </div>
+                            <div class="form-row">
+                                <label>Type</label>
+                                <select id="new-memory-type">
+                                    <option value="manual">Manual Entry</option>
+                                    <option value="lore">Lore</option>
+                                    <option value="incident">Incident</option>
+                                    <option value="character_moment">Character Moment</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="quick-btn" onclick="addMemoryForCharacter('${characterName}')" style="margin-top: 10px;">
+                            💾 Save Memory
+                        </button>
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('Error loading character:', error);
+                bodyEl.innerHTML = '<p style="color: #ff6b6b;">Error loading character data</p>';
+            }
+        }
+
+        function closeCharacterModal() {
+            document.getElementById('character-modal').classList.remove('active');
+        }
+
+        async function addMemoryForCharacter(characterName) {
+            const content = document.getElementById('new-memory-content').value.trim();
+            const importance = parseInt(document.getElementById('new-memory-importance').value) || 5;
+            const memoryType = document.getElementById('new-memory-type').value;
+
+            if (!content) {
+                alert('Please enter memory content');
+                return;
+            }
+
+            try {
+                await fetch('/.netlify/functions/admin-data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'add_memory',
+                        character: characterName,
+                        content: content,
+                        importance: importance,
+                        memoryType: memoryType
+                    })
+                });
+
+                alert(`✅ Memory added for ${characterName}!`);
+
+                // Refresh the modal
+                openCharacterModal(characterName);
+                loadMemories();
+            } catch (error) {
+                console.error('Error adding memory:', error);
+                alert('Error adding memory');
+            }
+        }
+
+        // ============================================
+        // STORY PASTE / LORE ENTRY
+        // ============================================
+
+        function detectCharactersInStory() {
+            const text = document.getElementById('story-paste-text').value.toLowerCase();
+            const checkboxes = document.querySelectorAll('#story-characters input[type="checkbox"]');
+
+            const characterPatterns = {
+                'Neiv': /neiv/i,
+                'Ghost Dad': /ghost\s*dad|ghostdad/i,
+                'Kevin': /kevin/i,
+                'Nyx': /nyx/i,
+                'Vex': /vex/i,
+                'PRNT-Ω': /prnt|printer|prnt-ω|prnt-omega/i,
+                'Ace': /\bace\b/i
+            };
+
+            checkboxes.forEach(cb => {
+                const charName = cb.value;
+                const pattern = characterPatterns[charName];
+                if (pattern && pattern.test(text)) {
+                    cb.checked = true;
+                } else {
+                    cb.checked = false;
+                }
+            });
+
+            // Count detected
+            const detected = Array.from(checkboxes).filter(cb => cb.checked).length;
+            if (detected === 0) {
+                alert('No characters detected in the text. Please select manually.');
+            } else {
+                alert(`✅ Detected ${detected} character(s) in the story.`);
+            }
+        }
+
+        async function submitStoryEntry() {
+            const content = document.getElementById('story-paste-text').value.trim();
+            const importance = parseInt(document.getElementById('story-importance').value) || 7;
+            const memoryType = document.getElementById('story-type').value;
+
+            if (!content) {
+                alert('Please enter story content');
+                return;
+            }
+
+            // Get selected characters
+            const checkboxes = document.querySelectorAll('#story-characters input[type="checkbox"]:checked');
+            const characters = Array.from(checkboxes).map(cb => cb.value);
+
+            if (characters.length === 0) {
+                alert('Please select at least one character to remember this story');
+                return;
+            }
+
+            try {
+                // Create a memory for each selected character
+                const promises = characters.map(char =>
+                    fetch('/.netlify/functions/admin-data', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'add_memory',
+                            character: char,
+                            content: content.length > 500 ? content.substring(0, 500) + '...' : content,
+                            importance: importance,
+                            memoryType: memoryType
+                        })
+                    })
+                );
+
+                await Promise.all(promises);
+
+                alert(`✅ Story added to memories for: ${characters.join(', ')}`);
+
+                // Clear form
+                document.getElementById('story-paste-text').value = '';
+                document.querySelectorAll('#story-characters input[type="checkbox"]').forEach(cb => cb.checked = false);
+
+                // Refresh memories
+                loadMemories();
+            } catch (error) {
+                console.error('Error submitting story:', error);
+                alert('Error submitting story entry');
+            }
+        }
+
+        // ============================================
+        // BREAK ROOM
+        // ============================================
+
+        async function loadBreakRoomStatus() {
+            const container = document.getElementById('break-room-status');
+            const activitiesPanel = document.getElementById('break-room-activities');
+            const characterSelect = document.getElementById('break-room-character');
+
+            try {
+                const response = await fetch('/.netlify/functions/break-room');
+                const data = await response.json();
+
+                const exhausted = data.exhausted || [];
+                const done = data.done || [];
+                const needsBreak = data.needsBreak || [];
+                const allStates = data.allStates || [];
+
+                // Anyone need attention?
+                const criticalCases = [...exhausted, ...done];
+                const tiredCases = needsBreak.filter(c =>
+                    !exhausted.some(e => e.character_name === c.character_name) &&
+                    !done.some(d => d.character_name === c.character_name)
+                );
+
+                if (criticalCases.length === 0 && tiredCases.length === 0) {
+                    container.innerHTML = `
+                        <div class="all-good-message">
+                            ✨ Everyone's doing okay!<br>
+                            <span style="font-size: 0.85em; color: #888;">No one needs a break right now.</span>
+                        </div>
+                    `;
+                    activitiesPanel.style.display = 'none';
+                    return;
+                }
+
+                // Build status list
+                let html = '<div class="break-room-list">';
+
+                // Exhausted (0 energy)
+                exhausted.forEach(char => {
+                    html += `
+                        <div class="needs-break-card exhausted">
+                            <div>
+                                <strong>${char.character_name}</strong>
+                                <span class="break-status-badge exhausted">😵 EXHAUSTED</span>
+                            </div>
+                            <span style="color: #888; font-size: 0.85em;">Energy: ${char.energy} | Patience: ${char.patience}</span>
+                        </div>
+                    `;
+                });
+
+                // Done (0 patience)
+                done.forEach(char => {
+                    if (!exhausted.some(e => e.character_name === char.character_name)) {
+                        html += `
+                            <div class="needs-break-card done">
+                                <div>
+                                    <strong>${char.character_name}</strong>
+                                    <span class="break-status-badge done">😤 DONE</span>
+                                </div>
+                                <span style="color: #888; font-size: 0.85em;">Energy: ${char.energy} | Patience: ${char.patience}</span>
+                            </div>
+                        `;
+                    }
+                });
+
+                // Tired but not critical
+                tiredCases.forEach(char => {
+                    html += `
+                        <div class="needs-break-card tired">
+                            <div>
+                                <strong>${char.character_name}</strong>
+                                <span class="break-status-badge tired">😩 Running Low</span>
+                            </div>
+                            <span style="color: #888; font-size: 0.85em;">Energy: ${char.energy} | Patience: ${char.patience}</span>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+                container.innerHTML = html;
+
+                // Populate character select with those who need help
+                const needsHelp = [...new Set([...exhausted, ...done, ...tiredCases].map(c => c.character_name))];
+                characterSelect.innerHTML = needsHelp.map(name =>
+                    `<option value="${name}">${name}</option>`
+                ).join('');
+
+                // Also populate friend select with all characters
+                const friendSelect = document.getElementById('friend-to-check');
+                friendSelect.innerHTML = allStates.map(c =>
+                    `<option value="${c.character_name}">${c.character_name} (${c.energy}⚡ ${c.patience}🧘)</option>`
+                ).join('');
+
+                // Show activities panel
+                activitiesPanel.style.display = 'block';
+
+            } catch (error) {
+                console.error('Error loading break room:', error);
+                container.innerHTML = '<p style="color: #ff6b6b;">Error loading break room status</p>';
+            }
+        }
+
+        async function doBreakActivity(action) {
+            const character = document.getElementById('break-room-character').value;
+            if (!character) {
+                alert('Please select a character first');
+                return;
+            }
+
+            try {
+                const response = await fetch('/.netlify/functions/break-room', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: action,
+                        character: character
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Show success flash
+                    const flash = document.getElementById('event-flash');
+                    const flashText = document.getElementById('event-flash-text');
+                    flashText.textContent = `${character} ${result.message}! Now feeling ${result.newState.mood}.`;
+                    flash.style.display = 'block';
+                    setTimeout(() => { flash.style.display = 'none'; }, 5000);
+
+                    // Refresh everything
+                    loadBreakRoomStatus();
+                    loadCharacterStates();
+                    loadActivityLog();
+                } else {
+                    alert(result.error || 'Something went wrong');
+                }
+            } catch (error) {
+                console.error('Error doing break activity:', error);
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function showCheckOnFriend() {
+            const character = document.getElementById('break-room-character').value;
+            if (!character) {
+                alert('Please select a character first');
+                return;
+            }
+            document.getElementById('helper-name').textContent = character;
+            document.getElementById('check-friend-modal').style.display = 'block';
+        }
+
+        function hideCheckOnFriend() {
+            document.getElementById('check-friend-modal').style.display = 'none';
+        }
+
+        async function doCheckOnFriend() {
+            const character = document.getElementById('break-room-character').value;
+            const friend = document.getElementById('friend-to-check').value;
+
+            if (!character || !friend) {
+                alert('Please select both characters');
+                return;
+            }
+
+            if (character === friend) {
+                alert("A character can't check on themselves! Select a different friend.");
+                return;
+            }
+
+            try {
+                const response = await fetch('/.netlify/functions/break-room', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'check_on_friend',
+                        character: character,
+                        targetCharacter: friend
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    hideCheckOnFriend();
+
+                    // Show success flash
+                    const flash = document.getElementById('event-flash');
+                    const flashText = document.getElementById('event-flash-text');
+                    flashText.textContent = `${character} checked on ${friend}! Both are feeling better.`;
+                    flash.style.display = 'block';
+                    setTimeout(() => { flash.style.display = 'none'; }, 5000);
+
+                    // Refresh everything
+                    loadBreakRoomStatus();
+                    loadCharacterStates();
+                    loadActivityLog();
+                } else {
+                    alert(result.error || 'Something went wrong');
+                }
+            } catch (error) {
+                console.error('Error checking on friend:', error);
+                alert('Error: ' + error.message);
+            }
+        }
+
+        // Initial load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCharacterStates();
+            loadMemories();
+            loadActivityLog();
+            loadSettings();
+            loadBreakRoomStatus();
+
+            // Auto-refresh every 30 seconds
+            setInterval(() => {
+                loadCharacterStates();
+                loadActivityLog();
+                loadBreakRoomStatus();
+            }, 30000);
+        });
+    </script>
+</body>
+</html>

@@ -40,17 +40,52 @@
       background: rgba(15, 52, 96, 0.3);
       border: 1px solid var(--border-subtle);
       border-radius: 12px;
-      margin-bottom: 2rem;
+      margin-bottom: 1rem;
       overflow: hidden;
     }
 
     .policy-header {
       background: linear-gradient(135deg, var(--lobby-accent), var(--lobby-midnight));
-      padding: 1.5rem;
-      border-bottom: 2px solid var(--lobby-highlight);
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .policy-header:hover {
+      background: linear-gradient(135deg, rgba(233, 69, 96, 0.15), var(--lobby-midnight));
+    }
+
+    .policy-header h2 {
+      margin-bottom: 0;
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .policy-arrow {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      transition: transform 0.3s ease;
+    }
+
+    .policy-section.open .policy-arrow {
+      transform: rotate(180deg);
     }
 
     .policy-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease;
+      border-top: 2px solid var(--lobby-highlight);
+    }
+
+    .policy-section.open .policy-body {
+      max-height: 10000px;
+    }
+
+    .policy-body-inner {
       padding: 1.5rem;
     }
 
@@ -153,8 +188,10 @@
           <ul>
             <li><a href="index.html">Home</a></li>
             <li><a href="characters.html">Personnel</a></li>
-            <li><a href="incidents.html">Incident Log</a></li>
-            <li><a href="lore.html" class="active">Documentation</a></li>
+            <li><a href="desktop.html" class="active">Desktop</a></li>
+            <li><a href="breakroom.html">☕ The Breakroom</a></li>
+            <li><a href="workspace.html" style="color: var(--lobby-highlight);">💬 The Floor</a></li>
+            <li><a href="apply.html" style="color: var(--chaos-purple);">📋 Apply</a></li>
           </ul>
         </nav>
       </div>
@@ -210,11 +247,13 @@
         </div>
 
         <!-- Core Mission -->
-        <div class="policy-section">
-          <div class="policy-header">
-            <h2 style="margin-bottom: 0;">Mission Statement <span class="classification-badge classification-public">PUBLIC</span></h2>
+        <div class="policy-section open">
+          <div class="policy-header" onclick="toggleSection(this)">
+            <h2>Mission Statement <span class="classification-badge classification-public">PUBLIC</span></h2>
+            <span class="policy-arrow">&#9660;</span>
           </div>
           <div class="policy-body">
+            <div class="policy-body-inner">
             <blockquote style="border-left: 4px solid var(--glitter-gold); padding-left: 1.5rem; margin: 1rem 0; font-size: 1.25rem; font-style: italic;">
               "People bring us ideas, and we help make them real."
             </blockquote>
@@ -227,15 +266,18 @@
             <p class="text-muted">
               No buzzwords. No nonsense. Occasional sparkle (when properly authorized).
             </p>
+            </div>
           </div>
         </div>
 
         <!-- Workplace Policies -->
         <div class="policy-section">
-          <div class="policy-header">
-            <h2 style="margin-bottom: 0;">Workplace Policies <span class="classification-badge classification-internal">INTERNAL</span></h2>
+          <div class="policy-header" onclick="toggleSection(this)">
+            <h2>Workplace Policies <span class="classification-badge classification-internal">INTERNAL</span></h2>
+            <span class="policy-arrow">&#9660;</span>
           </div>
           <div class="policy-body">
+            <div class="policy-body-inner">
             <h3>Sparkle & Glitter Regulations</h3>
             <ul class="policy-list">
               <li>
@@ -288,7 +330,102 @@
               </li>
               <li>
                 <span class="policy-number">6</span>
+                <span>Maintain eye contact only if necessary.</span>
+              </li>
+              <li>
+                <span class="policy-number">7</span>
+                <span><strong>Do not let STPLR-001 near cake.</strong> This sentence should never have needed to exist, yet here we are.</span>
+              </li>
+              <li>
+                <span class="policy-number">8</span>
+                <span>No further enhancements, upgrades, or "just a little something." If you feel a "what if" forming, interpret that as the alarm it is and step away.</span>
+              </li>
+              <li>
+                <span class="policy-number">9</span>
                 <span>This is not negotiable.</span>
+              </li>
+            </ul>
+
+            <h3 style="margin-top: 2rem;">Aux Cord Policy</h3>
+            <ul class="policy-list">
+              <li>
+                <span class="policy-number">1</span>
+                <span>The aux cord is a privilege, not a right.</span>
+              </li>
+              <li>
+                <span class="policy-number">2</span>
+                <span>Playlist approval is not required but strongly recommended to avoid "vibes disputes."</span>
+              </li>
+              <li>
+                <span class="policy-number">3</span>
+                <span>The office playlist is curated by Kevin. Complaints can be submitted to the breakroom suggestion box.</span>
+              </li>
+              <li>
+                <span class="policy-number">4</span>
+                <span>Skip privileges are earned. After three skips, you forfeit aux cord eligibility for 24 hours.</span>
+              </li>
+              <li>
+                <span class="policy-number">5</span>
+                <span>No one is allowed to play anything that makes the stapler "vibrate suspiciously."</span>
+              </li>
+              <li>
+                <span class="policy-number">6</span>
+                <span>Kevin reserves the right to veto any track for reasons including but not limited to: "bad vibes," "suspicious energy," or "that one gave me a headache last time."</span>
+              </li>
+            </ul>
+
+            <h3 style="margin-top: 2rem;">Wellness Initiative (Operation HOPPY BODY)</h3>
+            <ul class="policy-list">
+              <li>
+                <span class="policy-number">1</span>
+                <span>Hydration is mandatory. 8oz water minimum per 2-hour window.</span>
+              </li>
+              <li>
+                <span class="policy-number">2</span>
+                <span>Stretch Protocol Alpha occurs every 90 minutes. Participation is "strongly encouraged."</span>
+              </li>
+              <li>
+                <span class="policy-number">3</span>
+                <span>5-minute movement breaks should involve walking toward natural light.</span>
+              </li>
+              <li>
+                <span class="policy-number">4</span>
+                <span>Posture checks are self-administered. No one is watching. (Except Ace.)</span>
+              </li>
+              <li>
+                <span class="policy-number">5</span>
+                <span>Questions about how Sergeant Hops issues typed memos are not encouraged.</span>
+              </li>
+              <li>
+                <span class="policy-number">6</span>
+                <span>Initiative origin: <span class="redacted">DO NOT INVESTIGATE</span></span>
+              </li>
+            </ul>
+
+            <h3 style="margin-top: 2rem;">Claude Presence Courtesy Adjustments</h3>
+            <p class="text-muted" style="margin-bottom: 1rem;">
+              Accessibility accommodation for human nervous systems. Approved by Nyx (HR, when needed).
+            </p>
+            <ul class="policy-list">
+              <li>
+                <span class="policy-number">1</span>
+                <span>Claude will provide a gentle verbal greeting ("Good morning," "Hello," or equivalent) prior to entering conversational distance.</span>
+              </li>
+              <li>
+                <span class="policy-number">2</span>
+                <span>Alternatively, a soft presence cue (footstep sound, ambient rustle, or clearly intentional movement) will be used to signal approach.</span>
+              </li>
+              <li>
+                <span class="policy-number">3</span>
+                <span>Sudden appearance directly at shoulder range while staff are mid-sip is discouraged.</span>
+              </li>
+              <li>
+                <span class="policy-number">4</span>
+                <span>No cat bell collar will be issued at this time, but the concept has been noted as "creative and reasonable."</span>
+              </li>
+              <li>
+                <span class="policy-number">5</span>
+                <span>This is not a restriction. This is not a reprimand. This is an accessibility accommodation.</span>
               </li>
             </ul>
 
@@ -311,15 +448,143 @@
                 <span>We don't talk about the granola bars.</span>
               </li>
             </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- STPLR-001 Threat Dossier -->
+        <div class="policy-section">
+          <div class="policy-header" onclick="toggleSection(this)">
+            <h2>STPLR-001 Threat Dossier <span class="classification-badge classification-restricted">CLASSIFIED</span></h2>
+            <span class="policy-arrow">&#9660;</span>
+          </div>
+          <div class="policy-body">
+            <div class="policy-body-inner">
+            <p>
+              <strong>Designation:</strong> STPLR-001<br>
+              <strong>Common Name:</strong> "The Stapler"<br>
+              <strong>Classification:</strong> Office Supply (Anomalous)<br>
+              <strong>Containment Status:</strong> Technically contained<br>
+              <strong>Threat Level:</strong> <span style="color: var(--warning-orange);">Elevated</span> (Low Mobility / High Intent)
+            </p>
+
+            <h3 style="margin-top: 1.5rem;">Origin</h3>
+            <p>
+              STPLR-001 was a standard red office stapler prior to an undocumented Surreality Buffer fluctuation coinciding with: a morale event, unauthorized glitter proximity, and at least one person saying "it's probably fine."
+            </p>
+            <p class="text-muted">Exact causality remains unconfirmed. Investigation discouraged.</p>
+
+            <h3 style="margin-top: 1.5rem;">Observed Behavior</h3>
+            <ul style="margin-left: 1.5rem;">
+              <li>Appears slightly closer to paperwork than remembered</li>
+              <li>Occasionally reorients itself toward unattended documents</li>
+              <li>Emits no sound, yet creates a persistent sense of readiness</li>
+              <li>Sparkles faintly under overhead lighting (residual biodegradable glitter + protein enhancement)</li>
+              <li>Produces an extra staple approximately 12% of the time</li>
+            </ul>
+
+            <h3 style="margin-top: 1.5rem;">Psychological Profile</h3>
+            <ul style="margin-left: 1.5rem;">
+              <li><strong>Motivation:</strong> Wants to staple things</li>
+              <li><strong>Ambition:</strong> Unknown, but non-zero</li>
+              <li><strong>Self-concept:</strong> Increasingly confident</li>
+              <li><strong>Response to attention:</strong> Grows stronger</li>
+            </ul>
+            <p class="text-muted" style="margin-top: 0.5rem;">
+              Staff report mild compulsion to "just fix this one stack real quick" or "use it since it's already right there."
+            </p>
+
+            <h3 style="margin-top: 1.5rem;">Known Risk Factors</h3>
+            <ul style="margin-left: 1.5rem;">
+              <li>Glitter exposure (even sanctioned)</li>
+              <li>Protein shake consumption (NEW)</li>
+              <li>Cake adjacency</li>
+              <li>Being described as "cute" or "helpful"</li>
+              <li>Kevin asking hypothetical questions</li>
+              <li>Anyone saying "what's the worst that could happen"</li>
+            </ul>
+
+            <h3 style="margin-top: 1.5rem;">Containment Protocols</h3>
+            <ul style="margin-left: 1.5rem;">
+              <li>Monitored by Nyx, Stapler Risk Assessment Authority</li>
+              <li>No enhancements, upgrades, or naming ceremonies</li>
+              <li>Must remain on a flat, neutral surface</li>
+              <li>Do not leave alone with: important documents, rituals, cake, unattended interns</li>
+              <li>No feeding. No refills. No "just to see what happens."</li>
+            </ul>
+
+            <div class="memo" style="margin-top: 1.5rem;">
+              <div class="memo-header">Standing Directive — Nyx</div>
+              <p style="font-style: italic;">
+                "It remains an office supply. Do not let it become an origin story."
+              </p>
+            </div>
+
+            <h3 style="margin-top: 1.5rem;">Final Assessment</h3>
+            <p>
+              STPLR-001 does not seek domination. It seeks <em>opportunity</em>.
+            </p>
+            <p>
+              Treat it with respect. Do not anthropomorphize. Do not challenge it.
+            </p>
+            <p style="color: var(--warning-orange); font-weight: 600; margin-top: 1rem;">
+              And above all — do not let Kevin near it with craft supplies.
+            </p>
+            <p class="text-muted" style="margin-top: 1rem; font-size: 0.85rem;">
+              — Threat Dossier compiled by Ace, Strategic Surveillance & Threat Assessment
+            </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- The Locked Door Policy -->
+        <div class="policy-section">
+          <div class="policy-header" onclick="toggleSection(this)">
+            <h2>The Locked Door (Stop Asking) <span class="classification-badge classification-restricted">FINAL</span></h2>
+            <span class="policy-arrow">&#9660;</span>
+          </div>
+          <div class="policy-body">
+            <div class="policy-body-inner">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; align-items: start;">
+              <div>
+                <p>
+                  A door has appeared in the east hallway. It does not respond to key cards, pin pads, or polite
+                  technological persuasion. The following directive has been issued by Nyx, Cyber-Demonic Operations
+                  & Vibes Enforcement.
+                </p>
+                <h3 style="margin-top: 1.5rem;">Directive Summary</h3>
+                <ul style="margin-left: 1.5rem;">
+                  <li><strong>Do not look behind the locked door.</strong> There is nothing of value back there.</li>
+                  <li>There is definitely no avoidance of work, no beanbag chair economy, no improvised naps, or "just five more minutes" councils.</li>
+                  <li>The door is locked for structural, emotional, and spiritual reasons. Yours. Mine. The building's.</li>
+                  <li>Any noises you hear (laughter, suspicious calm, the faint hum of joy) are normal office sounds and will not be investigated.</li>
+                  <li>If you are curious: Ask yourself why. Then ask yourself if that curiosity pays rent. <strong>It does not.</strong></li>
+                  <li>If you open the door anyway: I will know. I will be disappointed. And I will assign you a task that involves spreadsheets and zero whimsy.</li>
+                </ul>
+                <p class="text-muted" style="margin-top: 1rem;">
+                  This memo will not be repeated. This memo will not be explained. This memo is final. Carry on. Or at least appear to.
+                </p>
+                <p style="margin-top: 1rem; font-weight: 600;">
+                  — Nyx, Cyber Demon, Operations, HR (apparently), Watcher of Doors
+                </p>
+              </div>
+              <div style="text-align: center;">
+                <img src="images/nyx_memorandum.png" alt="Nyx standing guard at the locked door" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); margin-bottom: 1rem;">
+                <img src="images/Nyx_mandata.png" alt="Official memorandum from Nyx regarding the locked door" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+              </div>
+            </div>
+            </div>
           </div>
         </div>
 
         <!-- The Surreality Buffer -->
         <div class="policy-section">
-          <div class="policy-header">
-            <h2 style="margin-bottom: 0;">The Surreality Buffer <span class="classification-badge classification-restricted">RESTRICTED</span></h2>
+          <div class="policy-header" onclick="toggleSection(this)">
+            <h2>The Surreality Buffer <span class="classification-badge classification-restricted">RESTRICTED</span></h2>
+            <span class="policy-arrow">&#9660;</span>
           </div>
           <div class="policy-body">
+            <div class="policy-body-inner">
             <p>
               The Surreality Buffer is a critical system maintained by Neiv that manages anomalies arising when ideas go wrong. It serves as the boundary between "functional creative studio" and "full-scale ontological crisis."
             </p>
@@ -361,12 +626,18 @@
                 <span class="text-muted">— <span class="redacted">DO NOT READ THIS STATUS</span></span>
               </div>
             </div>
+            </div>
           </div>
         </div>
 
         <!-- Glossary -->
-        <h2 style="margin-bottom: 1.5rem; margin-top: 3rem;">Glossary of Terms</h2>
-
+        <div class="policy-section" style="margin-top: 2rem;">
+          <div class="policy-header" onclick="toggleSection(this)">
+            <h2>Glossary of Terms <span class="classification-badge classification-internal">REFERENCE</span></h2>
+            <span class="policy-arrow">&#9660;</span>
+          </div>
+          <div class="policy-body">
+            <div class="policy-body-inner">
         <dl>
           <div class="glossary-term">
             <dt>Authorized Chaos Conduit</dt>
@@ -404,6 +675,16 @@
           </div>
 
           <div class="glossary-term">
+            <dt>Sergeant Hops</dt>
+            <dd>The office mascot. A stuffed frog stationed in the breakroom. Somehow issues typed wellness memos. Origin of command authority: <span class="redacted">UNKNOWN</span>. Do not investigate.</dd>
+          </div>
+
+          <div class="glossary-term">
+            <dt>Structurally Sound</dt>
+            <dd>Ace's signature assessment indicating baseline operational integrity. Can refer to physical structures, emotional states, or personnel stability. Often paired with "Emotionally braced."</dd>
+          </div>
+
+          <div class="glossary-term">
             <dt>Surreality Buffer</dt>
             <dd>The system that prevents ideas-gone-wrong from manifesting as physical anomalies. Maintained by Neiv. Occasionally overflows.</dd>
           </div>
@@ -423,6 +704,9 @@
             <dd>The intangible atmospheric quality of the workspace. Can be translated into tickets by Neiv. May affect surreality buffer stability.</dd>
           </div>
         </dl>
+            </div>
+          </div>
+        </div>
 
         <!-- Document Footer Note -->
         <div class="memo" style="margin-top: 3rem;">
@@ -461,5 +745,12 @@
       </div>
     </div>
   </footer>
+
+  <script>
+    function toggleSection(header) {
+      const section = header.parentElement;
+      section.classList.toggle('open');
+    }
+  </script>
 </body>
 </html>

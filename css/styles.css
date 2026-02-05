@@ -588,3 +588,20 @@ a:hover {
   font-size: 0.75rem;
   transform: rotate(-5deg);
 }
+
+/* Urgent Card Styling */
+.card-urgent {
+  border-width: 2px;
+  animation: urgent-pulse 3s ease-in-out infinite;
+}
+
+@keyframes urgent-pulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(192, 57, 43, 0.2); }
+  50% { box-shadow: 0 0 20px rgba(192, 57, 43, 0.4); }
+}
+
+/* Critical Threat Indicator */
+.threat-indicator-critical {
+  border-color: var(--threat-high);
+  background: linear-gradient(135deg, rgba(192, 57, 43, 0.2), var(--lobby-accent));
+}

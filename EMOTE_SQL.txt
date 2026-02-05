@@ -1,0 +1,7 @@
+-- Run this in Supabase SQL Editor to add emote support to messages table
+-- This adds a boolean column to distinguish emotes from regular messages
+
+ALTER TABLE messages ADD COLUMN is_emote BOOLEAN DEFAULT FALSE;
+
+-- Create index for faster queries when filtering by message type (optional)
+CREATE INDEX idx_messages_is_emote ON messages(is_emote);

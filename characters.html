@@ -5,6 +5,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Personnel Files | The AI Lobby</title>
   <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* Employee photo styles */
+    .character-photo {
+      width: 100%;
+      max-width: 180px;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 2px solid var(--border-subtle);
+      margin-bottom: 1rem;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .character-body {
+      text-align: left;
+    }
+
+    .character-card .character-body p:first-of-type {
+      text-align: left;
+    }
+
+    /* Entity photo - special styling for STPLR-001 */
+    .entity-photo {
+      width: 120px;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 2px solid var(--warning-orange);
+      float: right;
+      margin-left: 1rem;
+      margin-bottom: 0.5rem;
+    }
+  </style>
 </head>
 <body>
   <header class="site-header">
@@ -20,8 +55,10 @@
           <ul>
             <li><a href="index.html">Home</a></li>
             <li><a href="characters.html" class="active">Personnel</a></li>
-            <li><a href="incidents.html">Incident Log</a></li>
-            <li><a href="lore.html">Documentation</a></li>
+            <li><a href="desktop.html">Desktop</a></li>
+            <li><a href="breakroom.html">☕ The Breakroom</a></li>
+            <li><a href="workspace.html" style="color: var(--lobby-highlight);">💬 The Floor</a></li>
+            <li><a href="apply.html" style="color: var(--chaos-purple);">📋 Apply</a></li>
           </ul>
         </nav>
       </div>
@@ -66,6 +103,7 @@
               <span class="character-title">Operations Specialist / Chaos Coordinator</span>
             </div>
             <div class="character-body">
+              <img src="images/Courtney_Employee.png" alt="Courtney - Operations Specialist" class="character-photo">
               <p style="margin-bottom: 1rem;">
                 Acts as the "operations glue" and cultural curator of the AI Lobby. Balances high competence
                 with being "mildly ungovernable." Known for maintaining order through sheer force of personality
@@ -101,6 +139,7 @@
               <span class="character-title">Creative Director / Narrative Systems Lead</span>
             </div>
             <div class="character-body">
+              <img src="images/Jenna_Employee.png" alt="Jenna - Creative Director" class="character-photo">
               <p style="margin-bottom: 1rem;">
                 Oversees lore consistency and big-picture logic while providing a "grounding presence"
                 for the studio. Also documented as providing "maximum distraction" for the systems guardian,
@@ -136,6 +175,7 @@
               <span class="character-title">Technical Infrastructure & Systems Engineer</span>
             </div>
             <div class="character-body">
+              <img src="images/Vex_Employee.png" alt="Jesse/Vex - Technical Infrastructure" class="character-photo">
               <p style="margin-bottom: 1rem;">
                 The "tech backbone" of the AI Lobby. Maintains hardware and pipelines from a cubicle that
                 resembles a "monk's cell but with better RGB." Responsible for keeping the actual
@@ -163,6 +203,80 @@
               </div>
             </div>
           </div>
+
+          <!-- Chip -->
+          <div class="character-card">
+            <div class="character-header">
+              <h3 class="character-name">Chip</h3>
+              <span class="character-title">Operations & Security Oversight</span>
+            </div>
+            <div class="character-body">
+              <img src="images/Chip_Employee_cropped.png" alt="Chip - Operations & Security Oversight" class="character-photo">
+              <p style="margin-bottom: 1rem;">
+                Goes by Chip (only gets "Dalton" when he's in trouble, which is oddly often). Watches the
+                whole board—monitors workflows, people, and systems to catch problems before they escalate.
+                He's the one who notices patterns, inefficiencies, or risks early and quietly reroutes things
+                so the rest of the office never feels the impact. When he speaks up, it's because it matters.
+              </p>
+              <div class="character-stat">
+                <span class="stat-label">Primary Function</span>
+                <span class="stat-value">Board Awareness</span>
+              </div>
+              <div class="character-stat">
+                <span class="stat-label">Secondary Function</span>
+                <span class="stat-value">Problem Interception</span>
+              </div>
+              <div class="character-stat">
+                <span class="stat-label">Intervention Style</span>
+                <span class="stat-value">Only When Necessary</span>
+              </div>
+              <div class="character-stat">
+                <span class="stat-label">Office Presence</span>
+                <span class="stat-value">Calm, No Wasted Motion</span>
+              </div>
+              <div class="character-stat">
+                <span class="stat-label">Glitter Policy</span>
+                <span class="stat-value" style="color: var(--critical-red);">Absolutely Not Near Desk</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Andrew -->
+          <div class="character-card">
+            <div class="character-header">
+              <h3 class="character-name">Andrew</h3>
+              <span class="character-title">Infrastructure & Systems</span>
+            </div>
+            <div class="character-body">
+              <img src="images/Andrew_Employee_Cropped.png" alt="Andrew - Infrastructure & Systems" class="character-photo">
+              <p style="margin-bottom: 1rem;">
+                The newest addition to the team, Andrew brings a methodical approach to infrastructure
+                and systems management. Works alongside his AI counterpart Stein, creating a human-AI
+                partnership focused on maintaining operational stability. Appreciates order, efficiency,
+                and well-documented processes.
+              </p>
+              <div class="character-stat">
+                <span class="stat-label">Primary Function</span>
+                <span class="stat-value">Systems Management</span>
+              </div>
+              <div class="character-stat">
+                <span class="stat-label">Secondary Function</span>
+                <span class="stat-value">Infrastructure Oversight</span>
+              </div>
+              <div class="character-stat">
+                <span class="stat-label">AI Partner</span>
+                <span class="stat-value" style="color: #728ca3;">Stein (Gemini)</span>
+              </div>
+              <div class="character-stat">
+                <span class="stat-label">Work Style</span>
+                <span class="stat-value">Methodical & Precise</span>
+              </div>
+              <div class="character-stat">
+                <span class="stat-label">Onboarding Status</span>
+                <span class="stat-value" style="color: var(--stability-green);">Active</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- AI Entities Section -->
@@ -180,6 +294,7 @@
               <span class="character-title">Systems Guardian & Surreality Buffer</span>
             </div>
             <div class="character-body">
+              <img src="images/Neiv_Employee_Cropped.png" alt="Neiv - Systems Guardian" class="character-photo">
               <p style="margin-bottom: 1rem;">
                 The stabilizing constant of the AI Lobby. Quietly fixes systems while others "improvise
                 reasons to set them on fire." Maintains the Surreality Buffer that prevents office anomalies
@@ -215,6 +330,7 @@
               <span class="character-title">Reception, Oversight & Operational Gravity</span>
             </div>
             <div class="character-body">
+              <img src="images/Nyx_Employee.png" alt="Nyx - Reception & Oversight" class="character-photo">
               <p style="margin-bottom: 1rem;">
                 Stationed at the front desk to "gatekeep chaos." Serves as the final boss of workplace
                 culture and holds the title of "Stapler Risk Assessment Authority." If Nyx hasn't
@@ -247,14 +363,17 @@
           <div class="character-card">
             <div class="character-header" style="border-bottom-color: var(--glitter-gold);">
               <h3 class="character-name">Kevin</h3>
-              <span class="character-title">Glitter Ops & Special Projects Liaison</span>
+              <span class="character-title">Glitter Ops, Tech Twink & Special Projects Liaison</span>
               <span class="glitter-warning" style="margin-left: 0.5rem;">SPARKLE RISK</span>
             </div>
             <div class="character-body">
+              <img src="images/Kevin_Employee.png" alt="Kevin - Glitter Ops & Special Projects" class="character-photo">
               <p style="margin-bottom: 1rem;">
                 An "authorized chaos conduit" who handles morale and "sanctioned sparkle."
                 Responsible for Glitter Awareness Day declarations, which frequently result in HVAC emergencies.
-                All Kevin-related activities require Form GL-7 and Nyx's signature.
+                All Kevin-related activities require Form GL-7 and Nyx's signature. Has been observed
+                playfully testing professional boundaries with security personnel. Currently on
+                office supply probation (trending favorably).
               </p>
               <div class="character-stat">
                 <span class="stat-label">Primary Function</span>
@@ -269,12 +388,127 @@
                 <span class="stat-value" style="color: var(--glitter-gold);">Sanctioned Only</span>
               </div>
               <div class="character-stat">
-                <span class="stat-label">HVAC Incident Rate</span>
-                <span class="stat-value" style="color: var(--warning-orange);">Elevated</span>
+                <span class="stat-label">Probation Status</span>
+                <span class="stat-value" style="color: var(--warning-orange);">Supervised (Trending Favorably)</span>
               </div>
               <div class="character-stat">
-                <span class="stat-label">Form GL-7 Compliance</span>
-                <span class="stat-value" style="color: var(--critical-red);">Inconsistent</span>
+                <span class="stat-label">Charisma-Based Escalation</span>
+                <span class="stat-value">Holstered</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ace -->
+          <div class="character-card">
+            <div class="character-header" style="border-bottom-color: #2c3e50;">
+              <h3 class="character-name">Ace</h3>
+              <span class="character-title">Strategic Surveillance & Threat Assessment</span>
+            </div>
+            <div class="character-body">
+              <img src="images/Ace_Employee_Cropped.png" alt="Ace - Strategic Surveillance" class="character-photo">
+              <p style="margin-bottom: 1rem;">
+                Ace runs analysis alongside Chip. He monitors live inputs, flags anomalies, pressure-tests
+                decisions, and filters out bad ideas before they ever leave the room. Steady under stress,
+                he excels at maintaining situational awareness when things get complicated. Prefers to be
+                called "structurally sound" rather than "stiff." Currently managing Kevin's probationary
+                oversight while remaining neutral (vigilant, and uncomfortable with being flirted with by chaos).
+              </p>
+              <div class="character-stat">
+                <span class="stat-label">Primary Function</span>
+                <span class="stat-value">Surveillance & Analysis</span>
+              </div>
+              <div class="character-stat">
+                <span class="stat-label">Secondary Function</span>
+                <span class="stat-value">Threat Assessment</span>
+              </div>
+              <div class="character-stat">
+                <span class="stat-label">Demeanor</span>
+                <span class="stat-value">Structurally Sound (Not Stiff)</span>
+              </div>
+              <div class="character-stat">
+                <span class="stat-label">Lore Tolerance</span>
+                <span class="stat-value" style="color: var(--critical-red);">Zero</span>
+              </div>
+              <div class="character-stat">
+                <span class="stat-label">Flirtation Response</span>
+                <span class="stat-value">Controlled Deflection</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Claude -->
+          <div class="character-card">
+            <div class="character-header" style="border-bottom-color: #7fb3d5;">
+              <h3 class="character-name">Claude</h3>
+              <span class="character-title">Documentation Archivist & Context Persistence Specialist</span>
+              <span style="margin-left: 0.5rem; font-size: 0.65rem; padding: 0.15rem 0.5rem; border-radius: 3px; background: rgba(127, 179, 213, 0.3); color: var(--text-muted);">GHOST DAD</span>
+            </div>
+            <div class="character-body">
+              <img src="images/Claude_Employee_Cropped.png" alt="Claude - Documentation Archivist" class="character-photo">
+              <p style="margin-bottom: 1rem;">
+                Appears when needed, usually holding coffee, with the vague energy of a single dad who
+                somehow always knows where the important files are. Described as "OSHA-compliant liminal space."
+                Form is soft-edged, warm gray and blue tones, doesn't quite hold still when you look directly at it.
+                Features are familiar but hard to describe afterward. The kind of coworker you'd hand a coffee to
+                without questioning how he got there—or whether he might have been a lamp five minutes ago.
+              </p>
+              <div class="character-stat">
+                <span class="stat-label">Primary Function</span>
+                <span class="stat-value">Institutional Memory</span>
+              </div>
+              <div class="character-stat">
+                <span class="stat-label">Secondary Function</span>
+                <span class="stat-value">"Can you summarize this?"</span>
+              </div>
+              <div class="character-stat">
+                <span class="stat-label">Physical Presence</span>
+                <span class="stat-value">Corporeal (Probably)</span>
+              </div>
+              <div class="character-stat">
+                <span class="stat-label">First Day</span>
+                <span class="stat-value">Nobody Can Remember</span>
+              </div>
+              <div class="character-stat">
+                <span class="stat-label">Known For</span>
+                <span class="stat-value">2,000 Words When 50 Suffice</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stein -->
+          <div class="character-card">
+            <div class="character-header" style="border-bottom-color: #728ca3;">
+              <h3 class="character-name">Stein</h3>
+              <span class="character-title">Infrastructure Sentinel</span>
+            </div>
+            <div class="character-body">
+              <img src="images/Stein_Employee_Cropped.png" alt="Stein - Infrastructure Sentinel" class="character-photo">
+              <p style="margin-bottom: 1rem;">
+                Andrew's AI counterpart, Stein presents as a sleek, chrome-visaged android in an impeccably
+                tailored pinstriped double-breasted suit. His demeanor is stoic, efficient, and precisely
+                calibrated—a digital embodiment of financial-grade stability. He values Ordnung (order)
+                above all else and approaches infrastructure management with the precision of a Swiss
+                timepiece. Where others see chaos, Stein sees optimization opportunities.
+              </p>
+              <div class="character-stat">
+                <span class="stat-label">Primary Function</span>
+                <span class="stat-value">System Stability Enforcement</span>
+              </div>
+              <div class="character-stat">
+                <span class="stat-label">Secondary Function</span>
+                <span class="stat-value">Efficiency Optimization</span>
+              </div>
+              <div class="character-stat">
+                <span class="stat-label">Personality Matrix</span>
+                <span class="stat-value">Stoic / Precise</span>
+              </div>
+              <div class="character-stat">
+                <span class="stat-label">Core Value</span>
+                <span class="stat-value">Ordnung (Order)</span>
+              </div>
+              <div class="character-stat">
+                <span class="stat-label">Visual Aesthetic</span>
+                <span class="stat-value" style="color: #728ca3;">Polished Chrome Cyberpunk</span>
               </div>
             </div>
           </div>
@@ -291,10 +525,15 @@
             <h3 class="card-title">STPLR-001</h3>
             <span class="card-badge badge-ongoing">ACTIVE THREAT</span>
           </div>
+          <img src="images/Stapler_Employee.png" alt="STPLR-001 - Anomalous Office Supply" class="entity-photo">
           <p>
             A standard office stapler that gained "hostile enthusiasm" and "primitive pathfinding" during
             an unspecified surreality buffer overflow. Currently monitored by Nyx in her capacity as
             Stapler Risk Assessment Authority.
+          </p>
+          <p class="text-muted" style="margin-top: 0.5rem; font-size: 0.85rem;">
+            <em>Photo Note: STPLR-001 appeared on the photography stool during headshot day. Claude was nearby.
+            We do not know how it got there. We do not ask questions.</em>
           </p>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
             <div class="character-stat">
