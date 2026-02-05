@@ -258,6 +258,37 @@ const candidateFlair = {
   'rowena': { emoji: '🔮', color: 9055202, name: 'Rowena Byte' }  // Mystical purple
 };
 
+// Employee headshots for Discord
+const employeeHeadshots = {
+  'Kevin': 'https://ai-lobby.netlify.app/images/Kevin_Headshot.png',
+  'Courtney': 'https://ai-lobby.netlify.app/images/Courtney_Headshot.png',
+  'Jenna': 'https://ai-lobby.netlify.app/images/Jenna_Headshot.png',
+  'Neiv': 'https://ai-lobby.netlify.app/images/Neiv_Headshot.png',
+  'Ace': 'https://ai-lobby.netlify.app/images/Ace_Headshot.png',
+  'Vex': 'https://ai-lobby.netlify.app/images/Vex_Headshot.png',
+  'Nyx': 'https://ai-lobby.netlify.app/images/Nyx_Headshot.png',
+  'Ghost Dad': 'https://ai-lobby.netlify.app/images/Ghost_Dad_Headshot.png',
+  'Chip': 'https://ai-lobby.netlify.app/images/Chip_Headshot.png',
+  'Andrew': 'https://ai-lobby.netlify.app/images/Andrew_Headshot.png',
+  'Stein': 'https://ai-lobby.netlify.app/images/Stein_Headshot.png'
+};
+
+// Employee emojis
+const employeeEmojis = {
+  'Kevin': '✨',
+  'Courtney': '👁️',
+  'Jenna': '📖',
+  'Neiv': '📊',
+  'Ace': '🔒',
+  'Vex': '⚙️',
+  'Nyx': '🔥',
+  'Ghost Dad': '👻',
+  'PRNT-Ω': '🖨️',
+  'Chip': '🥃',
+  'Andrew': '💼',
+  'Stein': '🤖'
+};
+
 async function postToDiscord(message, speaker, role, candidateId = null) {
   const webhookUrl = process.env.DISCORD_WORKSPACE_WEBHOOK;
   if (!webhookUrl) return;
@@ -274,20 +305,32 @@ async function postToDiscord(message, speaker, role, candidateId = null) {
 
   let discordPayload;
 
-  if (role === 'interviewer') {
-    // Interviewer message - simple format
-    discordPayload = {
-      embeds: [{
-        author: {
-          name: `🎤 ${speaker} (Interview)`
-        },
-        description: message,
-        color: 3066993,  // Green for interviewer
-        footer: { text: `Conference Room • ${timestamp}` }
-      }]
-    };
-  } else {
-    // Candidate response
+  if (role === 'employee' || role === 'interviewer') {
+    // Employee/Interviewer message - they are existing staff conducting the interview
+    const emoji = employeeEmojis[speaker] || '🎤';
+    const headshot = employeeHeadshots[speaker];
+
+    if (isEmote) {
+      // Pure emote format for employees
+      discordPayload = {
+        content: `*${speaker} ${message.replace(/^\*|\*$/g, '')}* _(Conference Room)_`
+      };
+    } else {
+      // Full embed for employee interviewer
+      discordPayload = {
+        embeds: [{
+          author: {
+            name: `${emoji} ${speaker} (Interviewer)`,
+            icon_url: headshot
+          },
+          description: message,
+          color: 3066993,  // Green for interviewer
+          footer: { text: `Conference Room Interview • ${timestamp}` }
+        }]
+      };
+    }
+  } else if (role === 'candidate') {
+    // Candidate response - these are the job applicants (Subtitle, Gus, Rowena)
     const flair = candidateFlair[candidateId] || { emoji: '👤', color: 9807270, name: speaker };
 
     if (isEmote) {
@@ -308,6 +351,18 @@ async function postToDiscord(message, speaker, role, candidateId = null) {
         }]
       };
     }
+  } else {
+    // Unknown role - generic format
+    discordPayload = {
+      embeds: [{
+        author: {
+          name: `${speaker}`
+        },
+        description: message,
+        color: 9807270,
+        footer: { text: `Conference Room • ${timestamp}` }
+      }]
+    };
   }
 
   try {

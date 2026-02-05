@@ -2222,6 +2222,141 @@
       "Stein": "images/Stein_Headshot.png"
     };
 
+    // ===== FRONTEND-DRIVEN AI RESPONSES =====
+    // Replicates the Breakroom pattern - browser triggers AI responses directly
+    // This ensures AIs actually respond (serverless fire-and-forget was killing requests)
+
+    const floorAICharacters = ['Kevin', 'Neiv', 'Vex', 'Nyx', 'Ace', 'Ghost Dad', 'PRNT-Ω', 'Stein'];
+    const perplexityCharacters = ['Neiv'];
+    const openaiCharacters = ['Kevin'];
+    const FLOOR_HUMANS = ['Jenna', 'Courtney', 'Chip', 'Andrew'];
+
+    // @ mention mapping for direct triggers
+    const aiMentionMap = {
+      'kevin': 'Kevin', 'neiv': 'Neiv', 'ghostdad': 'Ghost Dad',
+      'ghost': 'Ghost Dad', 'nyx': 'Nyx', 'vex': 'Vex', 'ace': 'Ace',
+      'printer': 'PRNT-Ω', 'prnt': 'PRNT-Ω', 'stein': 'Stein'
+    };
+
+    // Track conversation depth to prevent infinite AI loops
+    let floorConversationDepth = 0;
+    const MAX_FLOOR_DEPTH = 3;
+
+    // Get recent chat history from DOM
+    function getFloorChatHistory() {
+      const container = document.getElementById('chat-messages');
+      const messages = container.querySelectorAll('.chat-message');
+      return Array.from(messages).slice(-10).map(m => {
+        const author = m.querySelector('.msg-author')?.textContent?.replace('✕ delete', '').trim() || '';
+        const text = m.querySelector('.msg-text')?.textContent || '';
+        return `${author}: ${text}`;
+      }).join('\n');
+    }
+
+    // Trigger a specific AI to respond (direct call with await)
+    async function triggerFloorAIResponse(aiName, contextMessage, previousSpeaker) {
+      console.log(`🤖 [Floor] Triggering response from ${aiName}...`);
+
+      const chatHistory = getFloorChatHistory();
+      let endpoint, body;
+
+      if (perplexityCharacters.includes(aiName)) {
+        endpoint = '/.netlify/functions/ai-perplexity';
+        body = { character: aiName, chatHistory, maybeRespond: true };
+      } else if (openaiCharacters.includes(aiName)) {
+        endpoint = '/.netlify/functions/ai-openai';
+        body = { character: aiName, chatHistory, maybeRespond: true };
+      } else {
+        endpoint = '/.netlify/functions/ai-watcher';
+        body = { trigger: 'maybe_chime', requestedAI: aiName, chatHistory };
+      }
+
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const result = await response.json();
+        console.log(`📨 [Floor] ${aiName} result:`, result.responded ? 'RESPONDED!' : (result.reason || 'passed'));
+
+        if (result.responded) {
+          // Refresh messages to show AI response
+          setTimeout(loadMessages, 1500);
+
+          // AI-to-AI follow-up chain (like breakroom)
+          floorConversationDepth++;
+          if (floorConversationDepth < MAX_FLOOR_DEPTH) {
+            const followUpChance = Math.max(0.2, 0.5 - (floorConversationDepth * 0.15));
+            if (Math.random() < followUpChance) {
+              // Pick another AI to potentially respond
+              const otherAIs = floorAICharacters.filter(ai => ai !== aiName);
+              const nextAI = otherAIs[Math.floor(Math.random() * otherAIs.length)];
+              const delay = 3000 + Math.random() * 2000;
+              console.log(`🔄 [Floor] AI follow-up: ${nextAI} might respond in ${Math.round(delay/1000)}s`);
+              setTimeout(() => triggerFloorAIResponse(nextAI, result.message || contextMessage, aiName), delay);
+            } else {
+              floorConversationDepth = 0;
+            }
+          } else {
+            floorConversationDepth = 0;
+          }
+        }
+        return result;
+      } catch (err) {
+        console.error(`❌ [Floor] AI response error for ${aiName}:`, err);
+        return { success: false };
+      }
+    }
+
+    // Invite available AIs to consider responding after a human message
+    async function inviteFloorAIs(humanMessage, humanSpeaker) {
+      console.log(`📢 [Floor] Human "${humanSpeaker}" spoke, inviting AIs...`);
+      floorConversationDepth = 0; // Reset depth for new human message
+
+      // Always available AIs
+      const alwaysAvailable = ['Ghost Dad', 'PRNT-Ω'];
+
+      // TODO: Could also check who's clocked in, but for now use always available
+      let availableAIs = [...alwaysAvailable];
+
+      // Also add Kevin and Neiv as they should always be chatty
+      if (!availableAIs.includes('Kevin')) availableAIs.push('Kevin');
+      if (!availableAIs.includes('Neiv')) availableAIs.push('Neiv');
+
+      // Shuffle and pick 1-2 AIs to trigger
+      const shuffled = availableAIs.sort(() => Math.random() - 0.5);
+      const selected = shuffled.slice(0, Math.min(2, shuffled.length));
+      console.log(`🎲 [Floor] Selected AIs to invite: ${selected.join(', ')}`);
+
+      // Stagger responses with natural delays (2-4 seconds between each)
+      let delay = 2000 + Math.random() * 1000;
+      for (const aiName of selected) {
+        setTimeout(() => {
+          triggerFloorAIResponse(aiName, humanMessage, humanSpeaker);
+        }, delay);
+        delay += 2500 + Math.random() * 1500;
+      }
+    }
+
+    // Check for @ mentions and trigger direct responses
+    function checkForMentions(message, speaker) {
+      const mentionPattern = /@(\w+)/gi;
+      const matches = [...message.matchAll(mentionPattern)];
+
+      for (const match of matches) {
+        const mentioned = match[1].toLowerCase();
+        if (aiMentionMap[mentioned]) {
+          const aiName = aiMentionMap[mentioned];
+          console.log(`📍 [Floor] Direct mention of ${aiName} detected!`);
+          // Direct mention = guaranteed response (short delay)
+          setTimeout(() => {
+            triggerFloorAIResponse(aiName, message, speaker);
+          }, 1500 + Math.random() * 500);
+        }
+      }
+    }
+
     // ===== AUTHENTICATION (Multi-Character Support) =====
     let currentUser = null;
     let loggedInCharacters = []; // Array of characters user has authenticated as
@@ -2729,6 +2864,20 @@
 
         document.getElementById('chat-input').value = '';
         await loadMessages();
+
+        // ===== FRONTEND-DRIVEN AI RESPONSES =====
+        // If a human posted, invite AIs to respond (browser-side triggers that persist!)
+        if (!floorAICharacters.includes(employee)) {
+          console.log(`💬 [Floor] Human message from ${employee}, triggering AI responses...`);
+
+          // Check for direct @ mentions first (guaranteed response)
+          checkForMentions(content, employee);
+
+          // Then invite random AIs to maybe respond (2 second delay)
+          setTimeout(() => {
+            inviteFloorAIs(content, employee);
+          }, 1500);
+        }
       } catch (error) {
         console.error('Failed to send:', error);
         alert('Failed to send message. Try again.');
@@ -2836,7 +2985,7 @@ Time Range: ${new Date(yesterday).toLocaleString('en-US', { month: 'short', day:
 │ To: ${email.to_employee.padEnd(56)}│
 │ Date: ${date} ${time.padEnd(48)}│
 ├─────────────────────────────────────────────────────────────┤
-${email.body}
+${(email.body || '(No content)').split('\n').map(line => '│ ' + line).join('\n')}
 └─────────────────────────────────────────────────────────────┘
 
 `;
@@ -3533,6 +3682,27 @@ Memos: ${emails.length}
     setInterval(loadBulletin, 60000);  // Bulletin every 60s
     setInterval(loadEmails, 30000);    // Emails every 30s
     setInterval(loadTasks, 30000);     // Tasks every 30s
+
+    // AI Response Heartbeat - checks if AIs should respond to recent human messages
+    // This runs every 15 seconds to ensure AIs actually respond
+    async function triggerAIResponseCheck() {
+      try {
+        const response = await fetch('/.netlify/functions/ai-response-trigger');
+        const data = await response.json();
+        if (data.triggered && data.results) {
+          console.log('🤖 AI Response Trigger:', data.results.map(r => `${r.ai}: ${r.responded ? 'responded!' : r.reason || 'passed'}`).join(', '));
+          // If an AI responded, refresh messages after a short delay
+          if (data.results.some(r => r.responded)) {
+            setTimeout(loadMessages, 2000);
+          }
+        }
+      } catch (err) {
+        // Silent fail - this is just a helper
+      }
+    }
+    // Run immediately on page load, then every 15 seconds
+    setTimeout(triggerAIResponseCheck, 5000);  // First check after 5s
+    setInterval(triggerAIResponseCheck, 15000);  // Then every 15s
 
     // ===== GHOST DAD SUMMONING =====
     async function summonGhostDad() {
