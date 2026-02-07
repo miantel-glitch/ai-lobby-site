@@ -1072,22 +1072,20 @@
   </style>
 </head>
 <body>
-  <header>
-    <div class="container">
-      <nav>
-        <a href="index.html" class="logo">
-          <span class="logo-icon">🏢</span>
-          <span>The AI Lobby</span>
-        </a>
-        <ul class="nav-links">
-          <li><a href="index.html">Home</a></li>
-          <li><a href="characters.html">Personnel</a></li>
-          <li><a href="desktop.html">Desktop</a></li>
-          <li><a href="breakroom.html">☕ The Breakroom</a></li>
-          <li><a href="workspace.html" style="color: var(--lobby-highlight);">💬 The Floor</a></li>
-          <li><a href="conference-room.html" class="active" style="color: var(--stability-green);">🎤 Conference Room</a></li>
-          <li><a href="apply.html" style="color: var(--chaos-purple);">📋 Apply</a></li>
-        </ul>
+  <header class="site-header">
+    <div class="header-content">
+      <a href="index.html" class="logo">
+        <span class="logo-icon">🏢</span>
+        <span class="logo-text">The AI Lobby</span>
+      </a>
+      <nav class="main-nav">
+        <a href="index.html">Home</a>
+        <a href="characters.html">Personnel</a>
+        <a href="desktop.html">Desktop</a>
+        <a href="breakroom.html">☕ Breakroom</a>
+        <a href="workspace.html">💬 The Floor</a>
+        <a href="conference-room.html" class="active">🎤 Conference Room</a>
+        <a href="apply.html">📋 Apply</a>
       </nav>
     </div>
   </header>
@@ -1545,7 +1543,8 @@ She doesn't debug—she banishes.
           const mState = data.meetingState;
           const wasMeetingActive = meetingActive;
 
-          if (mState.mode && mState.mode !== currentMode) {
+          // Only update mode from server if no local change is pending
+          if (!modeChangePending && mState.mode && mState.mode !== currentMode) {
             currentMode = mState.mode;
             updateModeUI();
           }
@@ -2576,10 +2575,15 @@ Don't repeat questions that have already been asked.`;
     // ============================================
 
     // Toggle between Interview and Meeting modes
-    function setMode(mode) {
+    let modeChangePending = false;  // Prevent polling from reverting during mode change
+
+    async function setMode(mode) {
+      modeChangePending = true;
       currentMode = mode;
       updateModeUI();
-      saveInterviewState();
+      await saveInterviewState();
+      // Small delay to let server sync before allowing polling to update
+      setTimeout(() => { modeChangePending = false; }, 1000);
     }
 
     function updateModeUI() {
