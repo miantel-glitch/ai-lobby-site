@@ -22,7 +22,7 @@ exports.handler = async (event, context) => {
 
     // Get current time in EST
     const now = new Date();
-    const estTime = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+    const estTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Chicago" }));
     const hour = estTime.getHours();
     const dayOfWeek = estTime.getDay(); // 0 = Sunday
 
@@ -79,6 +79,9 @@ exports.handler = async (event, context) => {
         })
       };
     }
+
+    // Check for breakroom characters who have recovered and should return to the floor
+    const returnedCharacters = await checkBreakroomRecovery(supabaseUrl, supabaseKey);
 
     // Get recent messages to analyze conversation momentum
     const messagesResponse = await fetch(
@@ -140,7 +143,8 @@ exports.handler = async (event, context) => {
           responded: false,
           reason: `Heartbeat skip (${(finalChance * 100).toFixed(1)}% chance)`,
           rhythm: currentRhythm.name,
-          momentum: momentum
+          momentum: momentum,
+          returnedFromBreakroom: returnedCharacters
         })
       };
     }
@@ -199,7 +203,8 @@ exports.handler = async (event, context) => {
         rhythm: currentRhythm.name,
         energy: currentRhythm.energy,
         momentum: momentum,
-        watcherResult
+        watcherResult,
+        returnedFromBreakroom: returnedCharacters
       })
     };
 
@@ -299,4 +304,172 @@ function selectRespondingAI(messages, energyLevel) {
   }
 
   return "Ghost Dad";
+}
+
+// Check breakroom occupants and return recovered characters to the floor
+async function checkBreakroomRecovery(supabaseUrl, supabaseKey) {
+  const returnedCharacters = [];
+
+  try {
+    // Get all characters currently in the breakroom
+    const breakroomResponse = await fetch(
+      `${supabaseUrl}/rest/v1/character_state?current_focus=eq.break_room&select=*`,
+      {
+        headers: {
+          "apikey": supabaseKey,
+          "Authorization": `Bearer ${supabaseKey}`
+        }
+      }
+    );
+    const breakroomOccupants = await breakroomResponse.json();
+
+    if (!breakroomOccupants || breakroomOccupants.length === 0) {
+      return returnedCharacters;
+    }
+
+    const now = new Date();
+
+    for (const character of breakroomOccupants) {
+      const lastUpdate = new Date(character.updated_at);
+      const minutesInBreakroom = (now.getTime() - lastUpdate.getTime()) / 60000;
+
+      // Check if character has recovered enough AND been resting long enough (20-30 mins)
+      // Recovery threshold: energy >= 60 AND patience >= 50 AND at least 20 minutes in breakroom
+      const hasRecovered = character.energy >= 60 && character.patience >= 50;
+      const restedLongEnough = minutesInBreakroom >= 20;
+
+      if (hasRecovered && restedLongEnough) {
+        console.log(`${character.character_name} has recovered (energy: ${character.energy}, patience: ${character.patience}, ${minutesInBreakroom.toFixed(0)} mins) - returning to floor`);
+
+        // Update character to return to the floor
+        await fetch(
+          `${supabaseUrl}/rest/v1/character_state?character_name=eq.${encodeURIComponent(character.character_name)}`,
+          {
+            method: "PATCH",
+            headers: {
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              current_focus: 'the_floor',
+              mood: 'refreshed',
+              updated_at: now.toISOString()
+            })
+          }
+        );
+
+        // Post return emote to chat
+        const returnEmote = getReturnEmote(character.character_name);
+        await fetch(
+          `${supabaseUrl}/rest/v1/messages`,
+          {
+            method: "POST",
+            headers: {
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              employee: character.character_name,
+              content: returnEmote,
+              created_at: now.toISOString(),
+              is_emote: true
+            })
+          }
+        );
+
+        // Also post to Discord
+        await postReturnToDiscord(character.character_name, returnEmote);
+
+        returnedCharacters.push(character.character_name);
+      }
+    }
+  } catch (error) {
+    console.error("Error checking breakroom recovery:", error);
+  }
+
+  return returnedCharacters;
+}
+
+// Get a character-appropriate return emote
+function getReturnEmote(characterName) {
+  const emotes = {
+    "Kevin": [
+      "*wanders back from the breakroom, coffee in hand*",
+      "*returns to the floor, looking more himself*",
+      "*strolls back in, refreshed and ready*"
+    ],
+    "Neiv": [
+      "*returns to the floor, looking more centered*",
+      "*walks back from the breakroom, composed*",
+      "*steps back onto the floor, ready to work*"
+    ],
+    "Ghost Dad": [
+      "*floats back from the breakroom, humming softly*",
+      "*drifts back onto the floor, looking peaceful*",
+      "*returns, emanating calm dad energy*"
+    ],
+    "Nyx": [
+      "*emerges from the breakroom, stretching*",
+      "*returns to the floor, looking less murderous*",
+      "*walks back in, refreshed and alert*"
+    ],
+    "Vex": [
+      "*slinks back from the breakroom*",
+      "*returns to the floor without comment*",
+      "*walks back in, marginally less irritated*"
+    ],
+    "Ace": [
+      "*returns to the floor, recalibrated*",
+      "*walks back in, systems restored*",
+      "*rejoins the floor, processing complete*"
+    ],
+    "PRNT-Ω": [
+      "*whirs back to life on the floor*",
+      "*returns, paper trays refilled with determination*",
+      "*resumes position, existentially recharged*"
+    ],
+    "Stein": [
+      "*emerges from the breakroom, adjusting glasses*",
+      "*returns to the floor, notes in hand*",
+      "*walks back in, looking more focused*"
+    ],
+    "Courtney": [
+      "*returns from the breakroom, looking refreshed*",
+      "*walks back onto the floor, ready to help*",
+      "*rejoins the team, energy restored*"
+    ],
+    "Jenna": [
+      "*bounces back from the breakroom*",
+      "*returns to the floor with renewed creative energy*",
+      "*walks back in, ideas clearly brewing*"
+    ]
+  };
+
+  const characterEmotes = emotes[characterName] || [
+    `*${characterName} returns from the breakroom*`,
+    `*${characterName} walks back onto the floor*`
+  ];
+
+  return characterEmotes[Math.floor(Math.random() * characterEmotes.length)];
+}
+
+// Post return emote to Discord
+async function postReturnToDiscord(characterName, emote) {
+  const webhookUrl = process.env.DISCORD_WORKSPACE_WEBHOOK;
+  if (!webhookUrl) return;
+
+  try {
+    // Pure emote format for Discord (italicized action)
+    await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content: `*${characterName} ${emote.replace(/^\*|\*$/g, '')}*`
+      })
+    });
+  } catch (error) {
+    console.error("Error posting return to Discord:", error);
+  }
 }

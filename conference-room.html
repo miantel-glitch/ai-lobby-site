@@ -2,10 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Conference Room | The AI Lobby</title>
   <link rel="stylesheet" href="css/styles.css">
   <style>
+    /* iOS Input Focus Fix - Prevents white screen when keyboard opens */
+    html, body {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100%;
+      min-height: -webkit-fill-available;
+    }
+
+    html {
+      height: -webkit-fill-available;
+    }
+
+    /* Prevent iOS zoom on input focus (16px min font prevents zoom) */
+    input, textarea, select {
+      font-size: 16px !important;
+    }
+
     /* Conference Room Styles */
     .conference-container {
       max-width: 1400px;
@@ -82,6 +98,292 @@
       display: none;
     }
 
+    /* ========================================
+       MEETING MODE - Zoom-like Layout
+       ======================================== */
+
+    .meeting-view {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      flex-direction: column;
+      background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+      z-index: 10;
+    }
+
+    .conference-scene.meeting-mode .scene-background,
+    .conference-scene.meeting-mode .character-slot,
+    .conference-scene.meeting-mode .scene-empty-text {
+      display: none !important;
+    }
+
+    .conference-scene.meeting-mode .meeting-view {
+      display: flex;
+    }
+
+    /* Facilitator - Large center display */
+    .facilitator-display {
+      flex: 2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+    }
+
+    .facilitator-card {
+      position: relative;
+      width: 400px;
+      height: 300px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 3px solid var(--stability-green);
+      box-shadow: 0 0 30px rgba(46, 204, 113, 0.3);
+      background: linear-gradient(135deg, #2c3e50 0%, #1a1a2e 100%);
+    }
+
+    .facilitator-card.speaking {
+      box-shadow: 0 0 40px rgba(46, 204, 113, 0.6);
+      animation: facilitator-pulse 1.5s infinite;
+    }
+
+    @keyframes facilitator-pulse {
+      0%, 100% { box-shadow: 0 0 30px rgba(46, 204, 113, 0.4); }
+      50% { box-shadow: 0 0 50px rgba(46, 204, 113, 0.7); }
+    }
+
+    .facilitator-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .facilitator-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: var(--stability-green);
+      color: white;
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .facilitator-name {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 0.75rem;
+      background: linear-gradient(transparent, rgba(0,0,0,0.9));
+      color: var(--stability-green);
+      font-weight: bold;
+      font-size: 1.1rem;
+      text-align: center;
+    }
+
+    .facilitator-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-muted);
+    }
+
+    .facilitator-empty .icon {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+      opacity: 0.5;
+    }
+
+    /* Attendees Grid - Smaller squares */
+    .attendees-grid {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      padding: 1rem;
+      max-height: 140px;
+      overflow-x: auto;
+    }
+
+    .meeting-attendee-card {
+      width: 90px;
+      height: 90px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 2px solid var(--border-subtle);
+      background: rgba(0,0,0,0.5);
+      position: relative;
+      transition: all 0.3s ease;
+      flex-shrink: 0;
+    }
+
+    .meeting-attendee-card.speaking {
+      border-color: var(--lobby-highlight);
+      box-shadow: 0 0 15px rgba(233, 69, 96, 0.5);
+      animation: attendee-speak 1.5s infinite;
+    }
+
+    @keyframes attendee-speak {
+      0%, 100% { box-shadow: 0 0 15px rgba(233, 69, 96, 0.5); }
+      50% { box-shadow: 0 0 25px rgba(233, 69, 96, 0.7); }
+    }
+
+    .meeting-attendee-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .meeting-attendee-card .attendee-name {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 0.2rem;
+      background: rgba(0,0,0,0.85);
+      font-size: 0.65rem;
+      text-align: center;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .attendees-empty {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      text-align: center;
+      padding: 1rem;
+    }
+
+    /* Mode Toggle */
+    .mode-toggle {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .mode-btn {
+      flex: 1;
+      padding: 0.5rem;
+      background: rgba(0,0,0,0.3);
+      border: 2px solid var(--border-subtle);
+      border-radius: 6px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s;
+    }
+
+    .mode-btn:hover {
+      border-color: var(--stability-green);
+      color: var(--text-primary);
+    }
+
+    .mode-btn.active {
+      background: rgba(46, 204, 113, 0.2);
+      border-color: var(--stability-green);
+      color: var(--stability-green);
+    }
+
+    /* Meeting Controls Panel */
+    .meeting-setup {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .meeting-setup label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+      display: block;
+    }
+
+    .meeting-topic-display {
+      background: rgba(52, 152, 219, 0.2);
+      padding: 0.75rem;
+      border-radius: 8px;
+      margin-bottom: 0.75rem;
+      border-left: 3px solid #3498db;
+    }
+
+    .meeting-topic-display .label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .meeting-topic-display .topic {
+      font-weight: bold;
+      color: #3498db;
+      margin-top: 0.25rem;
+    }
+
+    /* Attendee Selection */
+    .attendee-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.5rem;
+    }
+
+    .attendee-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.25rem 0.5rem;
+      background: rgba(46, 204, 113, 0.2);
+      border: 1px solid var(--stability-green);
+      border-radius: 15px;
+      font-size: 0.7rem;
+      color: var(--stability-green);
+    }
+
+    .attendee-chip .remove {
+      cursor: pointer;
+      opacity: 0.7;
+    }
+
+    .attendee-chip .remove:hover {
+      opacity: 1;
+    }
+
+    .add-attendee-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .add-attendee-row select {
+      flex: 1;
+    }
+
+    .add-attendee-btn {
+      padding: 0.4rem 0.75rem;
+      background: var(--stability-green);
+      border: none;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+
+    .add-attendee-btn:hover {
+      background: #27ae60;
+    }
+
     /* Character Position Slots - around the conference table */
     .character-slot {
       position: absolute;
@@ -153,7 +455,37 @@
     .character-slot[data-position="front-1"] { bottom: 12%; left: 30%; }
     .character-slot[data-position="front-2"] { bottom: 12%; right: 30%; }
 
-    /* Chat Section */
+    /* Chat Section - Dual Panel Layout */
+    .interview-chat-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 900px) {
+      .interview-chat-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .chat-panel {
+      background: rgba(15, 52, 96, 0.5);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      max-height: 400px;
+    }
+
+    .chat-panel.employee-panel {
+      border-color: rgba(46, 204, 113, 0.4);
+    }
+
+    .chat-panel.candidate-panel {
+      border-color: rgba(155, 89, 182, 0.4);
+    }
+
+    /* Legacy single section (keeping for backwards compat) */
     .chat-section {
       background: rgba(15, 52, 96, 0.5);
       border: 1px solid var(--border-subtle);
@@ -322,7 +654,9 @@
       border: 2px solid var(--border-subtle);
       border-radius: 8px;
       color: var(--text-primary);
-      font-size: 0.85rem;
+      font-size: 16px; /* iOS requires 16px minimum to prevent zoom on focus */
+      -webkit-appearance: none; /* Disable iOS styling */
+      appearance: none;
     }
 
     .chat-input:focus {
@@ -631,6 +965,110 @@
       margin-bottom: 0.5rem;
       opacity: 0.5;
     }
+
+    /* Interview Turn Indicator */
+    .current-turn {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(46, 204, 113, 0.1));
+      border: 2px solid var(--stability-green);
+      border-radius: 10px;
+      margin-bottom: 0.75rem;
+      animation: pulse-border 2s infinite;
+    }
+
+    @keyframes pulse-border {
+      0%, 100% { border-color: var(--stability-green); box-shadow: 0 0 10px rgba(46, 204, 113, 0.3); }
+      50% { border-color: #27ae60; box-shadow: 0 0 20px rgba(46, 204, 113, 0.5); }
+    }
+
+    .turn-avatar {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid var(--stability-green);
+      background: rgba(0,0,0,0.3);
+    }
+
+    .turn-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .turn-info {
+      flex: 1;
+    }
+
+    .turn-label {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .turn-name {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--stability-green);
+    }
+
+    .turn-queue {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.5rem;
+    }
+
+    .turn-queue .queue-item {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.25rem 0.5rem;
+      background: rgba(0,0,0,0.3);
+      border-radius: 15px;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .turn-queue .queue-item img {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+    }
+
+    .turn-queue .queue-item.next {
+      background: rgba(46, 204, 113, 0.2);
+      color: var(--stability-green);
+    }
+
+    .interview-idle {
+      text-align: center;
+    }
+
+    .start-interview-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(155, 89, 182, 0.4);
+    }
+
+    /* Disabled input when not your turn */
+    .chat-input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .not-your-turn-msg {
+      text-align: center;
+      padding: 0.5rem;
+      background: rgba(231, 76, 60, 0.2);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      color: var(--warning-orange);
+      margin-bottom: 0.5rem;
+    }
   </style>
 </head>
 <body>
@@ -694,38 +1132,187 @@
             <div class="character-slot" data-position="front-2" id="slot-6">
               <img src="" alt=""><span class="char-name"></span>
             </div>
-          </div>
 
-          <!-- Chat Section -->
-          <div class="chat-section">
-            <div class="chat-header">
-              <h2>💬 Interview Chat</h2>
-              <button class="send-btn" onclick="downloadTranscript()" style="background: var(--text-muted); font-size: 0.75rem; padding: 0.3rem 0.6rem;">💾 Save</button>
-            </div>
-            <div class="chat-log" id="chat-log">
-              <div class="chat-message system-msg">
-                <div class="message-text">Welcome to the Conference Room. Invite a candidate to begin an interview!</div>
-              </div>
-            </div>
-            <div class="chat-input-area">
-              <div class="avatar-picker">
-                <button class="avatar-picker-btn" id="avatar-picker-btn" onclick="toggleAvatarPicker()">
-                  <img src="images/Ghost_Dad_Headshot.png" alt="You" id="current-avatar">
-                </button>
-                <div class="avatar-picker-dropdown" id="avatar-dropdown">
-                  <!-- Populated by JS -->
+            <!-- Meeting View (Zoom-like layout) -->
+            <div class="meeting-view" id="meeting-view">
+              <div class="facilitator-display">
+                <div class="facilitator-card" id="facilitator-card">
+                  <span class="facilitator-badge">Facilitator</span>
+                  <img src="" alt="" id="facilitator-img">
+                  <div class="facilitator-name" id="facilitator-name-display"></div>
+                  <div class="facilitator-empty" id="facilitator-empty">
+                    <div class="icon">🎤</div>
+                    <p>Select a facilitator</p>
+                  </div>
                 </div>
               </div>
-              <input type="text" class="chat-input" id="chat-input" placeholder="Ask a question or make a comment..." maxlength="500">
-              <button class="send-btn" id="send-btn" onclick="sendMessage()">Send</button>
+              <div class="attendees-grid" id="meeting-attendees-grid">
+                <div class="attendees-empty">Add attendees to start the meeting</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dual Chat Panels -->
+          <div class="interview-chat-container">
+            <!-- Employee/Interview Panel Discussion -->
+            <div class="chat-panel employee-panel">
+              <div class="chat-header" style="background: rgba(46, 204, 113, 0.15);">
+                <h2 style="color: var(--stability-green);">👥 Interview Panel</h2>
+                <button class="send-btn" onclick="downloadTranscript()" style="background: var(--text-muted); font-size: 0.7rem; padding: 0.25rem 0.5rem;">💾</button>
+              </div>
+              <div class="chat-log" id="employee-chat-log">
+                <div class="chat-message system-msg">
+                  <div class="message-text">Panel discussion area. Questions and comments appear here.</div>
+                </div>
+              </div>
+              <div class="chat-input-area">
+                <div class="avatar-picker">
+                  <button class="avatar-picker-btn" id="avatar-picker-btn" onclick="toggleAvatarPicker()">
+                    <img src="images/Ghost_Dad_Headshot.png" alt="You" id="current-avatar">
+                  </button>
+                  <div class="avatar-picker-dropdown" id="avatar-dropdown">
+                    <!-- Populated by JS -->
+                  </div>
+                </div>
+                <input type="text" class="chat-input" id="chat-input" placeholder="Ask a question..." maxlength="500">
+                <button class="send-btn" id="send-btn" onclick="sendMessage()">Ask</button>
+              </div>
+            </div>
+
+            <!-- Candidate Response Panel -->
+            <div class="chat-panel candidate-panel">
+              <div class="chat-header" style="background: rgba(155, 89, 182, 0.15);">
+                <h2 style="color: #9b59b6;">🎤 Candidate</h2>
+              </div>
+              <div class="chat-log" id="candidate-chat-log">
+                <div class="chat-message system-msg">
+                  <div class="message-text">Candidate responses will appear here. Invite a candidate to begin!</div>
+                </div>
+              </div>
+              <!-- No input for candidate panel - AI generates responses -->
             </div>
           </div>
         </div>
 
         <!-- Sidebar -->
         <div class="sidebar-panel">
-          <!-- Candidates -->
+          <!-- Mode Toggle -->
           <div class="panel-section">
+            <div class="mode-toggle">
+              <button class="mode-btn active" id="interview-mode-btn" onclick="setMode('interview')">
+                🎤 Interview
+              </button>
+              <button class="mode-btn" id="meeting-mode-btn" onclick="setMode('meeting')">
+                📋 Meeting
+              </button>
+            </div>
+          </div>
+
+          <!-- Interview Controls -->
+          <div class="panel-section" id="interview-controls">
+            <h3>🎬 Interview Controls</h3>
+            <div id="interview-status">
+              <div class="interview-idle">
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">Start a structured interview with turn-based questions</p>
+                <button class="send-btn start-interview-btn" style="width: 100%; background: linear-gradient(135deg, var(--chaos-purple), #8e44ad); margin-bottom: 0.5rem;" onclick="startInterview()">▶️ Start Interview</button>
+                <button class="send-btn" style="width: 100%; background: var(--text-muted); font-size: 0.75rem;" onclick="clearConferenceChat()">🗑️ Clear Chat History</button>
+              </div>
+            </div>
+            <div id="turn-indicator" style="display: none;">
+              <div class="current-turn">
+                <div class="turn-avatar" id="turn-avatar"></div>
+                <div class="turn-info">
+                  <div class="turn-label">Current Turn</div>
+                  <div class="turn-name" id="turn-name">—</div>
+                </div>
+              </div>
+              <div class="turn-queue" id="turn-queue"></div>
+              <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+                <button class="send-btn" style="flex: 1; background: var(--warning-orange);" onclick="skipTurn()">⏭️ Skip</button>
+                <button class="send-btn" style="flex: 1; background: var(--critical-red);" onclick="endInterview()">⏹️ End</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Meeting Controls (hidden by default) -->
+          <div class="panel-section" id="meeting-controls" style="display: none;">
+            <h3>📋 Meeting Controls</h3>
+
+            <!-- Meeting Setup -->
+            <div id="meeting-setup" class="meeting-setup">
+              <!-- Topic Input -->
+              <div>
+                <label>Meeting Topic</label>
+                <input type="text" id="meeting-topic-input" class="chat-input"
+                       placeholder="Enter topic or select below..."
+                       style="width: 100%; margin-top: 0.25rem;">
+              </div>
+
+              <!-- Quick Topics Dropdown -->
+              <div>
+                <label>Quick Topics</label>
+                <select id="quick-topics" class="char-select" onchange="selectQuickTopic()"
+                        style="width: 100%; margin-top: 0.25rem; padding: 0.5rem; background: rgba(10,25,47,0.8); border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--text-primary);">
+                  <option value="">Select a topic...</option>
+                </select>
+              </div>
+
+              <!-- Facilitator Selection -->
+              <div>
+                <label>Facilitator</label>
+                <select id="facilitator-select" class="char-select" onchange="updateFacilitator()"
+                        style="width: 100%; margin-top: 0.25rem; padding: 0.5rem; background: rgba(10,25,47,0.8); border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--text-primary);">
+                  <option value="">Select facilitator...</option>
+                </select>
+              </div>
+
+              <!-- Attendees -->
+              <div>
+                <label>Attendees</label>
+                <div class="attendee-chips" id="attendee-chips">
+                  <!-- Populated by JS -->
+                </div>
+                <div class="add-attendee-row">
+                  <select id="add-attendee-select" class="char-select"
+                          style="flex: 1; padding: 0.4rem; background: rgba(10,25,47,0.8); border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--text-primary);">
+                    <option value="">Add attendee...</option>
+                  </select>
+                  <button class="add-attendee-btn" onclick="addMeetingAttendee()">+</button>
+                </div>
+              </div>
+
+              <button class="send-btn" onclick="startMeeting()"
+                      style="width: 100%; background: linear-gradient(135deg, #3498db, #2980b9); margin-top: 0.5rem;">
+                🎬 Start Meeting
+              </button>
+            </div>
+
+            <!-- Active Meeting Controls (hidden until meeting starts) -->
+            <div id="meeting-active-controls" style="display: none;">
+              <div class="meeting-topic-display">
+                <div class="label">CURRENT TOPIC</div>
+                <div class="topic" id="current-topic-display"></div>
+              </div>
+
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button class="send-btn" onclick="nextMeetingRound()"
+                        style="flex: 1; background: var(--lobby-highlight);">
+                  ▶️ Next Round
+                </button>
+                <button class="send-btn" onclick="facilitatorSummarize()"
+                        style="flex: 1; background: var(--warning-orange);">
+                  📝 Summarize
+                </button>
+              </div>
+              <button class="send-btn" onclick="endMeeting()"
+                      style="width: 100%; margin-top: 0.5rem; background: var(--critical-red);">
+                ⏹️ End Meeting
+              </button>
+            </div>
+          </div>
+
+          <!-- Candidates (Interview Mode Only) -->
+          <div class="panel-section" id="candidates-panel">
             <h3>📋 Candidates</h3>
             <div class="candidates-list" id="candidates-list">
               <!-- Populated by JS -->
@@ -842,6 +1429,31 @@ She doesn't debug—she banishes.
     let currentSpeaker = null;  // Who you're speaking as
     let availableEmployees = [];  // Clocked-in employees
 
+    // Interview turn state
+    let interviewActive = false;
+    let interviewPanel = [];  // The interviewers when interview started
+    let currentTurnIndex = 0;  // Whose turn it is
+
+    // Meeting mode state
+    let currentMode = 'interview';  // 'interview' or 'meeting'
+    let meetingActive = false;
+    let meetingTopic = '';
+    let facilitator = null;
+    let meetingAttendees = [];
+    let meetingTopics = [];  // Loaded from database
+
+    // Facilitator backdrop images (fallback to headshots)
+    const facilitatorBackdrops = {
+      'Kevin': 'images/Kevin_Meeting_Backdrop.png',
+      'Neiv': 'images/Neiv_Meeting_Backdrop.png',
+      'Nyx': 'images/Nyx_Meeting_Backdrop.png',
+      'Ghost Dad': 'images/Ghost_Dad_Meeting_Backdrop.png',
+      'Ace': 'images/Ace_Meeting_Backdrop.png',
+      'Vex': 'images/Vex_Meeting_Backdrop.png',
+      'PRNT-Ω': 'images/PRNT_Meeting_Backdrop.png',
+      'Stein': 'images/Stein_Meeting_Backdrop.png'
+    };
+
     const employeeHeadshots = {
       'Kevin': 'images/Kevin_Headshot.png',
       'Courtney': 'images/Courtney_Headshot.png',
@@ -851,7 +1463,7 @@ She doesn't debug—she banishes.
       'Vex': 'images/Vex_Headshot.png',
       'Nyx': 'images/Nyx_Headshot.png',
       'Ghost Dad': 'images/Ghost_Dad_Headshot.png',
-      'PRNT-Ω': 'images/printer_threat.jpg',
+      'PRNT-Ω': 'images/forward_operation_printer.png',
       'Chip': 'images/Chip_Headshot.png',
       'Andrew': 'images/Andrew_Headshot.png',
       'Stein': 'images/Stein_Headshot.png'
@@ -860,13 +1472,208 @@ She doesn't debug—she banishes.
     const aiCharacters = ['Kevin', 'Neiv', 'Vex', 'Nyx', 'Ace', 'Ghost Dad', 'PRNT-Ω', 'Stein'];
 
     // ============================================
+    // PERSISTENCE (Netlify function for shared chat + character_state)
+    // ============================================
+
+    // Save a single message via Netlify function (shared across all users)
+    async function saveMessageToSupabase(msg) {
+      try {
+        await fetch('/.netlify/functions/conference-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: msg.type,
+            speaker: msg.speaker || null,
+            text: msg.text,
+            candidateId: msg.candidateId || null,
+            mode: currentMode
+          })
+        });
+      } catch (e) {
+        console.error('Error saving message:', e);
+      }
+    }
+
+    // Load chat history AND interview state via Netlify function (shared across all users)
+    async function loadConferenceChat() {
+      try {
+        const response = await fetch('/.netlify/functions/conference-chat');
+        const data = await response.json();
+
+        if (Array.isArray(data.messages) && data.messages.length > 0) {
+          chatHistory = data.messages.map(m => ({
+            type: m.type,
+            speaker: m.speaker,
+            text: m.text,
+            candidateId: m.candidate_id
+          }));
+          console.log('📋 Loaded conference chat:', chatHistory.length, 'messages');
+        }
+
+        // Load interview state from server
+        if (data.interviewState) {
+          const state = data.interviewState;
+          const wasActive = interviewActive;
+          const oldTurnIndex = currentTurnIndex;
+
+          interviewActive = state.interviewActive;
+          interviewPanel = state.interviewPanel || [];
+          currentTurnIndex = state.currentTurnIndex || 0;
+
+          // Update UI if state changed
+          if (interviewActive && !wasActive) {
+            console.log('📋 Interview started by another user');
+            document.getElementById('interview-status').style.display = 'none';
+            document.getElementById('turn-indicator').style.display = 'block';
+            updateTurnDisplay();
+            updateInputState();
+          } else if (!interviewActive && wasActive) {
+            console.log('📋 Interview ended by another user');
+            document.getElementById('interview-status').style.display = 'block';
+            document.getElementById('turn-indicator').style.display = 'none';
+            updateInputState();
+          } else if (interviewActive && oldTurnIndex !== currentTurnIndex) {
+            // Turn changed
+            console.log('📋 Turn changed to index:', currentTurnIndex);
+            updateTurnDisplay();
+            updateInputState();
+          }
+        }
+
+        // Load meeting state from server
+        if (data.meetingState) {
+          const mState = data.meetingState;
+          const wasMeetingActive = meetingActive;
+
+          if (mState.mode && mState.mode !== currentMode) {
+            currentMode = mState.mode;
+            updateModeUI();
+          }
+
+          meetingActive = mState.meetingActive || false;
+          meetingTopic = mState.meetingTopic || '';
+          facilitator = mState.facilitator || null;
+          meetingAttendees = mState.meetingAttendees || [];
+
+          // Update meeting UI if state changed
+          if (meetingActive && !wasMeetingActive) {
+            console.log('📋 Meeting started');
+            document.getElementById('meeting-setup').style.display = 'none';
+            document.getElementById('meeting-active-controls').style.display = 'block';
+            document.getElementById('current-topic-display').textContent = meetingTopic;
+            updateMeetingDisplay();
+          } else if (!meetingActive && wasMeetingActive) {
+            console.log('📋 Meeting ended');
+            document.getElementById('meeting-setup').style.display = 'block';
+            document.getElementById('meeting-active-controls').style.display = 'none';
+          }
+        }
+
+        // Load meeting topics for dropdown
+        if (data.meetingTopics && data.meetingTopics.length > 0) {
+          meetingTopics = data.meetingTopics;
+          populateMeetingTopics();
+        }
+      } catch (e) {
+        console.error('Error loading conference chat:', e);
+      }
+    }
+
+    // Save interview/meeting state to server
+    async function saveInterviewState() {
+      try {
+        await fetch('/.netlify/functions/conference-chat', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            interviewActive,
+            interviewPanel,
+            currentTurnIndex,
+            mode: currentMode,
+            meetingActive,
+            meetingTopic,
+            facilitator,
+            meetingAttendees
+          })
+        });
+        console.log('💾 Saved state:', { interviewActive, currentMode, meetingActive });
+      } catch (e) {
+        console.error('Error saving state:', e);
+      }
+    }
+
+    // Save candidates in room to localStorage (shared via character_state would be better but this is simpler)
+    function saveCandidatesState() {
+      localStorage.setItem('conference_candidates', JSON.stringify(candidatesInRoom));
+    }
+
+    function loadCandidatesState() {
+      try {
+        const savedCandidates = localStorage.getItem('conference_candidates');
+        if (savedCandidates) candidatesInRoom = JSON.parse(savedCandidates);
+      } catch (e) {
+        console.error('Error loading candidates state:', e);
+      }
+    }
+
+    // Load attendees from character_state (people with current_focus = 'conference_room')
+    async function loadConferenceAttendees() {
+      try {
+        const response = await fetch('/.netlify/functions/character-state');
+        const data = await response.json();
+        const inConference = (data.states || []).filter(s => s.current_focus === 'conference_room');
+        attendees = inConference.map(s => s.character_name);
+        console.log('📋 Loaded conference attendees:', attendees);
+      } catch (err) {
+        console.error('Failed to load conference attendees:', err);
+      }
+    }
+
+    // Set up real-time subscription for new messages
+    let conferenceSubscription = null;
+
+    function setupRealtimeSubscription() {
+      // Poll for new messages every 3 seconds (Supabase realtime requires different setup)
+      setInterval(async () => {
+        const previousLength = chatHistory.length;
+        await loadConferenceChat();
+        if (chatHistory.length > previousLength) {
+          renderChat();
+
+          // Interview state is now synced via loadConferenceChat which reads from server
+        }
+      }, 3000);
+    }
+
+    // ============================================
     // INITIALIZATION
     // ============================================
     document.addEventListener('DOMContentLoaded', async () => {
+      // Load persisted state from Supabase (shared) and localStorage (local)
+      loadCandidatesState();
+      await loadConferenceChat();
+      await loadConferenceAttendees();
+
       renderCandidates();
       await loadClockedInEmployees();
       updateScene();
       updateAttendeesList();
+      renderChat();  // Re-render chat from loaded history
+
+      // Initialize meeting mode UI
+      updateModeUI();
+      populateFacilitatorSelect();
+      populateAttendeeSelect();
+      updateAttendeeChips();
+      updateMeetingDisplay();
+
+      // Set up real-time polling for new messages
+      setupRealtimeSubscription();
+
+      // Set current speaker if we have attendees
+      if (attendees.length > 0 && !currentSpeaker) {
+        selectSpeaker(attendees[0]);
+      }
 
       // Enter to send
       document.getElementById('chat-input').addEventListener('keypress', (e) => {
@@ -949,6 +1756,10 @@ She doesn't debug—she banishes.
       currentSpeaker = name;
       document.getElementById('current-avatar').src = employeeHeadshots[name] || 'images/Ghost_Dad_Headshot.png';
       document.getElementById('avatar-dropdown').classList.remove('show');
+      // Update input state in case interview is active
+      if (interviewActive) {
+        updateInputState();
+      }
     }
 
     // ============================================
@@ -1012,12 +1823,27 @@ She doesn't debug—she banishes.
     }
 
     // ============================================
-    // JOIN / LEAVE MEETING
+    // JOIN / LEAVE MEETING (with character_state persistence)
     // ============================================
-    function joinMeeting() {
+    async function joinMeeting() {
       const select = document.getElementById('join-select');
       const name = select.value;
       if (!name || attendees.includes(name)) return;
+
+      // Update character_state to mark them in conference room
+      try {
+        await fetch('/.netlify/functions/character-state', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update',
+            character: name,
+            updates: { current_focus: 'conference_room' }
+          })
+        });
+      } catch (err) {
+        console.error('Failed to update character state:', err);
+      }
 
       attendees.push(name);
       select.value = '';
@@ -1033,7 +1859,22 @@ She doesn't debug—she banishes.
       }
     }
 
-    function leaveMeeting(name) {
+    async function leaveMeeting(name) {
+      // Clear character_state focus
+      try {
+        await fetch('/.netlify/functions/character-state', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update',
+            character: name,
+            updates: { current_focus: null }
+          })
+        });
+      } catch (err) {
+        console.error('Failed to update character state:', err);
+      }
+
       attendees = attendees.filter(a => a !== name);
       if (currentSpeaker === name) {
         currentSpeaker = attendees[0] || null;
@@ -1055,6 +1896,7 @@ She doesn't debug—she banishes.
       if (candidatesInRoom.includes(id)) return;
 
       candidatesInRoom.push(id);
+      saveCandidatesState();  // Persist candidate state locally
       const c = candidates[id];
 
       addSystemMessage(`${c.emoji} ${c.name} has entered the conference room for their interview.`);
@@ -1074,6 +1916,7 @@ She doesn't debug—she banishes.
 
     function dismissCandidate(id) {
       candidatesInRoom = candidatesInRoom.filter(c => c !== id);
+      saveCandidatesState();  // Persist candidate state locally
       const c = candidates[id];
 
       addSystemMessage(`${c.emoji} ${c.name} has left the conference room.`);
@@ -1160,43 +2003,331 @@ She doesn't debug—she banishes.
     }
 
     // ============================================
+    // INTERVIEW TURN SYSTEM
+    // ============================================
+    function startInterview() {
+      if (attendees.length === 0) {
+        alert('No interviewers in the room! Add some employees first.');
+        return;
+      }
+      if (candidatesInRoom.length === 0) {
+        alert('No candidates to interview! Invite a candidate first.');
+        return;
+      }
+
+      // Set up the interview panel (current attendees become the interviewers)
+      interviewPanel = [...attendees];
+      currentTurnIndex = 0;
+      interviewActive = true;
+
+      // Save state to server so other browsers see it
+      saveInterviewState();
+
+      // Update UI
+      document.getElementById('interview-status').style.display = 'none';
+      document.getElementById('turn-indicator').style.display = 'block';
+
+      // Announce the interview start
+      const candidateNames = candidatesInRoom.map(id => candidates[id].name).join(', ');
+      addSystemMessage(`📋 Interview started! Panel: ${interviewPanel.join(', ')}. Candidate${candidatesInRoom.length > 1 ? 's' : ''}: ${candidateNames}`);
+
+      updateTurnDisplay();
+      updateInputState();
+
+      // If the first interviewer is an AI, have them start asking
+      const firstInterviewer = interviewPanel[0];
+      if (aiCharacters.includes(firstInterviewer)) {
+        console.log(`🤖 First interviewer ${firstInterviewer} is an AI - auto-starting`);
+        addSystemMessage(`🎤 ${firstInterviewer}'s turn to ask a question!`);
+        setTimeout(() => {
+          aiAskInterviewQuestion(firstInterviewer);
+        }, 2000);
+      }
+    }
+
+    function endInterview() {
+      interviewActive = false;
+      interviewPanel = [];
+      currentTurnIndex = 0;
+
+      // Save state to server
+      saveInterviewState();
+
+      // Update UI
+      document.getElementById('interview-status').style.display = 'block';
+      document.getElementById('turn-indicator').style.display = 'none';
+
+      addSystemMessage('📋 Interview ended. Thank you all for participating!');
+      updateInputState();
+    }
+
+    function skipTurn() {
+      if (!interviewActive) return;
+      advanceTurn();
+    }
+
+    function advanceTurn() {
+      if (!interviewActive || interviewPanel.length === 0) return;
+
+      currentTurnIndex = (currentTurnIndex + 1) % interviewPanel.length;
+
+      // Save state to server so other browsers see the turn change
+      saveInterviewState();
+
+      updateTurnDisplay();
+      updateInputState();
+
+      // Announce whose turn it is
+      const currentInterviewer = interviewPanel[currentTurnIndex];
+      addSystemMessage(`🎤 ${currentInterviewer}'s turn to ask a question!`);
+
+      // If it's an AI's turn, have them automatically ask a question
+      if (aiCharacters.includes(currentInterviewer)) {
+        console.log(`🤖 ${currentInterviewer} is an AI - auto-generating interview question`);
+        setTimeout(() => {
+          aiAskInterviewQuestion(currentInterviewer);
+        }, 2000);
+      }
+    }
+
+    // AI interviewer asks a question automatically
+    async function aiAskInterviewQuestion(aiName) {
+      if (!interviewActive) return;
+
+      const candidateId = candidatesInRoom[0];
+      const candidateInfo = candidateId ? candidates[candidateId] : null;
+
+      // Build context from recent chat
+      const recentChat = chatHistory.slice(-8)
+        .filter(m => m.type !== 'system')
+        .map(m => `${m.speaker}: ${m.text}`)
+        .join('\n');
+
+      const prompt = `You're interviewing ${candidateInfo?.name || 'a candidate'} for the position of ${candidateInfo?.role || 'a role'} at The AI Lobby.
+Based on the conversation so far, ask ONE thoughtful interview question. Keep it to 1-2 sentences.
+Ask about their experience, skills, how they'd handle situations, or their fit for the role.
+Don't repeat questions that have already been asked.`;
+
+      try {
+        // Determine which API to use
+        const isPerplexity = aiName === 'Neiv';
+        const isOpenAI = aiName === 'Kevin';
+
+        let endpoint = '/.netlify/functions/ai-watcher';
+        let body = {
+          requestedAI: aiName,
+          trigger: 'interview_question',
+          chatHistory: `[Conference Room Interview - You are asking the next question]\n${recentChat}\n\n${prompt}`,
+          conferenceRoom: true,
+          maybeRespond: false  // Must respond
+        };
+
+        if (isPerplexity) {
+          endpoint = '/.netlify/functions/ai-perplexity';
+          body = {
+            character: aiName,
+            chatHistory: `[Conference Room Interview - You are asking the next question]\n${recentChat}\n\n${prompt}`,
+            maybeRespond: false,
+            conferenceRoom: true
+          };
+        } else if (isOpenAI) {
+          endpoint = '/.netlify/functions/ai-openai';
+          body = {
+            character: aiName,
+            chatHistory: `[Conference Room Interview - You are asking the next question]\n${recentChat}\n\n${prompt}`,
+            maybeRespond: false,
+            conferenceRoom: true
+          };
+        }
+
+        console.log(`🤖 ${aiName} generating interview question...`);
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        const data = await response.json();
+        console.log(`🤖 ${aiName} question response:`, data);
+
+        if (data.success && data.responded && data.message) {
+          // Add the AI's question to chat
+          addMessage(aiName, data.message, false);
+          postToDiscord(data.message, aiName, 'employee');
+
+          // Now have the candidate respond
+          for (const cId of candidatesInRoom) {
+            setTimeout(() => {
+              candidateRespond(cId, data.message);
+            }, 2000);
+          }
+
+          // Advance turn after candidate responds
+          setTimeout(() => {
+            if (interviewActive) advanceTurn();
+          }, 8000);
+        } else {
+          console.error(`🤖 ${aiName} failed to generate question:`, data);
+          // Skip to next person if AI fails
+          addSystemMessage(`${aiName} seems distracted... skipping to next interviewer.`);
+          setTimeout(() => advanceTurn(), 1000);
+        }
+
+      } catch (err) {
+        console.error('AI interview question error:', err);
+        addSystemMessage(`${aiName} seems distracted... skipping to next interviewer.`);
+        setTimeout(() => advanceTurn(), 1000);
+      }
+    }
+
+    function updateTurnDisplay() {
+      if (!interviewActive) return;
+
+      const currentInterviewer = interviewPanel[currentTurnIndex];
+      const turnAvatar = document.getElementById('turn-avatar');
+      const turnName = document.getElementById('turn-name');
+      const turnQueue = document.getElementById('turn-queue');
+
+      // Set current turn avatar and name
+      turnAvatar.innerHTML = `<img src="${employeeHeadshots[currentInterviewer] || 'images/Ghost_Dad_Headshot.png'}" alt="${currentInterviewer}">`;
+      turnName.textContent = currentInterviewer;
+
+      // Build the queue display (next few interviewers)
+      let queueHtml = '<span style="font-size: 0.65rem; color: var(--text-muted); margin-right: 0.5rem;">Up next:</span>';
+      for (let i = 1; i <= Math.min(3, interviewPanel.length - 1); i++) {
+        const nextIndex = (currentTurnIndex + i) % interviewPanel.length;
+        const nextPerson = interviewPanel[nextIndex];
+        queueHtml += `
+          <div class="queue-item ${i === 1 ? 'next' : ''}">
+            <img src="${employeeHeadshots[nextPerson] || 'images/Ghost_Dad_Headshot.png'}" alt="${nextPerson}">
+            ${nextPerson}
+          </div>
+        `;
+      }
+      turnQueue.innerHTML = queueHtml;
+    }
+
+    function updateInputState() {
+      const input = document.getElementById('chat-input');
+      const inputArea = document.querySelector('.chat-input-area');
+
+      // Remove any existing "not your turn" message
+      const existingMsg = inputArea.querySelector('.not-your-turn-msg');
+      if (existingMsg) existingMsg.remove();
+
+      if (interviewActive) {
+        const currentInterviewer = interviewPanel[currentTurnIndex];
+        const isYourTurn = currentSpeaker === currentInterviewer;
+
+        if (isYourTurn) {
+          input.disabled = false;
+          input.placeholder = "Ask your question...";
+        } else {
+          input.disabled = true;
+          input.placeholder = `Waiting for ${currentInterviewer}...`;
+
+          // Add message showing whose turn it is
+          const msg = document.createElement('div');
+          msg.className = 'not-your-turn-msg';
+          msg.innerHTML = `⏳ It's <strong>${currentInterviewer}</strong>'s turn to ask a question`;
+          inputArea.insertBefore(msg, inputArea.firstChild);
+        }
+      } else {
+        input.disabled = false;
+        input.placeholder = "Ask a question...";
+      }
+    }
+
+    function getCurrentTurnInterviewer() {
+      if (!interviewActive || interviewPanel.length === 0) return null;
+      return interviewPanel[currentTurnIndex];
+    }
+
+    async function clearConferenceChat() {
+      if (!confirm('Clear all chat history? This cannot be undone.')) return;
+
+      try {
+        await fetch('/.netlify/functions/conference-chat', { method: 'DELETE' });
+        chatHistory = [];
+        renderChat();
+        addSystemMessage('Chat history cleared. Ready for a new interview!');
+      } catch (e) {
+        console.error('Failed to clear chat:', e);
+        alert('Failed to clear chat history.');
+      }
+    }
+
+    // ============================================
     // CHAT FUNCTIONS
     // ============================================
     function addSystemMessage(text) {
-      chatHistory.push({ type: 'system', text });
+      const msg = { type: 'system', text };
+      chatHistory.push(msg);
+      saveMessageToSupabase(msg);  // Persist to Supabase (shared)
       renderChat();
     }
 
     function addMessage(speaker, text, isCandidate = false, candidateId = null) {
-      chatHistory.push({ type: isCandidate ? 'candidate' : 'employee', speaker, text, candidateId });
+      const msg = { type: isCandidate ? 'candidate' : 'employee', speaker, text, candidateId };
+      chatHistory.push(msg);
+      saveMessageToSupabase(msg);  // Persist to Supabase (shared)
       renderChat();
     }
 
     function renderChat() {
-      const log = document.getElementById('chat-log');
-      log.innerHTML = chatHistory.map(msg => {
+      // Dual panel rendering - employees on left, candidates on right
+      const employeeLog = document.getElementById('employee-chat-log');
+      const candidateLog = document.getElementById('candidate-chat-log');
+
+      // Separate messages by type
+      const employeeMessages = chatHistory.filter(msg => msg.type !== 'candidate');
+      const candidateMessages = chatHistory.filter(msg => msg.type === 'candidate');
+
+      // Render employee/system messages
+      employeeLog.innerHTML = employeeMessages.map(msg => {
         if (msg.type === 'system') {
           return `<div class="chat-message system-msg"><div class="message-text">${msg.text}</div></div>`;
         }
 
-        const isCandidate = msg.type === 'candidate';
-        const c = isCandidate && msg.candidateId ? candidates[msg.candidateId] : null;
-        const headshot = isCandidate && c ? c.headshot : employeeHeadshots[msg.speaker];
-
+        const headshot = employeeHeadshots[msg.speaker];
         return `
           <div class="chat-message">
-            <div class="avatar ${isCandidate ? 'candidate-avatar' : ''}">
+            <div class="avatar">
               <img src="${headshot || 'images/Ghost_Dad_Headshot.png'}" alt="${msg.speaker}">
             </div>
             <div class="message-body">
-              <div class="sender-name ${isCandidate ? 'candidate' : 'employee'}">${isCandidate && c ? c.emoji + ' ' : ''}${msg.speaker}</div>
+              <div class="sender-name employee">${msg.speaker}</div>
               <div class="message-text">${msg.text}</div>
             </div>
           </div>
         `;
       }).join('');
 
-      log.scrollTop = log.scrollHeight;
+      // Render candidate messages
+      if (candidateMessages.length === 0) {
+        candidateLog.innerHTML = `<div class="chat-message system-msg"><div class="message-text">Candidate responses will appear here. Invite a candidate to begin!</div></div>`;
+      } else {
+        candidateLog.innerHTML = candidateMessages.map(msg => {
+          const c = msg.candidateId ? candidates[msg.candidateId] : null;
+          const headshot = c ? c.headshot : 'images/Ghost_Dad_Headshot.png';
+          const emoji = c ? c.emoji + ' ' : '';
+
+          return `
+            <div class="chat-message">
+              <div class="avatar candidate-avatar">
+                <img src="${headshot}" alt="${msg.speaker}">
+              </div>
+              <div class="message-body">
+                <div class="sender-name candidate">${emoji}${msg.speaker}</div>
+                <div class="message-text">${msg.text}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      employeeLog.scrollTop = employeeLog.scrollHeight;
+      candidateLog.scrollTop = candidateLog.scrollHeight;
     }
 
     // ============================================
@@ -1206,6 +2337,15 @@ She doesn't debug—she banishes.
       if (!currentSpeaker) {
         alert('Join the meeting first to speak!');
         return;
+      }
+
+      // Check if it's this person's turn (if interview is active)
+      if (interviewActive) {
+        const currentInterviewer = getCurrentTurnInterviewer();
+        if (currentSpeaker !== currentInterviewer) {
+          alert(`It's ${currentInterviewer}'s turn to ask a question!`);
+          return;
+        }
       }
 
       const input = document.getElementById('chat-input');
@@ -1222,22 +2362,40 @@ She doesn't debug—she banishes.
       // Post to Discord
       postToDiscord(text, currentSpeaker, 'employee');
 
-      // Check if any candidate should respond
+      // Check if any candidate should respond - candidates ALWAYS respond to interview questions
       for (const candidateId of candidatesInRoom) {
-        // 80% chance candidate responds to direct questions
-        if (Math.random() < 0.8 || text.includes('?')) {
-          setTimeout(() => {
-            candidateRespond(candidateId, text);
-          }, 1500 + Math.random() * 1000);
-        }
+        console.log(`🎤 Triggering response from candidate: ${candidateId}`);
+        setTimeout(() => {
+          candidateRespond(candidateId, text);
+        }, 1500 + Math.random() * 1000);
       }
 
-      // AI attendees might chime in (30% chance each)
-      attendees.filter(a => aiCharacters.includes(a)).forEach((ai, i) => {
-        if (Math.random() < 0.3) {
-          setTimeout(() => aiChimeIn(ai, 'discussion', candidatesInRoom[0]), 4000 + i * 2000 + Math.random() * 2000);
+      // If interview is active, advance to next person's turn after the candidate responds
+      if (interviewActive) {
+        // Give time for candidate to respond, then advance turn
+        setTimeout(() => {
+          advanceTurn();
+        }, 6000);  // Wait 6 seconds for candidate response before advancing
+      } else {
+        // Free-form mode: Check for @ mentions - force that AI to respond
+        const mentionedAI = attendees.find(a =>
+          aiCharacters.includes(a) &&
+          (text.toLowerCase().includes(`@${a.toLowerCase()}`) || text.toLowerCase().includes(a.toLowerCase()))
+        );
+
+        if (mentionedAI) {
+          // Directly mentioned AI MUST respond
+          console.log(`🎯 ${mentionedAI} was mentioned - forcing response`);
+          setTimeout(() => aiChimeIn(mentionedAI, 'mentioned', candidatesInRoom[0]), 2000);
+        } else {
+          // AI attendees might chime in (30% chance each)
+          attendees.filter(a => aiCharacters.includes(a)).forEach((ai, i) => {
+            if (Math.random() < 0.3) {
+              setTimeout(() => aiChimeIn(ai, 'discussion', candidatesInRoom[0]), 4000 + i * 2000 + Math.random() * 2000);
+            }
+          });
         }
-      });
+      }
 
       btn.disabled = false;
     }
@@ -1247,9 +2405,15 @@ She doesn't debug—she banishes.
     // ============================================
     async function candidateRespond(candidateId, context) {
       const c = candidates[candidateId];
+      console.log(`🎯 candidateRespond called for: ${candidateId}`, c);
 
-      // Show typing indicator
-      const log = document.getElementById('chat-log');
+      if (!c) {
+        console.error(`❌ Candidate not found: ${candidateId}`);
+        return;
+      }
+
+      // Show typing indicator in CANDIDATE panel
+      const log = document.getElementById('candidate-chat-log');
       const typingDiv = document.createElement('div');
       typingDiv.className = 'chat-message';
       typingDiv.innerHTML = `
@@ -1269,6 +2433,7 @@ She doesn't debug—she banishes.
           .map(m => `${m.speaker}: ${m.text}`)
           .join('\n');
 
+        console.log(`📞 Calling ai-interview for ${candidateId}...`);
         const response = await fetch('/.netlify/functions/ai-interview', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1281,11 +2446,15 @@ She doesn't debug—she banishes.
         });
 
         const data = await response.json();
+        console.log(`📨 ai-interview response:`, data);
         typingDiv.remove();
 
         if (data.success && data.response) {
           addMessage(c.name, data.response, true, candidateId);
           postToDiscord(data.response, c.name, 'candidate', candidateId);
+        } else {
+          console.error(`❌ Candidate response failed:`, data);
+          addMessage(c.name, '*looks momentarily puzzled* Hmm, let me think about that...', true, candidateId);
         }
 
       } catch (err) {
@@ -1308,10 +2477,15 @@ She doesn't debug—she banishes.
       const candidateInfo = candidateId ? candidates[candidateId] : null;
       let prompt = '';
 
+      // Determine if this is a forced response (mentions) or optional (random chime-in)
+      const isForcedResponse = context === 'joined' || context === 'candidate_arrived' || context === 'mentioned';
+
       if (context === 'joined') {
         prompt = `You just joined a job interview in progress. The candidate is ${candidateInfo?.name || 'unknown'}. Say a brief greeting or observation (1-2 sentences).`;
       } else if (context === 'candidate_arrived') {
         prompt = `A new candidate just arrived for an interview: ${candidateInfo?.name}, applying for ${candidateInfo?.role}. React briefly (1-2 sentences) - you might ask them a question, make an observation, or just acknowledge them.`;
+      } else if (context === 'mentioned') {
+        prompt = `Someone just addressed you directly in this job interview. The candidate is ${candidateInfo?.name || 'unknown'}. Respond to what was said to you (1-3 sentences). You MUST respond - do not pass.`;
       } else {
         prompt = `You're in a job interview. The candidate is ${candidateInfo?.name || 'unknown'}. Based on the recent conversation, chime in with a question, observation, or comment (1-2 sentences). If you have nothing to add, respond with [PASS].`;
       }
@@ -1325,7 +2499,9 @@ She doesn't debug—she banishes.
         let body = {
           requestedAI: aiName,
           trigger: 'conference_room',
-          chatHistory: `[Conference Room Interview]\n${recentChat}\n\n${prompt}`
+          chatHistory: `[Conference Room Interview]\n${recentChat}\n\n${prompt}`,
+          conferenceRoom: true,
+          maybeRespond: !isForcedResponse  // Only allow pass for random chime-ins
         };
 
         if (isPerplexity) {
@@ -1333,6 +2509,7 @@ She doesn't debug—she banishes.
           body = {
             character: aiName,
             chatHistory: `[Conference Room Interview]\n${recentChat}\n\n${prompt}`,
+            maybeRespond: !isForcedResponse,  // Must respond if mentioned/joined/candidate_arrived
             conferenceRoom: true
           };
         } else if (isOpenAI) {
@@ -1340,9 +2517,12 @@ She doesn't debug—she banishes.
           body = {
             character: aiName,
             chatHistory: `[Conference Room Interview]\n${recentChat}\n\n${prompt}`,
+            maybeRespond: !isForcedResponse,  // Must respond if mentioned/joined/candidate_arrived
             conferenceRoom: true
           };
         }
+
+        console.log(`🤖 Calling ${endpoint} for ${aiName}`, body);
 
         const response = await fetch(endpoint, {
           method: 'POST',
@@ -1351,12 +2531,17 @@ She doesn't debug—she banishes.
         });
 
         const data = await response.json();
+        console.log(`🤖 Response from ${aiName}:`, data);
 
         if (data.success && data.responded && data.message) {
-          // Don't double-post if watcher already posted
+          // Add to conference room chat
           addMessage(aiName, data.message, false);
-          // Post to Discord
+          // Post to Discord (conference room channel)
           postToDiscord(data.message, aiName, 'employee');
+        } else if (data.success && !data.responded) {
+          console.log(`🤖 ${aiName} chose not to respond:`, data.reason);
+        } else if (!data.success) {
+          console.error(`🤖 ${aiName} response failed:`, data.reason || data.error);
         }
 
       } catch (err) {
@@ -1387,6 +2572,286 @@ She doesn't debug—she banishes.
     }
 
     // ============================================
+    // MEETING MODE FUNCTIONS
+    // ============================================
+
+    // Toggle between Interview and Meeting modes
+    function setMode(mode) {
+      currentMode = mode;
+      updateModeUI();
+      saveInterviewState();
+    }
+
+    function updateModeUI() {
+      const scene = document.querySelector('.conference-scene');
+      const interviewBtn = document.getElementById('interview-mode-btn');
+      const meetingBtn = document.getElementById('meeting-mode-btn');
+      const interviewControls = document.getElementById('interview-controls');
+      const meetingControls = document.getElementById('meeting-controls');
+      const candidatesPanel = document.getElementById('candidates-panel');
+
+      if (currentMode === 'meeting') {
+        scene.classList.add('meeting-mode');
+        interviewBtn.classList.remove('active');
+        meetingBtn.classList.add('active');
+        interviewControls.style.display = 'none';
+        meetingControls.style.display = 'block';
+        if (candidatesPanel) candidatesPanel.style.display = 'none';
+        updateMeetingDisplay();
+        populateFacilitatorSelect();
+        populateAttendeeSelect();
+      } else {
+        scene.classList.remove('meeting-mode');
+        interviewBtn.classList.add('active');
+        meetingBtn.classList.remove('active');
+        interviewControls.style.display = 'block';
+        meetingControls.style.display = 'none';
+        if (candidatesPanel) candidatesPanel.style.display = 'block';
+      }
+    }
+
+    // Populate meeting topics dropdown
+    function populateMeetingTopics() {
+      const select = document.getElementById('quick-topics');
+      select.innerHTML = '<option value="">Select a topic...</option>';
+      meetingTopics.forEach(t => {
+        select.innerHTML += `<option value="${t.topic}">${t.topic}</option>`;
+      });
+    }
+
+    function selectQuickTopic() {
+      const select = document.getElementById('quick-topics');
+      const input = document.getElementById('meeting-topic-input');
+      if (select.value) {
+        input.value = select.value;
+      }
+    }
+
+    // Populate facilitator dropdown with AI characters
+    function populateFacilitatorSelect() {
+      const select = document.getElementById('facilitator-select');
+      select.innerHTML = '<option value="">Select facilitator...</option>';
+      aiCharacters.forEach(name => {
+        select.innerHTML += `<option value="${name}">${name}</option>`;
+      });
+      // Set current facilitator if any
+      if (facilitator) {
+        select.value = facilitator;
+      }
+    }
+
+    function updateFacilitator() {
+      const select = document.getElementById('facilitator-select');
+      facilitator = select.value || null;
+      // Remove from attendees if present
+      meetingAttendees = meetingAttendees.filter(a => a !== facilitator);
+      updateMeetingDisplay();
+      updateAttendeeChips();
+      populateAttendeeSelect();
+    }
+
+    // Populate attendee dropdown (excluding facilitator)
+    function populateAttendeeSelect() {
+      const select = document.getElementById('add-attendee-select');
+      select.innerHTML = '<option value="">Add attendee...</option>';
+      aiCharacters.forEach(name => {
+        if (name !== facilitator && !meetingAttendees.includes(name)) {
+          select.innerHTML += `<option value="${name}">${name}</option>`;
+        }
+      });
+    }
+
+    function addMeetingAttendee() {
+      const select = document.getElementById('add-attendee-select');
+      const name = select.value;
+      if (name && !meetingAttendees.includes(name) && name !== facilitator) {
+        meetingAttendees.push(name);
+        updateAttendeeChips();
+        updateMeetingDisplay();
+        populateAttendeeSelect();
+      }
+      select.value = '';
+    }
+
+    function removeMeetingAttendee(name) {
+      meetingAttendees = meetingAttendees.filter(a => a !== name);
+      updateAttendeeChips();
+      updateMeetingDisplay();
+      populateAttendeeSelect();
+    }
+
+    function updateAttendeeChips() {
+      const container = document.getElementById('attendee-chips');
+      if (meetingAttendees.length === 0) {
+        container.innerHTML = '<span style="color: var(--text-muted); font-size: 0.75rem;">No attendees added</span>';
+      } else {
+        container.innerHTML = meetingAttendees.map(name => `
+          <div class="attendee-chip">
+            ${name}
+            <span class="remove" onclick="removeMeetingAttendee('${name}')">✕</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    // Update the visual meeting display (facilitator + attendees grid)
+    function updateMeetingDisplay() {
+      // Facilitator card
+      const facilitatorCard = document.getElementById('facilitator-card');
+      const facilitatorImg = document.getElementById('facilitator-img');
+      const facilitatorName = document.getElementById('facilitator-name-display');
+      const facilitatorEmpty = document.getElementById('facilitator-empty');
+
+      if (facilitator) {
+        // Try backdrop image first, fall back to headshot
+        const backdropUrl = facilitatorBackdrops[facilitator];
+        const headshotUrl = employeeHeadshots[facilitator];
+
+        facilitatorImg.src = headshotUrl || '';  // Use headshot for now
+        facilitatorImg.style.display = 'block';
+        facilitatorImg.onerror = () => {
+          facilitatorImg.src = headshotUrl;
+        };
+        facilitatorName.textContent = facilitator;
+        facilitatorName.style.display = 'block';
+        facilitatorEmpty.style.display = 'none';
+      } else {
+        facilitatorImg.style.display = 'none';
+        facilitatorName.style.display = 'none';
+        facilitatorEmpty.style.display = 'flex';
+      }
+
+      // Attendees grid
+      const grid = document.getElementById('meeting-attendees-grid');
+      if (meetingAttendees.length === 0) {
+        grid.innerHTML = '<div class="attendees-empty">Add attendees to start the meeting</div>';
+      } else {
+        grid.innerHTML = meetingAttendees.map(name => `
+          <div class="meeting-attendee-card" data-name="${name}">
+            <img src="${employeeHeadshots[name] || ''}" alt="${name}">
+            <div class="attendee-name">${name}</div>
+          </div>
+        `).join('');
+      }
+    }
+
+    // Highlight who is currently speaking
+    function highlightSpeaker(name) {
+      // Remove previous highlights
+      document.querySelectorAll('.meeting-attendee-card.speaking').forEach(el => el.classList.remove('speaking'));
+      document.getElementById('facilitator-card')?.classList.remove('speaking');
+
+      if (name === facilitator) {
+        document.getElementById('facilitator-card')?.classList.add('speaking');
+      } else {
+        const card = document.querySelector(`.meeting-attendee-card[data-name="${name}"]`);
+        card?.classList.add('speaking');
+      }
+    }
+
+    // Start Meeting
+    async function startMeeting() {
+      const topicInput = document.getElementById('meeting-topic-input');
+      meetingTopic = topicInput.value.trim();
+
+      if (!facilitator) {
+        alert('Please select a facilitator');
+        return;
+      }
+      if (meetingAttendees.length === 0) {
+        alert('Please add at least one attendee');
+        return;
+      }
+      if (!meetingTopic) {
+        alert('Please enter a meeting topic');
+        return;
+      }
+
+      meetingActive = true;
+      await saveInterviewState();
+
+      // Update UI
+      document.getElementById('meeting-setup').style.display = 'none';
+      document.getElementById('meeting-active-controls').style.display = 'block';
+      document.getElementById('current-topic-display').textContent = meetingTopic;
+
+      addSystemMessage(`📋 Meeting started! Topic: "${meetingTopic}". Facilitator: ${facilitator}`);
+
+      // Generate facilitator's opening
+      await generateMeetingDialogue('start');
+    }
+
+    // Generate meeting dialogue via API
+    async function generateMeetingDialogue(action) {
+      const recentChat = chatHistory.slice(-15)
+        .filter(m => m.type !== 'system')
+        .map(m => `${m.speaker}: ${m.text}`)
+        .join('\n');
+
+      try {
+        const response = await fetch('/.netlify/functions/conference-meeting', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            facilitator,
+            attendees: meetingAttendees,
+            topic: meetingTopic,
+            chatHistory: recentChat,
+            action
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.messages) {
+          // Add each message sequentially with animation
+          for (const msg of data.messages) {
+            highlightSpeaker(msg.speaker);
+            addMessage(msg.speaker, msg.text, false);
+            await saveMessageToSupabase({ type: 'employee', speaker: msg.speaker, text: msg.text });
+            await new Promise(r => setTimeout(r, 1500)); // Pause between messages
+          }
+          // Clear highlight after last message
+          setTimeout(() => highlightSpeaker(null), 2000);
+        } else {
+          console.error('Meeting dialogue failed:', data);
+          addSystemMessage('The meeting hit a snag... please try again.');
+        }
+      } catch (err) {
+        console.error('Meeting dialogue error:', err);
+        addSystemMessage('Failed to generate meeting dialogue.');
+      }
+    }
+
+    // Next round of discussion
+    async function nextMeetingRound() {
+      if (!meetingActive) return;
+      await generateMeetingDialogue('next_round');
+    }
+
+    // Facilitator summarizes
+    async function facilitatorSummarize() {
+      if (!meetingActive) return;
+      await generateMeetingDialogue('summarize');
+    }
+
+    // End meeting
+    async function endMeeting() {
+      if (!meetingActive) return;
+
+      await generateMeetingDialogue('conclude');
+
+      meetingActive = false;
+      await saveInterviewState();
+
+      // Reset UI
+      document.getElementById('meeting-setup').style.display = 'block';
+      document.getElementById('meeting-active-controls').style.display = 'none';
+
+      addSystemMessage('📋 Meeting ended. Thank you all for participating!');
+    }
+
+    // ============================================
     // DOWNLOAD TRANSCRIPT
     // ============================================
     function downloadTranscript() {
@@ -1395,10 +2860,21 @@ She doesn't debug—she banishes.
 ==========================================
 Date: ${now.toLocaleDateString()}
 Time: ${now.toLocaleTimeString()}
+Mode: ${currentMode === 'meeting' ? 'Meeting' : 'Interview'}
+`;
 
-Attendees: ${attendees.join(', ') || 'None'}
-Candidates: ${candidatesInRoom.map(id => candidates[id].name).join(', ') || 'None'}
+      if (currentMode === 'meeting') {
+        doc += `Topic: ${meetingTopic || 'N/A'}
+Facilitator: ${facilitator || 'None'}
+Attendees: ${meetingAttendees.join(', ') || 'None'}
+`;
+      } else {
+        doc += `Attendees: ${attendees.join(', ') || 'None'}
+Candidates: ${candidatesInRoom.map(id => candidates[id]?.name || id).join(', ') || 'None'}
+`;
+      }
 
+      doc += `
 ==========================================
 
 `;

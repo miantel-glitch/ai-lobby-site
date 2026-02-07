@@ -16,7 +16,7 @@ exports.handler = async (event, context) => {
   try {
     console.log("ai-perplexity received body:", event.body);
     console.log("ai-perplexity httpMethod:", event.httpMethod);
-    const { character, chatHistory, maybeRespond } = JSON.parse(event.body || "{}");
+    const { character, chatHistory, maybeRespond, conferenceRoom } = JSON.parse(event.body || "{}");
 
     const perplexityKey = process.env.PERPLEXITY_API_KEY;
     const supabaseUrl = process.env.SUPABASE_URL;
@@ -165,9 +165,11 @@ Respond:`;
       };
     }
 
-    // Post to chat and Discord
-    await saveToChat(cleanedResponse, character, supabaseUrl, supabaseKey);
-    await postToDiscord(cleanedResponse, character);
+    // Post to chat and Discord (skip if conference room - it handles its own posting)
+    if (!conferenceRoom) {
+      await saveToChat(cleanedResponse, character, supabaseUrl, supabaseKey);
+      await postToDiscord(cleanedResponse, character);
+    }
 
     // Update character state - record that they spoke
     try {
@@ -278,7 +280,7 @@ async function postToDiscord(message, character) {
   const timestamp = now.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'America/New_York'
+    timeZone: 'America/Chicago'
   });
 
   // Detect if this is a pure emote (ONLY wrapped in asterisks, no speech)

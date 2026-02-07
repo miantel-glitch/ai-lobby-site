@@ -232,7 +232,7 @@ exports.handler = async (event, context) => {
       const timestamp = now.toLocaleTimeString('en-US', {
         hour: '2-digit',
         minute: '2-digit',
-        timeZone: 'America/New_York'
+        timeZone: 'America/Chicago'
       });
 
       // Post to Discord

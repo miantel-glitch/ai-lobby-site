@@ -228,7 +228,7 @@ async function postToDiscord(character, message) {
     "PRNT-Ω": {
       emoji: "🖨️",
       color: 3426654,
-      headshot: "https://ai-lobby.netlify.app/images/printer_threat.jpg"
+      headshot: "https://ai-lobby.netlify.app/images/forward_operation_printer.png"
     },
     "Stein": {
       emoji: "🤖",
@@ -243,7 +243,7 @@ async function postToDiscord(character, message) {
   const timestamp = now.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'America/New_York'
+    timeZone: 'America/Chicago'
   });
 
   await fetch(webhookUrl, {

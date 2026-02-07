@@ -156,6 +156,35 @@ exports.handler = async (event, context) => {
 
       const state = currentState[0];
 
+      // COOLDOWN CHECK: 5-minute global cooldown between ANY activities
+      const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes in milliseconds
+      if (state.last_activity_at) {
+        const lastActivity = new Date(state.last_activity_at);
+        const now = new Date();
+        const timeSinceActivity = now.getTime() - lastActivity.getTime();
+
+        if (timeSinceActivity < COOLDOWN_MS) {
+          const remainingMs = COOLDOWN_MS - timeSinceActivity;
+          const remainingSeconds = Math.ceil(remainingMs / 1000);
+          const remainingMinutes = Math.floor(remainingSeconds / 60);
+          const remainingSecs = remainingSeconds % 60;
+
+          return {
+            statusCode: 429, // Too Many Requests
+            headers,
+            body: JSON.stringify({
+              success: false,
+              error: "cooldown",
+              message: `${character} needs to rest before another activity`,
+              cooldownRemaining: remainingMs,
+              cooldownDisplay: remainingMinutes > 0
+                ? `${remainingMinutes}m ${remainingSecs}s`
+                : `${remainingSecs}s`
+            })
+          };
+        }
+      }
+
       // Apply recovery
       const newEnergy = Math.max(0, Math.min(100, state.energy + activity.energy));
       const newPatience = Math.max(0, Math.min(100, state.patience + activity.patience));
@@ -174,7 +203,8 @@ exports.handler = async (event, context) => {
             patience: newPatience,
             mood: activity.mood,
             current_focus: null, // Leave break room
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
+            last_activity_at: new Date().toISOString() // Track for cooldown
           })
         }
       );
@@ -214,7 +244,8 @@ exports.handler = async (event, context) => {
         }
       }
 
-      // Create a memory of this recovery moment
+      // Create a memory of this recovery moment (expires in 1 hour - routine activity)
+      const memoryExpiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
       await fetch(
         `${supabaseUrl}/rest/v1/character_memory`,
         {
@@ -229,7 +260,10 @@ exports.handler = async (event, context) => {
             memory_type: "break_room",
             content: `Took ${activity.duration} in the break room. ${activity.message}. Feeling ${activity.mood} now.`,
             importance: 3,
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            is_pinned: false,
+            memory_tier: 'working',
+            expires_at: memoryExpiresAt.toISOString()
           })
         }
       );

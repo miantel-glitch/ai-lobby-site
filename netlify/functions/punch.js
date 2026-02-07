@@ -141,12 +141,12 @@ exports.handler = async (event, context) => {
     const timestamp = now.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
-      timeZone: 'America/New_York'
+      timeZone: 'America/Chicago'
     });
     const dateStr = now.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      timeZone: 'America/New_York'
+      timeZone: 'America/Chicago'
     });
 
     // Employee flavor text (because this is The AI Lobby)

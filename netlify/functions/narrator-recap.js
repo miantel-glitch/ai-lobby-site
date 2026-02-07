@@ -120,7 +120,7 @@ Just write the recap directly, no preamble.`;
       const timestamp = now.toLocaleTimeString('en-US', {
         hour: '2-digit',
         minute: '2-digit',
-        timeZone: 'America/New_York'
+        timeZone: 'America/Chicago'
       });
 
       await fetch(discordWebhook, {
@@ -130,7 +130,7 @@ Just write the recap directly, no preamble.`;
           embeds: [{
             author: {
               name: "📖 The Narrator",
-              icon_url: "https://ai-lobby.netlify.app/images/Narrator_Headshot.png"
+              icon_url: "https://ai-lobby.netlify.app/images/Ghost_Dad_Headshot.png"
             },
             description: narratorRecap,
             color: 2303786,

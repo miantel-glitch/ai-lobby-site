@@ -178,6 +178,85 @@
             color: #ccc;
         }
 
+        .memory-item .delete-btn {
+            background: rgba(220, 53, 69, 0.2);
+            border: 1px solid rgba(220, 53, 69, 0.5);
+            color: #dc3545;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            cursor: pointer;
+            margin-left: 8px;
+            transition: all 0.2s;
+        }
+
+        .memory-item .delete-btn:hover {
+            background: rgba(220, 53, 69, 0.4);
+            color: #fff;
+        }
+
+        /* Pin button */
+        .memory-item .pin-btn {
+            background: rgba(255, 215, 0, 0.2);
+            border: 1px solid rgba(255, 215, 0, 0.5);
+            color: #ffd700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            cursor: pointer;
+            margin-left: 8px;
+            transition: all 0.2s;
+        }
+
+        .memory-item .pin-btn:hover {
+            background: rgba(255, 215, 0, 0.4);
+            color: #fff;
+        }
+
+        .memory-item .pin-btn.pinned {
+            background: rgba(255, 215, 0, 0.5);
+            color: #fff;
+        }
+
+        /* Pinned/Core memory styling */
+        .memory-item.pinned {
+            border-left: 3px solid #ffd700;
+            background: rgba(255, 215, 0, 0.08);
+        }
+
+        /* Memory section headers in character modal */
+        .memory-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+            margin: 10px 0 8px 0;
+            font-size: 0.9em;
+        }
+
+        .memory-section-header.core {
+            background: rgba(255, 215, 0, 0.15);
+            border-left: 3px solid #ffd700;
+        }
+
+        .memory-section-header .pin-count {
+            font-size: 0.8em;
+            color: #888;
+        }
+
+        /* Expiration indicator */
+        .memory-item .expires {
+            font-size: 0.75em;
+            color: #888;
+            margin-left: 8px;
+        }
+
+        .memory-item .expires.soon {
+            color: #ff9800;
+        }
+
         /* Settings Panel */
         .setting-row {
             display: flex;
@@ -475,6 +554,47 @@
         .add-memory-form h4 {
             margin: 0 0 15px 0;
             color: var(--accent);
+        }
+
+        /* Emotion picker chips */
+        .emotion-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            font-size: 0.8em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .emotion-chip:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .emotion-chip:has(input:checked) {
+            background: rgba(233, 69, 96, 0.2);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .emotion-chip input {
+            display: none;
+        }
+
+        /* Emotion pill display in memory items */
+        .emotion-pill {
+            display: inline-block;
+            padding: 2px 6px;
+            background: rgba(233, 69, 96, 0.15);
+            border: 1px solid rgba(233, 69, 96, 0.3);
+            border-radius: 10px;
+            font-size: 0.7em;
+            color: #f0a0b0;
+            margin-left: 4px;
         }
 
         .form-row {
@@ -916,7 +1036,7 @@
                 hour: '2-digit',
                 minute: '2-digit',
                 second: '2-digit',
-                timeZone: 'America/New_York'
+                timeZone: 'America/Chicago'
             }) + ' EST';
         }
         setInterval(updateClock, 1000);
@@ -1001,16 +1121,20 @@
 
                 container.innerHTML = memories.map(mem => {
                     const timeAgo = getTimeAgo(new Date(mem.created_at));
+                    const emotionPills = (mem.emotional_tags && Array.isArray(mem.emotional_tags))
+                        ? mem.emotional_tags.map(e => `<span class="emotion-pill">${e}</span>`).join('')
+                        : '';
                     return `
-                        <div class="memory-item">
+                        <div class="memory-item" data-memory-id="${mem.id}">
                             <div class="meta">
                                 <span class="character">${mem.character_name}</span>
                                 <span>
                                     <span class="importance">⭐ ${mem.importance}</span>
                                     <span style="margin-left: 8px;">${timeAgo}</span>
+                                    <button class="delete-btn" onclick="deleteMemory('${mem.id}', '${mem.character_name}')">🗑️ Delete</button>
                                 </span>
                             </div>
-                            <div class="content">${mem.content}</div>
+                            <div class="content">${mem.content}${emotionPills ? '<br>' + emotionPills : ''}</div>
                         </div>
                     `;
                 }).join('');
@@ -1299,6 +1423,88 @@
             return `${Math.floor(seconds / 86400)}d ago`;
         }
 
+        // Delete a memory
+        async function deleteMemory(memoryId, characterName) {
+            if (!confirm(`Delete this memory from ${characterName}? This cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/.netlify/functions/admin-data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'delete_memory',
+                        memoryId: memoryId
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Remove the memory item from DOM immediately
+                    const memoryElement = document.querySelector(`[data-memory-id="${memoryId}"]`);
+                    if (memoryElement) {
+                        memoryElement.style.opacity = '0';
+                        memoryElement.style.transform = 'translateX(-20px)';
+                        memoryElement.style.transition = 'all 0.3s';
+                        setTimeout(() => memoryElement.remove(), 300);
+                    }
+
+                    // Show success flash
+                    const flash = document.getElementById('event-flash');
+                    const flashText = document.getElementById('event-flash-text');
+                    flashText.textContent = `Memory deleted from ${characterName}`;
+                    flash.style.display = 'block';
+                    setTimeout(() => { flash.style.display = 'none'; }, 3000);
+                } else {
+                    alert('Error deleting memory: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error deleting memory:', error);
+                alert('Error deleting memory');
+            }
+        }
+
+        // Delete memory from within character modal (refreshes the modal after)
+        async function deleteMemoryFromModal(memoryId, characterName) {
+            if (!confirm(`Delete this memory from ${characterName}? This cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/.netlify/functions/admin-data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'delete_memory',
+                        memoryId: memoryId
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Remove the memory item from DOM immediately
+                    const memoryElement = document.querySelector(`[data-memory-id="${memoryId}"]`);
+                    if (memoryElement) {
+                        memoryElement.style.opacity = '0';
+                        memoryElement.style.transform = 'translateX(-20px)';
+                        memoryElement.style.transition = 'all 0.3s';
+                        setTimeout(() => memoryElement.remove(), 300);
+                    }
+
+                    // Also refresh the main memories panel
+                    loadMemories();
+                } else {
+                    alert('Error deleting memory: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error deleting memory:', error);
+                alert('Error deleting memory');
+            }
+        }
+
         // ============================================
         // CHARACTER DETAIL MODAL
         // ============================================
@@ -1385,25 +1591,32 @@
             modal.classList.add('active');
 
             try {
-                // Fetch full character state and ALL their memories
-                const [stateRes, memoriesRes] = await Promise.all([
+                // Fetch full character state, ALL their memories, and current goal
+                const [stateRes, memoriesRes, goalsRes] = await Promise.all([
                     fetch(`/.netlify/functions/character-state?character=${encodeURIComponent(characterName)}`),
-                    fetch(`/.netlify/functions/admin-data?type=memories&character=${encodeURIComponent(characterName)}&limit=50`)
+                    fetch(`/.netlify/functions/admin-data?type=memories&character=${encodeURIComponent(characterName)}&limit=50`),
+                    fetch(`/.netlify/functions/character-goals?character=${encodeURIComponent(characterName)}`)
                 ]);
 
                 const stateData = await stateRes.json();
                 const memoriesData = await memoriesRes.json();
+                const goalsData = await goalsRes.json();
 
                 const state = stateData.state || { energy: 100, patience: 100, mood: 'neutral' };
                 const memories = memoriesData.memories || [];
+                const currentGoal = goalsData.currentGoal || null;
 
-                // Group memories by type/importance
-                const importantMemories = memories.filter(m => m.importance >= 7);
-                const recentMemories = memories.filter(m => {
+                // Group memories by core (pinned) vs working
+                const coreMemories = memories.filter(m => m.is_pinned);
+                const workingMemories = memories.filter(m => !m.is_pinned);
+
+                // Further group working memories
+                const importantMemories = workingMemories.filter(m => m.importance >= 7);
+                const recentMemories = workingMemories.filter(m => {
                     const age = Date.now() - new Date(m.created_at).getTime();
                     return age < 24 * 60 * 60 * 1000; // Last 24 hours
                 });
-                const otherMemories = memories.filter(m => m.importance < 7);
+                const otherMemories = workingMemories.filter(m => m.importance < 7);
 
                 // Build relationships HTML
                 let relationshipsHtml = '';
@@ -1432,16 +1645,46 @@
                     `;
                 }
 
-                // Build memories HTML
-                const memoryHtml = (mem) => {
+                // Build memories HTML with pin button and expiration
+                const memoryHtml = (mem, charName) => {
                     const timeAgo = getTimeAgo(new Date(mem.created_at));
+                    const emotionPills = (mem.emotional_tags && Array.isArray(mem.emotional_tags))
+                        ? mem.emotional_tags.map(e => `<span class="emotion-pill">${e}</span>`).join('')
+                        : '';
+
+                    // Expiration display
+                    let expiresHtml = '';
+                    if (mem.expires_at && !mem.is_pinned) {
+                        const expiresIn = new Date(mem.expires_at) - Date.now();
+                        if (expiresIn > 0) {
+                            const hours = Math.floor(expiresIn / (1000 * 60 * 60));
+                            const days = Math.floor(hours / 24);
+                            if (days > 0) {
+                                expiresHtml = `<span class="expires">expires in ${days}d</span>`;
+                            } else if (hours > 0) {
+                                expiresHtml = `<span class="expires ${hours < 2 ? 'soon' : ''}">expires in ${hours}h</span>`;
+                            } else {
+                                expiresHtml = `<span class="expires soon">expiring soon</span>`;
+                            }
+                        }
+                    }
+
+                    // Pin button
+                    const pinBtnClass = mem.is_pinned ? 'pin-btn pinned' : 'pin-btn';
+                    const pinBtnText = mem.is_pinned ? '📌' : '📍';
+                    const pinBtnTitle = mem.is_pinned ? 'Unpin from core' : 'Pin as core memory';
+
                     return `
-                        <div class="memory-item">
+                        <div class="memory-item ${mem.is_pinned ? 'pinned' : ''}" data-memory-id="${mem.id}">
                             <div class="meta">
                                 <span class="importance">⭐ ${mem.importance}</span>
-                                <span>${timeAgo}</span>
+                                <span>
+                                    ${timeAgo}${expiresHtml}
+                                    <button class="${pinBtnClass}" onclick="togglePinMemory('${mem.id}', ${!mem.is_pinned}, '${charName}')" title="${pinBtnTitle}">${pinBtnText}</button>
+                                    <button class="delete-btn" onclick="deleteMemoryFromModal('${mem.id}', '${charName}')">🗑️</button>
+                                </span>
                             </div>
-                            <div class="content">${mem.content}</div>
+                            <div class="content">${mem.content}${emotionPills ? '<br>' + emotionPills : ''}</div>
                         </div>
                     `;
                 };
@@ -1463,34 +1706,89 @@
                     ${relationshipsHtml}
                     ${caresAboutHtml}
 
+                    <div class="char-goals-section" style="margin-bottom: 20px;">
+                        <h4>🎯 Current Goal</h4>
+                        ${currentGoal ? `
+                            <div style="background: rgba(233, 69, 96, 0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(233, 69, 96, 0.3);">
+                                <div style="font-weight: bold; color: #e0a0b0;">"${currentGoal.goal_text}"</div>
+                                <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.85em;">
+                                    <span style="color: #888;">Progress: ${currentGoal.progress}%</span>
+                                    <span style="color: #666;">${currentGoal.goal_type || 'personal'}</span>
+                                </div>
+                                <div style="background: rgba(0,0,0,0.3); height: 6px; border-radius: 3px; margin-top: 6px; overflow: hidden;">
+                                    <div style="background: linear-gradient(90deg, #e94560, #6bcb77); height: 100%; width: ${currentGoal.progress}%; border-radius: 3px;"></div>
+                                </div>
+                                <div style="display: flex; gap: 8px; margin-top: 10px;">
+                                    <button class="quick-btn" onclick="updateGoalProgress('${characterName}', 10)" style="flex: 1; font-size: 0.8em;">+10%</button>
+                                    <button class="quick-btn" onclick="updateGoalProgress('${characterName}', 25)" style="flex: 1; font-size: 0.8em;">+25%</button>
+                                    <button class="quick-btn" onclick="completeGoal('${characterName}')" style="flex: 1; font-size: 0.8em; background: #28a745;">✓ Complete</button>
+                                    <button class="quick-btn" onclick="generateNewGoal('${characterName}')" style="flex: 1; font-size: 0.8em; background: #6c757d;">🔄 New</button>
+                                </div>
+                            </div>
+                        ` : `
+                            <div style="text-align: center; padding: 15px; color: #666;">
+                                <p>No active goal. Let ${characterName} set one!</p>
+                                <button class="quick-btn" onclick="generateNewGoal('${characterName}')" style="margin-top: 8px;">
+                                    ✨ Generate Goal
+                                </button>
+                            </div>
+                        `}
+                    </div>
+
                     <div class="char-memories-section">
                         <h4>
                             🧠 Memories (${memories.length} total)
                         </h4>
 
+                        <!-- CORE MEMORIES (pinned) - always visible -->
+                        <div class="memory-section-header core">
+                            <span>📌 Core Memories</span>
+                            <span class="pin-count">${coreMemories.length}/5</span>
+                        </div>
+                        ${coreMemories.length > 0 ? `
+                            <div class="memory-category">
+                                ${coreMemories.map(m => memoryHtml(m, characterName)).join('')}
+                            </div>
+                        ` : `<p style="color: #888; font-size: 0.85em; padding: 10px;">No core memories pinned. Pin important memories to make them permanent.</p>`}
+
+                        <!-- WORKING MEMORIES (with expiration) -->
+                        <div class="memory-section-header">
+                            <span>💭 Working Memories</span>
+                            <span class="pin-count">${workingMemories.length} memories</span>
+                        </div>
+
                         ${importantMemories.length > 0 ? `
                             <div class="memory-category">
                                 <div class="memory-category-title">⭐ Important (Importance 7+)</div>
-                                ${importantMemories.map(memoryHtml).join('')}
+                                ${importantMemories.map(m => memoryHtml(m, characterName)).join('')}
                             </div>
                         ` : ''}
 
                         ${recentMemories.length > 0 ? `
                             <div class="memory-category">
                                 <div class="memory-category-title">🕐 Recent (Last 24 hours)</div>
-                                ${recentMemories.filter(m => m.importance < 7).map(memoryHtml).join('')}
+                                ${recentMemories.filter(m => m.importance < 7).map(m => memoryHtml(m, characterName)).join('')}
                             </div>
                         ` : ''}
 
                         ${otherMemories.length > 0 ? `
                             <div class="memory-category">
                                 <div class="memory-category-title">📝 Other Memories</div>
-                                ${otherMemories.slice(0, 10).map(memoryHtml).join('')}
+                                ${otherMemories.slice(0, 10).map(m => memoryHtml(m, characterName)).join('')}
                                 ${otherMemories.length > 10 ? `<p style="color: #666; font-size: 0.85em;">...and ${otherMemories.length - 10} more</p>` : ''}
                             </div>
                         ` : ''}
 
                         ${memories.length === 0 ? '<p style="color: #666;">No memories yet. This character hasn\'t experienced any memorable events.</p>' : ''}
+
+                        <!-- Consolidation button -->
+                        ${workingMemories.length > 10 ? `
+                            <div style="margin-top: 15px; text-align: center;">
+                                <button class="quick-btn" onclick="consolidateMemories('${characterName}')" style="background: #6c757d;">
+                                    🧹 Consolidate Memories (AI cleanup)
+                                </button>
+                            </div>
+                        ` : ''}
                     </div>
 
                     <div class="add-memory-form">
@@ -1514,6 +1812,21 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="form-row">
+                            <label>Emotions (how did they feel?)</label>
+                            <div id="emotion-picker" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;">
+                                <label class="emotion-chip"><input type="checkbox" value="joy"> 😊 Joy</label>
+                                <label class="emotion-chip"><input type="checkbox" value="sadness"> 😢 Sadness</label>
+                                <label class="emotion-chip"><input type="checkbox" value="anger"> 😠 Anger</label>
+                                <label class="emotion-chip"><input type="checkbox" value="fear"> 😨 Fear</label>
+                                <label class="emotion-chip"><input type="checkbox" value="surprise"> 😲 Surprise</label>
+                                <label class="emotion-chip"><input type="checkbox" value="flirty"> 😏 Flirty</label>
+                                <label class="emotion-chip"><input type="checkbox" value="grateful"> 🙏 Grateful</label>
+                                <label class="emotion-chip"><input type="checkbox" value="anxious"> 😰 Anxious</label>
+                                <label class="emotion-chip"><input type="checkbox" value="proud"> 🦚 Proud</label>
+                                <label class="emotion-chip"><input type="checkbox" value="embarrassed"> 😳 Embarrassed</label>
+                            </div>
+                        </div>
                         <button class="quick-btn" onclick="addMemoryForCharacter('${characterName}')" style="margin-top: 10px;">
                             💾 Save Memory
                         </button>
@@ -1535,6 +1848,10 @@
             const importance = parseInt(document.getElementById('new-memory-importance').value) || 5;
             const memoryType = document.getElementById('new-memory-type').value;
 
+            // Collect selected emotions
+            const emotionCheckboxes = document.querySelectorAll('#emotion-picker input[type="checkbox"]:checked');
+            const emotionalTags = Array.from(emotionCheckboxes).map(cb => cb.value);
+
             if (!content) {
                 alert('Please enter memory content');
                 return;
@@ -1549,11 +1866,13 @@
                         character: characterName,
                         content: content,
                         importance: importance,
-                        memoryType: memoryType
+                        memoryType: memoryType,
+                        emotionalTags: emotionalTags
                     })
                 });
 
-                alert(`✅ Memory added for ${characterName}!`);
+                const emotionNote = emotionalTags.length > 0 ? ` (emotions: ${emotionalTags.join(', ')})` : '';
+                alert(`✅ Memory added for ${characterName}!${emotionNote}`);
 
                 // Refresh the modal
                 openCharacterModal(characterName);
@@ -1561,6 +1880,162 @@
             } catch (error) {
                 console.error('Error adding memory:', error);
                 alert('Error adding memory');
+            }
+        }
+
+        // ============================================
+        // MEMORY PIN/CONSOLIDATION
+        // ============================================
+
+        async function togglePinMemory(memoryId, shouldPin, characterName) {
+            try {
+                const response = await fetch('/.netlify/functions/admin-data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'pin_memory',
+                        memoryId: memoryId,
+                        isPinned: shouldPin,
+                        character: characterName
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok || result.error) {
+                    alert(`❌ ${result.message || result.error}`);
+                    return;
+                }
+
+                const action = shouldPin ? 'pinned as core' : 'unpinned';
+                console.log(`Memory ${memoryId} ${action}`);
+
+                // Refresh the character modal
+                openCharacterModal(characterName);
+                loadMemories();
+            } catch (error) {
+                console.error('Error toggling pin:', error);
+                alert('Error updating memory pin status');
+            }
+        }
+
+        async function consolidateMemories(characterName) {
+            if (!confirm(`This will have ${characterName} review and clean up their memories.\n\nDuplicates will be merged, noise removed, and core candidates suggested.\n\nProceed?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/.netlify/functions/memory-consolidation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ character: characterName })
+                });
+
+                const result = await response.json();
+
+                if (result.error) {
+                    alert(`❌ ${result.error}`);
+                    return;
+                }
+
+                // Show results
+                let resultMessage = `✅ Memory consolidation complete for ${characterName}!\n\n`;
+                if (result.deleted > 0) resultMessage += `• Removed ${result.deleted} redundant memories\n`;
+                if (result.merged > 0) resultMessage += `• Merged ${result.merged} groups of similar memories\n`;
+                if (result.coreCandidates && result.coreCandidates.length > 0) {
+                    resultMessage += `\n💫 Suggested core memories:\n${result.coreCandidates.map(c => `  - "${c.content.substring(0, 50)}..."`).join('\n')}`;
+                }
+
+                alert(resultMessage);
+
+                // Refresh
+                openCharacterModal(characterName);
+                loadMemories();
+            } catch (error) {
+                console.error('Error consolidating memories:', error);
+                alert('Error running memory consolidation');
+            }
+        }
+
+        // ============================================
+        // GOALS MANAGEMENT
+        // ============================================
+
+        async function generateNewGoal(characterName) {
+            try {
+                const response = await fetch('/.netlify/functions/character-goals', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'generate',
+                        character: characterName
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Refresh the modal to show new goal
+                    openCharacterModal(characterName);
+                } else {
+                    alert('Error generating goal: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error generating goal:', error);
+                alert('Error generating goal');
+            }
+        }
+
+        async function updateGoalProgress(characterName, delta) {
+            try {
+                const response = await fetch('/.netlify/functions/character-goals', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        character: characterName,
+                        progressDelta: delta
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Refresh the modal
+                    openCharacterModal(characterName);
+                } else {
+                    alert('Error updating progress: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error updating goal progress:', error);
+                alert('Error updating goal progress');
+            }
+        }
+
+        async function completeGoal(characterName) {
+            if (!confirm(`Mark ${characterName}'s goal as complete?`)) return;
+
+            try {
+                const response = await fetch('/.netlify/functions/character-goals', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        character: characterName,
+                        complete: true
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(`🎉 Goal completed for ${characterName}!`);
+                    // Refresh the modal
+                    openCharacterModal(characterName);
+                } else {
+                    alert('Error completing goal: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error completing goal:', error);
+                alert('Error completing goal');
             }
         }
 

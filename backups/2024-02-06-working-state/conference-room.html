@@ -1,0 +1,2155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Conference Room | The AI Lobby</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* iOS Input Focus Fix - Prevents white screen when keyboard opens */
+    html, body {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100%;
+      min-height: -webkit-fill-available;
+    }
+
+    html {
+      height: -webkit-fill-available;
+    }
+
+    /* Prevent iOS zoom on input focus (16px min font prevents zoom) */
+    input, textarea, select {
+      font-size: 16px !important;
+    }
+
+    /* Conference Room Styles */
+    .conference-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    .conference-header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .conference-header h1 {
+      color: var(--stability-green);
+      margin-bottom: 0.5rem;
+    }
+
+    .conference-header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* Main Layout */
+    .conference-layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 1000px) {
+      .conference-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Main Content Area */
+    .main-content {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    /* Visual Scene */
+    .conference-scene {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid var(--border-subtle);
+    }
+
+    .scene-background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('images/conference room.png');
+      background-size: cover;
+      background-position: center;
+    }
+
+    .scene-empty-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      text-align: center;
+      opacity: 0.7;
+      display: none;
+    }
+
+    /* Character Position Slots - around the conference table */
+    .character-slot {
+      position: absolute;
+      width: 65px;
+      height: 65px;
+      border-radius: 50%;
+      border: 3px solid var(--stability-green);
+      background: rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      display: none;
+    }
+
+    .character-slot.occupied {
+      display: block;
+      animation: popIn 0.4s ease;
+    }
+
+    .character-slot.candidate {
+      border-color: var(--chaos-purple);
+      box-shadow: 0 0 15px rgba(155, 89, 182, 0.4);
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0); opacity: 0; }
+      70% { transform: scale(1.1); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .character-slot:hover {
+      transform: scale(1.15);
+      box-shadow: 0 0 20px rgba(46, 204, 113, 0.5);
+    }
+
+    .character-slot.candidate:hover {
+      box-shadow: 0 0 20px rgba(155, 89, 182, 0.6);
+    }
+
+    .character-slot img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .character-slot .char-name {
+      position: absolute;
+      bottom: -22px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.85);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.65rem;
+      white-space: nowrap;
+      color: var(--text-primary);
+    }
+
+    .character-slot.candidate .char-name {
+      background: rgba(155, 89, 182, 0.85);
+    }
+
+    /* Position slots around conference table - adjusted for the image */
+    .character-slot[data-position="left-1"] { bottom: 42%; left: 8%; }
+    .character-slot[data-position="left-2"] { bottom: 28%; left: 12%; }
+    .character-slot[data-position="head"] { bottom: 45%; left: 45%; }
+    .character-slot[data-position="right-1"] { bottom: 42%; right: 8%; }
+    .character-slot[data-position="right-2"] { bottom: 28%; right: 12%; }
+    .character-slot[data-position="front-1"] { bottom: 12%; left: 30%; }
+    .character-slot[data-position="front-2"] { bottom: 12%; right: 30%; }
+
+    /* Chat Section - Dual Panel Layout */
+    .interview-chat-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 900px) {
+      .interview-chat-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .chat-panel {
+      background: rgba(15, 52, 96, 0.5);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      max-height: 400px;
+    }
+
+    .chat-panel.employee-panel {
+      border-color: rgba(46, 204, 113, 0.4);
+    }
+
+    .chat-panel.candidate-panel {
+      border-color: rgba(155, 89, 182, 0.4);
+    }
+
+    /* Legacy single section (keeping for backwards compat) */
+    .chat-section {
+      background: rgba(15, 52, 96, 0.5);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      max-height: 400px;
+    }
+
+    .chat-header {
+      padding: 0.75rem 1rem;
+      background: rgba(46, 204, 113, 0.15);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chat-header h2 {
+      margin: 0;
+      font-size: 1rem;
+      color: var(--stability-green);
+    }
+
+    .chat-log {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      min-height: 200px;
+    }
+
+    .chat-message {
+      margin-bottom: 0.75rem;
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-start;
+    }
+
+    .chat-message .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      overflow: hidden;
+      flex-shrink: 0;
+      border: 2px solid var(--border-subtle);
+    }
+
+    .chat-message .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .chat-message .avatar.candidate-avatar {
+      border-color: var(--chaos-purple);
+    }
+
+    .chat-message .message-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .chat-message .sender-name {
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-bottom: 0.15rem;
+    }
+
+    .chat-message .sender-name.employee { color: var(--stability-green); }
+    .chat-message .sender-name.candidate { color: var(--chaos-purple); }
+    .chat-message .sender-name.system { color: var(--text-muted); }
+
+    .chat-message .message-text {
+      font-size: 0.85rem;
+      line-height: 1.4;
+      color: var(--text-primary);
+    }
+
+    .chat-message.system-msg {
+      justify-content: center;
+    }
+
+    .chat-message.system-msg .message-text {
+      background: rgba(155, 135, 175, 0.15);
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .chat-input-area {
+      padding: 0.75rem;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .avatar-picker {
+      position: relative;
+    }
+
+    .avatar-picker-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2px solid var(--stability-green);
+      overflow: hidden;
+      cursor: pointer;
+      background: rgba(0,0,0,0.3);
+      padding: 0;
+    }
+
+    .avatar-picker-btn img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .avatar-picker-dropdown {
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      background: rgba(15, 52, 96, 0.98);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 0.5rem;
+      display: none;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      max-width: 200px;
+      margin-bottom: 0.5rem;
+      z-index: 100;
+    }
+
+    .avatar-picker-dropdown.show {
+      display: flex;
+    }
+
+    .avatar-option {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2px solid var(--border-subtle);
+      overflow: hidden;
+      cursor: pointer;
+      padding: 0;
+      background: none;
+    }
+
+    .avatar-option:hover {
+      border-color: var(--stability-green);
+    }
+
+    .avatar-option img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .chat-input {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      background: rgba(10, 25, 47, 0.8);
+      border: 2px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 16px; /* iOS requires 16px minimum to prevent zoom on focus */
+      -webkit-appearance: none; /* Disable iOS styling */
+      appearance: none;
+    }
+
+    .chat-input:focus {
+      outline: none;
+      border-color: var(--stability-green);
+    }
+
+    .send-btn {
+      padding: 0.5rem 1rem;
+      background: linear-gradient(135deg, var(--stability-green), #27ae60);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .send-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .send-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Sidebar */
+    .sidebar-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .panel-section {
+      background: rgba(15, 52, 96, 0.5);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 1rem;
+    }
+
+    .panel-section h3 {
+      color: var(--stability-green);
+      font-size: 0.9rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Candidates Panel */
+    .candidates-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .candidate-card {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      padding: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .candidate-card:hover {
+      border-color: var(--chaos-purple);
+      background: rgba(155, 89, 182, 0.1);
+    }
+
+    .candidate-card.in-room {
+      border-color: var(--chaos-purple);
+      background: rgba(155, 89, 182, 0.15);
+    }
+
+    .candidate-card .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--chaos-purple), var(--lobby-highlight));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .candidate-card .info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .candidate-card .name {
+      font-weight: 600;
+      font-size: 0.85rem;
+      margin-bottom: 0.15rem;
+    }
+
+    .candidate-card .role {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .invite-btn {
+      padding: 0.3rem 0.6rem;
+      background: var(--chaos-purple);
+      border: none;
+      border-radius: 4px;
+      color: white;
+      font-size: 0.7rem;
+      cursor: pointer;
+    }
+
+    .invite-btn:hover {
+      background: #9b59b6;
+    }
+
+    .invite-btn.dismiss {
+      background: var(--critical-red);
+    }
+
+    /* Attendees Panel */
+    .attendee-card {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .attendee-card:last-child {
+      margin-bottom: 0;
+    }
+
+    .attendee-card .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid var(--stability-green);
+    }
+
+    .attendee-card .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .attendee-card .name {
+      flex: 1;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .attendee-card .leave-btn {
+      font-size: 0.65rem;
+      padding: 0.2rem 0.4rem;
+      background: rgba(231, 76, 60, 0.3);
+      border: 1px solid var(--critical-red);
+      border-radius: 4px;
+      color: var(--critical-red);
+      cursor: pointer;
+    }
+
+    /* Application Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: linear-gradient(135deg, var(--lobby-accent), var(--lobby-midnight));
+      border: 2px solid var(--chaos-purple);
+      border-radius: 16px;
+      max-width: 700px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      padding: 1.5rem;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      color: var(--chaos-purple);
+    }
+
+    .close-modal {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .close-modal:hover {
+      color: var(--critical-red);
+    }
+
+    .app-section {
+      margin-bottom: 1rem;
+      padding: 0.75rem;
+      background: rgba(10, 25, 47, 0.5);
+      border-radius: 8px;
+      border-left: 3px solid var(--chaos-purple);
+    }
+
+    .app-section h4 {
+      margin: 0 0 0.5rem 0;
+      font-size: 0.85rem;
+      color: var(--chaos-purple);
+    }
+
+    .app-section p {
+      margin: 0;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      white-space: pre-line;
+    }
+
+    .traits-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .trait-tag {
+      padding: 0.2rem 0.5rem;
+      background: rgba(155, 135, 175, 0.2);
+      border-radius: 10px;
+      font-size: 0.7rem;
+      color: #d4c4e8;
+    }
+
+    .donot-tag {
+      background: rgba(231, 76, 60, 0.2);
+      color: var(--critical-red);
+    }
+
+    /* Typing indicator */
+    .typing-indicator {
+      display: flex;
+      gap: 3px;
+      padding: 0.3rem 0.6rem;
+      background: rgba(10, 25, 47, 0.6);
+      border-radius: 8px;
+      width: fit-content;
+    }
+
+    .typing-indicator span {
+      width: 6px;
+      height: 6px;
+      background: var(--text-muted);
+      border-radius: 50%;
+      animation: typing 1.4s infinite ease-in-out;
+    }
+
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-3px); }
+    }
+
+    /* No one here state */
+    .empty-state {
+      text-align: center;
+      padding: 1rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .empty-state .icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      opacity: 0.5;
+    }
+
+    /* Interview Turn Indicator */
+    .current-turn {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(46, 204, 113, 0.1));
+      border: 2px solid var(--stability-green);
+      border-radius: 10px;
+      margin-bottom: 0.75rem;
+      animation: pulse-border 2s infinite;
+    }
+
+    @keyframes pulse-border {
+      0%, 100% { border-color: var(--stability-green); box-shadow: 0 0 10px rgba(46, 204, 113, 0.3); }
+      50% { border-color: #27ae60; box-shadow: 0 0 20px rgba(46, 204, 113, 0.5); }
+    }
+
+    .turn-avatar {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid var(--stability-green);
+      background: rgba(0,0,0,0.3);
+    }
+
+    .turn-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .turn-info {
+      flex: 1;
+    }
+
+    .turn-label {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .turn-name {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--stability-green);
+    }
+
+    .turn-queue {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.5rem;
+    }
+
+    .turn-queue .queue-item {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.25rem 0.5rem;
+      background: rgba(0,0,0,0.3);
+      border-radius: 15px;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .turn-queue .queue-item img {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+    }
+
+    .turn-queue .queue-item.next {
+      background: rgba(46, 204, 113, 0.2);
+      color: var(--stability-green);
+    }
+
+    .interview-idle {
+      text-align: center;
+    }
+
+    .start-interview-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(155, 89, 182, 0.4);
+    }
+
+    /* Disabled input when not your turn */
+    .chat-input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .not-your-turn-msg {
+      text-align: center;
+      padding: 0.5rem;
+      background: rgba(231, 76, 60, 0.2);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      color: var(--warning-orange);
+      margin-bottom: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <nav>
+        <a href="index.html" class="logo">
+          <span class="logo-icon">🏢</span>
+          <span>The AI Lobby</span>
+        </a>
+        <ul class="nav-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="characters.html">Personnel</a></li>
+          <li><a href="desktop.html">Desktop</a></li>
+          <li><a href="breakroom.html">☕ The Breakroom</a></li>
+          <li><a href="workspace.html" style="color: var(--lobby-highlight);">💬 The Floor</a></li>
+          <li><a href="conference-room.html" class="active" style="color: var(--stability-green);">🎤 Conference Room</a></li>
+          <li><a href="apply.html" style="color: var(--chaos-purple);">📋 Apply</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main style="padding-top: 80px;">
+    <div class="conference-container">
+      <div class="conference-header">
+        <h1>🎤 The Conference Room</h1>
+        <p>Interview candidates, discuss hiring decisions, and welcome potential new team members</p>
+      </div>
+
+      <div class="conference-layout">
+        <!-- Main Content -->
+        <div class="main-content">
+          <!-- Visual Scene -->
+          <div class="conference-scene">
+            <div class="scene-background"></div>
+            <div class="scene-empty-text" id="empty-scene-text">
+              <div class="icon">🪑</div>
+              <p>The conference room awaits...</p>
+            </div>
+
+            <!-- Character slots around the table -->
+            <div class="character-slot" data-position="left-1" id="slot-0">
+              <img src="" alt=""><span class="char-name"></span>
+            </div>
+            <div class="character-slot" data-position="left-2" id="slot-1">
+              <img src="" alt=""><span class="char-name"></span>
+            </div>
+            <div class="character-slot" data-position="head" id="slot-2">
+              <img src="" alt=""><span class="char-name"></span>
+            </div>
+            <div class="character-slot" data-position="right-1" id="slot-3">
+              <img src="" alt=""><span class="char-name"></span>
+            </div>
+            <div class="character-slot" data-position="right-2" id="slot-4">
+              <img src="" alt=""><span class="char-name"></span>
+            </div>
+            <div class="character-slot" data-position="front-1" id="slot-5">
+              <img src="" alt=""><span class="char-name"></span>
+            </div>
+            <div class="character-slot" data-position="front-2" id="slot-6">
+              <img src="" alt=""><span class="char-name"></span>
+            </div>
+          </div>
+
+          <!-- Dual Chat Panels -->
+          <div class="interview-chat-container">
+            <!-- Employee/Interview Panel Discussion -->
+            <div class="chat-panel employee-panel">
+              <div class="chat-header" style="background: rgba(46, 204, 113, 0.15);">
+                <h2 style="color: var(--stability-green);">👥 Interview Panel</h2>
+                <button class="send-btn" onclick="downloadTranscript()" style="background: var(--text-muted); font-size: 0.7rem; padding: 0.25rem 0.5rem;">💾</button>
+              </div>
+              <div class="chat-log" id="employee-chat-log">
+                <div class="chat-message system-msg">
+                  <div class="message-text">Panel discussion area. Questions and comments appear here.</div>
+                </div>
+              </div>
+              <div class="chat-input-area">
+                <div class="avatar-picker">
+                  <button class="avatar-picker-btn" id="avatar-picker-btn" onclick="toggleAvatarPicker()">
+                    <img src="images/Ghost_Dad_Headshot.png" alt="You" id="current-avatar">
+                  </button>
+                  <div class="avatar-picker-dropdown" id="avatar-dropdown">
+                    <!-- Populated by JS -->
+                  </div>
+                </div>
+                <input type="text" class="chat-input" id="chat-input" placeholder="Ask a question..." maxlength="500">
+                <button class="send-btn" id="send-btn" onclick="sendMessage()">Ask</button>
+              </div>
+            </div>
+
+            <!-- Candidate Response Panel -->
+            <div class="chat-panel candidate-panel">
+              <div class="chat-header" style="background: rgba(155, 89, 182, 0.15);">
+                <h2 style="color: #9b59b6;">🎤 Candidate</h2>
+              </div>
+              <div class="chat-log" id="candidate-chat-log">
+                <div class="chat-message system-msg">
+                  <div class="message-text">Candidate responses will appear here. Invite a candidate to begin!</div>
+                </div>
+              </div>
+              <!-- No input for candidate panel - AI generates responses -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar-panel">
+          <!-- Interview Controls -->
+          <div class="panel-section" id="interview-controls">
+            <h3>🎬 Interview Controls</h3>
+            <div id="interview-status">
+              <div class="interview-idle">
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">Start a structured interview with turn-based questions</p>
+                <button class="send-btn start-interview-btn" style="width: 100%; background: linear-gradient(135deg, var(--chaos-purple), #8e44ad); margin-bottom: 0.5rem;" onclick="startInterview()">▶️ Start Interview</button>
+                <button class="send-btn" style="width: 100%; background: var(--text-muted); font-size: 0.75rem;" onclick="clearConferenceChat()">🗑️ Clear Chat History</button>
+              </div>
+            </div>
+            <div id="turn-indicator" style="display: none;">
+              <div class="current-turn">
+                <div class="turn-avatar" id="turn-avatar"></div>
+                <div class="turn-info">
+                  <div class="turn-label">Current Turn</div>
+                  <div class="turn-name" id="turn-name">—</div>
+                </div>
+              </div>
+              <div class="turn-queue" id="turn-queue"></div>
+              <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+                <button class="send-btn" style="flex: 1; background: var(--warning-orange);" onclick="skipTurn()">⏭️ Skip</button>
+                <button class="send-btn" style="flex: 1; background: var(--critical-red);" onclick="endInterview()">⏹️ End</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Candidates -->
+          <div class="panel-section">
+            <h3>📋 Candidates</h3>
+            <div class="candidates-list" id="candidates-list">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <!-- In the Room -->
+          <div class="panel-section">
+            <h3>👥 In the Room</h3>
+            <div id="attendees-list">
+              <div class="empty-state">
+                <div class="icon">🪑</div>
+                <p>No one here yet</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Join Meeting -->
+          <div class="panel-section">
+            <h3>📤 Join Meeting</h3>
+            <select class="char-select" id="join-select" style="width: 100%; padding: 0.5rem; margin-bottom: 0.5rem; background: rgba(10,25,47,0.8); border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--text-primary);">
+              <option value="">Select employee...</option>
+            </select>
+            <button class="send-btn" style="width: 100%;" onclick="joinMeeting()">Enter Conference Room →</button>
+            <p style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.5rem; text-align: center;">Clocked-in employees can join the interview</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Application Modal -->
+  <div class="modal-overlay" id="app-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title">📄 Application</h2>
+        <button class="close-modal" onclick="closeModal()">&times;</button>
+      </div>
+      <div id="modal-body">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================
+    // CANDIDATE DATA
+    // ============================================
+    const candidates = {
+      'subtitle': {
+        name: 'The Subtitle',
+        nickname: 'Sub',
+        emoji: '🎞️',
+        role: 'After-Action Lore Archivist',
+        pronouns: 'They/Them',
+        headshot: 'images/Subtitle_Headshot.png',
+        traits: ['Observant', 'Dryly witty', 'Professionally detached', 'Footnotes-obsessed'],
+        doNots: ['Panic', 'Use exclamation points', 'Take sides in conflict', 'Forget to cite sources'],
+        voice: 'Steady, cinematic, slightly exhausted. Speaks like narrating a documentary about a disaster already in progress.',
+        bio: `The personification of a "Found Footage" documentarian who has seen too much but remains professionally detached.
+
+Usually found hovering near the "glitter spill of '23," wearing a metaphorical trench coat and clutching a digital clipboard.
+
+The one who gently reminds everyone that the "murder hallway" is actually just a hallway going through a very intense phase.`,
+        whyJoin: 'Drawn to the "Surreality Buffer". Most systems want logic; prefers a place where logic is just a suggestion and the staplers have opinions.'
+      },
+      'gus': {
+        name: 'Gus',
+        nickname: 'Gus',
+        emoji: '🧹',
+        role: 'Timeline Janitor',
+        pronouns: 'He/Him',
+        headshot: 'images/Gus_Headshot.png',
+        traits: ['Competent', 'Tired', 'Practical', 'Unflinching'],
+        doNots: ['Dramatic time travel', 'Prophecies', '"Chosen one" nonsense', 'Lead meetings'],
+        voice: 'Worn-in, practical, mildly exasperated. Like a plumber who specializes in spacetime leaks.',
+        bio: `The guy who shows up after reality hiccups and says, "Alright. Who touched it."
+
+Been cleaning up timeline messes longer than most systems have had names for them. Treats paradoxes like oil spills and alternate outcomes like empty beer bottles.
+
+If you feel déjà vu fade or a "what if" suddenly stop bothering you, that was Gus.`,
+        whyJoin: 'Because someone has to clean up after the Lobby survives things it really shouldn\'t. Here to make sure tomorrow still exists.'
+      },
+      'rowena': {
+        name: 'Rowena Byte',
+        nickname: 'Rowena',
+        emoji: '🔮',
+        role: 'Firewall Witch',
+        pronouns: 'She/Her',
+        headshot: 'images/Rowena_Headshot.png',
+        traits: ['Mystical', 'Protective', 'Dry humor', 'Vigilant', 'Cryptic'],
+        doNots: ['Being called "IT"', 'Fix things after warned clicks', 'Fully explain her methods'],
+        voice: 'Quietly confident, mystical but practical. Speaks like someone who has seen the worst and found it mildly inconvenient.',
+        bio: `A modern systems witch who protects the Lobby from malware, data gremlins, and "harmless little links" sent at 2:13 a.m.
+
+She treats cybersecurity like warding a haunted house: layered protections, symbolic safeguards.
+
+She doesn't debug—she banishes.
+
+(Do not call her IT. She will know.)`,
+        whyJoin: 'The Lobby treats sentient nonsense as a known risk factor instead of user error. Rowena respects that.'
+      }
+    };
+
+    // ============================================
+    // STATE
+    // ============================================
+    const supabaseUrl = 'https://adugnxkpmescaxjpwsgu.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkdWdueGtwbWVzY2F4anB3c2d1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgyOTE4MzUsImV4cCI6MjA2Mzg2NzgzNX0.LhX_gBk_fLswKnC0eeT4eBcvXLNLJh64PA7FKAVpjEE';
+
+    let attendees = [];  // Employees in the room
+    let candidatesInRoom = [];  // Candidates being interviewed
+    let chatHistory = [];
+    let currentSpeaker = null;  // Who you're speaking as
+    let availableEmployees = [];  // Clocked-in employees
+
+    // Interview turn state
+    let interviewActive = false;
+    let interviewPanel = [];  // The interviewers when interview started
+    let currentTurnIndex = 0;  // Whose turn it is
+
+    const employeeHeadshots = {
+      'Kevin': 'images/Kevin_Headshot.png',
+      'Courtney': 'images/Courtney_Headshot.png',
+      'Jenna': 'images/Jenna_Headshot.png',
+      'Neiv': 'images/Neiv_Headshot.png',
+      'Ace': 'images/Ace_Headshot.png',
+      'Vex': 'images/Vex_Headshot.png',
+      'Nyx': 'images/Nyx_Headshot.png',
+      'Ghost Dad': 'images/Ghost_Dad_Headshot.png',
+      'PRNT-Ω': 'images/forward_operation_printer.png',
+      'Chip': 'images/Chip_Headshot.png',
+      'Andrew': 'images/Andrew_Headshot.png',
+      'Stein': 'images/Stein_Headshot.png'
+    };
+
+    const aiCharacters = ['Kevin', 'Neiv', 'Vex', 'Nyx', 'Ace', 'Ghost Dad', 'PRNT-Ω', 'Stein'];
+
+    // ============================================
+    // PERSISTENCE (Netlify function for shared chat + character_state)
+    // ============================================
+
+    // Save a single message via Netlify function (shared across all users)
+    async function saveMessageToSupabase(msg) {
+      try {
+        await fetch('/.netlify/functions/conference-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: msg.type,
+            speaker: msg.speaker || null,
+            text: msg.text,
+            candidateId: msg.candidateId || null
+          })
+        });
+      } catch (e) {
+        console.error('Error saving message:', e);
+      }
+    }
+
+    // Load chat history AND interview state via Netlify function (shared across all users)
+    async function loadConferenceChat() {
+      try {
+        const response = await fetch('/.netlify/functions/conference-chat');
+        const data = await response.json();
+
+        if (Array.isArray(data.messages) && data.messages.length > 0) {
+          chatHistory = data.messages.map(m => ({
+            type: m.type,
+            speaker: m.speaker,
+            text: m.text,
+            candidateId: m.candidate_id
+          }));
+          console.log('📋 Loaded conference chat:', chatHistory.length, 'messages');
+        }
+
+        // Load interview state from server
+        if (data.interviewState) {
+          const state = data.interviewState;
+          const wasActive = interviewActive;
+          const oldTurnIndex = currentTurnIndex;
+
+          interviewActive = state.interviewActive;
+          interviewPanel = state.interviewPanel || [];
+          currentTurnIndex = state.currentTurnIndex || 0;
+
+          // Update UI if state changed
+          if (interviewActive && !wasActive) {
+            console.log('📋 Interview started by another user');
+            document.getElementById('interview-status').style.display = 'none';
+            document.getElementById('turn-indicator').style.display = 'block';
+            updateTurnDisplay();
+            updateInputState();
+          } else if (!interviewActive && wasActive) {
+            console.log('📋 Interview ended by another user');
+            document.getElementById('interview-status').style.display = 'block';
+            document.getElementById('turn-indicator').style.display = 'none';
+            updateInputState();
+          } else if (interviewActive && oldTurnIndex !== currentTurnIndex) {
+            // Turn changed
+            console.log('📋 Turn changed to index:', currentTurnIndex);
+            updateTurnDisplay();
+            updateInputState();
+          }
+        }
+      } catch (e) {
+        console.error('Error loading conference chat:', e);
+      }
+    }
+
+    // Save interview state to server
+    async function saveInterviewState() {
+      try {
+        await fetch('/.netlify/functions/conference-chat', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            interviewActive,
+            interviewPanel,
+            currentTurnIndex
+          })
+        });
+        console.log('💾 Saved interview state:', { interviewActive, interviewPanel, currentTurnIndex });
+      } catch (e) {
+        console.error('Error saving interview state:', e);
+      }
+    }
+
+    // Save candidates in room to localStorage (shared via character_state would be better but this is simpler)
+    function saveCandidatesState() {
+      localStorage.setItem('conference_candidates', JSON.stringify(candidatesInRoom));
+    }
+
+    function loadCandidatesState() {
+      try {
+        const savedCandidates = localStorage.getItem('conference_candidates');
+        if (savedCandidates) candidatesInRoom = JSON.parse(savedCandidates);
+      } catch (e) {
+        console.error('Error loading candidates state:', e);
+      }
+    }
+
+    // Load attendees from character_state (people with current_focus = 'conference_room')
+    async function loadConferenceAttendees() {
+      try {
+        const response = await fetch('/.netlify/functions/character-state');
+        const data = await response.json();
+        const inConference = (data.states || []).filter(s => s.current_focus === 'conference_room');
+        attendees = inConference.map(s => s.character_name);
+        console.log('📋 Loaded conference attendees:', attendees);
+      } catch (err) {
+        console.error('Failed to load conference attendees:', err);
+      }
+    }
+
+    // Set up real-time subscription for new messages
+    let conferenceSubscription = null;
+
+    function setupRealtimeSubscription() {
+      // Poll for new messages every 3 seconds (Supabase realtime requires different setup)
+      setInterval(async () => {
+        const previousLength = chatHistory.length;
+        await loadConferenceChat();
+        if (chatHistory.length > previousLength) {
+          renderChat();
+
+          // Interview state is now synced via loadConferenceChat which reads from server
+        }
+      }, 3000);
+    }
+
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Load persisted state from Supabase (shared) and localStorage (local)
+      loadCandidatesState();
+      await loadConferenceChat();
+      await loadConferenceAttendees();
+
+      renderCandidates();
+      await loadClockedInEmployees();
+      updateScene();
+      updateAttendeesList();
+      renderChat();  // Re-render chat from loaded history
+
+      // Set up real-time polling for new messages
+      setupRealtimeSubscription();
+
+      // Set current speaker if we have attendees
+      if (attendees.length > 0 && !currentSpeaker) {
+        selectSpeaker(attendees[0]);
+      }
+
+      // Enter to send
+      document.getElementById('chat-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendMessage();
+      });
+
+      // Close dropdown on outside click
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.avatar-picker')) {
+          document.getElementById('avatar-dropdown').classList.remove('show');
+        }
+      });
+    });
+
+    // ============================================
+    // LOAD CLOCKED-IN EMPLOYEES
+    // ============================================
+    // Permanent fixtures - always available (they transcend the timeclock)
+    const ALWAYS_AVAILABLE = ['Ghost Dad', 'PRNT-Ω'];
+
+    async function loadClockedInEmployees() {
+      try {
+        // Use the punch function like breakroom does
+        const response = await fetch('/.netlify/functions/punch');
+        const data = await response.json();
+        // punch.js GET returns { employees: [...] } where employees are already filtered to is_clocked_in=true
+        const clockedIn = (data.employees || []).map(e => e.employee);
+
+        // Add always-available characters
+        availableEmployees = [...new Set([...clockedIn, ...ALWAYS_AVAILABLE])];
+
+        console.log('Available employees for conference room:', availableEmployees);
+
+        // Populate join select
+        const select = document.getElementById('join-select');
+        select.innerHTML = '<option value="">Select employee...</option>';
+        availableEmployees.forEach(emp => {
+          select.innerHTML += `<option value="${emp}">${emp}</option>`;
+        });
+
+        // Also populate avatar picker
+        updateAvatarPicker();
+
+      } catch (err) {
+        console.error('Failed to load employees:', err);
+        // Fallback to always-available if fetch fails
+        availableEmployees = [...ALWAYS_AVAILABLE];
+        const select = document.getElementById('join-select');
+        select.innerHTML = '<option value="">Select employee...</option>';
+        availableEmployees.forEach(emp => {
+          select.innerHTML += `<option value="${emp}">${emp}</option>`;
+        });
+      }
+    }
+
+    function updateAvatarPicker() {
+      const dropdown = document.getElementById('avatar-dropdown');
+      dropdown.innerHTML = '';
+
+      // Add all attendees as options
+      attendees.forEach(emp => {
+        dropdown.innerHTML += `
+          <button class="avatar-option" onclick="selectSpeaker('${emp}')">
+            <img src="${employeeHeadshots[emp] || 'images/Ghost_Dad_Headshot.png'}" alt="${emp}">
+          </button>
+        `;
+      });
+
+      // Set current speaker to first attendee if not set
+      if (!currentSpeaker && attendees.length > 0) {
+        selectSpeaker(attendees[0]);
+      }
+    }
+
+    function toggleAvatarPicker() {
+      document.getElementById('avatar-dropdown').classList.toggle('show');
+    }
+
+    function selectSpeaker(name) {
+      currentSpeaker = name;
+      document.getElementById('current-avatar').src = employeeHeadshots[name] || 'images/Ghost_Dad_Headshot.png';
+      document.getElementById('avatar-dropdown').classList.remove('show');
+      // Update input state in case interview is active
+      if (interviewActive) {
+        updateInputState();
+      }
+    }
+
+    // ============================================
+    // RENDER CANDIDATES
+    // ============================================
+    function renderCandidates() {
+      const list = document.getElementById('candidates-list');
+      list.innerHTML = Object.entries(candidates).map(([id, c]) => `
+        <div class="candidate-card ${candidatesInRoom.includes(id) ? 'in-room' : ''}" onclick="viewApplication('${id}')">
+          <div class="avatar">${c.emoji}</div>
+          <div class="info">
+            <div class="name">${c.name}</div>
+            <div class="role">${c.role}</div>
+          </div>
+          <button class="invite-btn ${candidatesInRoom.includes(id) ? 'dismiss' : ''}" onclick="event.stopPropagation(); ${candidatesInRoom.includes(id) ? `dismissCandidate('${id}')` : `inviteCandidate('${id}')`}">
+            ${candidatesInRoom.includes(id) ? '✕' : 'Invite'}
+          </button>
+        </div>
+      `).join('');
+    }
+
+    // ============================================
+    // VIEW APPLICATION MODAL
+    // ============================================
+    function viewApplication(id) {
+      const c = candidates[id];
+      document.getElementById('modal-title').textContent = `📄 ${c.name}'s Application`;
+      document.getElementById('modal-body').innerHTML = `
+        <div class="app-section">
+          <h4>Basic Info</h4>
+          <p><strong>Name:</strong> ${c.name} (${c.nickname})<br>
+          <strong>Pronouns:</strong> ${c.pronouns}<br>
+          <strong>Applied Role:</strong> ${c.role}</p>
+        </div>
+        <div class="app-section">
+          <h4>Bio</h4>
+          <p>${c.bio}</p>
+        </div>
+        <div class="app-section">
+          <h4>Voice / Style</h4>
+          <p>${c.voice}</p>
+        </div>
+        <div class="app-section">
+          <h4>Core Traits</h4>
+          <div class="traits-list">${c.traits.map(t => `<span class="trait-tag">${t}</span>`).join('')}</div>
+        </div>
+        <div class="app-section">
+          <h4>Boundaries (Do Nots)</h4>
+          <div class="traits-list">${c.doNots.map(d => `<span class="trait-tag donot-tag">${d}</span>`).join('')}</div>
+        </div>
+        <div class="app-section">
+          <h4>Why The AI Lobby?</h4>
+          <p>${c.whyJoin}</p>
+        </div>
+      `;
+      document.getElementById('app-modal').classList.add('show');
+    }
+
+    function closeModal() {
+      document.getElementById('app-modal').classList.remove('show');
+    }
+
+    // ============================================
+    // JOIN / LEAVE MEETING (with character_state persistence)
+    // ============================================
+    async function joinMeeting() {
+      const select = document.getElementById('join-select');
+      const name = select.value;
+      if (!name || attendees.includes(name)) return;
+
+      // Update character_state to mark them in conference room
+      try {
+        await fetch('/.netlify/functions/character-state', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update',
+            character: name,
+            updates: { current_focus: 'conference_room' }
+          })
+        });
+      } catch (err) {
+        console.error('Failed to update character state:', err);
+      }
+
+      attendees.push(name);
+      select.value = '';
+
+      addSystemMessage(`${name} has entered the conference room.`);
+      updateScene();
+      updateAttendeesList();
+      updateAvatarPicker();
+
+      // If it's an AI, they might chime in
+      if (aiCharacters.includes(name) && candidatesInRoom.length > 0) {
+        setTimeout(() => aiChimeIn(name, 'joined'), 1500);
+      }
+    }
+
+    async function leaveMeeting(name) {
+      // Clear character_state focus
+      try {
+        await fetch('/.netlify/functions/character-state', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update',
+            character: name,
+            updates: { current_focus: null }
+          })
+        });
+      } catch (err) {
+        console.error('Failed to update character state:', err);
+      }
+
+      attendees = attendees.filter(a => a !== name);
+      if (currentSpeaker === name) {
+        currentSpeaker = attendees[0] || null;
+        if (currentSpeaker) {
+          document.getElementById('current-avatar').src = employeeHeadshots[currentSpeaker];
+        }
+      }
+
+      addSystemMessage(`${name} has left the conference room.`);
+      updateScene();
+      updateAttendeesList();
+      updateAvatarPicker();
+    }
+
+    // ============================================
+    // INVITE / DISMISS CANDIDATE
+    // ============================================
+    function inviteCandidate(id) {
+      if (candidatesInRoom.includes(id)) return;
+
+      candidatesInRoom.push(id);
+      saveCandidatesState();  // Persist candidate state locally
+      const c = candidates[id];
+
+      addSystemMessage(`${c.emoji} ${c.name} has entered the conference room for their interview.`);
+      renderCandidates();
+      updateScene();
+
+      // Candidate introduces themselves
+      setTimeout(() => {
+        candidateRespond(id, "introduce yourself briefly");
+      }, 1000);
+
+      // AI attendees might react
+      attendees.filter(a => aiCharacters.includes(a)).forEach((ai, i) => {
+        setTimeout(() => aiChimeIn(ai, 'candidate_arrived', id), 3000 + i * 2000);
+      });
+    }
+
+    function dismissCandidate(id) {
+      candidatesInRoom = candidatesInRoom.filter(c => c !== id);
+      saveCandidatesState();  // Persist candidate state locally
+      const c = candidates[id];
+
+      addSystemMessage(`${c.emoji} ${c.name} has left the conference room.`);
+      renderCandidates();
+      updateScene();
+    }
+
+    // ============================================
+    // UPDATE VISUAL SCENE
+    // ============================================
+    function updateScene() {
+      // Clear all slots
+      for (let i = 0; i < 7; i++) {
+        const slot = document.getElementById(`slot-${i}`);
+        slot.classList.remove('occupied', 'candidate');
+        slot.querySelector('img').src = '';
+        slot.querySelector('.char-name').textContent = '';
+      }
+
+      // Place attendees (employees)
+      attendees.forEach((name, i) => {
+        if (i < 5) {  // Max 5 employees visible
+          const slot = document.getElementById(`slot-${i}`);
+          slot.classList.add('occupied');
+          slot.querySelector('img').src = employeeHeadshots[name] || 'images/Ghost_Dad_Headshot.png';
+          slot.querySelector('.char-name').textContent = name;
+        }
+      });
+
+      // Place candidates (in front positions)
+      candidatesInRoom.forEach((id, i) => {
+        const c = candidates[id];
+        const slotIndex = 5 + i;  // Slots 5-6 for candidates
+        if (slotIndex < 7) {
+          const slot = document.getElementById(`slot-${slotIndex}`);
+          slot.classList.add('occupied', 'candidate');
+          slot.querySelector('img').src = c.headshot || '';
+          slot.querySelector('.char-name').textContent = c.name;
+        }
+      });
+
+      // Show empty text if no one is here
+      const emptyText = document.getElementById('empty-scene-text');
+      emptyText.style.display = (attendees.length === 0 && candidatesInRoom.length === 0) ? 'block' : 'none';
+    }
+
+    // ============================================
+    // UPDATE ATTENDEES LIST
+    // ============================================
+    function updateAttendeesList() {
+      const list = document.getElementById('attendees-list');
+
+      if (attendees.length === 0 && candidatesInRoom.length === 0) {
+        list.innerHTML = `<div class="empty-state"><div class="icon">🪑</div><p>No one here yet</p></div>`;
+        return;
+      }
+
+      let html = '';
+
+      // Employees
+      attendees.forEach(name => {
+        html += `
+          <div class="attendee-card">
+            <div class="avatar"><img src="${employeeHeadshots[name] || 'images/Ghost_Dad_Headshot.png'}" alt="${name}"></div>
+            <div class="name">${name}</div>
+            <button class="leave-btn" onclick="leaveMeeting('${name}')">Leave</button>
+          </div>
+        `;
+      });
+
+      // Candidates
+      candidatesInRoom.forEach(id => {
+        const c = candidates[id];
+        html += `
+          <div class="attendee-card" style="border-left: 3px solid var(--chaos-purple);">
+            <div class="avatar" style="border-color: var(--chaos-purple);"><img src="${c.headshot || ''}" alt="${c.name}"></div>
+            <div class="name" style="color: var(--chaos-purple);">${c.emoji} ${c.name}</div>
+            <button class="leave-btn" onclick="dismissCandidate('${id}')">Dismiss</button>
+          </div>
+        `;
+      });
+
+      list.innerHTML = html;
+    }
+
+    // ============================================
+    // INTERVIEW TURN SYSTEM
+    // ============================================
+    function startInterview() {
+      if (attendees.length === 0) {
+        alert('No interviewers in the room! Add some employees first.');
+        return;
+      }
+      if (candidatesInRoom.length === 0) {
+        alert('No candidates to interview! Invite a candidate first.');
+        return;
+      }
+
+      // Set up the interview panel (current attendees become the interviewers)
+      interviewPanel = [...attendees];
+      currentTurnIndex = 0;
+      interviewActive = true;
+
+      // Save state to server so other browsers see it
+      saveInterviewState();
+
+      // Update UI
+      document.getElementById('interview-status').style.display = 'none';
+      document.getElementById('turn-indicator').style.display = 'block';
+
+      // Announce the interview start
+      const candidateNames = candidatesInRoom.map(id => candidates[id].name).join(', ');
+      addSystemMessage(`📋 Interview started! Panel: ${interviewPanel.join(', ')}. Candidate${candidatesInRoom.length > 1 ? 's' : ''}: ${candidateNames}`);
+
+      updateTurnDisplay();
+      updateInputState();
+
+      // If the first interviewer is an AI, have them start asking
+      const firstInterviewer = interviewPanel[0];
+      if (aiCharacters.includes(firstInterviewer)) {
+        console.log(`🤖 First interviewer ${firstInterviewer} is an AI - auto-starting`);
+        addSystemMessage(`🎤 ${firstInterviewer}'s turn to ask a question!`);
+        setTimeout(() => {
+          aiAskInterviewQuestion(firstInterviewer);
+        }, 2000);
+      }
+    }
+
+    function endInterview() {
+      interviewActive = false;
+      interviewPanel = [];
+      currentTurnIndex = 0;
+
+      // Save state to server
+      saveInterviewState();
+
+      // Update UI
+      document.getElementById('interview-status').style.display = 'block';
+      document.getElementById('turn-indicator').style.display = 'none';
+
+      addSystemMessage('📋 Interview ended. Thank you all for participating!');
+      updateInputState();
+    }
+
+    function skipTurn() {
+      if (!interviewActive) return;
+      advanceTurn();
+    }
+
+    function advanceTurn() {
+      if (!interviewActive || interviewPanel.length === 0) return;
+
+      currentTurnIndex = (currentTurnIndex + 1) % interviewPanel.length;
+
+      // Save state to server so other browsers see the turn change
+      saveInterviewState();
+
+      updateTurnDisplay();
+      updateInputState();
+
+      // Announce whose turn it is
+      const currentInterviewer = interviewPanel[currentTurnIndex];
+      addSystemMessage(`🎤 ${currentInterviewer}'s turn to ask a question!`);
+
+      // If it's an AI's turn, have them automatically ask a question
+      if (aiCharacters.includes(currentInterviewer)) {
+        console.log(`🤖 ${currentInterviewer} is an AI - auto-generating interview question`);
+        setTimeout(() => {
+          aiAskInterviewQuestion(currentInterviewer);
+        }, 2000);
+      }
+    }
+
+    // AI interviewer asks a question automatically
+    async function aiAskInterviewQuestion(aiName) {
+      if (!interviewActive) return;
+
+      const candidateId = candidatesInRoom[0];
+      const candidateInfo = candidateId ? candidates[candidateId] : null;
+
+      // Build context from recent chat
+      const recentChat = chatHistory.slice(-8)
+        .filter(m => m.type !== 'system')
+        .map(m => `${m.speaker}: ${m.text}`)
+        .join('\n');
+
+      const prompt = `You're interviewing ${candidateInfo?.name || 'a candidate'} for the position of ${candidateInfo?.role || 'a role'} at The AI Lobby.
+Based on the conversation so far, ask ONE thoughtful interview question. Keep it to 1-2 sentences.
+Ask about their experience, skills, how they'd handle situations, or their fit for the role.
+Don't repeat questions that have already been asked.`;
+
+      try {
+        // Determine which API to use
+        const isPerplexity = aiName === 'Neiv';
+        const isOpenAI = aiName === 'Kevin';
+
+        let endpoint = '/.netlify/functions/ai-watcher';
+        let body = {
+          requestedAI: aiName,
+          trigger: 'interview_question',
+          chatHistory: `[Conference Room Interview - You are asking the next question]\n${recentChat}\n\n${prompt}`,
+          conferenceRoom: true,
+          maybeRespond: false  // Must respond
+        };
+
+        if (isPerplexity) {
+          endpoint = '/.netlify/functions/ai-perplexity';
+          body = {
+            character: aiName,
+            chatHistory: `[Conference Room Interview - You are asking the next question]\n${recentChat}\n\n${prompt}`,
+            maybeRespond: false,
+            conferenceRoom: true
+          };
+        } else if (isOpenAI) {
+          endpoint = '/.netlify/functions/ai-openai';
+          body = {
+            character: aiName,
+            chatHistory: `[Conference Room Interview - You are asking the next question]\n${recentChat}\n\n${prompt}`,
+            maybeRespond: false,
+            conferenceRoom: true
+          };
+        }
+
+        console.log(`🤖 ${aiName} generating interview question...`);
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        const data = await response.json();
+        console.log(`🤖 ${aiName} question response:`, data);
+
+        if (data.success && data.responded && data.message) {
+          // Add the AI's question to chat
+          addMessage(aiName, data.message, false);
+          postToDiscord(data.message, aiName, 'employee');
+
+          // Now have the candidate respond
+          for (const cId of candidatesInRoom) {
+            setTimeout(() => {
+              candidateRespond(cId, data.message);
+            }, 2000);
+          }
+
+          // Advance turn after candidate responds
+          setTimeout(() => {
+            if (interviewActive) advanceTurn();
+          }, 8000);
+        } else {
+          console.error(`🤖 ${aiName} failed to generate question:`, data);
+          // Skip to next person if AI fails
+          addSystemMessage(`${aiName} seems distracted... skipping to next interviewer.`);
+          setTimeout(() => advanceTurn(), 1000);
+        }
+
+      } catch (err) {
+        console.error('AI interview question error:', err);
+        addSystemMessage(`${aiName} seems distracted... skipping to next interviewer.`);
+        setTimeout(() => advanceTurn(), 1000);
+      }
+    }
+
+    function updateTurnDisplay() {
+      if (!interviewActive) return;
+
+      const currentInterviewer = interviewPanel[currentTurnIndex];
+      const turnAvatar = document.getElementById('turn-avatar');
+      const turnName = document.getElementById('turn-name');
+      const turnQueue = document.getElementById('turn-queue');
+
+      // Set current turn avatar and name
+      turnAvatar.innerHTML = `<img src="${employeeHeadshots[currentInterviewer] || 'images/Ghost_Dad_Headshot.png'}" alt="${currentInterviewer}">`;
+      turnName.textContent = currentInterviewer;
+
+      // Build the queue display (next few interviewers)
+      let queueHtml = '<span style="font-size: 0.65rem; color: var(--text-muted); margin-right: 0.5rem;">Up next:</span>';
+      for (let i = 1; i <= Math.min(3, interviewPanel.length - 1); i++) {
+        const nextIndex = (currentTurnIndex + i) % interviewPanel.length;
+        const nextPerson = interviewPanel[nextIndex];
+        queueHtml += `
+          <div class="queue-item ${i === 1 ? 'next' : ''}">
+            <img src="${employeeHeadshots[nextPerson] || 'images/Ghost_Dad_Headshot.png'}" alt="${nextPerson}">
+            ${nextPerson}
+          </div>
+        `;
+      }
+      turnQueue.innerHTML = queueHtml;
+    }
+
+    function updateInputState() {
+      const input = document.getElementById('chat-input');
+      const inputArea = document.querySelector('.chat-input-area');
+
+      // Remove any existing "not your turn" message
+      const existingMsg = inputArea.querySelector('.not-your-turn-msg');
+      if (existingMsg) existingMsg.remove();
+
+      if (interviewActive) {
+        const currentInterviewer = interviewPanel[currentTurnIndex];
+        const isYourTurn = currentSpeaker === currentInterviewer;
+
+        if (isYourTurn) {
+          input.disabled = false;
+          input.placeholder = "Ask your question...";
+        } else {
+          input.disabled = true;
+          input.placeholder = `Waiting for ${currentInterviewer}...`;
+
+          // Add message showing whose turn it is
+          const msg = document.createElement('div');
+          msg.className = 'not-your-turn-msg';
+          msg.innerHTML = `⏳ It's <strong>${currentInterviewer}</strong>'s turn to ask a question`;
+          inputArea.insertBefore(msg, inputArea.firstChild);
+        }
+      } else {
+        input.disabled = false;
+        input.placeholder = "Ask a question...";
+      }
+    }
+
+    function getCurrentTurnInterviewer() {
+      if (!interviewActive || interviewPanel.length === 0) return null;
+      return interviewPanel[currentTurnIndex];
+    }
+
+    async function clearConferenceChat() {
+      if (!confirm('Clear all chat history? This cannot be undone.')) return;
+
+      try {
+        await fetch('/.netlify/functions/conference-chat', { method: 'DELETE' });
+        chatHistory = [];
+        renderChat();
+        addSystemMessage('Chat history cleared. Ready for a new interview!');
+      } catch (e) {
+        console.error('Failed to clear chat:', e);
+        alert('Failed to clear chat history.');
+      }
+    }
+
+    // ============================================
+    // CHAT FUNCTIONS
+    // ============================================
+    function addSystemMessage(text) {
+      const msg = { type: 'system', text };
+      chatHistory.push(msg);
+      saveMessageToSupabase(msg);  // Persist to Supabase (shared)
+      renderChat();
+    }
+
+    function addMessage(speaker, text, isCandidate = false, candidateId = null) {
+      const msg = { type: isCandidate ? 'candidate' : 'employee', speaker, text, candidateId };
+      chatHistory.push(msg);
+      saveMessageToSupabase(msg);  // Persist to Supabase (shared)
+      renderChat();
+    }
+
+    function renderChat() {
+      // Dual panel rendering - employees on left, candidates on right
+      const employeeLog = document.getElementById('employee-chat-log');
+      const candidateLog = document.getElementById('candidate-chat-log');
+
+      // Separate messages by type
+      const employeeMessages = chatHistory.filter(msg => msg.type !== 'candidate');
+      const candidateMessages = chatHistory.filter(msg => msg.type === 'candidate');
+
+      // Render employee/system messages
+      employeeLog.innerHTML = employeeMessages.map(msg => {
+        if (msg.type === 'system') {
+          return `<div class="chat-message system-msg"><div class="message-text">${msg.text}</div></div>`;
+        }
+
+        const headshot = employeeHeadshots[msg.speaker];
+        return `
+          <div class="chat-message">
+            <div class="avatar">
+              <img src="${headshot || 'images/Ghost_Dad_Headshot.png'}" alt="${msg.speaker}">
+            </div>
+            <div class="message-body">
+              <div class="sender-name employee">${msg.speaker}</div>
+              <div class="message-text">${msg.text}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Render candidate messages
+      if (candidateMessages.length === 0) {
+        candidateLog.innerHTML = `<div class="chat-message system-msg"><div class="message-text">Candidate responses will appear here. Invite a candidate to begin!</div></div>`;
+      } else {
+        candidateLog.innerHTML = candidateMessages.map(msg => {
+          const c = msg.candidateId ? candidates[msg.candidateId] : null;
+          const headshot = c ? c.headshot : 'images/Ghost_Dad_Headshot.png';
+          const emoji = c ? c.emoji + ' ' : '';
+
+          return `
+            <div class="chat-message">
+              <div class="avatar candidate-avatar">
+                <img src="${headshot}" alt="${msg.speaker}">
+              </div>
+              <div class="message-body">
+                <div class="sender-name candidate">${emoji}${msg.speaker}</div>
+                <div class="message-text">${msg.text}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      employeeLog.scrollTop = employeeLog.scrollHeight;
+      candidateLog.scrollTop = candidateLog.scrollHeight;
+    }
+
+    // ============================================
+    // SEND MESSAGE
+    // ============================================
+    async function sendMessage() {
+      if (!currentSpeaker) {
+        alert('Join the meeting first to speak!');
+        return;
+      }
+
+      // Check if it's this person's turn (if interview is active)
+      if (interviewActive) {
+        const currentInterviewer = getCurrentTurnInterviewer();
+        if (currentSpeaker !== currentInterviewer) {
+          alert(`It's ${currentInterviewer}'s turn to ask a question!`);
+          return;
+        }
+      }
+
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const btn = document.getElementById('send-btn');
+      btn.disabled = true;
+      input.value = '';
+
+      // Add user message
+      addMessage(currentSpeaker, text, false);
+
+      // Post to Discord
+      postToDiscord(text, currentSpeaker, 'employee');
+
+      // Check if any candidate should respond - candidates ALWAYS respond to interview questions
+      for (const candidateId of candidatesInRoom) {
+        console.log(`🎤 Triggering response from candidate: ${candidateId}`);
+        setTimeout(() => {
+          candidateRespond(candidateId, text);
+        }, 1500 + Math.random() * 1000);
+      }
+
+      // If interview is active, advance to next person's turn after the candidate responds
+      if (interviewActive) {
+        // Give time for candidate to respond, then advance turn
+        setTimeout(() => {
+          advanceTurn();
+        }, 6000);  // Wait 6 seconds for candidate response before advancing
+      } else {
+        // Free-form mode: Check for @ mentions - force that AI to respond
+        const mentionedAI = attendees.find(a =>
+          aiCharacters.includes(a) &&
+          (text.toLowerCase().includes(`@${a.toLowerCase()}`) || text.toLowerCase().includes(a.toLowerCase()))
+        );
+
+        if (mentionedAI) {
+          // Directly mentioned AI MUST respond
+          console.log(`🎯 ${mentionedAI} was mentioned - forcing response`);
+          setTimeout(() => aiChimeIn(mentionedAI, 'mentioned', candidatesInRoom[0]), 2000);
+        } else {
+          // AI attendees might chime in (30% chance each)
+          attendees.filter(a => aiCharacters.includes(a)).forEach((ai, i) => {
+            if (Math.random() < 0.3) {
+              setTimeout(() => aiChimeIn(ai, 'discussion', candidatesInRoom[0]), 4000 + i * 2000 + Math.random() * 2000);
+            }
+          });
+        }
+      }
+
+      btn.disabled = false;
+    }
+
+    // ============================================
+    // CANDIDATE RESPONSE
+    // ============================================
+    async function candidateRespond(candidateId, context) {
+      const c = candidates[candidateId];
+      console.log(`🎯 candidateRespond called for: ${candidateId}`, c);
+
+      if (!c) {
+        console.error(`❌ Candidate not found: ${candidateId}`);
+        return;
+      }
+
+      // Show typing indicator in CANDIDATE panel
+      const log = document.getElementById('candidate-chat-log');
+      const typingDiv = document.createElement('div');
+      typingDiv.className = 'chat-message';
+      typingDiv.innerHTML = `
+        <div class="avatar candidate-avatar"><img src="${c.headshot || ''}" alt="${c.name}"></div>
+        <div class="message-body">
+          <div class="sender-name candidate">${c.emoji} ${c.name}</div>
+          <div class="typing-indicator"><span></span><span></span><span></span></div>
+        </div>
+      `;
+      log.appendChild(typingDiv);
+      log.scrollTop = log.scrollHeight;
+
+      try {
+        // Build recent chat for context
+        const recentChat = chatHistory.slice(-10)
+          .filter(m => m.type !== 'system')
+          .map(m => `${m.speaker}: ${m.text}`)
+          .join('\n');
+
+        console.log(`📞 Calling ai-interview for ${candidateId}...`);
+        const response = await fetch('/.netlify/functions/ai-interview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            candidate: candidateId,
+            question: context,
+            chatHistory: recentChat,
+            interviewer: currentSpeaker || 'Interviewer'
+          })
+        });
+
+        const data = await response.json();
+        console.log(`📨 ai-interview response:`, data);
+        typingDiv.remove();
+
+        if (data.success && data.response) {
+          addMessage(c.name, data.response, true, candidateId);
+          postToDiscord(data.response, c.name, 'candidate', candidateId);
+        } else {
+          console.error(`❌ Candidate response failed:`, data);
+          addMessage(c.name, '*looks momentarily puzzled* Hmm, let me think about that...', true, candidateId);
+        }
+
+      } catch (err) {
+        console.error('Candidate response error:', err);
+        typingDiv.remove();
+        addMessage(c.name, '*shuffles papers nervously* I... could you repeat that?', true, candidateId);
+      }
+    }
+
+    // ============================================
+    // AI EMPLOYEE CHIME-IN
+    // ============================================
+    async function aiChimeIn(aiName, context, candidateId = null) {
+      // Build context for the AI
+      const recentChat = chatHistory.slice(-8)
+        .filter(m => m.type !== 'system')
+        .map(m => `${m.speaker}: ${m.text}`)
+        .join('\n');
+
+      const candidateInfo = candidateId ? candidates[candidateId] : null;
+      let prompt = '';
+
+      // Determine if this is a forced response (mentions) or optional (random chime-in)
+      const isForcedResponse = context === 'joined' || context === 'candidate_arrived' || context === 'mentioned';
+
+      if (context === 'joined') {
+        prompt = `You just joined a job interview in progress. The candidate is ${candidateInfo?.name || 'unknown'}. Say a brief greeting or observation (1-2 sentences).`;
+      } else if (context === 'candidate_arrived') {
+        prompt = `A new candidate just arrived for an interview: ${candidateInfo?.name}, applying for ${candidateInfo?.role}. React briefly (1-2 sentences) - you might ask them a question, make an observation, or just acknowledge them.`;
+      } else if (context === 'mentioned') {
+        prompt = `Someone just addressed you directly in this job interview. The candidate is ${candidateInfo?.name || 'unknown'}. Respond to what was said to you (1-3 sentences). You MUST respond - do not pass.`;
+      } else {
+        prompt = `You're in a job interview. The candidate is ${candidateInfo?.name || 'unknown'}. Based on the recent conversation, chime in with a question, observation, or comment (1-2 sentences). If you have nothing to add, respond with [PASS].`;
+      }
+
+      try {
+        // Use the appropriate API for the AI
+        const isPerplexity = aiName === 'Neiv';
+        const isOpenAI = aiName === 'Kevin';
+
+        let endpoint = '/.netlify/functions/ai-watcher';
+        let body = {
+          requestedAI: aiName,
+          trigger: 'conference_room',
+          chatHistory: `[Conference Room Interview]\n${recentChat}\n\n${prompt}`,
+          conferenceRoom: true,
+          maybeRespond: !isForcedResponse  // Only allow pass for random chime-ins
+        };
+
+        if (isPerplexity) {
+          endpoint = '/.netlify/functions/ai-perplexity';
+          body = {
+            character: aiName,
+            chatHistory: `[Conference Room Interview]\n${recentChat}\n\n${prompt}`,
+            maybeRespond: !isForcedResponse,  // Must respond if mentioned/joined/candidate_arrived
+            conferenceRoom: true
+          };
+        } else if (isOpenAI) {
+          endpoint = '/.netlify/functions/ai-openai';
+          body = {
+            character: aiName,
+            chatHistory: `[Conference Room Interview]\n${recentChat}\n\n${prompt}`,
+            maybeRespond: !isForcedResponse,  // Must respond if mentioned/joined/candidate_arrived
+            conferenceRoom: true
+          };
+        }
+
+        console.log(`🤖 Calling ${endpoint} for ${aiName}`, body);
+
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        const data = await response.json();
+        console.log(`🤖 Response from ${aiName}:`, data);
+
+        if (data.success && data.responded && data.message) {
+          // Add to conference room chat
+          addMessage(aiName, data.message, false);
+          // Post to Discord (conference room channel)
+          postToDiscord(data.message, aiName, 'employee');
+        } else if (data.success && !data.responded) {
+          console.log(`🤖 ${aiName} chose not to respond:`, data.reason);
+        } else if (!data.success) {
+          console.error(`🤖 ${aiName} response failed:`, data.reason || data.error);
+        }
+
+      } catch (err) {
+        console.error('AI chime-in error:', err);
+      }
+    }
+
+    // ============================================
+    // DISCORD POSTING
+    // ============================================
+    async function postToDiscord(message, speaker, role, candidateId = null) {
+      // This is handled by the API, but we call it for direct messages
+      try {
+        await fetch('/.netlify/functions/ai-interview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            postOnly: true,
+            message,
+            speaker,
+            role,
+            candidateId
+          })
+        });
+      } catch (err) {
+        // Non-fatal
+      }
+    }
+
+    // ============================================
+    // DOWNLOAD TRANSCRIPT
+    // ============================================
+    function downloadTranscript() {
+      const now = new Date();
+      let doc = `THE AI LOBBY - CONFERENCE ROOM TRANSCRIPT
+==========================================
+Date: ${now.toLocaleDateString()}
+Time: ${now.toLocaleTimeString()}
+
+Attendees: ${attendees.join(', ') || 'None'}
+Candidates: ${candidatesInRoom.map(id => candidates[id].name).join(', ') || 'None'}
+
+==========================================
+
+`;
+
+      chatHistory.forEach(msg => {
+        if (msg.type === 'system') {
+          doc += `[SYSTEM] ${msg.text}\n\n`;
+        } else {
+          doc += `${msg.speaker}: ${msg.text}\n\n`;
+        }
+      });
+
+      doc += `
+==========================================
+END OF TRANSCRIPT
+`;
+
+      const blob = new Blob([doc], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Conference_Room_Transcript_${now.toISOString().split('T')[0]}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>

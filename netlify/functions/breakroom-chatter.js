@@ -56,8 +56,8 @@ const characterPersonalities = {
   }
 };
 
-// Casual conversation topics (NOT work related!)
-const casualTopics = [
+// Fallback casual conversation topics (used if Supabase table doesn't exist)
+const fallbackTopics = [
   "a TV show or movie they watched",
   "the weather lately",
   "what they did over the weekend",
@@ -71,6 +71,33 @@ const casualTopics = [
   "what they'd do with a day off",
   "their opinion on a silly hypothetical"
 ];
+
+// Fetch topics from Supabase (with fallback to hardcoded list)
+async function getChatterTopics(supabaseUrl, supabaseKey) {
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/chatter_topics?select=topic&is_active=eq.true`,
+      {
+        headers: {
+          "apikey": supabaseKey,
+          "Authorization": `Bearer ${supabaseKey}`
+        }
+      }
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      if (Array.isArray(data) && data.length > 0) {
+        return data.map(row => row.topic);
+      }
+    }
+  } catch (error) {
+    console.log("Could not fetch topics from Supabase, using fallback:", error.message);
+  }
+
+  // Return fallback topics if Supabase fetch fails or returns empty
+  return fallbackTopics;
+}
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -143,8 +170,9 @@ exports.handler = async (event, context) => {
         };
       }
 
-      // Pick a random topic
-      const topic = casualTopics[Math.floor(Math.random() * casualTopics.length)];
+      // Pick a random topic (from Supabase or fallback)
+      const topics = await getChatterTopics(supabaseUrl, supabaseKey);
+      const topic = topics[Math.floor(Math.random() * topics.length)];
 
       // Build character context
       const charContext = participants.map(name => {

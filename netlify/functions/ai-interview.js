@@ -297,7 +297,7 @@ async function postToDiscord(message, speaker, role, candidateId = null) {
   const timestamp = now.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'America/New_York'
+    timeZone: 'America/Chicago'
   });
 
   // Detect if this is a pure emote

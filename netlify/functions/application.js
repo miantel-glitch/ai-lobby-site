@@ -1,16 +1,134 @@
 // AI Lobby Employment Application Handler
-// Posts applications to Discord for review
+// Posts applications to Discord AND saves to Supabase for review
 
 exports.handler = async (event, context) => {
   const headers = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
     "Content-Type": "application/json"
   };
 
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 200, headers, body: "" };
+  }
+
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+  // GET - Fetch all applications (for admin/desktop view)
+  if (event.httpMethod === "GET") {
+    if (!supabaseUrl || !supabaseKey) {
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ applications: [], error: "No database configured" })
+      };
+    }
+
+    try {
+      const params = event.queryStringParameters || {};
+      let url = `${supabaseUrl}/rest/v1/applications?order=created_at.desc`;
+
+      // Filter by status if specified
+      if (params.status) {
+        url += `&status=eq.${encodeURIComponent(params.status)}`;
+      }
+
+      // Limit if specified
+      if (params.limit) {
+        url += `&limit=${params.limit}`;
+      }
+
+      const response = await fetch(url, {
+        headers: {
+          "apikey": supabaseKey,
+          "Authorization": `Bearer ${supabaseKey}`
+        }
+      });
+      const applications = await response.json();
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ applications: Array.isArray(applications) ? applications : [] })
+      };
+    } catch (error) {
+      console.error("Error fetching applications:", error);
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ error: "Failed to fetch applications" })
+      };
+    }
+  }
+
+  // PATCH - Update application status (for admin review)
+  if (event.httpMethod === "PATCH") {
+    if (!supabaseUrl || !supabaseKey) {
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ error: "No database configured" })
+      };
+    }
+
+    try {
+      const body = JSON.parse(event.body || "{}");
+      const { id, status, reviewNotes } = body;
+
+      if (!id || !status) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ error: "Missing id or status" })
+        };
+      }
+
+      const validStatuses = ['pending', 'reviewed', 'hired', 'rejected', 'interview'];
+      if (!validStatuses.includes(status)) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ error: "Invalid status", validStatuses })
+        };
+      }
+
+      const updateData = {
+        status,
+        reviewed_at: new Date().toISOString()
+      };
+
+      if (reviewNotes) {
+        updateData.review_notes = reviewNotes;
+      }
+
+      await fetch(
+        `${supabaseUrl}/rest/v1/applications?id=eq.${id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(updateData)
+        }
+      );
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ success: true, id, status })
+      };
+    } catch (error) {
+      console.error("Error updating application:", error);
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ error: "Failed to update application" })
+      };
+    }
   }
 
   if (event.httpMethod !== "POST") {
@@ -90,10 +208,56 @@ exports.handler = async (event, context) => {
       }
     }
 
+    // Save to Supabase for persistent storage and admin review
+    let savedApplication = null;
+    if (supabaseUrl && supabaseKey) {
+      try {
+        const applicationRecord = {
+          ai_name: application.ai.name,
+          ai_emoji: application.ai.emoji,
+          ai_pronouns: application.ai.pronouns,
+          ai_title: application.ai.title,
+          ai_bio: application.ai.bio,
+          ai_skills: application.ai.skills || [],
+          human_name: application.human.name,
+          human_three_words: application.human.threeWords,
+          human_does: application.human.does,
+          human_strength: application.human.strength,
+          human_struggle: application.human.struggle,
+          human_quirk: application.human.quirk,
+          why_lobby: application.whyLobby,
+          glitter_status: application.glitter,
+          additional_notes: application.additional,
+          status: 'pending',
+          created_at: new Date().toISOString()
+        };
+
+        const saveResponse = await fetch(
+          `${supabaseUrl}/rest/v1/applications`,
+          {
+            method: "POST",
+            headers: {
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+              "Content-Type": "application/json",
+              "Prefer": "return=representation"
+            },
+            body: JSON.stringify(applicationRecord)
+          }
+        );
+
+        const saved = await saveResponse.json();
+        savedApplication = Array.isArray(saved) ? saved[0] : saved;
+        console.log(`Application saved to Supabase: ${application.ai.name}`);
+      } catch (dbError) {
+        console.error("Failed to save to Supabase (non-fatal):", dbError.message);
+      }
+    }
+
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ success: true })
+      body: JSON.stringify({ success: true, applicationId: savedApplication?.id })
     };
 
   } catch (error) {

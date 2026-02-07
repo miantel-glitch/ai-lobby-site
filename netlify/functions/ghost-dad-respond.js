@@ -179,7 +179,7 @@ async function postCallerToDiscord(message, caller) {
   const timestamp = now.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'America/New_York'
+    timeZone: 'America/Chicago'
   });
 
   await fetch(webhookUrl, {
@@ -210,7 +210,7 @@ async function postToDiscord(message) {
   const timestamp = now.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'America/New_York'
+    timeZone: 'America/Chicago'
   });
 
   // Detect if this is a pure emote (ONLY wrapped in asterisks, no speech)

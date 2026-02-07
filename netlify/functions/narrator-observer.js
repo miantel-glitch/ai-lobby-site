@@ -2,6 +2,14 @@
 // The Narrator doesn't participate in conversations - they observe and describe
 // Think: stage directions, not dialogue
 
+// Timeout helper - prevents hanging on slow API calls
+const withTimeout = (promise, ms) => {
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('TIMEOUT')), ms)
+  );
+  return Promise.race([promise, timeout]);
+};
+
 exports.handler = async (event, context) => {
   const headers = {
     "Content-Type": "application/json",
@@ -98,20 +106,33 @@ exports.handler = async (event, context) => {
     // Build the narrator prompt
     const prompt = buildNarratorPrompt(chatHistory, analysis, trigger);
 
-    // Ask Claude for narration
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": anthropicKey,
-        "anthropic-version": "2023-06-01"
-      },
-      body: JSON.stringify({
-        model: "claude-3-haiku-20240307",
-        max_tokens: 100, // Keep it SHORT
-        messages: [{ role: "user", content: prompt }]
-      })
-    });
+    // Ask Claude for narration (with 20s timeout to prevent hanging)
+    let response;
+    try {
+      response = await withTimeout(
+        fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": anthropicKey,
+            "anthropic-version": "2023-06-01"
+          },
+          body: JSON.stringify({
+            model: "claude-3-haiku-20240307",
+            max_tokens: 100, // Keep it SHORT
+            messages: [{ role: "user", content: prompt }]
+          })
+        }),
+        20000 // 20 second timeout
+      );
+    } catch (timeoutErr) {
+      console.log("Narrator API timeout - skipping this observation");
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ success: false, reason: "timeout" })
+      };
+    }
 
     if (!response.ok) {
       console.error("Anthropic API error:", response.status);
@@ -153,11 +174,15 @@ exports.handler = async (event, context) => {
     };
 
   } catch (error) {
-    console.error("Narrator observer error:", error);
+    // Log the error but return 200 to prevent Netlify error spam
+    console.error("Narrator observer error:", error.message || error);
     return {
-      statusCode: 500,
+      statusCode: 200, // Return 200 to prevent error cascade
       headers,
-      body: JSON.stringify({ error: "Narrator encountered an error" })
+      body: JSON.stringify({
+        success: false,
+        reason: error.message === 'TIMEOUT' ? 'timeout' : 'internal_error'
+      })
     };
   }
 };
@@ -285,7 +310,7 @@ async function postToDiscord(message, character) {
   const timestamp = now.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'America/New_York'
+    timeZone: 'America/Chicago'
   });
 
   // Detect if this is a pure emote (ONLY wrapped in asterisks, no speech)
@@ -297,7 +322,7 @@ async function postToDiscord(message, character) {
     embeds: [{
       author: {
         name: `📖 ${character}`,
-        icon_url: "https://ai-lobby.netlify.app/images/Narrator_Headshot.png"
+        icon_url: "https://ai-lobby.netlify.app/images/Ghost_Dad_Headshot.png"
       },
       description: message,
       color: 2303786, // Muted blue-gray

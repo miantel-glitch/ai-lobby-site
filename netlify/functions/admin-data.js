@@ -1,6 +1,29 @@
 // Admin Data API - Provides data for the admin panel
 // Handles: memories, settings, activity logs
 
+// Helper: Calculate memory expiration based on importance and type
+function calculateMemoryExpiration(importance, memoryType) {
+  const now = new Date();
+
+  // System events (chaos, vent, printer) expire faster - 1 hour
+  const fastExpireTypes = ['chaos', 'vent_activity', 'printer_mentioned', 'stapler', 'fire_drill'];
+  if (fastExpireTypes.includes(memoryType)) {
+    return new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
+  }
+
+  // Importance-based expiration
+  if (importance < 5) {
+    return new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
+  } else if (importance <= 6) {
+    return new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours
+  } else if (importance <= 8) {
+    return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  }
+
+  // importance 9-10 or self_created: 30 days
+  return new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+}
+
 exports.handler = async (event, context) => {
   const headers = {
     "Content-Type": "application/json",
@@ -196,7 +219,7 @@ exports.handler = async (event, context) => {
 
       // Add a manual memory
       if (body.action === "add_memory") {
-        const { character, content, importance, memoryType } = body;
+        const { character, content, importance, memoryType, emotionalTags, isPinned } = body;
 
         if (!character || !content) {
           return {
@@ -204,6 +227,35 @@ exports.handler = async (event, context) => {
             headers,
             body: JSON.stringify({ error: "Missing character or content" })
           };
+        }
+
+        const importanceVal = importance || 5;
+        const typeVal = memoryType || "manual";
+
+        // Build the memory object
+        const memoryData = {
+          character_name: character,
+          content: content,
+          importance: importanceVal,
+          memory_type: typeVal,
+          created_at: new Date().toISOString(),
+          is_pinned: isPinned || false,
+          memory_tier: isPinned ? 'core' : 'working'
+        };
+
+        // Set expiration for working memories (pinned memories don't expire)
+        if (!isPinned) {
+          memoryData.expires_at = calculateMemoryExpiration(importanceVal, typeVal).toISOString();
+        }
+
+        // Add emotional tags if provided (array of emotions)
+        // Valid emotions: joy, sadness, anger, fear, surprise, flirty, grateful, anxious, proud, embarrassed
+        if (emotionalTags && Array.isArray(emotionalTags) && emotionalTags.length > 0) {
+          const validEmotions = ['joy', 'sadness', 'anger', 'fear', 'surprise', 'flirty', 'grateful', 'anxious', 'proud', 'embarrassed'];
+          const filteredTags = emotionalTags.filter(tag => validEmotions.includes(tag));
+          if (filteredTags.length > 0) {
+            memoryData.emotional_tags = filteredTags;
+          }
         }
 
         await fetch(
@@ -215,20 +267,98 @@ exports.handler = async (event, context) => {
               "Authorization": `Bearer ${supabaseKey}`,
               "Content-Type": "application/json"
             },
-            body: JSON.stringify({
-              character_name: character,
-              content: content,
-              importance: importance || 5,
-              memory_type: memoryType || "manual",
-              created_at: new Date().toISOString()
-            })
+            body: JSON.stringify(memoryData)
           }
         );
 
         return {
           statusCode: 200,
           headers,
-          body: JSON.stringify({ success: true, character, content })
+          body: JSON.stringify({ success: true, character, content, emotionalTags: memoryData.emotional_tags, isPinned: memoryData.is_pinned })
+        };
+      }
+
+      // Pin or unpin a memory (toggle core/working tier)
+      if (body.action === "pin_memory") {
+        const { memoryId, isPinned, character } = body;
+
+        if (!memoryId) {
+          return {
+            statusCode: 400,
+            headers,
+            body: JSON.stringify({ error: "Missing memoryId" })
+          };
+        }
+
+        // If pinning, check if character already has 5 core memories
+        if (isPinned && character) {
+          const countResponse = await fetch(
+            `${supabaseUrl}/rest/v1/character_memory?character_name=eq.${encodeURIComponent(character)}&is_pinned=eq.true&select=id`,
+            {
+              headers: {
+                "apikey": supabaseKey,
+                "Authorization": `Bearer ${supabaseKey}`
+              }
+            }
+          );
+          const pinnedMemories = await countResponse.json();
+
+          if (Array.isArray(pinnedMemories) && pinnedMemories.length >= 5) {
+            return {
+              statusCode: 400,
+              headers,
+              body: JSON.stringify({
+                error: "Maximum core memories reached",
+                message: `${character} already has 5 core memories. Unpin one first.`,
+                currentCount: pinnedMemories.length
+              })
+            };
+          }
+        }
+
+        // Update the memory
+        const updateData = {
+          is_pinned: isPinned,
+          memory_tier: isPinned ? 'core' : 'working'
+        };
+
+        // If pinning, remove expiration. If unpinning, set expiration based on importance
+        if (isPinned) {
+          updateData.expires_at = null;
+        } else {
+          // Fetch the memory to get its importance for expiration calculation
+          const memResponse = await fetch(
+            `${supabaseUrl}/rest/v1/character_memory?id=eq.${memoryId}&select=importance,memory_type`,
+            {
+              headers: {
+                "apikey": supabaseKey,
+                "Authorization": `Bearer ${supabaseKey}`
+              }
+            }
+          );
+          const memData = await memResponse.json();
+          if (memData && memData[0]) {
+            updateData.expires_at = calculateMemoryExpiration(memData[0].importance, memData[0].memory_type).toISOString();
+          }
+        }
+
+        await fetch(
+          `${supabaseUrl}/rest/v1/character_memory?id=eq.${memoryId}`,
+          {
+            method: "PATCH",
+            headers: {
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(updateData)
+          }
+        );
+
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({ success: true, memoryId, isPinned, tier: updateData.memory_tier })
         };
       }
 

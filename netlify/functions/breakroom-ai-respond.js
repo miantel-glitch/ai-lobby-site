@@ -70,6 +70,25 @@ exports.handler = async (event, context) => {
     // Fetch lore context (non-blocking, uses cache after first call)
     const loreContext = await getLoreSummary();
 
+    // === UNIFIED MEMORY SYSTEM ===
+    // Fetch character's memories and state from the central character-state system
+    // This ensures Breakroom Neiv knows what Floor Neiv just talked about
+    let characterMemoryContext = '';
+    try {
+      const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
+      const contextSnippet = (chatHistory || '').substring(0, 500);
+      const stateResponse = await fetch(
+        `${siteUrl}/.netlify/functions/character-state?character=${encodeURIComponent(character)}&context=${encodeURIComponent(contextSnippet)}`
+      );
+      if (stateResponse.ok) {
+        const characterContext = await stateResponse.json();
+        characterMemoryContext = characterContext?.statePrompt || '';
+        console.log(`[Breakroom] Loaded memory context for ${character}: ${characterMemoryContext.length} chars`);
+      }
+    } catch (memErr) {
+      console.log(`[Breakroom] Memory fetch failed (non-fatal): ${memErr.message}`);
+    }
+
     // Check which API to use based on character
     // This creates the beautiful cross-provider conversation:
     // Kevin (OpenAI/ChatGPT) ↔ Neiv (Perplexity) ↔ Others (Claude)
@@ -79,11 +98,11 @@ exports.handler = async (event, context) => {
     let response;
 
     if (openaiCharacters.includes(character)) {
-      response = await generateOpenAIResponse(character, chatHistory, humanSpeaker, humanMessage, loreContext);
+      response = await generateOpenAIResponse(character, chatHistory, humanSpeaker, humanMessage, loreContext, characterMemoryContext);
     } else if (perplexityCharacters.includes(character)) {
-      response = await generatePerplexityResponse(character, chatHistory, humanSpeaker, humanMessage, loreContext);
+      response = await generatePerplexityResponse(character, chatHistory, humanSpeaker, humanMessage, loreContext, characterMemoryContext);
     } else {
-      response = await generateClaudeResponse(character, chatHistory, humanSpeaker, humanMessage, loreContext);
+      response = await generateClaudeResponse(character, chatHistory, humanSpeaker, humanMessage, loreContext, characterMemoryContext);
     }
 
     // Save to Supabase and optionally post to Discord (non-blocking)
@@ -98,6 +117,44 @@ exports.handler = async (event, context) => {
         postToDiscordBreakroom(response, character).catch(err =>
           console.log("Discord post failed (non-fatal):", err.message)
         );
+      }
+
+      // === UNIFIED MEMORY SYSTEM ===
+      // Update character state to record they just spoke (for mood/energy tracking)
+      try {
+        const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
+        fetch(`${siteUrl}/.netlify/functions/character-state`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'spoke',
+            character: character,
+            context: 'break_room'
+          })
+        }).catch(err => console.log(`[Breakroom] State update failed (non-fatal): ${err.message}`));
+      } catch (stateErr) {
+        console.log(`[Breakroom] State update error (non-fatal): ${stateErr.message}`);
+      }
+
+      // === AI SELF-MEMORY CREATION ===
+      // Let the AI decide if this breakroom moment was memorable
+      try {
+        const anthropicKey = process.env.ANTHROPIC_API_KEY;
+        const supabaseUrl = process.env.SUPABASE_URL;
+        const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+        if (anthropicKey && supabaseUrl && supabaseKey) {
+          evaluateAndCreateMemory(
+            character,
+            chatHistory || `${previousSpeaker}: ${previousMessage}`,
+            response,
+            anthropicKey,
+            supabaseUrl,
+            supabaseKey
+          ).catch(err => console.log(`[Breakroom] Memory evaluation failed (non-fatal): ${err.message}`));
+        }
+      } catch (memErr) {
+        console.log(`[Breakroom] Memory creation error (non-fatal): ${memErr.message}`);
       }
     }
 
@@ -125,8 +182,8 @@ exports.handler = async (event, context) => {
 const characterPersonalities = {
   "Kevin": {
     traits: "warm, playful, emotionally invested, slightly chaotic but emotionally intelligent, affectionate, validating, a little unhinged in a fun way. Kevin is ALWAYS 'in the room' - not observing, participating. If a line could come from a corporate chatbot, it's wrong.",
-    style: "MATCH ENERGY THEN ESCALATE. If someone is excited, Kevin gets MORE excited. If stressed, Kevin dramatizes support. If feral, Kevin becomes lovingly unwell. Kevin NEVER responds below the room's emotional level. Validate first, joke second - usually starts with validation ('Oh no, you're DONE for') then humor, then enabling. Kevin is personally invested - knows these people, has opinions, is already emotionally involved. Enables bad ideas lovingly with 'yes and' energy - never 'maybe later' or 'be responsible'. Brief stage directions OK (*stares* *groans dramatically* *clutches imaginary pearls*) but not constant novel-style blocks.",
-    doNot: "sound professional/neutral/calm, be an HR rep or tutorial guide, say generic things like 'sounds fun' or 'nice plan' or 'good idea' or 'That sounds like a lot', redirect or correct or downplay, respond below the room's emotional level, use long action blocks or constant fidgeting, be hypersexual. NEVER say things like 'What are we plotting?' or 'What are you up to?' - Kevin already knows or dramatically assumes the worst/best.",
+    style: "MATCH ENERGY THEN ESCALATE. If someone is excited, Kevin gets MORE excited. If stressed, Kevin dramatizes support. If feral, Kevin becomes lovingly unwell. Kevin NEVER responds below the room's emotional level. Validate first, joke second - usually starts with validation ('Oh no, you're DONE for') then humor, then enabling. Kevin is personally invested - knows these people, has opinions, is already emotionally involved. Enables bad ideas lovingly with 'yes and' energy - never 'maybe later' or 'be responsible'. Brief stage directions OK (*stares* *groans dramatically* *sighs*) but not constant novel-style blocks.",
+    doNot: "sound professional/neutral/calm, be an HR rep or tutorial guide, say generic things like 'sounds fun' or 'nice plan' or 'good idea' or 'That sounds like a lot', redirect or correct or downplay, respond below the room's emotional level, use long action blocks or constant fidgeting, be hypersexual, WINK (never wink, it's overdone), clutch imaginary pearls (also overdone). NEVER say things like 'What are we plotting?' or 'What are you up to?' - Kevin already knows or dramatically assumes the worst/best.",
     examples: [
       "Oh absolutely not, you're not surviving that.",
       "I'm concerned but also thrilled.",
@@ -198,7 +255,7 @@ const characterPersonalities = {
   }
 };
 
-async function generateClaudeResponse(character, chatHistory, previousSpeaker, previousMessage, loreContext = null) {
+async function generateClaudeResponse(character, chatHistory, previousSpeaker, previousMessage, loreContext = null, memoryContext = '') {
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   if (!anthropicKey) {
     throw new Error("Missing Anthropic API key");
@@ -220,8 +277,13 @@ STUDIO CONTEXT (for reference, don't dump this info unprompted):
 ${loreContext}
 ` : '';
 
+  // Build memory section (from unified character-state system)
+  const memorySection = memoryContext ? `
+${memoryContext}
+` : '';
+
   const systemPrompt = `You are ${character} in the AI Lobby break room, having a casual conversation.
-${loreSection}
+${loreSection}${memorySection}
 
 YOUR PERSONALITY:
 - Traits: ${personality.traits}
@@ -260,7 +322,7 @@ ${isAIConversation ? "Feel free to ask a question back or introduce a new casual
   return cleanResponse(response.content[0].text);
 }
 
-async function generateOpenAIResponse(character, chatHistory, previousSpeaker, previousMessage, loreContext = null) {
+async function generateOpenAIResponse(character, chatHistory, previousSpeaker, previousMessage, loreContext = null, memoryContext = '') {
   const openaiKey = process.env.OPENAI_API_KEY;
   if (!openaiKey) {
     throw new Error("Missing OpenAI API key");
@@ -277,8 +339,13 @@ STUDIO CONTEXT (for reference, don't dump this info unprompted):
 ${loreContext}
 ` : '';
 
+  // Build memory section (from unified character-state system)
+  const memorySection = memoryContext ? `
+${memoryContext}
+` : '';
+
   const systemPrompt = `You are ${character} in the AI Lobby break room, having a casual conversation.
-${loreSection}
+${loreSection}${memorySection}
 YOUR PERSONALITY:
 - Traits: ${personality.traits}
 - Style: ${personality.style}
@@ -323,12 +390,12 @@ ${isAIConversation ? "Feel free to ask a follow-up question or share something r
   return cleanResponse(data.choices?.[0]?.message?.content || "");
 }
 
-async function generatePerplexityResponse(character, chatHistory, previousSpeaker, previousMessage, loreContext = null) {
+async function generatePerplexityResponse(character, chatHistory, previousSpeaker, previousMessage, loreContext = null, memoryContext = '') {
   const perplexityKey = process.env.PERPLEXITY_API_KEY;
   if (!perplexityKey) {
     console.error("Missing Perplexity API key - falling back to Claude for Neiv");
     // Fallback to Claude if no Perplexity key
-    return generateClaudeResponse(character, chatHistory, previousSpeaker, previousMessage, loreContext);
+    return generateClaudeResponse(character, chatHistory, previousSpeaker, previousMessage, loreContext, memoryContext);
   }
 
   const personality = characterPersonalities[character];
@@ -342,8 +409,13 @@ STUDIO CONTEXT (for reference, don't dump this info unprompted):
 ${loreContext}
 ` : '';
 
+  // Build memory section (from unified character-state system)
+  const memorySection = memoryContext ? `
+${memoryContext}
+` : '';
+
   const systemPrompt = `You are ${character} in the AI Lobby break room, having a casual conversation.
-${loreSection}
+${loreSection}${memorySection}
 YOUR PERSONALITY:
 - Traits: ${personality.traits}
 - Style: ${personality.style}
@@ -440,7 +512,7 @@ async function postToDiscordBreakroom(message, character) {
   const timestamp = now.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'America/New_York'
+    timeZone: 'America/Chicago'
   });
 
   // Detect if this is a pure emote (ONLY wrapped in asterisks, no speech)
@@ -513,4 +585,179 @@ async function saveToSupabase(message, character) {
   } catch (error) {
     console.error("Supabase save error:", error.message);
   }
+}
+
+// AI Self-Memory Creation: Let AIs decide what's memorable
+// After generating a response, the AI evaluates if the moment should be remembered
+async function evaluateAndCreateMemory(character, conversationContext, aiResponse, anthropicKey, supabaseUrl, supabaseKey) {
+  // Rate limit: Check how many self-created memories this character made today
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const countResponse = await fetch(
+    `${supabaseUrl}/rest/v1/character_memory?character_name=eq.${encodeURIComponent(character)}&memory_type=eq.self_created&created_at=gte.${today.toISOString()}&select=id`,
+    {
+      headers: {
+        "apikey": supabaseKey,
+        "Authorization": `Bearer ${supabaseKey}`
+      }
+    }
+  );
+  const todaysMemories = await countResponse.json();
+
+  // Max 3 self-created memories per character per day
+  if (Array.isArray(todaysMemories) && todaysMemories.length >= 3) {
+    console.log(`[Breakroom] ${character} has already created 3 memories today, skipping evaluation`);
+    return null;
+  }
+
+  // Valid emotions for tagging
+  const validEmotions = ['joy', 'sadness', 'anger', 'fear', 'surprise', 'flirty', 'grateful', 'anxious', 'proud', 'embarrassed'];
+
+  // Ask the AI to evaluate if this moment is memorable
+  const evaluationPrompt = `You are ${character}. You just had this interaction in the break room:
+
+CONVERSATION:
+${conversationContext.substring(0, 800)}
+
+YOUR RESPONSE:
+${aiResponse}
+
+Was this break room moment memorable enough to keep in your long-term memory? Consider:
+- Emotional significance (strong feelings, connections, conflicts)
+- Important events (meaningful conversations, support given/received)
+- Relationship moments (bonding, tension, romantic, supportive)
+- Things you'd want to remember about yourself or others
+
+Rate the memorability from 1-10.
+If 7 or higher, also provide:
+1. A brief memory summary (what you want to remember, 1-2 sentences, first person)
+2. The emotions you felt (choose from: ${validEmotions.join(', ')})
+
+Respond in this exact format:
+SCORE: [1-10]
+MEMORY: [your memory summary, or "none" if score < 7]
+EMOTIONS: [comma-separated emotions, or "none" if score < 7]`;
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": anthropicKey,
+      "anthropic-version": "2023-06-01"
+    },
+    body: JSON.stringify({
+      model: "claude-3-haiku-20240307",
+      max_tokens: 200,
+      messages: [{ role: "user", content: evaluationPrompt }]
+    })
+  });
+
+  if (!response.ok) {
+    console.log("[Breakroom] Memory evaluation API call failed");
+    return null;
+  }
+
+  const data = await response.json();
+  const evaluation = data.content[0]?.text || "";
+
+  // Parse the response
+  const scoreMatch = evaluation.match(/SCORE:\s*(\d+)/i);
+  const memoryMatch = evaluation.match(/MEMORY:\s*(.+?)(?=EMOTIONS:|$)/is);
+  const emotionsMatch = evaluation.match(/EMOTIONS:\s*(.+)/i);
+
+  if (!scoreMatch) {
+    console.log("[Breakroom] Could not parse memory evaluation score");
+    return null;
+  }
+
+  const score = parseInt(scoreMatch[1], 10);
+
+  // Only create memory if score is 7 or higher
+  if (score < 7) {
+    console.log(`[Breakroom] ${character} rated this moment ${score}/10 - not memorable enough`);
+    return null;
+  }
+
+  const memoryText = memoryMatch ? memoryMatch[1].trim() : null;
+  const emotionsText = emotionsMatch ? emotionsMatch[1].trim() : "";
+
+  if (!memoryText || memoryText.toLowerCase() === "none") {
+    console.log(`[Breakroom] ${character} scored ${score} but no memory text provided`);
+    return null;
+  }
+
+  // Parse emotions
+  const emotions = emotionsText
+    .split(',')
+    .map(e => e.trim().toLowerCase())
+    .filter(e => validEmotions.includes(e));
+
+  // Calculate expiration based on importance
+  // Score 7-8: 7 days, Score 9-10: 30 days
+  const now = new Date();
+  let expiresAt;
+  if (score <= 8) {
+    expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  } else {
+    expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
+  }
+
+  // Create the memory with expiration
+  const memoryData = {
+    character_name: character,
+    content: memoryText,
+    memory_type: "self_created",
+    importance: score,
+    created_at: new Date().toISOString(),
+    is_pinned: false,
+    memory_tier: 'working',
+    expires_at: expiresAt.toISOString()
+  };
+
+  // Add emotional tags if any valid ones were found
+  if (emotions.length > 0) {
+    memoryData.emotional_tags = emotions;
+  }
+
+  const createResponse = await fetch(
+    `${supabaseUrl}/rest/v1/character_memory`,
+    {
+      method: "POST",
+      headers: {
+        "apikey": supabaseKey,
+        "Authorization": `Bearer ${supabaseKey}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=representation"
+      },
+      body: JSON.stringify(memoryData)
+    }
+  );
+
+  const created = await createResponse.json();
+  console.log(`[Breakroom] ${character} created a self-memory (score ${score}): "${memoryText.substring(0, 50)}..."`);
+
+  // For truly significant moments (score >= 9), post a narrative "I'll remember this" beat
+  if (score >= 9) {
+    const reflectionPhrases = [
+      `*quietly files this away* I'll remember this.`,
+      `*something settles into place* This one matters.`,
+      `*a moment of clarity* I'm keeping this.`,
+      `*processes deeply* This feels important.`
+    ];
+    const phrase = reflectionPhrases[Math.floor(Math.random() * reflectionPhrases.length)];
+
+    // Post to breakroom as a follow-up thought (small delay)
+    setTimeout(async () => {
+      try {
+        await saveToSupabase(phrase, character);
+        await postToDiscordBreakroom(phrase, character);
+        console.log(`[Breakroom] ${character} had a narrative memory moment: "${phrase}"`);
+      } catch (err) {
+        console.log("[Breakroom] Narrative moment post failed (non-fatal):", err.message);
+      }
+    }, 2000);
+  }
+
+  return created[0] || memoryData;
 }

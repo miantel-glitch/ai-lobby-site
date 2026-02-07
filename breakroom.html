@@ -726,6 +726,9 @@
                 <button class="spark-btn" id="save-log-btn" onclick="saveSessionLog()" style="background: var(--text-muted);" title="Save chat log">
                   💾 Save
                 </button>
+                <button class="spark-btn" id="clear-chat-btn" onclick="clearBreakroomChat()" style="background: #dc3545;" title="Delete all breakroom messages">
+                  🗑️ Clear
+                </button>
               </div>
             </div>
             <div class="chatter-log" id="chatter-log">
@@ -1087,7 +1090,35 @@
       });
     }
 
+    // Check if a character can enter a room (single location enforcement)
+    async function canEnterRoom(characterName, targetRoom) {
+      try {
+        const response = await fetch(`/.netlify/functions/character-state?character=${encodeURIComponent(characterName)}`);
+        const data = await response.json();
+        const state = data.states?.[0] || data;
+
+        if (state.current_focus && state.current_focus !== targetRoom) {
+          const roomNames = {
+            'break_room': 'the Breakroom',
+            'the_floor': 'The Floor',
+            'conference_room': 'the Conference Room'
+          };
+          const currentRoomName = roomNames[state.current_focus] || state.current_focus;
+          alert(`${characterName} is currently in ${currentRoomName}. They need to leave there first!`);
+          return false;
+        }
+        return true;
+      } catch (err) {
+        console.error('Error checking room status:', err);
+        return true; // Allow on error (fail open)
+      }
+    }
+
     async function sendToBreakroom(characterName) {
+      // Check single location rule
+      const canEnter = await canEnterRoom(characterName, 'break_room');
+      if (!canEnter) return;
+
       try {
         await fetch('/.netlify/functions/character-state', {
           method: 'POST',
@@ -1107,12 +1138,20 @@
       }
     }
 
+    // Track cooldown timer
+    let cooldownTimer = null;
+    let cooldownEndTime = null;
+
     async function doActivity(action) {
       const character = document.getElementById('activity-char-select').value;
       if (!character) {
         alert('Please select a character first');
         return;
       }
+
+      // Disable activity buttons while processing
+      const buttons = document.querySelectorAll('.activity-btn');
+      buttons.forEach(btn => btn.disabled = true);
 
       try {
         const response = await fetch('/.netlify/functions/break-room', {
@@ -1126,13 +1165,87 @@
         if (result.success) {
           // Refresh
           loadBreakroomData();
+          // Start cooldown display
+          startCooldownTimer(5 * 60 * 1000); // 5 minutes
+        } else if (result.error === 'cooldown') {
+          // Show cooldown message and timer
+          showCooldownMessage(character, result.cooldownRemaining, result.cooldownDisplay);
+          startCooldownTimer(result.cooldownRemaining);
         } else {
           alert(result.error || 'Something went wrong');
+          buttons.forEach(btn => btn.disabled = false);
         }
       } catch (error) {
         console.error('Error doing activity:', error);
         alert('Error: ' + error.message);
+        buttons.forEach(btn => btn.disabled = false);
       }
+    }
+
+    function showCooldownMessage(character, remainingMs, display) {
+      // Create or update cooldown notice
+      let notice = document.getElementById('cooldown-notice');
+      if (!notice) {
+        notice = document.createElement('div');
+        notice.id = 'cooldown-notice';
+        notice.style.cssText = `
+          background: rgba(255, 193, 7, 0.2);
+          border: 1px solid rgba(255, 193, 7, 0.5);
+          border-radius: 8px;
+          padding: 0.75rem;
+          margin-bottom: 0.75rem;
+          text-align: center;
+          font-size: 0.85rem;
+          color: #ffc107;
+        `;
+        const activitySection = document.querySelector('.activity-grid').parentNode;
+        activitySection.insertBefore(notice, document.querySelector('.activity-grid'));
+      }
+      notice.innerHTML = `⏳ <strong>${character}</strong> needs to rest. Cooldown: <span id="cooldown-time">${display}</span>`;
+    }
+
+    function startCooldownTimer(remainingMs) {
+      // Clear any existing timer
+      if (cooldownTimer) {
+        clearInterval(cooldownTimer);
+      }
+
+      cooldownEndTime = Date.now() + remainingMs;
+
+      // Disable activity buttons
+      const buttons = document.querySelectorAll('.activity-btn');
+      buttons.forEach(btn => btn.disabled = true);
+
+      // Update every second
+      cooldownTimer = setInterval(() => {
+        const remaining = cooldownEndTime - Date.now();
+
+        if (remaining <= 0) {
+          // Cooldown complete
+          clearInterval(cooldownTimer);
+          cooldownTimer = null;
+          cooldownEndTime = null;
+
+          // Remove notice
+          const notice = document.getElementById('cooldown-notice');
+          if (notice) notice.remove();
+
+          // Re-enable buttons
+          buttons.forEach(btn => btn.disabled = false);
+          return;
+        }
+
+        // Update display
+        const seconds = Math.ceil(remaining / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        const display = minutes > 0 ? `${minutes}m ${secs}s` : `${secs}s`;
+
+        const timeSpan = document.getElementById('cooldown-time');
+        if (timeSpan) {
+          timeSpan.textContent = display;
+        }
+      }, 1000);
     }
 
     // ==========================================
@@ -1701,6 +1814,38 @@
       a.download = `breakroom-${dateStr.replace(/[^a-zA-Z0-9]/g, '-')}.txt`;
       a.click();
       URL.revokeObjectURL(url);
+    }
+
+    async function clearBreakroomChat() {
+      if (!confirm('Delete ALL breakroom messages? This cannot be undone.')) {
+        return;
+      }
+
+      try {
+        const response = await fetch('/.netlify/functions/breakroom-message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'clear_all' })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          // Clear local session
+          sessionMessages = [];
+          renderSessionChat();
+
+          // Show the "breakroom is quiet" message
+          document.getElementById('no-chatter-msg').style.display = 'block';
+
+          console.log('Breakroom chat cleared');
+        } else {
+          alert('Error clearing chat: ' + (result.error || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('Error clearing chat:', error);
+        alert('Error clearing chat');
+      }
     }
 
     function loadChatter() {

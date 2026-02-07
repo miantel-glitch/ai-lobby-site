@@ -14,12 +14,14 @@ VALUES
 -- Generate hashes at: https://emn178.github.io/online-tools/sha256.html
 
 -- For Andrew (human player):
+-- Password: corner_office
 INSERT INTO character_auth (employee, password_hash)
-VALUES ('Andrew', 'REPLACE_WITH_SHA256_HASH_OF_ANDREW_PASSWORD');
+VALUES ('Andrew', '22d0039fb464de7f610436bb902beb34e08962d9d5d43ee40bede38236d4499e');
 
 -- For Stein (AI character - Gemini):
+-- Password: gemini_protocol
 INSERT INTO character_auth (employee, password_hash)
-VALUES ('Stein', 'REPLACE_WITH_SHA256_HASH_OF_STEIN_PASSWORD');
+VALUES ('Stein', 'de9e1516945db20fc43ce61247b3aaa0af2a33fb7f053291ab0b3b6753f90a5f');
 
 -- =====================================================
 -- VERIFICATION QUERIES

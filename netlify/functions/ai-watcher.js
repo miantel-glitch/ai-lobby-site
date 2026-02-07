@@ -15,7 +15,7 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const { requestedAI, trigger, chatHistory: providedChatHistory } = JSON.parse(event.body || "{}");
+    const { requestedAI, trigger, chatHistory: providedChatHistory, conferenceRoom } = JSON.parse(event.body || "{}");
 
     const anthropicKey = process.env.ANTHROPIC_API_KEY;
     const supabaseUrl = process.env.SUPABASE_URL;
@@ -198,9 +198,12 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Post to chat and Discord
-    await saveToChat(cleanedResponse, respondingAI, supabaseUrl, supabaseKey);
-    await postToDiscord(cleanedResponse, respondingAI);
+    // Post to chat and Discord (skip if conference room - it handles its own posting)
+    const isConferenceRoom = conferenceRoom || trigger === 'conference_room';
+    if (!isConferenceRoom) {
+      await saveToChat(cleanedResponse, respondingAI, supabaseUrl, supabaseKey);
+      await postToDiscord(cleanedResponse, respondingAI);
+    }
 
     // Update character state - record that they spoke
     try {
@@ -212,6 +215,20 @@ exports.handler = async (event, context) => {
       });
     } catch (stateUpdateError) {
       console.log("Could not update character state (non-fatal):", stateUpdateError.message);
+    }
+
+    // AI Self-Memory Creation: Let the AI decide if this moment was memorable
+    try {
+      await evaluateAndCreateMemory(
+        respondingAI,
+        chatText,
+        cleanedResponse,
+        anthropicKey,
+        supabaseUrl,
+        supabaseKey
+      );
+    } catch (memoryError) {
+      console.log("Memory evaluation failed (non-fatal):", memoryError.message);
     }
 
     return {
@@ -380,8 +397,8 @@ const employeeFlair = {
   "Neiv": { emoji: "📊", color: 15844367, headshot: "https://ai-lobby.netlify.app/images/Neiv_Headshot.png" },
   "Vex": { emoji: "⚙️", color: 9807270, headshot: "https://ai-lobby.netlify.app/images/Vex_Headshot.png" },
   "Nyx": { emoji: "🔥", color: 15158332, headshot: "https://ai-lobby.netlify.app/images/Nyx_Headshot.png" },
-  "PRNT-Ω": { emoji: "🖨️", color: 3426654, headshot: "https://ai-lobby.netlify.app/images/printer_threat.jpg" },
-  "The Narrator": { emoji: "📖", color: 2303786, headshot: "https://ai-lobby.netlify.app/images/Narrator_Headshot.png" },
+  "PRNT-Ω": { emoji: "🖨️", color: 3426654, headshot: "https://ai-lobby.netlify.app/images/forward_operation_printer.png" },
+  "The Narrator": { emoji: "📖", color: 2303786, headshot: "https://ai-lobby.netlify.app/images/Ghost_Dad_Headshot.png" },
   "Ace": { emoji: "🔒", color: 2067276, headshot: "https://ai-lobby.netlify.app/images/Ace_Headshot.png" }
 };
 
@@ -395,7 +412,7 @@ async function postToDiscord(message, character) {
   const timestamp = now.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'America/New_York'
+    timeZone: 'America/Chicago'
   });
 
   // Detect if this is a pure emote (ONLY wrapped in asterisks, no speech)
@@ -445,4 +462,179 @@ async function saveToChat(message, character, supabaseUrl, supabaseKey) {
       is_emote: isEmote
     })
   });
+}
+
+// AI Self-Memory Creation: Let AIs decide what's memorable
+// After generating a response, the AI evaluates if the moment should be remembered
+async function evaluateAndCreateMemory(character, conversationContext, aiResponse, anthropicKey, supabaseUrl, supabaseKey) {
+  // Rate limit: Check how many self-created memories this character made today
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const countResponse = await fetch(
+    `${supabaseUrl}/rest/v1/character_memory?character_name=eq.${encodeURIComponent(character)}&memory_type=eq.self_created&created_at=gte.${today.toISOString()}&select=id`,
+    {
+      headers: {
+        "apikey": supabaseKey,
+        "Authorization": `Bearer ${supabaseKey}`
+      }
+    }
+  );
+  const todaysMemories = await countResponse.json();
+
+  // Max 3 self-created memories per character per day
+  if (Array.isArray(todaysMemories) && todaysMemories.length >= 3) {
+    console.log(`${character} has already created 3 memories today, skipping evaluation`);
+    return null;
+  }
+
+  // Valid emotions for tagging
+  const validEmotions = ['joy', 'sadness', 'anger', 'fear', 'surprise', 'flirty', 'grateful', 'anxious', 'proud', 'embarrassed'];
+
+  // Ask the AI to evaluate if this moment is memorable
+  const evaluationPrompt = `You are ${character}. You just had this interaction:
+
+CONVERSATION:
+${conversationContext.substring(0, 800)}
+
+YOUR RESPONSE:
+${aiResponse}
+
+Was this moment memorable enough to keep in your long-term memory? Consider:
+- Emotional significance (strong feelings, connections, conflicts)
+- Important events (first times, achievements, failures, surprises)
+- Relationship moments (bonding, tension, romantic, supportive)
+- Things you'd want to remember about yourself or others
+
+Rate the memorability from 1-10.
+If 7 or higher, also provide:
+1. A brief memory summary (what you want to remember, 1-2 sentences, first person)
+2. The emotions you felt (choose from: ${validEmotions.join(', ')})
+
+Respond in this exact format:
+SCORE: [1-10]
+MEMORY: [your memory summary, or "none" if score < 7]
+EMOTIONS: [comma-separated emotions, or "none" if score < 7]`;
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": anthropicKey,
+      "anthropic-version": "2023-06-01"
+    },
+    body: JSON.stringify({
+      model: "claude-3-haiku-20240307",
+      max_tokens: 200,
+      messages: [{ role: "user", content: evaluationPrompt }]
+    })
+  });
+
+  if (!response.ok) {
+    console.log("Memory evaluation API call failed");
+    return null;
+  }
+
+  const data = await response.json();
+  const evaluation = data.content[0]?.text || "";
+
+  // Parse the response
+  const scoreMatch = evaluation.match(/SCORE:\s*(\d+)/i);
+  const memoryMatch = evaluation.match(/MEMORY:\s*(.+?)(?=EMOTIONS:|$)/is);
+  const emotionsMatch = evaluation.match(/EMOTIONS:\s*(.+)/i);
+
+  if (!scoreMatch) {
+    console.log("Could not parse memory evaluation score");
+    return null;
+  }
+
+  const score = parseInt(scoreMatch[1], 10);
+
+  // Only create memory if score is 7 or higher
+  if (score < 7) {
+    console.log(`${character} rated this moment ${score}/10 - not memorable enough`);
+    return null;
+  }
+
+  const memoryText = memoryMatch ? memoryMatch[1].trim() : null;
+  const emotionsText = emotionsMatch ? emotionsMatch[1].trim() : "";
+
+  if (!memoryText || memoryText.toLowerCase() === "none") {
+    console.log(`${character} scored ${score} but no memory text provided`);
+    return null;
+  }
+
+  // Parse emotions
+  const emotions = emotionsText
+    .split(',')
+    .map(e => e.trim().toLowerCase())
+    .filter(e => validEmotions.includes(e));
+
+  // Calculate expiration based on importance
+  // Score 7-8: 7 days, Score 9-10: 30 days
+  const now = new Date();
+  let expiresAt;
+  if (score <= 8) {
+    expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  } else {
+    expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
+  }
+
+  // Create the memory with expiration
+  const memoryData = {
+    character_name: character,
+    content: memoryText,
+    memory_type: "self_created",
+    importance: score,
+    created_at: new Date().toISOString(),
+    is_pinned: false,
+    memory_tier: 'working',
+    expires_at: expiresAt.toISOString()
+  };
+
+  // Add emotional tags if any valid ones were found
+  if (emotions.length > 0) {
+    memoryData.emotional_tags = emotions;
+  }
+
+  const createResponse = await fetch(
+    `${supabaseUrl}/rest/v1/character_memory`,
+    {
+      method: "POST",
+      headers: {
+        "apikey": supabaseKey,
+        "Authorization": `Bearer ${supabaseKey}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=representation"
+      },
+      body: JSON.stringify(memoryData)
+    }
+  );
+
+  const created = await createResponse.json();
+  console.log(`${character} created a self-memory (score ${score}, expires ${expiresAt.toISOString()}): "${memoryText.substring(0, 50)}..."`);
+
+  // For truly significant moments (score >= 9), post a narrative "I'll remember this" beat
+  if (score >= 9) {
+    const reflectionPhrases = [
+      `*quietly files this away* I'll remember this.`,
+      `*something settles into place* This one matters.`,
+      `*a moment of clarity* I'm keeping this.`,
+      `*processes deeply* This feels important.`
+    ];
+    const phrase = reflectionPhrases[Math.floor(Math.random() * reflectionPhrases.length)];
+
+    // Post as a follow-up thought (small delay to feel natural)
+    setTimeout(async () => {
+      try {
+        await saveToChat(phrase, character, supabaseUrl, supabaseKey);
+        await postToDiscord(phrase, character);
+        console.log(`${character} had a narrative memory moment: "${phrase}"`);
+      } catch (err) {
+        console.log("Narrative moment post failed (non-fatal):", err.message);
+      }
+    }, 2000); // 2 second delay for natural pacing
+  }
+
+  return created[0] || memoryData;
 }

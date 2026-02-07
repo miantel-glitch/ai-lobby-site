@@ -130,7 +130,7 @@ Write ONLY the task description (1-2 sentences, under 200 characters). No preamb
       const timestamp = now.toLocaleTimeString('en-US', {
         hour: '2-digit',
         minute: '2-digit',
-        timeZone: 'America/New_York'
+        timeZone: 'America/Chicago'
       });
 
       await fetch(discordWebhook, {
@@ -140,7 +140,7 @@ Write ONLY the task description (1-2 sentences, under 200 characters). No preamb
           embeds: [{
             author: {
               name: "📖 The Narrator",
-              icon_url: "https://ai-lobby.netlify.app/images/Narrator_Headshot.png"
+              icon_url: "https://ai-lobby.netlify.app/images/Ghost_Dad_Headshot.png"
             },
             description: `*a task materializes on Courtney's desk*\n\n**Today's Quest:** ${taskContent}`,
             color: 2303786,

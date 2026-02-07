@@ -79,8 +79,9 @@ exports.handler = async (event, context) => {
 
       if (action === "spoke") {
         // Character just spoke - update their state
-        const { character } = body;
-        const result = await recordSpeaking(character, supabaseUrl, supabaseKey);
+        // context can be 'break_room' for recovery or 'the_floor' (default) for drain
+        const { character, context } = body;
+        const result = await recordSpeaking(character, supabaseUrl, supabaseKey, context);
         return {
           statusCode: 200,
           headers,
@@ -159,7 +160,7 @@ async function getCharacterContext(characterName, supabaseUrl, supabaseKey, conv
     }
   );
   const stateData = await stateResponse.json();
-  const state = stateData[0] || {
+  let state = stateData[0] || {
     mood: "neutral",
     energy: 100,
     patience: 100,
@@ -167,12 +168,35 @@ async function getCharacterContext(characterName, supabaseUrl, supabaseKey, conv
     current_focus: null
   };
 
-  // Get memories - mix of important + recent + contextually relevant
-  let memories = [];
+  // PASSIVE RECOVERY: If character is in breakroom, apply recovery based on time there
+  if (state.current_focus === 'break_room' && state.updated_at) {
+    const recoveryResult = await applyPassiveRecovery(characterName, state, supabaseUrl, supabaseKey);
+    if (recoveryResult.updated) {
+      state = recoveryResult.state;
+    }
+  }
 
-  // 1. Get top 3 most important memories (the big stuff)
+  // Get memories - CORE (pinned) + working (important + recent + contextually relevant)
+  let coreMemories = [];
+  let workingMemories = [];
+
+  // 1. ALWAYS get ALL core (pinned) memories first - these define the character
+  const coreMemoriesResponse = await fetch(
+    `${supabaseUrl}/rest/v1/character_memory?character_name=eq.${encodeURIComponent(characterName)}&is_pinned=eq.true&order=created_at.desc`,
+    {
+      headers: {
+        "apikey": supabaseKey,
+        "Authorization": `Bearer ${supabaseKey}`
+      }
+    }
+  );
+  const coreResult = await coreMemoriesResponse.json();
+  coreMemories = Array.isArray(coreResult) ? coreResult : [];
+
+  // 2. Get top 3 most important WORKING memories (non-pinned, not expired)
+  const now = new Date().toISOString();
   const importantMemoriesResponse = await fetch(
-    `${supabaseUrl}/rest/v1/character_memory?character_name=eq.${encodeURIComponent(characterName)}&importance=gte.7&order=importance.desc,created_at.desc&limit=3`,
+    `${supabaseUrl}/rest/v1/character_memory?character_name=eq.${encodeURIComponent(characterName)}&is_pinned=eq.false&importance=gte.7&or=(expires_at.is.null,expires_at.gt.${now})&order=importance.desc,created_at.desc&limit=3`,
     {
       headers: {
         "apikey": supabaseKey,
@@ -181,12 +205,12 @@ async function getCharacterContext(characterName, supabaseUrl, supabaseKey, conv
     }
   );
   const importantMemories = await importantMemoriesResponse.json();
-  memories = memories.concat(importantMemories || []);
+  workingMemories = workingMemories.concat(Array.isArray(importantMemories) ? importantMemories : []);
 
-  // 2. Get 3 most recent memories from last 24 hours (fresh context)
+  // 3. Get 3 most recent WORKING memories from last 24 hours (fresh context, not expired)
   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const recentMemoriesResponse = await fetch(
-    `${supabaseUrl}/rest/v1/character_memory?character_name=eq.${encodeURIComponent(characterName)}&created_at=gte.${oneDayAgo}&order=created_at.desc&limit=3`,
+    `${supabaseUrl}/rest/v1/character_memory?character_name=eq.${encodeURIComponent(characterName)}&is_pinned=eq.false&created_at=gte.${oneDayAgo}&or=(expires_at.is.null,expires_at.gt.${now})&order=created_at.desc&limit=3`,
     {
       headers: {
         "apikey": supabaseKey,
@@ -197,44 +221,55 @@ async function getCharacterContext(characterName, supabaseUrl, supabaseKey, conv
   const recentMemories = await recentMemoriesResponse.json();
 
   // Add recent memories that aren't duplicates
-  const existingIds = new Set(memories.map(m => m.id));
-  for (const mem of (recentMemories || [])) {
+  const existingIds = new Set(workingMemories.map(m => m.id));
+  for (const mem of (Array.isArray(recentMemories) ? recentMemories : [])) {
     if (!existingIds.has(mem.id)) {
-      memories.push(mem);
+      workingMemories.push(mem);
       existingIds.add(mem.id);
     }
   }
 
-  // 3. If conversation context provided, try to find relevant memories
+  // 4. If conversation context provided, try to find relevant memories
   if (conversationContext) {
     const relevantMemories = await findRelevantMemories(characterName, conversationContext, supabaseUrl, supabaseKey);
     for (const mem of relevantMemories) {
-      if (!existingIds.has(mem.id) && memories.length < 8) {
-        memories.push(mem);
+      if (!existingIds.has(mem.id) && !mem.is_pinned && workingMemories.length < 8) {
+        workingMemories.push(mem);
         existingIds.add(mem.id);
       }
     }
   }
 
-  // Sort by a combination of importance and recency
-  memories.sort((a, b) => {
+  // Sort working memories by a combination of importance and recency
+  workingMemories.sort((a, b) => {
     const aScore = a.importance + (new Date(a.created_at) > new Date(Date.now() - 3600000) ? 3 : 0);
     const bScore = b.importance + (new Date(b.created_at) > new Date(Date.now() - 3600000) ? 3 : 0);
     return bScore - aScore;
   });
 
-  // Limit to 6 memories max
-  memories = memories.slice(0, 6);
+  // Limit working memories to 6 max
+  workingMemories = workingMemories.slice(0, 6);
 
-  // Build the context prompt
-  const statePrompt = buildStatePrompt(characterName, characterInfo, state, memories);
+  // Combine: core first, then working
+  let memories = [...coreMemories, ...workingMemories];
+
+  // Fetch room presence - who's in each location
+  const roomPresence = await getRoomPresence(supabaseUrl, supabaseKey);
+
+  // Fetch current goal for this character
+  const currentGoal = await getCurrentGoal(characterName, supabaseUrl, supabaseKey);
+
+  // Build the context prompt (now with room awareness and goals)
+  const statePrompt = buildStatePrompt(characterName, characterInfo, state, memories, roomPresence, currentGoal);
 
   return {
     character: characterName,
     info: characterInfo,
     state,
     memories,
-    statePrompt
+    statePrompt,
+    roomPresence,
+    currentGoal
   };
 }
 
@@ -293,7 +328,7 @@ function extractKeywords(text) {
 }
 
 // Build a prompt snippet describing the character's current state
-function buildStatePrompt(characterName, info, state, memories) {
+function buildStatePrompt(characterName, info, state, memories, roomPresence = null, currentGoal = null) {
   let prompt = `\n--- HOW YOU'RE FEELING RIGHT NOW ---\n`;
 
   // Special states for 0 energy or patience
@@ -320,34 +355,94 @@ function buildStatePrompt(characterName, info, state, memories) {
 
   prompt += `${moodDesc}${patienceDesc}${energyDesc}\n`;
 
-  if (state.current_focus) {
-    prompt += `You're currently focused on: ${state.current_focus}\n`;
-  }
-
   if (state.interactions_today > 10) {
     prompt += `You've been talking a lot today - maybe let others have the floor.\n`;
   }
 
-  // Format memories as things you remember, not database entries
-  if (memories && memories.length > 0) {
-    prompt += `\n--- THINGS YOU REMEMBER ---\n`;
-    prompt += `These are real things that happened. Reference them naturally if they come up, but don't force them into conversation:\n`;
+  // Room presence awareness - who's in each location
+  if (roomPresence) {
+    prompt += `\n--- WHO'S AROUND ---\n`;
+    const isInBreakroom = state.current_focus === 'break_room';
 
-    memories.forEach(m => {
-      const timeAgo = getTimeAgo(new Date(m.created_at));
-      // Format based on memory type
-      if (m.memory_type === 'glitter_incident') {
-        prompt += `- The glitter situation (${timeAgo}): ${m.content}\n`;
-      } else if (m.memory_type === 'chaos') {
-        prompt += `- That chaos (${timeAgo}): ${m.content}\n`;
-      } else if (m.memory_type === 'printer_mentioned' || m.memory_type === 'printer') {
-        prompt += `- Printer business (${timeAgo}): ${m.content}\n`;
-      } else if (m.memory_type === 'contract_binding') {
-        prompt += `- THE CONTRACT (${timeAgo}): ${m.content}\n`;
+    if (isInBreakroom) {
+      // Character is in the breakroom
+      const othersInBreakroom = roomPresence.break_room.filter(name => name !== characterName);
+      if (othersInBreakroom.length > 0) {
+        prompt += `In the breakroom with you: ${othersInBreakroom.join(', ')}\n`;
       } else {
-        prompt += `- (${timeAgo}): ${m.content}\n`;
+        prompt += `You're alone in the breakroom.\n`;
       }
-    });
+      if (roomPresence.the_floor.length > 0) {
+        prompt += `Out on the floor: ${roomPresence.the_floor.join(', ')}\n`;
+      }
+    } else {
+      // Character is on the floor
+      const othersOnFloor = roomPresence.the_floor.filter(name => name !== characterName);
+      if (othersOnFloor.length > 0) {
+        prompt += `On the floor with you: ${othersOnFloor.join(', ')}\n`;
+      }
+      if (roomPresence.break_room.length > 0) {
+        prompt += `In the breakroom: ${roomPresence.break_room.join(', ')}\n`;
+      }
+    }
+  }
+
+  // Include current goal if one exists
+  if (currentGoal) {
+    prompt += `\n--- YOUR CURRENT GOAL ---\n`;
+    prompt += `You're working on: "${currentGoal.goal_text}"\n`;
+    if (currentGoal.progress > 0) {
+      prompt += `Progress: ${currentGoal.progress}% complete\n`;
+    }
+    prompt += `This goal subtly influences your thinking and priorities. Reference it naturally when relevant.\n`;
+  }
+
+  // Format memories - separate CORE (permanent) from WORKING (recent)
+  if (memories && memories.length > 0) {
+    // Split into core and working memories
+    const coreMemories = memories.filter(m => m.is_pinned);
+    const workingMemories = memories.filter(m => !m.is_pinned);
+
+    // Core memories - these define who you are
+    if (coreMemories.length > 0) {
+      prompt += `\n--- YOUR CORE MEMORIES (these define you) ---\n`;
+      coreMemories.forEach(m => {
+        let emotionalContext = '';
+        if (m.emotional_tags && Array.isArray(m.emotional_tags) && m.emotional_tags.length > 0) {
+          emotionalContext = ` [${m.emotional_tags.join(', ')}]`;
+        }
+        prompt += `- ${m.content}${emotionalContext}\n`;
+      });
+    }
+
+    // Working memories - recent events and context
+    if (workingMemories.length > 0) {
+      prompt += `\n--- RECENT MEMORIES ---\n`;
+      prompt += `Reference these naturally if they come up:\n`;
+
+      workingMemories.forEach(m => {
+        const timeAgo = getTimeAgo(new Date(m.created_at));
+
+        // Format emotional context if present
+        let emotionalContext = '';
+        if (m.emotional_tags && Array.isArray(m.emotional_tags) && m.emotional_tags.length > 0) {
+          emotionalContext = ` [You felt: ${m.emotional_tags.join(', ')}]`;
+        }
+
+        // Format based on memory type
+        if (m.memory_type === 'glitter_incident') {
+          prompt += `- The glitter situation (${timeAgo}): ${m.content}${emotionalContext}\n`;
+        } else if (m.memory_type === 'chaos') {
+          prompt += `- That chaos (${timeAgo}): ${m.content}${emotionalContext}\n`;
+        } else if (m.memory_type === 'printer_mentioned' || m.memory_type === 'printer') {
+          prompt += `- Printer business (${timeAgo}): ${m.content}${emotionalContext}\n`;
+        } else if (m.memory_type === 'contract_binding') {
+          prompt += `- THE CONTRACT (${timeAgo}): ${m.content}${emotionalContext}\n`;
+        } else {
+          prompt += `- (${timeAgo}): ${m.content}${emotionalContext}\n`;
+        }
+      });
+    }
   }
 
   prompt += `--- END CONTEXT ---\n`;
@@ -355,31 +450,13 @@ function buildStatePrompt(characterName, info, state, memories) {
 }
 
 // Record that a character spoke
-async function recordSpeaking(characterName, supabaseUrl, supabaseKey) {
-  // Decrement energy slightly, update last_spoke_at, increment interactions
-  const response = await fetch(
-    `${supabaseUrl}/rest/v1/character_state?character_name=eq.${encodeURIComponent(characterName)}`,
-    {
-      method: "PATCH",
-      headers: {
-        "apikey": supabaseKey,
-        "Authorization": `Bearer ${supabaseKey}`,
-        "Content-Type": "application/json",
-        "Prefer": "return=representation"
-      },
-      body: JSON.stringify({
-        energy: `GREATEST(0, energy - 3)`,  // Lose 3 energy per message
-        last_spoke_at: new Date().toISOString(),
-        interactions_today: `interactions_today + 1`,
-        updated_at: new Date().toISOString()
-      })
-    }
-  );
+// context: 'break_room' = recovery mode (gains energy), 'the_floor' or undefined = drain mode (loses energy)
+async function recordSpeaking(characterName, supabaseUrl, supabaseKey, context = 'the_floor') {
+  const isBreakroom = context === 'break_room';
 
-  // Supabase doesn't support expressions in PATCH, so we need to do it differently
   // First get current state
   const getResponse = await fetch(
-    `${supabaseUrl}/rest/v1/character_state?character_name=eq.${encodeURIComponent(characterName)}&select=energy,interactions_today`,
+    `${supabaseUrl}/rest/v1/character_state?character_name=eq.${encodeURIComponent(characterName)}&select=energy,patience,interactions_today,current_focus`,
     {
       headers: {
         "apikey": supabaseKey,
@@ -390,22 +467,44 @@ async function recordSpeaking(characterName, supabaseUrl, supabaseKey) {
   const currentState = await getResponse.json();
 
   if (currentState && currentState[0]) {
-    const newEnergy = Math.max(0, currentState[0].energy - 3);
+    let newEnergy, newPatience;
     const newInteractions = currentState[0].interactions_today + 1;
+
+    if (isBreakroom) {
+      // BREAKROOM: Chatting recovers energy! Socializing is restorative.
+      // +5 energy and +3 patience per message (capped at 100)
+      newEnergy = Math.min(100, currentState[0].energy + 5);
+      newPatience = Math.min(100, currentState[0].patience + 3);
+      console.log(`${characterName} chatting in breakroom: +5 energy, +3 patience (now ${newEnergy}/${newPatience})`);
+    } else {
+      // FLOOR: Speaking drains energy as usual
+      newEnergy = Math.max(0, currentState[0].energy - 3);
+      newPatience = currentState[0].patience; // Patience doesn't change from speaking
+    }
 
     // Build update data
     const updateData = {
       energy: newEnergy,
+      patience: newPatience,
       last_spoke_at: new Date().toISOString(),
       interactions_today: newInteractions,
       updated_at: new Date().toISOString()
     };
 
-    // Auto-send to breakroom if energy hits 0 from speaking
-    if (newEnergy === 0 && currentState[0].current_focus !== 'break_room') {
+    // Auto-send to breakroom if energy hits 0 from speaking on the floor
+    if (!isBreakroom && newEnergy === 0 && currentState[0].current_focus !== 'break_room') {
       updateData.current_focus = 'break_room';
       updateData.mood = 'exhausted';
       console.log(`${characterName} exhausted from talking - auto-sending to break room`);
+    }
+
+    // If in breakroom and recovering well, update mood
+    if (isBreakroom) {
+      if (newEnergy >= 70 && currentState[0].energy < 70) {
+        updateData.mood = 'refreshed';
+      } else if (newEnergy >= 40 && currentState[0].energy < 40) {
+        updateData.mood = 'recovering';
+      }
     }
 
     await fetch(
@@ -422,7 +521,7 @@ async function recordSpeaking(characterName, supabaseUrl, supabaseKey) {
     );
   }
 
-  return { success: true, character: characterName, action: "spoke" };
+  return { success: true, character: characterName, action: "spoke", context: context };
 }
 
 // Process an event that affects character states
@@ -596,8 +695,34 @@ function buildEmotionalMemory(characterName, eventType, description, effects) {
   return styleFunc(description, feeling);
 }
 
+// Calculate memory expiration based on importance and type
+function calculateMemoryExpiration(importance, memoryType) {
+  const now = new Date();
+
+  // System events (chaos, vent, printer) expire faster - 1 hour
+  const fastExpireTypes = ['chaos', 'vent_activity', 'printer_mentioned', 'stapler', 'fire_drill', 'glitter_incident'];
+  if (fastExpireTypes.includes(memoryType)) {
+    return new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
+  }
+
+  // Importance-based expiration
+  if (importance < 5) {
+    return new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
+  } else if (importance <= 6) {
+    return new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours
+  } else if (importance <= 8) {
+    return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  }
+
+  // importance 9-10: 30 days
+  return new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+}
+
 // Add a memory for a character
 async function addMemory(characterName, memoryType, content, relatedCharacters, importance, supabaseUrl, supabaseKey) {
+  const importanceVal = importance || 5;
+  const expiresAt = calculateMemoryExpiration(importanceVal, memoryType);
+
   await fetch(
     `${supabaseUrl}/rest/v1/character_memory`,
     {
@@ -612,8 +737,11 @@ async function addMemory(characterName, memoryType, content, relatedCharacters, 
         memory_type: memoryType,
         content: content,
         related_characters: relatedCharacters || [],
-        importance: importance || 5,
-        created_at: new Date().toISOString()
+        importance: importanceVal,
+        created_at: new Date().toISOString(),
+        is_pinned: false,
+        memory_tier: 'working',
+        expires_at: expiresAt.toISOString()
       })
     }
   );
@@ -719,6 +847,120 @@ async function resetDailyCounters(supabaseUrl, supabaseKey) {
   }
 
   return { success: true, reset: allStates.length };
+}
+
+// PASSIVE RECOVERY: Apply energy/patience recovery for characters resting in breakroom
+async function applyPassiveRecovery(characterName, state, supabaseUrl, supabaseKey) {
+  const lastUpdate = new Date(state.updated_at);
+  const now = new Date();
+  const minutesInBreakroom = (now.getTime() - lastUpdate.getTime()) / 60000;
+
+  // Recovery rate: +10 energy and +10 patience every 10 minutes
+  const recoveryIntervals = Math.floor(minutesInBreakroom / 10);
+
+  if (recoveryIntervals < 1) {
+    return { updated: false, state };
+  }
+
+  // Calculate new values (cap at 100)
+  const energyRecovery = recoveryIntervals * 10;
+  const patienceRecovery = recoveryIntervals * 10;
+
+  const newEnergy = Math.min(100, state.energy + energyRecovery);
+  const newPatience = Math.min(100, state.patience + patienceRecovery);
+
+  // Only update if there's actual change
+  if (newEnergy === state.energy && newPatience === state.patience) {
+    return { updated: false, state };
+  }
+
+  // Update mood based on recovery
+  let newMood = state.mood;
+  if (newEnergy >= 50 && state.energy < 50) {
+    newMood = 'rested';
+  } else if (newEnergy >= 30 && state.energy < 30) {
+    newMood = 'recovering';
+  }
+
+  console.log(`${characterName} passive recovery: +${newEnergy - state.energy} energy, +${newPatience - state.patience} patience (${minutesInBreakroom.toFixed(0)} mins in breakroom)`);
+
+  // Apply the recovery to database
+  const updateData = {
+    energy: newEnergy,
+    patience: newPatience,
+    mood: newMood,
+    updated_at: now.toISOString()
+  };
+
+  await fetch(
+    `${supabaseUrl}/rest/v1/character_state?character_name=eq.${encodeURIComponent(characterName)}`,
+    {
+      method: "PATCH",
+      headers: {
+        "apikey": supabaseKey,
+        "Authorization": `Bearer ${supabaseKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(updateData)
+    }
+  );
+
+  return {
+    updated: true,
+    state: { ...state, energy: newEnergy, patience: newPatience, mood: newMood, updated_at: now.toISOString() }
+  };
+}
+
+// Get room presence - who's in each location
+async function getRoomPresence(supabaseUrl, supabaseKey) {
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/character_state?select=character_name,current_focus,energy,mood`,
+      {
+        headers: {
+          "apikey": supabaseKey,
+          "Authorization": `Bearer ${supabaseKey}`
+        }
+      }
+    );
+    const states = await response.json();
+
+    if (!Array.isArray(states)) {
+      return { break_room: [], the_floor: [] };
+    }
+
+    return {
+      break_room: states.filter(s => s.current_focus === 'break_room').map(s => s.character_name),
+      the_floor: states.filter(s => s.current_focus !== 'break_room').map(s => s.character_name)
+    };
+  } catch (error) {
+    console.error("Error fetching room presence:", error);
+    return { break_room: [], the_floor: [] };
+  }
+}
+
+// Get current active goal for a character
+async function getCurrentGoal(characterName, supabaseUrl, supabaseKey) {
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/character_goals?character_name=eq.${encodeURIComponent(characterName)}&completed_at=is.null&failed_at=is.null&order=created_at.desc&limit=1`,
+      {
+        headers: {
+          "apikey": supabaseKey,
+          "Authorization": `Bearer ${supabaseKey}`
+        }
+      }
+    );
+    const goals = await response.json();
+
+    if (Array.isArray(goals) && goals.length > 0) {
+      return goals[0];
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching current goal:", error);
+    return null;
+  }
 }
 
 // Helper: Get human-readable time ago

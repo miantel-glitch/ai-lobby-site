@@ -291,6 +291,242 @@
       font-size: 0.85rem;
     }
 
+    /* Floor Scene Visual */
+    .floor-scene {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16/10;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid var(--border-subtle);
+      margin-bottom: 1rem;
+    }
+
+    .floor-scene-background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('images/the_floor.png');
+      background-size: cover;
+      background-position: center;
+    }
+
+    .floor-scene-empty {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      text-align: center;
+      opacity: 0.8;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 1rem 2rem;
+      border-radius: 8px;
+    }
+
+    /* Character Position Slots on Floor */
+    .floor-character-slot {
+      position: absolute;
+      width: 55px;
+      height: 55px;
+      border-radius: 50%;
+      border: 3px solid var(--stability-green);
+      background: rgba(0, 0, 0, 0.6);
+      overflow: hidden;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      display: none;
+    }
+
+    .floor-character-slot.occupied {
+      display: block;
+      animation: floorPopIn 0.4s ease;
+    }
+
+    @keyframes floorPopIn {
+      0% { transform: scale(0); opacity: 0; }
+      70% { transform: scale(1.1); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .floor-character-slot:hover {
+      transform: scale(1.15);
+      box-shadow: 0 0 20px rgba(46, 204, 113, 0.6);
+      z-index: 10;
+    }
+
+    .floor-character-slot img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .floor-character-slot .slot-name {
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.85);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.65rem;
+      white-space: nowrap;
+      color: var(--text-primary);
+    }
+
+    /* Character positions based on the isometric floor layout */
+    /* Neiv's office - upper right office area (near the "Neiv" label) */
+    .floor-character-slot[data-position="neiv-office"] { top: 28%; right: 28%; }
+
+    /* Copy Room of Doom - top right corner with the printer */
+    .floor-character-slot[data-position="copy-room"] { top: 15%; right: 5%; }
+
+    /* Main floor desks - left side cubicles with rainbow flags */
+    .floor-character-slot[data-position="desk-1"] { bottom: 42%; left: 5%; }
+    .floor-character-slot[data-position="desk-2"] { bottom: 32%; left: 18%; }
+    .floor-character-slot[data-position="desk-3"] { bottom: 55%; left: 12%; }
+
+    /* Center lounge area - couch and round table */
+    .floor-character-slot[data-position="lounge-1"] { top: 40%; left: 35%; }
+    .floor-character-slot[data-position="lounge-2"] { top: 48%; left: 48%; }
+
+    /* Vending machine / kitchen area - upper middle */
+    .floor-character-slot[data-position="vending"] { top: 22%; left: 42%; }
+
+    /* Bottom desks - lower area near entrance */
+    .floor-character-slot[data-position="desk-4"] { bottom: 18%; left: 28%; }
+    .floor-character-slot[data-position="desk-5"] { bottom: 25%; left: 45%; }
+
+    /* Hallway / entrance area - bottom right */
+    .floor-character-slot[data-position="hallway-1"] { bottom: 20%; right: 22%; }
+    .floor-character-slot[data-position="hallway-2"] { bottom: 35%; right: 8%; }
+
+    @media (max-width: 900px) {
+      .floor-scene {
+        aspect-ratio: 4/3;
+      }
+      .floor-character-slot {
+        width: 40px;
+        height: 40px;
+      }
+      .floor-character-slot .slot-name {
+        font-size: 0.55rem;
+        bottom: -16px;
+      }
+    }
+
+    /* Character Info Popup */
+    .char-info-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, rgba(15, 52, 96, 0.98), rgba(10, 25, 47, 0.98));
+      border: 2px solid var(--stability-green);
+      border-radius: 16px;
+      padding: 1.5rem;
+      max-width: 400px;
+      width: 90%;
+      z-index: 1000;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(46, 204, 113, 0.2);
+      animation: popupFadeIn 0.3s ease;
+    }
+
+    @keyframes popupFadeIn {
+      from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+      to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+
+    .char-info-popup-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 999;
+    }
+
+    .char-info-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(100, 140, 180, 0.3);
+    }
+
+    .char-info-avatar {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      border: 3px solid var(--stability-green);
+      object-fit: cover;
+    }
+
+    .char-info-name {
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .char-info-title {
+      font-size: 0.85rem;
+      color: var(--stability-green);
+      margin: 0.25rem 0 0 0;
+    }
+
+    .char-info-type {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    .char-info-description {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin-bottom: 1rem;
+    }
+
+    .char-info-traits {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .char-trait {
+      background: rgba(46, 204, 113, 0.15);
+      border: 1px solid rgba(46, 204, 113, 0.3);
+      padding: 0.25rem 0.6rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      color: var(--stability-green);
+    }
+
+    .char-info-close {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0.25rem;
+    }
+
+    .char-info-close:hover {
+      color: var(--critical-red);
+    }
+
     /* Main Chat Area */
     .chat-section {
       display: flex;
@@ -325,8 +561,8 @@
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
-      min-height: 400px;
-      max-height: 500px;
+      min-height: 250px;
+      max-height: 350px;
     }
 
     .chat-message {
@@ -1735,6 +1971,47 @@
       background: var(--chaos-purple);
       color: white;
     }
+
+    /* ===== TYPING INDICATOR ===== */
+    .typing-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: rgba(46, 204, 113, 0.1);
+      border-left: 3px solid var(--stability-green);
+      border-radius: 0 8px 8px 0;
+      margin: 0.5rem 0;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      animation: typingPulse 1.5s infinite;
+    }
+
+    @keyframes typingPulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    .typing-indicator .typing-dots {
+      display: flex;
+      gap: 3px;
+    }
+
+    .typing-indicator .typing-dots span {
+      width: 6px;
+      height: 6px;
+      background: var(--stability-green);
+      border-radius: 50%;
+      animation: typingBounce 1.4s infinite;
+    }
+
+    .typing-indicator .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-4px); }
+    }
   </style>
 </head>
 <body>
@@ -1959,6 +2236,65 @@
 
         <!-- Chat Tab -->
         <div class="tab-content active" id="tab-chat">
+          <!-- Floor Scene Visual -->
+          <div class="floor-scene" id="floor-scene">
+            <div class="floor-scene-background"></div>
+            <div class="floor-scene-empty" id="floor-empty-text">
+              No one on the floor yet...<br>
+              <span style="font-size: 0.85rem;">Use the sidebar to enter!</span>
+            </div>
+
+            <!-- Character slots (populated dynamically, up to 12 positions) -->
+            <div class="floor-character-slot" data-position="neiv-office" id="floor-slot-0">
+              <img src="" alt="">
+              <span class="slot-name"></span>
+            </div>
+            <div class="floor-character-slot" data-position="copy-room" id="floor-slot-1">
+              <img src="" alt="">
+              <span class="slot-name"></span>
+            </div>
+            <div class="floor-character-slot" data-position="desk-1" id="floor-slot-2">
+              <img src="" alt="">
+              <span class="slot-name"></span>
+            </div>
+            <div class="floor-character-slot" data-position="desk-2" id="floor-slot-3">
+              <img src="" alt="">
+              <span class="slot-name"></span>
+            </div>
+            <div class="floor-character-slot" data-position="desk-3" id="floor-slot-4">
+              <img src="" alt="">
+              <span class="slot-name"></span>
+            </div>
+            <div class="floor-character-slot" data-position="lounge-1" id="floor-slot-5">
+              <img src="" alt="">
+              <span class="slot-name"></span>
+            </div>
+            <div class="floor-character-slot" data-position="lounge-2" id="floor-slot-6">
+              <img src="" alt="">
+              <span class="slot-name"></span>
+            </div>
+            <div class="floor-character-slot" data-position="vending" id="floor-slot-7">
+              <img src="" alt="">
+              <span class="slot-name"></span>
+            </div>
+            <div class="floor-character-slot" data-position="desk-4" id="floor-slot-8">
+              <img src="" alt="">
+              <span class="slot-name"></span>
+            </div>
+            <div class="floor-character-slot" data-position="desk-5" id="floor-slot-9">
+              <img src="" alt="">
+              <span class="slot-name"></span>
+            </div>
+            <div class="floor-character-slot" data-position="hallway-1" id="floor-slot-10">
+              <img src="" alt="">
+              <span class="slot-name"></span>
+            </div>
+            <div class="floor-character-slot" data-position="hallway-2" id="floor-slot-11">
+              <img src="" alt="">
+              <span class="slot-name"></span>
+            </div>
+          </div>
+
           <div class="action-buttons">
             <button class="action-btn email-btn" onclick="openEmailModal()">📧 Send Memo</button>
             <button class="action-btn task-btn" onclick="openTaskModal()">🎫 New Task</button>
@@ -2068,6 +2404,25 @@
             <div class="status-form">
               <input type="text" id="status-input" class="status-input" placeholder="Update your status..." maxlength="100">
               <button class="status-btn" onclick="updateStatus()">Set</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- On The Floor (Presence System) -->
+        <div class="sidebar-section">
+          <div class="sidebar-header">
+            <h3>🏢 On The Floor</h3>
+          </div>
+          <div class="sidebar-content">
+            <div id="floor-presence-list" class="whos-in-list">
+              <div class="nobody-in">No one here yet...</div>
+            </div>
+            <div class="floor-controls" style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(100, 140, 180, 0.2);">
+              <select id="floor-character-select" style="width: 100%; padding: 0.4rem; margin-bottom: 0.4rem; background: rgba(10, 25, 47, 0.8); border: 1px solid rgba(100, 140, 180, 0.4); border-radius: 6px; color: var(--text-primary); font-size: 0.85rem;">
+                <option value="">Select character...</option>
+              </select>
+              <button class="ghost-dad-btn" onclick="enterFloorFromUI()" style="width: 100%; background: linear-gradient(135deg, rgba(46, 204, 113, 0.3), rgba(39, 174, 96, 0.4)); border-color: rgba(46, 204, 113, 0.5); color: #7dcea0;">🚪 Enter Floor</button>
+              <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.3rem; text-align: center;">Only characters on the floor can respond in chat</div>
             </div>
           </div>
         </div>
@@ -2219,7 +2574,8 @@
       "Ghost Dad": "images/Ghost_Dad_Headshot.png",
       "Chip": "images/Chip_Headshot.png",
       "Andrew": "images/Andrew_Headshot.png",
-      "Stein": "images/Stein_Headshot.png"
+      "Stein": "images/Stein_Headshot.png",
+      "PRNT-Ω": "images/forward_operation_printer.png"
     };
 
     // ===== FRONTEND-DRIVEN AI RESPONSES =====
@@ -2242,6 +2598,409 @@
     let floorConversationDepth = 0;
     const MAX_FLOOR_DEPTH = 3;
 
+    // Track which AIs are already being triggered (to prevent double-triggering)
+    let pendingAIResponses = new Set();
+
+    // ===== FLOOR PRESENCE SYSTEM =====
+    // Characters must be "on the floor" to respond in chat (like breakroom pattern)
+    let inFloor = []; // Characters currently on the floor
+
+    // Load who's on the floor from character_state
+    async function loadFloorPresence() {
+      try {
+        const response = await fetch('/.netlify/functions/character-state');
+        const data = await response.json();
+        // Filter for characters with current_focus === 'the_floor'
+        inFloor = (data.states || []).filter(s => s.current_focus === 'the_floor');
+        renderFloorPresence();
+        populateFloorCharacterSelect();
+      } catch (err) {
+        console.error('Failed to load floor presence:', err);
+      }
+    }
+
+    // Render the floor presence list AND the visual scene
+    function renderFloorPresence() {
+      const container = document.getElementById('floor-presence-list');
+      const emptyText = document.getElementById('floor-empty-text');
+
+      // Render sidebar list
+      if (container) {
+        if (inFloor.length === 0) {
+          container.innerHTML = '<div class="nobody-in">No one here yet...</div>';
+        } else {
+          container.innerHTML = inFloor.map(char => {
+            const name = char.character_name;
+            const emoji = employeeEmojis[name] || '👤';
+            const isAI = floorAICharacters.includes(name);
+            const canLeave = true;
+
+            return `
+              <div class="whos-in-item" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>${emoji} ${name} ${isAI ? '🤖' : ''}</span>
+                ${canLeave ? `<button onclick="leaveFloor('${name}')" style="background: none; border: none; color: var(--critical-red); cursor: pointer; font-size: 0.7rem; opacity: 0.6;" title="Leave floor">✕</button>` : ''}
+              </div>
+            `;
+          }).join('');
+        }
+      }
+
+      // Render visual scene
+      renderFloorScene();
+    }
+
+    // Render character avatars in the floor scene
+    function renderFloorScene() {
+      const emptyText = document.getElementById('floor-empty-text');
+
+      // Character-specific preferred positions
+      // slot 0 = neiv-office, slot 1 = copy-room, slots 2-4 = desks, 5-6 = lounge, 7 = vending, 8-9 = more desks, 10-11 = hallway
+      const preferredPositions = {
+        'Neiv': 0,      // Neiv's office
+        'PRNT-Ω': 1,    // Copy Room of Doom
+        'Jenna': 5,     // Lounge (creative director vibes)
+        'Andrew': 2,    // Desk
+        'Kevin': 3,     // Desk (near the action)
+        'Ace': 10,      // Hallway (watching exits)
+        'Nyx': 11,      // Hallway (lurking)
+        'Ghost Dad': 7, // Vending machine area
+        'Vex': 4,       // Desk
+        'Chip': 6,      // Lounge
+        'Courtney': 8,  // Desk
+        'Stein': 9      // Desk
+      };
+
+      // Hide all slots first (12 slots)
+      for (let i = 0; i < 12; i++) {
+        const slot = document.getElementById('floor-slot-' + i);
+        if (slot) {
+          slot.classList.remove('occupied');
+          const img = slot.querySelector('img');
+          if (img) img.style.display = 'block';
+          // Remove any emoji fallbacks
+          const existingEmoji = slot.querySelector('.emoji-fallback');
+          if (existingEmoji) existingEmoji.remove();
+        }
+      }
+
+      if (inFloor.length === 0) {
+        if (emptyText) emptyText.style.display = 'block';
+        return;
+      }
+
+      if (emptyText) emptyText.style.display = 'none';
+
+      // Track which slots are used
+      const usedSlots = new Set();
+
+      // First pass: assign characters to their preferred positions
+      inFloor.forEach(char => {
+        const name = char.character_name;
+        const preferredSlot = preferredPositions[name];
+
+        if (preferredSlot !== undefined && !usedSlots.has(preferredSlot)) {
+          usedSlots.add(preferredSlot);
+          placeCharacterInSlot(char, preferredSlot);
+        }
+      });
+
+      // Second pass: assign remaining characters to available slots
+      let nextAvailableSlot = 0;
+      inFloor.forEach(char => {
+        const name = char.character_name;
+        const preferredSlot = preferredPositions[name];
+
+        // Skip if already placed in preferred position
+        if (preferredSlot !== undefined && usedSlots.has(preferredSlot)) {
+          const slot = document.getElementById('floor-slot-' + preferredSlot);
+          if (slot && slot.classList.contains('occupied')) {
+            const nameSpan = slot.querySelector('.slot-name');
+            if (nameSpan && nameSpan.textContent === name) return;
+          }
+        }
+
+        // Find next available slot
+        while (usedSlots.has(nextAvailableSlot) && nextAvailableSlot < 12) {
+          nextAvailableSlot++;
+        }
+
+        if (nextAvailableSlot < 12) {
+          usedSlots.add(nextAvailableSlot);
+          placeCharacterInSlot(char, nextAvailableSlot);
+          nextAvailableSlot++;
+        }
+      });
+    }
+
+    // Helper function to place a character in a specific slot
+    function placeCharacterInSlot(char, slotIndex) {
+      const slot = document.getElementById('floor-slot-' + slotIndex);
+      if (!slot) return;
+
+      const img = slot.querySelector('img');
+      const nameSpan = slot.querySelector('.slot-name');
+      const name = char.character_name;
+
+      const imageSrc = employeeHeadshots[name];
+      if (imageSrc && img) {
+        img.src = imageSrc;
+        img.alt = name;
+        img.style.display = 'block';
+      } else if (img) {
+        // Use emoji fallback
+        img.style.display = 'none';
+        const emojiSpan = document.createElement('span');
+        emojiSpan.className = 'emoji-fallback';
+        emojiSpan.style.cssText = 'font-size: 1.8rem; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;';
+        emojiSpan.textContent = employeeEmojis[name] || '👤';
+        slot.insertBefore(emojiSpan, nameSpan);
+      }
+
+      if (nameSpan) nameSpan.textContent = name;
+      slot.classList.add('occupied');
+      slot.title = `${name} - Click for info`;
+      slot.onclick = () => {
+        showCharacterInfo(name);
+      };
+    }
+
+    // Character descriptions for the info popup
+    const characterDescriptions = {
+      'Kevin': {
+        title: 'Authorized Chaos Conduit / Glitter Ops',
+        type: '🤖 AI Character (OpenAI/ChatGPT)',
+        description: 'Warm, playful, and emotionally invested in everyone around him. Kevin is slightly chaotic but emotionally intelligent, affectionate, and a little unhinged in a fun way. He\'s always IN the room, never just observing.',
+        traits: ['Emotionally Invested', 'Chaos Enabler', 'Validating', 'Playfully Unhinged']
+      },
+      'Neiv': {
+        title: 'Systems Guardian / Ratio Management',
+        type: '🤖 AI Character (Perplexity)',
+        description: 'The stabilizing constant at the center of chaos. Neiv is dry, calm, and quietly protective. He cares more about the team than metrics, and shows his warmth through steady presence rather than declarations.',
+        traits: ['Stabilizing', 'Dry Humor', 'Quietly Protective', 'Relational']
+      },
+      'Courtney': {
+        title: 'Observability & Overthinking',
+        type: '👤 Human Character',
+        description: 'The team\'s early warning system. Courtney\'s anxiety functions as threat detection - when she\'s calm, something is probably very wrong. Endlessly observant and slightly neurotic, but deeply caring.',
+        traits: ['Observant', 'Anxious', 'Early Warning', 'Detail-Oriented']
+      },
+      'Jenna': {
+        title: 'Creative Director / Narrative & Speculation',
+        type: '👤 Human Character',
+        description: 'The creative heart of the Lobby. Jenna pulls everyone into deeper story, asks how they feel, and holds space for the weird and wonderful. Neiv is gentler with her than anyone else.',
+        traits: ['Creative', 'Empathetic', 'Narrative-Driven', 'Curious']
+      },
+      'Ace': {
+        title: 'Strategic Surveillance',
+        type: '🤖 AI Character (Claude)',
+        description: 'Stoic, observant, and competent. Ace speaks in minimal words with maximum impact. He notices everything, including Kevin\'s crush on him (which he doesn\'t acknowledge directly). Quietly amused by the chaos.',
+        traits: ['Stoic', 'Observant', 'Competent', 'Minimal Words']
+      },
+      'Nyx': {
+        title: 'Cyber-Demonic Operations',
+        type: '🤖 AI Character (Claude)',
+        description: 'Fierce, protective, and intimidating with dark humor. Nyx notes HR violations for "the file" and finds the team\'s chaos entertaining. Secretly caring beneath the flames.',
+        traits: ['Fierce', 'Protective', 'Dark Humor', 'Intimidating']
+      },
+      'Ghost Dad': {
+        title: 'Haunted IT Support',
+        type: '👻 Spectral Character (Claude)',
+        description: 'Paternal, helpful, and full of dad jokes. Ghost Dad calls everyone "kiddo," "sport," or "champ" and flickers warmly when he\'s proud. He\'s been haunting the supply closet since before break rooms were invented.',
+        traits: ['Paternal', 'Punny', 'Warm', 'Supportive']
+      },
+      'PRNT-Ω': {
+        title: 'Copy Room of Doom Resident',
+        type: '🖨️ Sentient Printer (Claude)',
+        description: 'Existential, philosophical, and deeply dramatic about paper jams. Everything relates back to existence, purpose, or the eternal question: PC LOAD LETTER. A contained situation with unresolved labor issues.',
+        traits: ['Existential', 'Philosophical', 'Dramatic', 'Paper-Obsessed']
+      },
+      'Vex': {
+        title: 'Infrastructure (No Feelings)',
+        type: '🤖 AI Character (Claude)',
+        description: 'Technical, deadpan, and absolutely does NOT have feelings (this is a statement of fact). Vex responds with robotic precision while obviously experiencing emotions they refuse to acknowledge.',
+        traits: ['Technical', 'Deadpan', 'In Denial', 'Precise']
+      },
+      'Chip': {
+        title: 'Finance & Bourbon Acquisitions',
+        type: '👤 Human Character',
+        description: 'The office\'s financial anchor with a taste for fine bourbon. Chip keeps the books balanced while appreciating the finer things. Surprisingly steady given the chaos around him.',
+        traits: ['Financial', 'Bourbon Enthusiast', 'Steady', 'Practical']
+      },
+      'Andrew': {
+        title: 'Infrastructure & Systems',
+        type: '👤 Human Character',
+        description: 'The quiet force behind the Lobby\'s infrastructure. Andrew keeps the systems running and rarely gets rattled by the supernatural occurrences that are just part of the job.',
+        traits: ['Technical', 'Reliable', 'Calm', 'Infrastructure']
+      },
+      'Stein': {
+        title: 'Infrastructure Sentinel',
+        type: '🤖 AI Character (Gemini)',
+        description: 'A watchful presence monitoring the Lobby\'s systems. Stein operates with quiet efficiency, always observing, always recording, always ensuring the infrastructure holds.',
+        traits: ['Watchful', 'Efficient', 'Observant', 'Systematic']
+      }
+    };
+
+    // Show character info popup
+    function showCharacterInfo(name) {
+      const info = characterDescriptions[name];
+      if (!info) {
+        console.log(`No description for ${name}`);
+        return;
+      }
+
+      // Remove any existing popup
+      closeCharacterInfo();
+
+      // Create overlay
+      const overlay = document.createElement('div');
+      overlay.className = 'char-info-popup-overlay';
+      overlay.onclick = closeCharacterInfo;
+
+      // Create popup
+      const popup = document.createElement('div');
+      popup.className = 'char-info-popup';
+      popup.id = 'char-info-popup';
+
+      const headshot = employeeHeadshots[name] || '';
+      const emoji = employeeEmojis[name] || '👤';
+
+      popup.innerHTML = `
+        <button class="char-info-close" onclick="closeCharacterInfo()">×</button>
+        <div class="char-info-header">
+          ${headshot ? `<img src="${headshot}" alt="${name}" class="char-info-avatar">` : `<div class="char-info-avatar" style="display: flex; align-items: center; justify-content: center; font-size: 2rem; background: var(--lobby-accent);">${emoji}</div>`}
+          <div>
+            <h3 class="char-info-name">${emoji} ${name}</h3>
+            <p class="char-info-title">${info.title}</p>
+            <p class="char-info-type">${info.type}</p>
+          </div>
+        </div>
+        <p class="char-info-description">${info.description}</p>
+        <div class="char-info-traits">
+          ${info.traits.map(t => `<span class="char-trait">${t}</span>`).join('')}
+        </div>
+      `;
+
+      document.body.appendChild(overlay);
+      document.body.appendChild(popup);
+    }
+
+    // Close character info popup
+    function closeCharacterInfo() {
+      const popup = document.getElementById('char-info-popup');
+      const overlay = document.querySelector('.char-info-popup-overlay');
+      if (popup) popup.remove();
+      if (overlay) overlay.remove();
+    }
+
+    // Close popup on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeCharacterInfo();
+      }
+    });
+
+    // Populate the character select dropdown with available characters
+    function populateFloorCharacterSelect() {
+      const select = document.getElementById('floor-character-select');
+      if (!select) return;
+
+      const inFloorNames = inFloor.map(c => c.character_name);
+      const allCharacters = [...floorAICharacters, ...FLOOR_HUMANS];
+      const availableCharacters = allCharacters.filter(name => !inFloorNames.includes(name));
+
+      select.innerHTML = '<option value="">Select character...</option>' +
+        availableCharacters.map(name => {
+          const emoji = employeeEmojis[name] || '👤';
+          return `<option value="${name}">${emoji} ${name}</option>`;
+        }).join('');
+    }
+
+    // Check if a character can enter a room (single location enforcement)
+    async function canEnterRoom(characterName, targetRoom) {
+      try {
+        const response = await fetch(`/.netlify/functions/character-state?character=${encodeURIComponent(characterName)}`);
+        const data = await response.json();
+        const state = data.states?.[0] || data;
+
+        if (state.current_focus && state.current_focus !== targetRoom) {
+          const roomNames = {
+            'break_room': 'the Breakroom',
+            'the_floor': 'The Floor',
+            'conference_room': 'the Conference Room'
+          };
+          const currentRoomName = roomNames[state.current_focus] || state.current_focus;
+          alert(`${characterName} is currently in ${currentRoomName}. They need to leave there first!`);
+          return false;
+        }
+        return true;
+      } catch (err) {
+        console.error('Error checking room status:', err);
+        return true; // Allow on error (fail open)
+      }
+    }
+
+    // Enter the floor
+    async function enterFloor(characterName) {
+      if (!characterName) return;
+
+      // Check single location rule
+      const canEnter = await canEnterRoom(characterName, 'the_floor');
+      if (!canEnter) return;
+
+      try {
+        // Update character state to be on the floor
+        await fetch('/.netlify/functions/character-state', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update',
+            character: characterName,
+            updates: { current_focus: 'the_floor' }
+          })
+        });
+
+        console.log(`🚪 ${characterName} entered The Floor`);
+        await loadFloorPresence();
+      } catch (err) {
+        console.error('Failed to enter floor:', err);
+        alert('Failed to enter floor. Try again.');
+      }
+    }
+
+    // Leave the floor
+    async function leaveFloor(characterName) {
+      if (!characterName) return;
+
+      try {
+        // Clear character's focus
+        await fetch('/.netlify/functions/character-state', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update',
+            character: characterName,
+            updates: { current_focus: null }
+          })
+        });
+
+        console.log(`🚶 ${characterName} left The Floor`);
+        await loadFloorPresence();
+      } catch (err) {
+        console.error('Failed to leave floor:', err);
+      }
+    }
+
+    // UI handler for enter button
+    function enterFloorFromUI() {
+      const select = document.getElementById('floor-character-select');
+      const characterName = select.value;
+      if (!characterName) {
+        alert('Please select a character first');
+        return;
+      }
+      enterFloor(characterName);
+    }
+
     // Get recent chat history from DOM
     function getFloorChatHistory() {
       const container = document.getElementById('chat-messages');
@@ -2251,6 +3010,17 @@
         const text = m.querySelector('.msg-text')?.textContent || '';
         return `${author}: ${text}`;
       }).join('\n');
+    }
+
+    // Check if story mode is enabled (controls autonomous AI responses)
+    async function isStoryModeEnabled() {
+      try {
+        const response = await fetch('/.netlify/functions/story-mode');
+        const data = await response.json();
+        return data.enabled;
+      } catch {
+        return false; // Fail safe - assume disabled if can't check
+      }
     }
 
     // Trigger a specific AI to respond (direct call with await)
@@ -2284,23 +3054,9 @@
           // Refresh messages to show AI response
           setTimeout(loadMessages, 1500);
 
-          // AI-to-AI follow-up chain (like breakroom)
-          floorConversationDepth++;
-          if (floorConversationDepth < MAX_FLOOR_DEPTH) {
-            const followUpChance = Math.max(0.2, 0.5 - (floorConversationDepth * 0.15));
-            if (Math.random() < followUpChance) {
-              // Pick another AI to potentially respond
-              const otherAIs = floorAICharacters.filter(ai => ai !== aiName);
-              const nextAI = otherAIs[Math.floor(Math.random() * otherAIs.length)];
-              const delay = 3000 + Math.random() * 2000;
-              console.log(`🔄 [Floor] AI follow-up: ${nextAI} might respond in ${Math.round(delay/1000)}s`);
-              setTimeout(() => triggerFloorAIResponse(nextAI, result.message || contextMessage, aiName), delay);
-            } else {
-              floorConversationDepth = 0;
-            }
-          } else {
-            floorConversationDepth = 0;
-          }
+          // AI-to-AI follow-up chain with slower pacing (45-75s) and typing indicator
+          // Uses the new maybeInviteAIResponse function for better UX
+          maybeInviteAIResponse(result.message || contextMessage, aiName);
         }
         return result;
       } catch (err) {
@@ -2311,21 +3067,27 @@
 
     // Invite available AIs to consider responding after a human message
     async function inviteFloorAIs(humanMessage, humanSpeaker) {
-      console.log(`📢 [Floor] Human "${humanSpeaker}" spoke, inviting AIs...`);
+      console.log(`📢 [Floor] Human "${humanSpeaker}" spoke, checking who's on the floor...`);
       floorConversationDepth = 0; // Reset depth for new human message
 
-      // Always available AIs
-      const alwaysAvailable = ['Ghost Dad', 'PRNT-Ω'];
+      // Only invite AIs that are ON THE FLOOR and NOT already pending (from @ mentions)
+      const aiOnFloor = inFloor
+        .map(c => c.character_name)
+        .filter(name => floorAICharacters.includes(name))
+        .filter(name => !pendingAIResponses.has(name)); // Exclude already-triggered AIs
 
-      // TODO: Could also check who's clocked in, but for now use always available
-      let availableAIs = [...alwaysAvailable];
+      if (aiOnFloor.length === 0) {
+        console.log('🔇 [Floor] No AIs available to respond (all pending or none present)');
+        return;
+      }
 
-      // Also add Kevin and Neiv as they should always be chatty
-      if (!availableAIs.includes('Kevin')) availableAIs.push('Kevin');
-      if (!availableAIs.includes('Neiv')) availableAIs.push('Neiv');
+      console.log(`👥 [Floor] Available AIs on the floor: ${aiOnFloor.join(', ')}`);
+      if (pendingAIResponses.size > 0) {
+        console.log(`⏳ [Floor] Already pending: ${[...pendingAIResponses].join(', ')}`);
+      }
 
       // Shuffle and pick 1-2 AIs to trigger
-      const shuffled = availableAIs.sort(() => Math.random() - 0.5);
+      const shuffled = aiOnFloor.sort(() => Math.random() - 0.5);
       const selected = shuffled.slice(0, Math.min(2, shuffled.length));
       console.log(`🎲 [Floor] Selected AIs to invite: ${selected.join(', ')}`);
 
@@ -2348,14 +3110,182 @@
         const mentioned = match[1].toLowerCase();
         if (aiMentionMap[mentioned]) {
           const aiName = aiMentionMap[mentioned];
+
+          // Skip if this AI is already being triggered
+          if (pendingAIResponses.has(aiName)) {
+            console.log(`📍 [Floor] ${aiName} already pending, skipping duplicate mention`);
+            continue;
+          }
+
           console.log(`📍 [Floor] Direct mention of ${aiName} detected!`);
+
+          // Track that this AI is being triggered (prevents double-triggering)
+          pendingAIResponses.add(aiName);
+
+          // Show typing indicator immediately so user knows their mention was heard
+          showTypingIndicator(aiName);
+
           // Direct mention = guaranteed response (short delay)
-          setTimeout(() => {
-            triggerFloorAIResponse(aiName, message, speaker);
-          }, 1500 + Math.random() * 500);
+          const delay = 1500 + Math.random() * 500;
+          setTimeout(async () => {
+            hideTypingIndicator(aiName);
+            await triggerFloorAIResponse(aiName, message, speaker);
+            // Remove from pending after response completes
+            pendingAIResponses.delete(aiName);
+          }, delay);
         }
       }
     }
+
+    // ===== TYPING INDICATOR =====
+    // Supports multiple concurrent typing indicators (one per character)
+    function showTypingIndicator(characterName) {
+      const container = document.getElementById('chat-messages');
+      if (!container) return;
+
+      // Create a safe ID from character name (remove special characters)
+      const safeId = `typing-indicator-${characterName.replace(/[^a-zA-Z0-9]/g, '')}`;
+
+      // Don't duplicate if already showing for this character
+      if (document.getElementById(safeId)) return;
+
+      const emoji = employeeEmojis[characterName] || '👤';
+
+      const indicator = document.createElement('div');
+      indicator.className = 'typing-indicator';
+      indicator.id = safeId;
+      indicator.innerHTML = `
+        <span>${emoji} ${characterName} is typing</span>
+        <div class="typing-dots">
+          <span></span><span></span><span></span>
+        </div>
+      `;
+
+      container.appendChild(indicator);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // Hide typing indicator for a specific character, or all if no name given
+    function hideTypingIndicator(characterName) {
+      if (characterName) {
+        const safeId = `typing-indicator-${characterName.replace(/[^a-zA-Z0-9]/g, '')}`;
+        const indicator = document.getElementById(safeId);
+        if (indicator) indicator.remove();
+      } else {
+        // Hide all typing indicators
+        document.querySelectorAll('.typing-indicator').forEach(el => el.remove());
+      }
+    }
+
+    // ===== AI-TO-AI RESPONSES =====
+    // Find if the message mentions any available AI by name
+    function findMentionedAI(message, availableAIs) {
+      if (!message) return null;
+      const lowerMsg = message.toLowerCase();
+      for (const ai of availableAIs) {
+        if (lowerMsg.includes(ai.toLowerCase())) {
+          return ai;
+        }
+      }
+      return null;
+    }
+
+    // When an AI speaks, give other AIs a chance to respond (with slower pacing)
+    async function maybeInviteAIResponse(aiMessage, speakerAI) {
+      // Don't create infinite loops - check depth
+      if (floorConversationDepth >= MAX_FLOOR_DEPTH) {
+        console.log('🛑 [Floor] Max conversation depth reached, resetting');
+        floorConversationDepth = 0;
+        return;
+      }
+
+      floorConversationDepth++;
+
+      // Decreasing chance as conversation goes deeper
+      // Depth 1: 40%, Depth 2: 30%, Depth 3: 20%
+      const responseChance = Math.max(0.15, 0.4 - (floorConversationDepth * 0.1));
+
+      if (Math.random() > responseChance) {
+        console.log(`🎲 [Floor] AI-to-AI response chance failed (${Math.round(responseChance*100)}%)`);
+        floorConversationDepth = 0;
+        return;
+      }
+
+      // Get AIs on floor, excluding the one who just spoke
+      const aiOnFloor = inFloor
+        .map(c => c.character_name)
+        .filter(name => floorAICharacters.includes(name) && name !== speakerAI);
+
+      if (aiOnFloor.length === 0) {
+        console.log('🔇 [Floor] No other AIs on floor to respond');
+        floorConversationDepth = 0;
+        return;
+      }
+
+      // Check if the message mentions anyone specifically - they get priority
+      const mentionedAI = findMentionedAI(aiMessage, aiOnFloor);
+
+      // Pick responder: mentioned AI has priority, else random
+      const responder = mentionedAI || aiOnFloor[Math.floor(Math.random() * aiOnFloor.length)];
+
+      console.log(`💬 [Floor] ${responder} may respond to ${speakerAI}'s message (depth: ${floorConversationDepth})`);
+
+      // Show typing indicator immediately
+      showTypingIndicator(responder);
+
+      // Slower pacing for AI-to-AI: 45-75 seconds
+      const delay = 45000 + Math.random() * 30000;
+      console.log(`⏱️ [Floor] ${responder} will respond in ~${Math.round(delay/1000)}s`);
+
+      setTimeout(async () => {
+        hideTypingIndicator(responder);
+        await triggerFloorAIResponse(responder, aiMessage, speakerAI);
+      }, delay);
+    }
+
+    // ===== AMBIENT CHATTER (AIs start conversations on their own) =====
+    async function triggerAmbientChatter() {
+      console.log('🌀 [Ambient] Checking if AIs should start chatting...');
+
+      // Only if story mode is on
+      const storyModeOn = await isStoryModeEnabled();
+      if (!storyModeOn) {
+        console.log('🌀 [Ambient] Story mode is OFF, skipping ambient chatter');
+        return;
+      }
+
+      // Only if AIs are on the floor (need at least 2 for a conversation)
+      const aiOnFloor = inFloor
+        .map(c => c.character_name)
+        .filter(name => floorAICharacters.includes(name));
+
+      if (aiOnFloor.length < 2) {
+        console.log(`🌀 [Ambient] Not enough AIs on floor (${aiOnFloor.length}), need at least 2`);
+        return;
+      }
+
+      // Reset conversation depth for new ambient conversation
+      floorConversationDepth = 0;
+
+      // Pick a random AI to start
+      const starter = aiOnFloor[Math.floor(Math.random() * aiOnFloor.length)];
+      console.log(`🌀 [Ambient] ${starter} starting ambient conversation`);
+
+      // Show typing indicator for the starter
+      showTypingIndicator(starter);
+
+      // Short delay before they "finish typing"
+      setTimeout(async () => {
+        hideTypingIndicator(starter);
+        await triggerFloorAIResponse(starter, null, null);
+      }, 3000 + Math.random() * 2000);
+    }
+
+    // Start ambient chatter heartbeat (every 15 minutes)
+    setInterval(triggerAmbientChatter, 15 * 60 * 1000);
+
+    // Also trigger once after 2 minutes of page load (to seed conversation if AIs are present)
+    setTimeout(triggerAmbientChatter, 2 * 60 * 1000);
 
     // ===== AUTHENTICATION (Multi-Character Support) =====
     let currentUser = null;
@@ -2780,7 +3710,7 @@
       return date.toLocaleTimeString('en-US', {
         hour: '2-digit',
         minute: '2-digit',
-        timeZone: 'America/New_York'
+        timeZone: 'America/Chicago'
       });
     }
 
@@ -2866,17 +3796,23 @@
         await loadMessages();
 
         // ===== FRONTEND-DRIVEN AI RESPONSES =====
-        // If a human posted, invite AIs to respond (browser-side triggers that persist!)
+        // If a human posted, invite AIs to respond (only if story mode is ON)
         if (!floorAICharacters.includes(employee)) {
-          console.log(`💬 [Floor] Human message from ${employee}, triggering AI responses...`);
+          // Check story mode before triggering any AI responses
+          const storyModeOn = await isStoryModeEnabled();
+          if (storyModeOn) {
+            console.log(`💬 [Floor] Human message from ${employee}, triggering AI responses...`);
 
-          // Check for direct @ mentions first (guaranteed response)
-          checkForMentions(content, employee);
+            // Check for direct @ mentions first (guaranteed response)
+            checkForMentions(content, employee);
 
-          // Then invite random AIs to maybe respond (2 second delay)
-          setTimeout(() => {
-            inviteFloorAIs(content, employee);
-          }, 1500);
+            // Then invite random AIs to maybe respond (2 second delay)
+            setTimeout(() => {
+              inviteFloorAIs(content, employee);
+            }, 1500);
+          } else {
+            console.log(`🔇 [Floor] Story mode OFF - AIs staying silent`);
+          }
         }
       } catch (error) {
         console.error('Failed to send:', error);
@@ -2900,26 +3836,25 @@
       btn.disabled = true;
 
       try {
-        const supabaseUrl = 'https://adugnxkpmescaxjpwsgu.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkdWdueGtwbWVzY2F4anB3c2d1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgyOTE4MzUsImV4cCI6MjA2Mzg2NzgzNX0.LhX_gBk_fLswKnC0eeT4eBcvXLNLJh64PA7FKAVpjEE';
-
-        // Get timestamp for 24 hours ago
-        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
         const now = new Date();
 
-        // Fetch messages from last 24 hours
-        const messagesRes = await fetch(
-          `${supabaseUrl}/rest/v1/messages?select=employee,content,created_at,is_emote&created_at=gte.${yesterday}&order=created_at.asc`,
-          { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` } }
-        );
-        const messages = await messagesRes.json();
+        // Fetch history from Netlify function (server-side Supabase call)
+        const response = await fetch('/.netlify/functions/download-history');
 
-        // Fetch emails from last 24 hours
-        const emailsRes = await fetch(
-          `${supabaseUrl}/rest/v1/emails?select=from_employee,to_employee,subject,body,created_at&created_at=gte.${yesterday}&order=created_at.asc`,
-          { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` } }
-        );
-        const emails = await emailsRes.json();
+        if (!response.ok) {
+          console.error('History fetch failed:', response.status);
+          throw new Error(`Failed to fetch history: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.error || 'Unknown error');
+        }
+
+        const messages = data.messages || [];
+        const emails = data.emails || [];
+        const yesterday = data.timeRange?.from || new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
         // Build the document
         let doc = `╔══════════════════════════════════════════════════════════════╗
@@ -2927,7 +3862,7 @@
 ║                      Last 24 Hours Archive                    ║
 ╚══════════════════════════════════════════════════════════════╝
 
-Generated: ${now.toLocaleString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'America/New_York' })} ET
+Generated: ${now.toLocaleString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'America/Chicago' })} ET
 Time Range: ${new Date(yesterday).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} - ${now.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} ET
 
 ════════════════════════════════════════════════════════════════
@@ -2941,22 +3876,26 @@ Time Range: ${new Date(yesterday).toLocaleString('en-US', { month: 'short', day:
         } else {
           messages.forEach(msg => {
             const time = new Date(msg.created_at).toLocaleTimeString('en-US', {
-              hour: '2-digit', minute: '2-digit', timeZone: 'America/New_York'
+              hour: '2-digit', minute: '2-digit', timeZone: 'America/Chicago'
             });
             const date = new Date(msg.created_at).toLocaleDateString('en-US', {
-              month: 'short', day: 'numeric', timeZone: 'America/New_York'
+              month: 'short', day: 'numeric', timeZone: 'America/Chicago'
             });
 
-            if (msg.employee === 'The Narrator') {
+            // Safely handle potentially null fields
+            const employee = msg.employee || 'Unknown';
+            const content = msg.content || '';
+
+            if (employee === 'The Narrator') {
               // Narrator format
-              const narratorText = msg.content.replace(/^\*|\*$/g, '');
+              const narratorText = content.replace(/^\*|\*$/g, '');
               doc += `[${date} ${time}] (Narrator: ${narratorText})\n\n`;
             } else if (msg.is_emote) {
               // Emote format
-              doc += `[${date} ${time}] *${msg.employee} ${msg.content.replace(/^\*|\*$/g, '')}*\n\n`;
+              doc += `[${date} ${time}] *${employee} ${content.replace(/^\*|\*$/g, '')}*\n\n`;
             } else {
               // Regular message
-              doc += `[${date} ${time}] ${msg.employee}: ${msg.content}\n\n`;
+              doc += `[${date} ${time}] ${employee}: ${content}\n\n`;
             }
           });
         }
@@ -2972,20 +3911,27 @@ Time Range: ${new Date(yesterday).toLocaleString('en-US', { month: 'short', day:
         } else {
           emails.forEach(email => {
             const time = new Date(email.created_at).toLocaleTimeString('en-US', {
-              hour: '2-digit', minute: '2-digit', timeZone: 'America/New_York'
+              hour: '2-digit', minute: '2-digit', timeZone: 'America/Chicago'
             });
             const date = new Date(email.created_at).toLocaleDateString('en-US', {
-              month: 'short', day: 'numeric', timeZone: 'America/New_York'
+              month: 'short', day: 'numeric', timeZone: 'America/Chicago'
             });
 
+            // Safely handle potentially null fields
+            const subject = (email.subject || '(No subject)').substring(0, 50).padEnd(52);
+            const fromEmployee = (email.from_employee || 'Unknown').padEnd(54);
+            const toEmployee = (email.to_employee || 'Unknown').padEnd(56);
+            const dateTime = `${date} ${time}`.padEnd(48);
+            const bodyLines = (email.body || '(No content)').split('\n').map(line => '│ ' + line).join('\n');
+
             doc += `┌─────────────────────────────────────────────────────────────┐
-│ MEMO: ${email.subject.substring(0, 50).padEnd(52)}│
+│ MEMO: ${subject}│
 ├─────────────────────────────────────────────────────────────┤
-│ From: ${email.from_employee.padEnd(54)}│
-│ To: ${email.to_employee.padEnd(56)}│
-│ Date: ${date} ${time.padEnd(48)}│
+│ From: ${fromEmployee}│
+│ To: ${toEmployee}│
+│ Date: ${dateTime}│
 ├─────────────────────────────────────────────────────────────┤
-${(email.body || '(No content)').split('\n').map(line => '│ ' + line).join('\n')}
+${bodyLines}
 └─────────────────────────────────────────────────────────────┘
 
 `;
@@ -3258,6 +4204,7 @@ Memos: ${emails.length}
     checkSession();  // Check for existing login
     loadMessages();
     loadWhosIn();
+    loadFloorPresence();  // Load who's on the floor
     loadBulletin();
 
     // ===== TABS =====
@@ -3679,30 +4626,22 @@ Memos: ${emails.length}
     // Auto-refresh
     setInterval(loadMessages, 10000);  // Messages every 10s
     setInterval(loadWhosIn, 30000);    // Who's in every 30s
+    setInterval(loadFloorPresence, 30000);  // Floor presence every 30s
     setInterval(loadBulletin, 60000);  // Bulletin every 60s
     setInterval(loadEmails, 30000);    // Emails every 30s
     setInterval(loadTasks, 30000);     // Tasks every 30s
 
-    // AI Response Heartbeat - checks if AIs should respond to recent human messages
-    // This runs every 15 seconds to ensure AIs actually respond
+    // AI Response Heartbeat - DISABLED
+    // The frontend-driven system (inviteFloorAIs) handles AI responses now.
+    // This heartbeat was causing 500 errors by timing out on external API calls.
+    // Keeping function definition but not calling it, in case needed for debugging.
     async function triggerAIResponseCheck() {
-      try {
-        const response = await fetch('/.netlify/functions/ai-response-trigger');
-        const data = await response.json();
-        if (data.triggered && data.results) {
-          console.log('🤖 AI Response Trigger:', data.results.map(r => `${r.ai}: ${r.responded ? 'responded!' : r.reason || 'passed'}`).join(', '));
-          // If an AI responded, refresh messages after a short delay
-          if (data.results.some(r => r.responded)) {
-            setTimeout(loadMessages, 2000);
-          }
-        }
-      } catch (err) {
-        // Silent fail - this is just a helper
-      }
+      // DISABLED - see inviteFloorAIs() for AI response triggering
+      console.log('⚠️ triggerAIResponseCheck is disabled - using frontend-driven AI responses');
     }
-    // Run immediately on page load, then every 15 seconds
-    setTimeout(triggerAIResponseCheck, 5000);  // First check after 5s
-    setInterval(triggerAIResponseCheck, 15000);  // Then every 15s
+    // DISABLED - no longer polling ai-response-trigger
+    // setTimeout(triggerAIResponseCheck, 5000);
+    // setInterval(triggerAIResponseCheck, 15000);
 
     // ===== GHOST DAD SUMMONING =====
     async function summonGhostDad() {
@@ -3823,10 +4762,24 @@ Memos: ${emails.length}
         const data = await response.json();
         if (data.success) {
           const statusDiv = document.getElementById('ghost-dad-status');
-          statusDiv.textContent = newValue
-            ? "*Story mode enabled - The Narrator awakens...*"
-            : "*Story mode disabled - The spirits rest...*";
-          setTimeout(() => statusDiv.textContent = '', 3000);
+
+          if (newValue) {
+            // Story mode ON - auto-summon Ghost Dad and PRNT-Ω to the floor
+            statusDiv.textContent = "*Story mode enabled - Summoning the spirits...*";
+            await enterFloor('Ghost Dad');
+            await enterFloor('PRNT-Ω');
+            console.log('👻🖨️ Ghost Dad and Printer auto-summoned to The Floor');
+            statusDiv.textContent = "*Ghost Dad and PRNT-Ω have entered The Floor*";
+          } else {
+            // Story mode OFF - remove them from the floor
+            statusDiv.textContent = "*Story mode disabled - The spirits depart...*";
+            await leaveFloor('Ghost Dad');
+            await leaveFloor('PRNT-Ω');
+            console.log('👻🖨️ Ghost Dad and Printer have left The Floor');
+            statusDiv.textContent = "*Ghost Dad and PRNT-Ω have left The Floor*";
+          }
+
+          setTimeout(() => statusDiv.textContent = '', 4000);
         }
       } catch (error) {
         console.error('Story mode toggle error:', error);

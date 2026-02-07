@@ -61,9 +61,43 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // POST - Save message and optionally post to Discord
+    // POST - Save message, clear chat, or post to Discord
     if (event.httpMethod === "POST") {
-      const { speaker, message, isAI, postToDiscord } = JSON.parse(event.body || "{}");
+      const body = JSON.parse(event.body || "{}");
+      const { speaker, message, isAI, postToDiscord, action } = body;
+
+      // Clear all breakroom messages
+      if (action === 'clear_all') {
+        // Supabase REST API requires a filter for DELETE - use id > 0 to match all rows
+        const deleteResponse = await fetch(
+          `${supabaseUrl}/rest/v1/breakroom_messages?id=gt.0`,
+          {
+            method: "DELETE",
+            headers: {
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+              "Prefer": "return=minimal"
+            }
+          }
+        );
+
+        if (!deleteResponse.ok) {
+          const errorText = await deleteResponse.text();
+          console.error("Failed to clear breakroom messages:", errorText);
+          return {
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({ error: "Failed to clear chat", details: errorText })
+          };
+        }
+
+        console.log("Breakroom chat cleared");
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({ success: true, message: "Chat cleared" })
+        };
+      }
 
       if (!speaker || !message) {
         return {
@@ -162,7 +196,7 @@ async function postToDiscordBreakroom(message, speaker) {
   const timestamp = now.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'America/New_York'
+    timeZone: 'America/Chicago'
   });
 
   // Detect if this is a pure emote

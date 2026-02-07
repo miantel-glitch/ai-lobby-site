@@ -75,12 +75,35 @@ exports.handler = async (event, context) => {
       console.log(`Reset ${state.character_name}: energy ${state.energy}→${newEnergy}, patience ${state.patience}→${newPatience}`);
     }
 
-    // Clean up old, low-importance memories (older than 3 days, importance < 5)
+    // === MEMORY CLEANUP ===
+    // 1. Delete EXPIRED working memories (non-pinned with expires_at in the past)
+    const now = new Date().toISOString();
+    const expiredResponse = await fetch(
+      `${supabaseUrl}/rest/v1/character_memory?is_pinned=eq.false&expires_at=lt.${now}`,
+      {
+        method: "DELETE",
+        headers: {
+          "apikey": supabaseKey,
+          "Authorization": `Bearer ${supabaseKey}`,
+          "Prefer": "return=representation"
+        }
+      }
+    );
+    let expiredDeleted = 0;
+    try {
+      const expiredData = await expiredResponse.json();
+      expiredDeleted = Array.isArray(expiredData) ? expiredData.length : 0;
+    } catch (e) {
+      // DELETE might not return data
+    }
+    console.log(`Deleted ${expiredDeleted} expired memories`);
+
+    // 2. Legacy cleanup: old, low-importance memories without expiration (older than 3 days, importance < 5)
     const threeDaysAgo = new Date();
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
     await fetch(
-      `${supabaseUrl}/rest/v1/character_memory?importance=lt.5&created_at=lt.${threeDaysAgo.toISOString()}`,
+      `${supabaseUrl}/rest/v1/character_memory?importance=lt.5&created_at=lt.${threeDaysAgo.toISOString()}&expires_at=is.null&is_pinned=eq.false`,
       {
         method: "DELETE",
         headers: {
@@ -90,7 +113,7 @@ exports.handler = async (event, context) => {
       }
     );
 
-    console.log("Daily reset complete. Cleaned old memories.");
+    console.log("Daily reset complete. Cleaned expired and old memories.");
 
     return {
       statusCode: 200,
