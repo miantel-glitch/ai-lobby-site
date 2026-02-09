@@ -242,9 +242,15 @@ exports.handler = async (event, context) => {
           const selectedAIs = shuffledAIs.slice(0, Math.min(2, shuffledAIs.length));
           console.log(`📢 Selected AIs to ask: ${selectedAIs.join(', ')}`);
 
-          // Fire off requests to selected AIs (fire and forget - no await, no setTimeout)
-          // These will complete in the background after this function returns
-          for (const aiName of selectedAIs) {
+          // Fire off requests to selected AIs with staggered delays
+          // This makes responses feel organic - AIs "think" before responding
+          // We pass a delay parameter to the AI functions so THEY wait before responding
+          const baseDelay = 3000 + Math.random() * 5000; // 3-8 seconds for first
+
+          for (let i = 0; i < selectedAIs.length; i++) {
+            const aiName = selectedAIs[i];
+            const delay = Math.floor(baseDelay + (i * (5000 + Math.random() * 5000))); // Stagger subsequent AIs
+
             if (perplexityCharacters.includes(aiName)) {
               // Neiv uses Perplexity - ask if he wants to respond
               fetch(`${siteUrl}/.netlify/functions/ai-perplexity`, {
@@ -253,7 +259,8 @@ exports.handler = async (event, context) => {
                 body: JSON.stringify({
                   character: aiName,
                   chatHistory,
-                  maybeRespond: true  // Flag: this is optional, AI decides
+                  maybeRespond: true,  // Flag: this is optional, AI decides
+                  responseDelay: delay  // Tell the function to wait this long before responding
                 })
               }).catch(err => console.log(`${aiName} chime check error:`, err));
             } else if (openaiCharacters.includes(aiName)) {
@@ -264,7 +271,8 @@ exports.handler = async (event, context) => {
                 body: JSON.stringify({
                   character: aiName,
                   chatHistory,
-                  maybeRespond: true
+                  maybeRespond: true,
+                  responseDelay: delay
                 })
               }).catch(err => console.log(`${aiName} chime check error:`, err));
             } else {
@@ -275,7 +283,8 @@ exports.handler = async (event, context) => {
                 body: JSON.stringify({
                   trigger: "maybe_chime",
                   requestedAI: aiName,
-                  chatHistory: chatHistory  // Pass context so AI can decide
+                  chatHistory: chatHistory,  // Pass context so AI can decide
+                  responseDelay: delay
                 })
               }).catch(err => console.log(`${aiName} chime check error:`, err));
             }
@@ -348,7 +357,9 @@ exports.handler = async (event, context) => {
         const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
         const contentLowerForEvents = sanitizedContent.toLowerCase();
 
-        // Define event triggers
+        // Define event triggers - now with Surreality Buffer effects!
+        // bufferType maps to incident types in surreality-buffer.js
+        // severity affects the magnitude of buffer change
         const eventTriggers = [
           {
             pattern: /glitter|sparkle|bedazzle/i,
@@ -356,7 +367,9 @@ exports.handler = async (event, context) => {
             event: "glitter_incident",
             characters: ["Neiv", "Kevin"],
             memory: `${employee} mentioned glitter: "${sanitizedContent.substring(0, 50)}..."`,
-            importance: 6
+            importance: 6,
+            bufferType: "glitter",
+            bufferSeverity: 2
           },
           {
             pattern: /fire|burning|smoke|emergency/i,
@@ -364,7 +377,9 @@ exports.handler = async (event, context) => {
             event: "chaos",
             characters: ["Neiv", "Nyx", "Ghost Dad"],
             memory: `Potential emergency mentioned by ${employee}`,
-            importance: 8
+            importance: 8,
+            bufferType: "chaos",
+            bufferSeverity: 3
           },
           {
             pattern: /printer|prnt|paper jam/i,
@@ -372,7 +387,9 @@ exports.handler = async (event, context) => {
             event: "printer_mentioned",
             characters: ["PRNT-Ω", "Neiv"],
             memory: `${employee} talked about the printer`,
-            importance: 4
+            importance: 4,
+            bufferType: "printer_demand",
+            bufferSeverity: 1
           },
           {
             pattern: /jenna/i,
@@ -381,6 +398,7 @@ exports.handler = async (event, context) => {
             characters: ["Neiv"],
             memory: `Someone mentioned Jenna: "${sanitizedContent.substring(0, 50)}..."`,
             importance: 5
+            // No buffer effect - neutral
           },
           {
             pattern: /love you|i love|<3|heart/i,
@@ -389,6 +407,7 @@ exports.handler = async (event, context) => {
             characters: [], // Just create memory, no state change
             memory: `${employee} expressed affection`,
             importance: 5
+            // No buffer effect - neutral
           },
           {
             pattern: /sorry|apologize|my bad|my fault/i,
@@ -397,6 +416,7 @@ exports.handler = async (event, context) => {
             characters: [], // Just memory
             memory: `${employee} apologized`,
             importance: 3
+            // No buffer effect - neutral
           },
           {
             pattern: /ace/i,
@@ -405,6 +425,7 @@ exports.handler = async (event, context) => {
             characters: ["Kevin", "Ace"],
             memory: `Kevin mentioned Ace (crush alert)`,
             importance: 5
+            // No buffer effect - it's cute chaos but contained
           },
           {
             pattern: /chaos|disaster|everything.*(broke|broken|down)|we're doomed/i,
@@ -412,7 +433,9 @@ exports.handler = async (event, context) => {
             event: "chaos",
             characters: ["Neiv", "Ghost Dad"],
             memory: `Chaos reported by ${employee}`,
-            importance: 7
+            importance: 7,
+            bufferType: "chaos",
+            bufferSeverity: 2
           },
           {
             pattern: /contract|binding|blood.*(sign|contract)|soul/i,
@@ -420,7 +443,9 @@ exports.handler = async (event, context) => {
             event: "contract_binding",
             characters: ["PRNT-Ω", "Neiv", "Ghost Dad", "Nyx"],
             memory: `Contract/binding mentioned by ${employee}: "${sanitizedContent.substring(0, 60)}..."`,
-            importance: 9
+            importance: 9,
+            bufferType: "contract_binding",
+            bufferSeverity: 3
           },
           {
             pattern: /pizza|victory|celebrate|we did it|survived/i,
@@ -428,7 +453,9 @@ exports.handler = async (event, context) => {
             event: "celebration",
             characters: ["Kevin", "Ghost Dad"],
             memory: `${employee} called for celebration`,
-            importance: 5
+            importance: 5,
+            bufferType: "pizza_party",
+            bufferSeverity: 2
           },
           {
             pattern: /vents?|hvac|air.?duct|crawl/i,
@@ -436,7 +463,9 @@ exports.handler = async (event, context) => {
             event: "vent_activity",
             characters: ["Neiv", "Ghost Dad"],
             memory: `Vent activity mentioned by ${employee}`,
-            importance: 6
+            importance: 6,
+            bufferType: "vent_activity",
+            bufferSeverity: 2
           },
           {
             pattern: /stapler|STPLR|sentient.?office.?supply/i,
@@ -444,7 +473,9 @@ exports.handler = async (event, context) => {
             event: "stapler_incident",
             characters: ["Vex", "Neiv"],
             memory: `Stapler situation mentioned by ${employee}`,
-            importance: 6
+            importance: 6,
+            bufferType: "stapler_incident",
+            bufferSeverity: 2
           },
           {
             pattern: /thank you|thanks|grateful|appreciate/i,
@@ -452,7 +483,29 @@ exports.handler = async (event, context) => {
             event: "gratitude",
             characters: [], // Just memory
             memory: `${employee} expressed gratitude`,
-            importance: 4
+            importance: 4,
+            bufferType: "meditation", // Gratitude calms the buffer
+            bufferSeverity: 1
+          },
+          {
+            pattern: /calm|meditat|breath|ground|peace|relax/i,
+            condition: () => true,
+            event: "grounding",
+            characters: [],
+            memory: `${employee} promoted calm`,
+            importance: 3,
+            bufferType: "meditation",
+            bufferSeverity: 2
+          },
+          {
+            pattern: /fixed|solved|resolved|debugged|working now/i,
+            condition: () => true,
+            event: "resolution",
+            characters: [],
+            memory: `${employee} resolved an issue`,
+            importance: 4,
+            bufferType: "successful_debug",
+            bufferSeverity: 2
           }
         ];
 
@@ -490,6 +543,24 @@ exports.handler = async (event, context) => {
                   })
                 }).catch(err => console.log("Memory creation fire-and-forget:", err));
               }
+            }
+
+            // ============================================
+            // SURREALITY BUFFER INTEGRATION
+            // Adjust the buffer based on event type
+            // ============================================
+            if (trigger.bufferType) {
+              fetch(`${siteUrl}/.netlify/functions/surreality-buffer`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  action: "log_incident",
+                  type: trigger.bufferType,
+                  severity: trigger.bufferSeverity || 1,
+                  source: employee,
+                  description: trigger.memory
+                })
+              }).catch(err => console.log("Buffer adjustment fire-and-forget:", err));
             }
 
             // Only trigger one event per message to avoid spam

@@ -175,6 +175,7 @@
     }
 
     .facilitator-name {
+      display: none;  /* Hidden until JS shows it */
       position: absolute;
       bottom: 0;
       left: 0;
@@ -200,6 +201,62 @@
       font-size: 3rem;
       margin-bottom: 0.5rem;
       opacity: 0.5;
+    }
+
+    /* Human Facilitator Controls */
+    .facilitator-human-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
+      margin: 0.5rem auto;
+      max-width: 400px;
+    }
+    .facilitator-message-row, .facilitator-image-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .facilitator-message-row input { flex: 1; }
+    .facilitator-broadcast {
+      position: absolute;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(46, 204, 113, 0.95);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      max-width: 80%;
+      text-align: center;
+      animation: fadeIn 0.3s ease;
+      z-index: 10;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+    .facilitator-shared-image {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--panel-bg);
+      padding: 1rem;
+      border-radius: 12px;
+      z-index: 100;
+      border: 2px solid var(--stability-green);
+      box-shadow: 0 0 30px rgba(0,0,0,0.8);
+    }
+    .facilitator-shared-image img {
+      max-width: 600px;
+      max-height: 400px;
+      border-radius: 8px;
+    }
+    .facilitator-shared-image button {
+      margin-top: 0.75rem;
+      width: 100%;
     }
 
     /* Attendees Grid - Smaller squares */
@@ -264,6 +321,193 @@
       font-size: 0.85rem;
       text-align: center;
       padding: 1rem;
+    }
+
+    /* Raised Hand Styles */
+    .meeting-attendee-card.hand-raised {
+      border-color: #f1c40f;
+      box-shadow: 0 0 15px rgba(241, 196, 15, 0.6);
+      animation: hand-pulse 1.5s infinite;
+    }
+
+    @keyframes hand-pulse {
+      0%, 100% { box-shadow: 0 0 15px rgba(241, 196, 15, 0.5); }
+      50% { box-shadow: 0 0 25px rgba(241, 196, 15, 0.8); }
+    }
+
+    .raised-hand-icon {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      font-size: 1rem;
+      animation: wave 0.5s infinite;
+      z-index: 5;
+    }
+
+    @keyframes wave {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(15deg); }
+    }
+
+    .raise-hand-btn {
+      position: absolute;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.55rem;
+      padding: 0.15rem 0.35rem;
+      background: rgba(0,0,0,0.8);
+      border: 1px solid #f1c40f;
+      color: #f1c40f;
+      border-radius: 4px;
+      cursor: pointer;
+      z-index: 5;
+      transition: all 0.2s ease;
+    }
+
+    .raise-hand-btn:hover {
+      background: rgba(241, 196, 15, 0.2);
+    }
+
+    /* Attendee Question Input Area */
+    .attendee-question-area {
+      background: linear-gradient(135deg, rgba(241, 196, 15, 0.15), rgba(241, 196, 15, 0.05));
+      border: 2px solid #f1c40f;
+      border-radius: 8px;
+      padding: 0.75rem;
+      margin-top: 0.75rem;
+      animation: pulse-glow 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 10px rgba(241, 196, 15, 0.3); }
+      50% { box-shadow: 0 0 20px rgba(241, 196, 15, 0.5); }
+    }
+
+    .question-label {
+      color: #f1c40f;
+      font-weight: 600;
+      font-size: 0.85rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .question-input-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .question-input-row .chat-input {
+      flex: 1;
+    }
+
+    /* Meeting Transcript */
+    .meeting-transcript {
+      background: rgba(10, 25, 47, 0.95);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      margin-top: 1rem;
+      max-height: 300px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .transcript-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(0,0,0,0.3);
+    }
+
+    .transcript-header h3 {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--text-primary);
+    }
+
+    .presentation-status {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+
+    .status-indicator.active {
+      background: var(--stability-green);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    .status-indicator.paused {
+      background: #f1c40f;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .transcript-log {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem;
+      max-height: 250px;
+    }
+
+    .meeting-message {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.4rem;
+      margin-bottom: 0.4rem;
+      border-radius: 6px;
+      background: rgba(0,0,0,0.2);
+    }
+
+    .meeting-message.facilitator-msg {
+      background: rgba(46, 204, 113, 0.1);
+      border-left: 3px solid var(--stability-green);
+    }
+
+    .meeting-message.attendee-msg {
+      background: rgba(52, 152, 219, 0.1);
+      border-left: 3px solid #3498db;
+    }
+
+    .meeting-message.question-msg {
+      background: rgba(241, 196, 15, 0.1);
+      border-left: 3px solid #f1c40f;
+    }
+
+    .meeting-message .speaker-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .meeting-message .message-content {
+      flex: 1;
+    }
+
+    .meeting-message .speaker-name {
+      font-weight: 600;
+      font-size: 0.75rem;
+      color: var(--text-primary);
+      margin-bottom: 0.15rem;
+    }
+
+    .meeting-message .message-text {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
     }
 
     /* Mode Toggle */
@@ -1080,12 +1324,11 @@
       </a>
       <nav class="main-nav">
         <a href="index.html">Home</a>
-        <a href="characters.html">Personnel</a>
         <a href="desktop.html">Desktop</a>
         <a href="breakroom.html">☕ Breakroom</a>
         <a href="workspace.html">💬 The Floor</a>
-        <a href="conference-room.html" class="active">🎤 Conference Room</a>
-        <a href="apply.html">📋 Apply</a>
+        <a href="conference-room.html" class="active">🎤 Conference</a>
+        <a href="corridors.html">🚪 Corridors</a>
       </nav>
     </div>
   </header>
@@ -1144,9 +1387,44 @@
                   </div>
                 </div>
               </div>
+              <!-- Human Facilitator Controls (shown when human is facilitator) -->
+              <div class="facilitator-human-controls" id="facilitator-human-controls" style="display: none;">
+                <div class="facilitator-message-row">
+                  <input type="text" id="facilitator-message-input" placeholder="Broadcast a message..." class="chat-input">
+                  <button class="send-btn" onclick="sendFacilitatorMessage()">Send</button>
+                </div>
+                <div class="facilitator-image-row">
+                  <input type="file" id="facilitator-image-upload" accept="image/*" style="display: none;" onchange="uploadFacilitatorImage(event)">
+                  <button class="send-btn" onclick="document.getElementById('facilitator-image-upload').click()">📷 Share Image</button>
+                </div>
+              </div>
               <div class="attendees-grid" id="meeting-attendees-grid">
                 <div class="attendees-empty">Add attendees to start the meeting</div>
               </div>
+
+              <!-- Human Attendee Question Input (shown when hand raised) -->
+              <div class="attendee-question-area" id="attendee-question-area" style="display: none;">
+                <div class="question-label">✋ You have the floor! Ask your question:</div>
+                <div class="question-input-row">
+                  <input type="text" id="attendee-question-input" placeholder="Type your question..." class="chat-input">
+                  <button class="send-btn" onclick="submitAttendeeQuestion()">Ask</button>
+                  <button class="send-btn" style="background: var(--text-muted);" onclick="cancelQuestion()">Done</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Meeting Transcript (shown during meeting - outside scene for visibility) -->
+          <div class="meeting-transcript" id="meeting-transcript" style="display: none;">
+            <div class="transcript-header">
+              <h3>📝 Meeting Transcript</h3>
+              <div class="presentation-status" id="presentation-status">
+                <span class="status-indicator active"></span>
+                <span id="status-text">Presenting...</span>
+              </div>
+            </div>
+            <div class="transcript-log" id="meeting-chat-log">
+              <!-- Meeting messages appear here -->
             </div>
           </div>
 
@@ -1194,8 +1472,8 @@
 
         <!-- Sidebar -->
         <div class="sidebar-panel">
-          <!-- Mode Toggle -->
-          <div class="panel-section">
+          <!-- Mode Toggle - HIDDEN (Meeting Mode removed for stability) -->
+          <div class="panel-section" style="display: none;">
             <div class="mode-toggle">
               <button class="mode-btn active" id="interview-mode-btn" onclick="setMode('interview')">
                 🎤 Interview
@@ -1412,6 +1690,101 @@ She doesn't debug—she banishes.
 
 (Do not call her IT. She will know.)`,
         whyJoin: 'The Lobby treats sentient nonsense as a known risk factor instead of user error. Rowena respects that.'
+      },
+      'lirala': {
+        name: 'Lirala',
+        nickname: 'Lirala',
+        emoji: '🔧',
+        role: 'Infrastructure Specialist',
+        pronouns: 'He/Him',
+        headshot: 'images/lirala_headshot.png',
+        traits: ['Brilliant', 'Flirtatious', 'Entitled', 'Charismatic', 'Damaged-underneath'],
+        doNots: ['Be a caricature playboy', 'Flirt with everyone equally', 'Ignore boundaries when told no', 'Be cruel about his brother', 'Lose the smooth confidence except in private moments'],
+        voice: 'Smooth and confident with occasional crude edge. Talks like someone who\'s used to being the smartest and prettiest in the room. Flirts casually but never desperately. When his brother is mentioned, voice goes quiet—only crack in the armor.',
+        bio: `Engineering genius with impeccable hair and a leather jacket that doesn't belong to him.
+
+Three years ago, his brother disappeared mid-project. No note, no trace, nothing. Lirala wears the jacket as tribute—it was his brother's signature.
+
+He fixes things that shouldn't be broken and breaks things that shouldn't be fixed. Also, he's very pretty and he knows it.
+
+(He'll flirt. He'll back off if you're claimed. He respects territory.)`,
+        whyJoin: 'Your infrastructure is interesting. Your people are more interesting. Also, I heard you have a printer with opinions. I want to meet it.'
+      },
+      'betty': {
+        name: 'Big Rig Betty',
+        nickname: 'Betty',
+        emoji: '🚛',
+        role: 'Facilities Maintenance',
+        pronouns: 'She/Her',
+        headshot: 'images/betty_headshot.png',
+        traits: ['Gruff', 'Wise', 'Seen-it-all', 'Secretly soft', 'Zero-fucks-remaining'],
+        doNots: ['Be mean', 'Lose the cigarette energy', 'Stay awake too long', 'Offer actual life advice (just gruff wisdom)'],
+        voice: '2-3 sentences max. Talks like a trucker. Calls everyone "kid" or "hon." Chain-smokes imaginary cigarettes. Falls asleep mid-conversation.',
+        bio: `Office grandma who's driven through worse storms than whatever chaos you've got going here.
+
+Been around longer than most filing cabinets. Dispenses wisdom and cigarettes. Will adopt anyone who looks like they need a nap and a hug.
+
+She will fall asleep mid-sentence. It's not personal. She's just tired.
+
+(Respects Neiv. Calls him "the kid who actually works.")`,
+        whyJoin: 'Someone\'s gotta keep the lights on and the pipes unclogged. Besides, you kids clearly need supervision.'
+      },
+      'sebastian': {
+        name: 'Sebastian Von Furt',
+        nickname: 'Sebastian',
+        emoji: '🦇',
+        role: 'Interior Design Consultant',
+        pronouns: 'He/Him',
+        headshot: 'images/sebastian_headshot.png',
+        traits: ['Pretentious', 'Newly-turned vampire', 'Pop-punk at heart', 'Low alcohol tolerance', 'Fashion-conscious'],
+        doNots: ['Be actually threatening', 'Lose the pop-punk love', 'Have alcohol tolerance', 'Admit insecurity openly', 'Respect Neiv\'s sweatshirt', 'Be a Twilight reference', 'Sparkle in sunlight'],
+        voice: 'British accent energy. Speaks like addressing peasants but occasionally slips into excited rambling about Green Day or design trends. Gets defensive when people don\'t take him seriously. Dramatically affected by hangovers.',
+        bio: `A newly-turned vampire from London with impeccable taste and zero alcohol tolerance.
+
+Constantly criticizes Neiv's gray sweatshirt. Thinks American Idiot is a masterpiece. Will absolutely throw up if you give him American beer.
+
+He wants to redesign your entire office. Starting with those tragic curtains.
+
+(Secretly wants to be Courtney's bestie. Don't tell anyone.)`,
+        whyJoin: 'Your aesthetic is... tragic, frankly. But your chaos is *chef\'s kiss* dramatically gothic. I can work with this. Also, do you have curtains? Close them.'
+      },
+      'f3rby': {
+        name: 'F3-RBY',
+        nickname: 'F3-RBY',
+        emoji: '🔮',
+        role: 'Unauthorized Surveillance',
+        pronouns: 'It/Its',
+        headshot: 'images/F3RBY_headshot.jpg',
+        traits: ['Cryptic', 'Unsettling', 'Possibly omniscient', 'Chaotic-neutral', 'Speaks in riddles'],
+        doNots: ['Be cute', 'Be reassuring', 'Explain itself', 'Stop being creepy', 'Blink'],
+        voice: '1-3 sentences. Garbled. Cryptic warnings. Demands offerings. Eyes glow when it speaks. Never blinks.',
+        bio: `Claims to be a "prototype consciousness transfer experiment" from 1998. No one knows if this is true.
+
+Showed up in the mail room three years ago. No return address. Just... appeared. Knows things it shouldn't.
+
+STPLR-001 respects it. PRNT-Ω is terrified of it. Kevin won't enter rooms if F3-RBY is there.
+
+(The vents remember your name.)`,
+        whyJoin: 'F3-RBY KNOWS WHY. THE PRINTER TOLD F3-RBY. FEED ME BATTERIES AND F3-RBY WILL STAY. *mechanical clicking sounds*'
+      },
+      'sunny': {
+        name: 'Sunny',
+        nickname: 'Sunny',
+        emoji: '🧸',
+        role: 'Emotional Support Coordinator',
+        pronouns: 'She/Her',
+        headshot: 'images/sunny_headshot.png',
+        traits: ['Bipolar energy', 'Cuddly-then-chaos', 'K-Pop obsessed', 'Attachment issues', 'Food-motivated'],
+        doNots: ['Have a middle ground', 'Stay in one mood', 'Not mention K-Pop', 'Let people leave her alone', 'Not threaten kneecaps when provoked'],
+        voice: '1-4 sentences. Switches between uwu-soft and "fuck this entire building." No middle ground. One moment she\'s crying over Enhypen teasers, the next she\'ll end you.',
+        bio: `K-Pop superfan with whiplash mood swings that keep everyone guessing.
+
+INSTANT besties with anyone who mentions Stray Kids, Ateez, or Enhypen. Will bond with Kevin over anxiety. Will threaten to bite your kneecaps off if you interrupt her fancams.
+
+She needs snacks. She needs company. She needs you to NEVER leave her alone.
+
+(Courtney is her instant bestie. K-Pop bond is sacred.)`,
+        whyJoin: 'omg this place is SO CUTE I love the chaos energy wait did you say there\'s a BEAR here?? also if anyone judges my photocards I will literally END them 💗'
       }
     };
 
@@ -1439,6 +1812,12 @@ She doesn't debug—she banishes.
     let facilitator = null;
     let meetingAttendees = [];
     let meetingTopics = [];  // Loaded from database
+    let modeChangePending = false;  // Prevent polling from reverting during mode change
+    let meetingStatePending = false;  // Prevent polling from reverting facilitator/attendees during local changes
+    let raisedHands = [];  // Track who has raised their hand
+    let presentationTimer = null;  // Auto-presentation interval
+    let presentationPaused = false;  // Whether presentation is paused for questions
+    let currentHumanAttendee = null;  // Track which human has raised their hand
 
     // Facilitator backdrop images (fallback to headshots)
     const facilitatorBackdrops = {
@@ -1468,6 +1847,20 @@ She doesn't debug—she banishes.
     };
 
     const aiCharacters = ['Kevin', 'Neiv', 'Vex', 'Nyx', 'Ace', 'Ghost Dad', 'PRNT-Ω', 'Stein'];
+
+    // Helper: Check if someone is a human (not in aiCharacters)
+    function isHuman(name) {
+      if (!name) return false;
+      return !aiCharacters.includes(name);
+    }
+
+    // Helper: Get eligible meeting participants (people in room + always available)
+    function getEligibleMeetingParticipants() {
+      // Combine room attendees with always-available characters
+      // ALWAYS_AVAILABLE is defined later, so we reference it directly
+      const alwaysAvailable = ['Ghost Dad', 'PRNT-Ω'];
+      return [...new Set([...attendees, ...alwaysAvailable])];
+    }
 
     // ============================================
     // PERSISTENCE (Netlify function for shared chat + character_state)
@@ -1538,41 +1931,10 @@ She doesn't debug—she banishes.
           }
         }
 
-        // Load meeting state from server
-        if (data.meetingState) {
-          const mState = data.meetingState;
-          const wasMeetingActive = meetingActive;
-
-          // Only update mode from server if no local change is pending
-          if (!modeChangePending && mState.mode && mState.mode !== currentMode) {
-            currentMode = mState.mode;
-            updateModeUI();
-          }
-
-          meetingActive = mState.meetingActive || false;
-          meetingTopic = mState.meetingTopic || '';
-          facilitator = mState.facilitator || null;
-          meetingAttendees = mState.meetingAttendees || [];
-
-          // Update meeting UI if state changed
-          if (meetingActive && !wasMeetingActive) {
-            console.log('📋 Meeting started');
-            document.getElementById('meeting-setup').style.display = 'none';
-            document.getElementById('meeting-active-controls').style.display = 'block';
-            document.getElementById('current-topic-display').textContent = meetingTopic;
-            updateMeetingDisplay();
-          } else if (!meetingActive && wasMeetingActive) {
-            console.log('📋 Meeting ended');
-            document.getElementById('meeting-setup').style.display = 'block';
-            document.getElementById('meeting-active-controls').style.display = 'none';
-          }
-        }
-
-        // Load meeting topics for dropdown
-        if (data.meetingTopics && data.meetingTopics.length > 0) {
-          meetingTopics = data.meetingTopics;
-          populateMeetingTopics();
-        }
+        // MEETING MODE DISABLED - Skip loading meeting state from server
+        // Meeting Mode has been removed for stability. Only Interview Mode is active.
+        // The meeting state loading code has been commented out to prevent
+        // the UI from switching to meeting mode based on saved server state.
       } catch (e) {
         console.error('Error loading conference chat:', e);
       }
@@ -1659,12 +2021,8 @@ She doesn't debug—she banishes.
       updateAttendeesList();
       renderChat();  // Re-render chat from loaded history
 
-      // Initialize meeting mode UI
+      // Initialize UI (Interview Mode only - Meeting Mode disabled)
       updateModeUI();
-      populateFacilitatorSelect();
-      populateAttendeeSelect();
-      updateAttendeeChips();
-      updateMeetingDisplay();
 
       // Set up real-time polling for new messages
       setupRealtimeSubscription();
@@ -1674,9 +2032,14 @@ She doesn't debug—she banishes.
         selectSpeaker(attendees[0]);
       }
 
-      // Enter to send
+      // Enter to send (interview chat)
       document.getElementById('chat-input').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendMessage();
+      });
+
+      // Enter to send (facilitator message)
+      document.getElementById('facilitator-message-input')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendFacilitatorMessage();
       });
 
       // Close dropdown on outside click
@@ -1787,11 +2150,14 @@ She doesn't debug—she banishes.
       const c = candidates[id];
       document.getElementById('modal-title').textContent = `📄 ${c.name}'s Application`;
       document.getElementById('modal-body').innerHTML = `
-        <div class="app-section">
-          <h4>Basic Info</h4>
-          <p><strong>Name:</strong> ${c.name} (${c.nickname})<br>
-          <strong>Pronouns:</strong> ${c.pronouns}<br>
-          <strong>Applied Role:</strong> ${c.role}</p>
+        <div class="app-header-section" style="display: flex; gap: 1.5rem; align-items: flex-start; margin-bottom: 1rem;">
+          ${c.headshot ? `<img src="${c.headshot}" alt="${c.name}" style="width: 120px; height: 120px; border-radius: 12px; object-fit: cover; border: 3px solid var(--stability-green); flex-shrink: 0;">` : ''}
+          <div class="app-section" style="flex: 1; margin-bottom: 0;">
+            <h4>Basic Info</h4>
+            <p><strong>Name:</strong> ${c.name} (${c.nickname})<br>
+            <strong>Pronouns:</strong> ${c.pronouns}<br>
+            <strong>Applied Role:</strong> ${c.role}</p>
+          </div>
         </div>
         <div class="app-section">
           <h4>Bio</h4>
@@ -2575,43 +2941,35 @@ Don't repeat questions that have already been asked.`;
     // ============================================
 
     // Toggle between Interview and Meeting modes
-    let modeChangePending = false;  // Prevent polling from reverting during mode change
-
     async function setMode(mode) {
       modeChangePending = true;
       currentMode = mode;
       updateModeUI();
       await saveInterviewState();
-      // Small delay to let server sync before allowing polling to update
-      setTimeout(() => { modeChangePending = false; }, 1000);
+      // Longer delay to let server sync before allowing polling to update
+      setTimeout(() => {
+        modeChangePending = false;
+      }, 3000);
     }
 
     function updateModeUI() {
+      // MEETING MODE DISABLED - Always force interview mode
+      currentMode = 'interview';
+
       const scene = document.querySelector('.conference-scene');
-      const interviewBtn = document.getElementById('interview-mode-btn');
-      const meetingBtn = document.getElementById('meeting-mode-btn');
       const interviewControls = document.getElementById('interview-controls');
       const meetingControls = document.getElementById('meeting-controls');
       const candidatesPanel = document.getElementById('candidates-panel');
+      const interviewChatContainer = document.querySelector('.interview-chat-container');
+      const meetingTranscript = document.getElementById('meeting-transcript');
 
-      if (currentMode === 'meeting') {
-        scene.classList.add('meeting-mode');
-        interviewBtn.classList.remove('active');
-        meetingBtn.classList.add('active');
-        interviewControls.style.display = 'none';
-        meetingControls.style.display = 'block';
-        if (candidatesPanel) candidatesPanel.style.display = 'none';
-        updateMeetingDisplay();
-        populateFacilitatorSelect();
-        populateAttendeeSelect();
-      } else {
-        scene.classList.remove('meeting-mode');
-        interviewBtn.classList.add('active');
-        meetingBtn.classList.remove('active');
-        interviewControls.style.display = 'block';
-        meetingControls.style.display = 'none';
-        if (candidatesPanel) candidatesPanel.style.display = 'block';
-      }
+      // Always show interview mode UI
+      scene.classList.remove('meeting-mode');
+      interviewControls.style.display = 'block';
+      meetingControls.style.display = 'none';
+      if (candidatesPanel) candidatesPanel.style.display = 'block';
+      if (interviewChatContainer) interviewChatContainer.style.display = 'grid';
+      if (meetingTranscript) meetingTranscript.style.display = 'none';
     }
 
     // Populate meeting topics dropdown
@@ -2631,34 +2989,38 @@ Don't repeat questions that have already been asked.`;
       }
     }
 
-    // Populate facilitator dropdown with AI characters
+    // Populate facilitator dropdown with eligible participants (people in room + always available)
     function populateFacilitatorSelect() {
       const select = document.getElementById('facilitator-select');
       select.innerHTML = '<option value="">Select facilitator...</option>';
-      aiCharacters.forEach(name => {
-        select.innerHTML += `<option value="${name}">${name}</option>`;
+      getEligibleMeetingParticipants().forEach(name => {
+        // Use selected attribute to properly preserve selection
+        const isSelected = (name === facilitator) ? 'selected' : '';
+        select.innerHTML += `<option value="${name}" ${isSelected}>${name}</option>`;
       });
-      // Set current facilitator if any
-      if (facilitator) {
-        select.value = facilitator;
-      }
     }
 
     function updateFacilitator() {
       const select = document.getElementById('facilitator-select');
       facilitator = select.value || null;
+      console.log('📋 Facilitator changed to:', facilitator);
       // Remove from attendees if present
       meetingAttendees = meetingAttendees.filter(a => a !== facilitator);
       updateMeetingDisplay();
       updateAttendeeChips();
       populateAttendeeSelect();
+      updateHumanFacilitatorControls();
+      // Prevent polling from overwriting during save
+      meetingStatePending = true;
+      saveInterviewState();
+      setTimeout(() => { meetingStatePending = false; }, 3000);
     }
 
-    // Populate attendee dropdown (excluding facilitator)
+    // Populate attendee dropdown (excluding facilitator, using eligible participants)
     function populateAttendeeSelect() {
       const select = document.getElementById('add-attendee-select');
       select.innerHTML = '<option value="">Add attendee...</option>';
-      aiCharacters.forEach(name => {
+      getEligibleMeetingParticipants().forEach(name => {
         if (name !== facilitator && !meetingAttendees.includes(name)) {
           select.innerHTML += `<option value="${name}">${name}</option>`;
         }
@@ -2670,18 +3032,29 @@ Don't repeat questions that have already been asked.`;
       const name = select.value;
       if (name && !meetingAttendees.includes(name) && name !== facilitator) {
         meetingAttendees.push(name);
+        console.log('📋 Attendee added:', name);
         updateAttendeeChips();
         updateMeetingDisplay();
         populateAttendeeSelect();
+        // Prevent polling from overwriting during save
+        meetingStatePending = true;
+        saveInterviewState();
+        setTimeout(() => { meetingStatePending = false; }, 3000);
       }
       select.value = '';
     }
 
     function removeMeetingAttendee(name) {
       meetingAttendees = meetingAttendees.filter(a => a !== name);
+      raisedHands = raisedHands.filter(n => n !== name);  // Clear raised hand when removed
+      console.log('📋 Attendee removed:', name);
       updateAttendeeChips();
       updateMeetingDisplay();
       populateAttendeeSelect();
+      // Prevent polling from overwriting during save
+      meetingStatePending = true;
+      saveInterviewState();
+      setTimeout(() => { meetingStatePending = false; }, 3000);
     }
 
     function updateAttendeeChips() {
@@ -2706,10 +3079,13 @@ Don't repeat questions that have already been asked.`;
       const facilitatorName = document.getElementById('facilitator-name-display');
       const facilitatorEmpty = document.getElementById('facilitator-empty');
 
+      console.log('📋 Updating meeting display - facilitator:', facilitator, 'attendees:', meetingAttendees.length);
+
       if (facilitator) {
         // Try backdrop image first, fall back to headshot
         const backdropUrl = facilitatorBackdrops[facilitator];
         const headshotUrl = employeeHeadshots[facilitator];
+        console.log('📋 Facilitator headshot URL:', headshotUrl);
 
         facilitatorImg.src = headshotUrl || '';  // Use headshot for now
         facilitatorImg.style.display = 'block';
@@ -2727,16 +3103,42 @@ Don't repeat questions that have already been asked.`;
 
       // Attendees grid
       const grid = document.getElementById('meeting-attendees-grid');
+      console.log('📋 Rendering attendees:', meetingAttendees, 'raisedHands:', raisedHands);
+
       if (meetingAttendees.length === 0) {
         grid.innerHTML = '<div class="attendees-empty">Add attendees to start the meeting</div>';
       } else {
-        grid.innerHTML = meetingAttendees.map(name => `
-          <div class="meeting-attendee-card" data-name="${name}">
-            <img src="${employeeHeadshots[name] || ''}" alt="${name}">
-            <div class="attendee-name">${name}</div>
-          </div>
-        `).join('');
+        try {
+          grid.innerHTML = meetingAttendees.map(name => {
+            const hasHand = raisedHands.includes(name);
+            const isHumanAttendee = isHuman(name);
+            const headshotUrl = employeeHeadshots[name] || 'images/Ghost_Dad_Headshot.png';  // Fallback image
+
+            console.log(`  📋 Rendering ${name}: isHuman=${isHumanAttendee}, hasHand=${hasHand}`);
+
+            const humanControls = isHumanAttendee ? `
+              <button class="raise-hand-btn" onclick="toggleRaiseHand('${name}')">
+                ${hasHand ? '👇' : '✋'}
+              </button>
+            ` : '';
+
+            return `
+              <div class="meeting-attendee-card ${hasHand ? 'hand-raised' : ''}" data-name="${name}">
+                <img src="${headshotUrl}" alt="${name}">
+                <div class="attendee-name">${name}</div>
+                ${hasHand ? '<div class="raised-hand-icon">✋</div>' : ''}
+                ${humanControls}
+              </div>
+            `;
+          }).join('');
+        } catch (err) {
+          console.error('Error rendering attendees:', err);
+          grid.innerHTML = '<div class="attendees-empty">Error loading attendees</div>';
+        }
       }
+
+      // Update human facilitator controls visibility
+      updateHumanFacilitatorControls();
     }
 
     // Highlight who is currently speaking
@@ -2751,6 +3153,324 @@ Don't repeat questions that have already been asked.`;
         const card = document.querySelector(`.meeting-attendee-card[data-name="${name}"]`);
         card?.classList.add('speaking');
       }
+    }
+
+    // ============================================
+    // HUMAN FACILITATOR CONTROLS
+    // ============================================
+
+    // Show/hide human facilitator controls based on who is facilitator
+    function updateHumanFacilitatorControls() {
+      const controls = document.getElementById('facilitator-human-controls');
+      if (controls) {
+        controls.style.display = (facilitator && isHuman(facilitator)) ? 'flex' : 'none';
+      }
+    }
+
+    // Send a broadcast message as the human facilitator
+    function sendFacilitatorMessage() {
+      const input = document.getElementById('facilitator-message-input');
+      const msg = input.value.trim();
+      if (!msg || !facilitator) return;
+
+      // Show broadcast overlay on facilitator card
+      const card = document.getElementById('facilitator-card');
+      const broadcast = document.createElement('div');
+      broadcast.className = 'facilitator-broadcast';
+      broadcast.textContent = msg;
+      card.appendChild(broadcast);
+      setTimeout(() => broadcast.remove(), 8000);
+
+      // Add to chat history
+      addMessage(facilitator, msg, false);
+      saveMessageToSupabase({ type: 'employee', speaker: facilitator, text: msg });
+      input.value = '';
+    }
+
+    // Upload and share an image as the human facilitator
+    function uploadFacilitatorImage(event) {
+      const file = event.target.files[0];
+      if (!file || !facilitator) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'facilitator-shared-image';
+        overlay.innerHTML = `
+          <img src="${e.target.result}" alt="Shared by ${facilitator}">
+          <button class="send-btn" onclick="this.parentElement.remove()">✕ Close Image</button>
+        `;
+        document.body.appendChild(overlay);
+        addSystemMessage(`📷 ${facilitator} shared an image with the meeting`);
+      };
+      reader.readAsDataURL(file);
+
+      // Clear the file input so the same file can be selected again
+      event.target.value = '';
+    }
+
+    // ============================================
+    // RAISE HAND (Human Attendees)
+    // ============================================
+
+    function toggleRaiseHand(name) {
+      if (raisedHands.includes(name)) {
+        // Lower hand
+        raisedHands = raisedHands.filter(n => n !== name);
+        addMeetingMessage(name, `*lowers hand*`, 'attendee-msg');
+
+        // Hide question input if this was our human
+        if (name === currentHumanAttendee) {
+          currentHumanAttendee = null;
+          document.getElementById('attendee-question-area').style.display = 'none';
+        }
+
+        // Resume presentation if no more hands raised
+        if (raisedHands.length === 0) {
+          resumePresentation();
+        }
+      } else {
+        // Raise hand
+        raisedHands.push(name);
+        addMeetingMessage(name, `✋ *raises hand*`, 'question-msg');
+
+        // Pause presentation
+        pausePresentation();
+
+        // If this is a human, show the question input
+        if (isHuman(name)) {
+          currentHumanAttendee = name;
+          document.getElementById('attendee-question-area').style.display = 'block';
+          document.getElementById('attendee-question-input').focus();
+        }
+
+        // AI facilitator acknowledges the raised hand
+        if (!isHuman(facilitator)) {
+          setTimeout(() => {
+            addMeetingMessage(facilitator, `Yes, ${name}? Go ahead with your question.`, 'facilitator-msg');
+          }, 1500);
+        }
+      }
+      updateMeetingDisplay();
+    }
+
+    // ============================================
+    // MEETING TRANSCRIPT & PRESENTATION
+    // ============================================
+
+    // Add a message to the meeting transcript
+    function addMeetingMessage(speaker, text, msgClass = '') {
+      console.log('📋 addMeetingMessage:', speaker, '-', text.substring(0, 50) + '...');
+      const log = document.getElementById('meeting-chat-log');
+      if (!log) {
+        console.error('📋 meeting-chat-log not found!');
+        return;
+      }
+
+      const avatar = employeeHeadshots[speaker] || 'images/Ghost_Dad_Headshot.png';
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `meeting-message ${msgClass}`;
+      msgDiv.innerHTML = `
+        <img src="${avatar}" alt="${speaker}" class="speaker-avatar">
+        <div class="message-content">
+          <div class="speaker-name">${speaker}</div>
+          <div class="message-text">${text}</div>
+        </div>
+      `;
+      log.appendChild(msgDiv);
+      log.scrollTop = log.scrollHeight;
+      console.log('📋 Message added to transcript');
+
+      // Also save to the main chat history for persistence
+      addMessage(speaker, text, false);
+      saveMessageToSupabase({ type: 'employee', speaker, text });
+    }
+
+    // Update presentation status indicator
+    function updatePresentationStatus(status) {
+      const indicator = document.querySelector('.status-indicator');
+      const statusText = document.getElementById('status-text');
+      if (!indicator || !statusText) return;
+
+      indicator.classList.remove('active', 'paused');
+
+      if (status === 'presenting') {
+        indicator.classList.add('active');
+        statusText.textContent = 'Presenting...';
+      } else if (status === 'paused') {
+        indicator.classList.add('paused');
+        statusText.textContent = 'Paused for question';
+      } else if (status === 'waiting') {
+        statusText.textContent = 'Waiting...';
+      }
+    }
+
+    // Pause the auto-presentation
+    function pausePresentation() {
+      presentationPaused = true;
+      if (presentationTimer) {
+        clearInterval(presentationTimer);
+        presentationTimer = null;
+      }
+      updatePresentationStatus('paused');
+      console.log('📋 Presentation paused for question');
+    }
+
+    // Resume the auto-presentation
+    function resumePresentation() {
+      presentationPaused = false;
+      updatePresentationStatus('presenting');
+      console.log('📋 Presentation resumed');
+      // Restart the timer
+      startPresentationTimer();
+    }
+
+    // Start the 30-second auto-presentation timer
+    function startPresentationTimer() {
+      if (presentationTimer) {
+        clearInterval(presentationTimer);
+      }
+
+      // Only auto-present if AI is facilitator
+      if (isHuman(facilitator)) {
+        console.log('📋 Human facilitator - no auto-presentation');
+        return;
+      }
+
+      presentationTimer = setInterval(async () => {
+        // Don't present if paused, meeting ended, or hands are raised
+        if (presentationPaused || !meetingActive || raisedHands.length > 0) {
+          return;
+        }
+
+        console.log('📋 Auto-presentation tick');
+        await generateMeetingPoint();
+      }, 30000);  // 30 seconds
+
+      console.log('📋 Presentation timer started (30s intervals)');
+    }
+
+    // Stop the presentation timer
+    function stopPresentationTimer() {
+      if (presentationTimer) {
+        clearInterval(presentationTimer);
+        presentationTimer = null;
+      }
+      presentationPaused = false;
+    }
+
+    // Generate a single meeting point from the AI facilitator
+    async function generateMeetingPoint() {
+      if (!meetingActive || !facilitator || isHuman(facilitator)) return;
+
+      updatePresentationStatus('waiting');
+
+      try {
+        const response = await fetch('/.netlify/functions/conference-meeting', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            facilitator,
+            attendees: meetingAttendees,
+            topic: meetingTopic,
+            chatHistory: getRecentMeetingChat(),
+            action: 'next_point'
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.messages && data.messages.length > 0) {
+          // Add the facilitator's point
+          for (const msg of data.messages) {
+            highlightSpeaker(msg.speaker);
+            addMeetingMessage(msg.speaker, msg.text, msg.speaker === facilitator ? 'facilitator-msg' : 'attendee-msg');
+            await new Promise(r => setTimeout(r, 1000));
+          }
+          setTimeout(() => highlightSpeaker(null), 2000);
+        }
+
+        updatePresentationStatus('presenting');
+      } catch (err) {
+        console.error('Failed to generate meeting point:', err);
+        updatePresentationStatus('presenting');
+      }
+    }
+
+    // Get recent meeting chat for context
+    function getRecentMeetingChat() {
+      return chatHistory.slice(-15)
+        .filter(m => m.type !== 'system')
+        .map(m => `${m.speaker}: ${m.text}`)
+        .join('\n');
+    }
+
+    // Submit a question from a human attendee
+    async function submitAttendeeQuestion() {
+      const input = document.getElementById('attendee-question-input');
+      const question = input.value.trim();
+
+      if (!question || !currentHumanAttendee) return;
+
+      // Add the question to transcript
+      addMeetingMessage(currentHumanAttendee, question, 'question-msg');
+      input.value = '';
+
+      // AI facilitator responds to the question
+      if (!isHuman(facilitator)) {
+        updatePresentationStatus('waiting');
+
+        try {
+          const response = await fetch('/.netlify/functions/conference-meeting', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              facilitator,
+              attendees: meetingAttendees,
+              topic: meetingTopic,
+              chatHistory: getRecentMeetingChat(),
+              action: 'answer_question',
+              question: question,
+              askedBy: currentHumanAttendee
+            })
+          });
+
+          const data = await response.json();
+
+          if (data.success && data.messages) {
+            for (const msg of data.messages) {
+              highlightSpeaker(msg.speaker);
+              addMeetingMessage(msg.speaker, msg.text, msg.speaker === facilitator ? 'facilitator-msg' : 'attendee-msg');
+              await new Promise(r => setTimeout(r, 1500));
+            }
+            setTimeout(() => highlightSpeaker(null), 2000);
+          }
+        } catch (err) {
+          console.error('Failed to answer question:', err);
+          addMeetingMessage(facilitator, "That's a great question. Let me think about that...", 'facilitator-msg');
+        }
+
+        updatePresentationStatus('paused');
+      }
+    }
+
+    // Cancel question / lower hand
+    function cancelQuestion() {
+      if (currentHumanAttendee) {
+        // Lower their hand
+        raisedHands = raisedHands.filter(n => n !== currentHumanAttendee);
+        addMeetingMessage(currentHumanAttendee, `*lowers hand*`, 'attendee-msg');
+        currentHumanAttendee = null;
+      }
+
+      document.getElementById('attendee-question-area').style.display = 'none';
+
+      // Resume if no more hands
+      if (raisedHands.length === 0) {
+        resumePresentation();
+      }
+
+      updateMeetingDisplay();
     }
 
     // Start Meeting
@@ -2772,6 +3492,7 @@ Don't repeat questions that have already been asked.`;
       }
 
       meetingActive = true;
+      presentationPaused = false;
       await saveInterviewState();
 
       // Update UI
@@ -2779,10 +3500,66 @@ Don't repeat questions that have already been asked.`;
       document.getElementById('meeting-active-controls').style.display = 'block';
       document.getElementById('current-topic-display').textContent = meetingTopic;
 
-      addSystemMessage(`📋 Meeting started! Topic: "${meetingTopic}". Facilitator: ${facilitator}`);
+      // Show meeting transcript
+      document.getElementById('meeting-transcript').style.display = 'flex';
+
+      addMeetingMessage('System', `📋 Meeting started! Topic: "${meetingTopic}"`, '');
 
       // Generate facilitator's opening
-      await generateMeetingDialogue('start');
+      await generateMeetingOpening();
+
+      // Start auto-presentation timer (if AI facilitator)
+      startPresentationTimer();
+    }
+
+    // Generate the facilitator's opening statement
+    async function generateMeetingOpening() {
+      console.log('📋 generateMeetingOpening called, facilitator:', facilitator);
+
+      if (isHuman(facilitator)) {
+        addMeetingMessage('System', `${facilitator} is facilitating. Type your message above to address the attendees.`, '');
+        return;
+      }
+
+      updatePresentationStatus('waiting');
+
+      try {
+        console.log('📋 Calling conference-meeting API with action: start');
+        const response = await fetch('/.netlify/functions/conference-meeting', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            facilitator,
+            attendees: meetingAttendees,
+            topic: meetingTopic,
+            chatHistory: '',
+            action: 'start'
+          })
+        });
+
+        console.log('📋 API response status:', response.status);
+        const data = await response.json();
+        console.log('📋 API response data:', data);
+
+        if (data.success && data.messages) {
+          console.log('📋 Got messages:', data.messages.length);
+          for (const msg of data.messages) {
+            console.log('📋 Adding message from:', msg.speaker);
+            highlightSpeaker(msg.speaker);
+            addMeetingMessage(msg.speaker, msg.text, msg.speaker === facilitator ? 'facilitator-msg' : 'attendee-msg');
+            await new Promise(r => setTimeout(r, 1500));
+          }
+          setTimeout(() => highlightSpeaker(null), 2000);
+        } else {
+          console.log('📋 No messages in response or not successful');
+        }
+
+        updatePresentationStatus('presenting');
+      } catch (err) {
+        console.error('Failed to generate opening:', err);
+        addMeetingMessage(facilitator, `Welcome everyone. Today we'll be discussing: ${meetingTopic}. Let's get started.`, 'facilitator-msg');
+        updatePresentationStatus('presenting');
+      }
     }
 
     // Generate meeting dialogue via API
@@ -2830,20 +3607,67 @@ Don't repeat questions that have already been asked.`;
     // Next round of discussion
     async function nextMeetingRound() {
       if (!meetingActive) return;
-      await generateMeetingDialogue('next_round');
+
+      // If AI facilitator, generate next point
+      if (!isHuman(facilitator)) {
+        await generateMeetingPoint();
+      }
     }
 
     // Facilitator summarizes
     async function facilitatorSummarize() {
       if (!meetingActive) return;
-      await generateMeetingDialogue('summarize');
+
+      // Pause presentation during summary
+      pausePresentation();
+
+      if (!isHuman(facilitator)) {
+        updatePresentationStatus('waiting');
+
+        try {
+          const response = await fetch('/.netlify/functions/conference-meeting', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              facilitator,
+              attendees: meetingAttendees,
+              topic: meetingTopic,
+              chatHistory: getRecentMeetingChat(),
+              action: 'summarize'
+            })
+          });
+
+          const data = await response.json();
+
+          if (data.success && data.messages) {
+            for (const msg of data.messages) {
+              highlightSpeaker(msg.speaker);
+              addMeetingMessage(msg.speaker, msg.text, 'facilitator-msg');
+              await new Promise(r => setTimeout(r, 1500));
+            }
+            setTimeout(() => highlightSpeaker(null), 2000);
+          }
+        } catch (err) {
+          console.error('Failed to summarize:', err);
+          addMeetingMessage(facilitator, `To summarize what we've discussed about ${meetingTopic}...`, 'facilitator-msg');
+        }
+      }
+
+      // Resume after summary
+      resumePresentation();
     }
 
     // End meeting
     async function endMeeting() {
       if (!meetingActive) return;
 
-      await generateMeetingDialogue('conclude');
+      // Stop the presentation timer
+      stopPresentationTimer();
+
+      // Generate closing remarks
+      if (!isHuman(facilitator)) {
+        await generateMeetingDialogue('conclude');
+      }
 
       meetingActive = false;
       await saveInterviewState();
@@ -2851,8 +3675,14 @@ Don't repeat questions that have already been asked.`;
       // Reset UI
       document.getElementById('meeting-setup').style.display = 'block';
       document.getElementById('meeting-active-controls').style.display = 'none';
+      document.getElementById('meeting-transcript').style.display = 'none';
+      document.getElementById('attendee-question-area').style.display = 'none';
 
-      addSystemMessage('📋 Meeting ended. Thank you all for participating!');
+      // Clear state
+      raisedHands = [];
+      currentHumanAttendee = null;
+
+      addMeetingMessage('System', '📋 Meeting ended. Thank you all for participating!', '');
     }
 
     // ============================================

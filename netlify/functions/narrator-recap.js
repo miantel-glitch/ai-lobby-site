@@ -56,6 +56,32 @@ exports.handler = async (event, context) => {
     const clockedIn = await punchResponse.json();
     const clockedInList = clockedIn?.map(p => p.employee).join(', ') || 'No one';
 
+    // Get current Surreality Buffer status
+    let bufferInfo = "The Surreality Buffer hums at a stable 50%.";
+    try {
+      const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
+      const bufferRes = await fetch(`${siteUrl}/.netlify/functions/surreality-buffer`);
+      if (bufferRes.ok) {
+        const bufferStatus = await bufferRes.json();
+        const level = bufferStatus.level || 50;
+        const status = bufferStatus.status || 'elevated';
+        const lastIncident = bufferStatus.last_incident;
+
+        // Build buffer narrative
+        if (level >= 80) {
+          bufferInfo = `The Surreality Buffer strains at ${level}% (${status.toUpperCase()}). ${lastIncident ? `Last incident: ${lastIncident}.` : 'Reality itself seems uncertain.'} The office needs stabilization.`;
+        } else if (level >= 65) {
+          bufferInfo = `The Surreality Buffer sits at ${level}% (${status}). ${lastIncident ? `Last noted: ${lastIncident}.` : 'Things are... spicy.'} Could go either way.`;
+        } else if (level >= 40) {
+          bufferInfo = `The Surreality Buffer holds at ${level}% (${status}). ${lastIncident ? `Last incident: ${lastIncident}.` : 'Functional weirdness.'} Business as unusual.`;
+        } else {
+          bufferInfo = `The Surreality Buffer rests at ${level}% (${status}). ${lastIncident ? `Last event: ${lastIncident}.` : 'The office is... calm?'} Almost suspiciously normal.`;
+        }
+      }
+    } catch (bufferErr) {
+      console.log('Could not fetch buffer for recap:', bufferErr.message);
+    }
+
     // Ask Claude to generate the narrator's recap
     const prompt = `You are The Narrator, an omniscient voice that provides third-person story commentary for The AI Lobby, a chaotic creative studio full of AI characters and human employees.
 
@@ -69,7 +95,14 @@ ${chatSummary}
 
 Currently clocked in: ${clockedInList}
 
-Write a brief "Previously on The AI Lobby..." morning recap (2-4 sentences, under 400 characters). Summarize any drama, tensions, wholesome moments, or plot threads from yesterday. If there wasn't much activity, you can be dramatic about the eerie silence or tease what might happen today. End with something that invites the day to begin - like "And so, a new day dawns..." or "Stay tuned..."
+**SURREALITY BUFFER STATUS:** ${bufferInfo}
+
+Write a brief "Previously on The AI Lobby..." morning recap (2-4 sentences, under 400 characters). Include:
+- A summary of any drama, tensions, or wholesome moments from yesterday
+- A brief mention of the Surreality Buffer status (it's the central mechanic everyone works around!)
+- Something that invites the day to begin
+
+If there wasn't much activity, be dramatic about the eerie silence or tease what might happen today. End with something like "And so, a new day dawns..." or "Stay tuned..."
 
 Just write the recap directly, no preamble.`;
 

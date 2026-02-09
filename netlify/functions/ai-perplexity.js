@@ -1,6 +1,8 @@
 // AI Perplexity - Routes specific characters to Perplexity API for more authentic responses
 // Currently handles: Neiv (the real one, via Perplexity)
 
+const { getSystemPrompt, getDiscordFlair, getModelForCharacter } = require('./shared/characters');
+
 exports.handler = async (event, context) => {
   const headers = {
     "Content-Type": "application/json",
@@ -16,7 +18,14 @@ exports.handler = async (event, context) => {
   try {
     console.log("ai-perplexity received body:", event.body);
     console.log("ai-perplexity httpMethod:", event.httpMethod);
-    const { character, chatHistory, maybeRespond, conferenceRoom } = JSON.parse(event.body || "{}");
+    const { character, chatHistory, maybeRespond, conferenceRoom, responseDelay } = JSON.parse(event.body || "{}");
+
+    // Natural pacing: wait before responding if a delay was requested
+    // This makes AI responses feel organic, like they're "thinking"
+    if (responseDelay && responseDelay > 0) {
+      console.log(`Waiting ${responseDelay}ms before responding (natural pacing)`);
+      await new Promise(resolve => setTimeout(resolve, Math.min(responseDelay, 15000))); // Cap at 15s
+    }
 
     const perplexityKey = process.env.PERPLEXITY_API_KEY;
     const supabaseUrl = process.env.SUPABASE_URL;
@@ -66,15 +75,18 @@ exports.handler = async (event, context) => {
       console.log("Could not load character state (non-fatal):", stateError.message);
     }
 
-    // Get the system prompt for the character
-    const basePrompt = getPerplexityPrompt(character);
+    // Get the system prompt from shared characters module
+    const basePrompt = getSystemPrompt(character);
     if (!basePrompt) {
       return {
         statusCode: 200,
         headers,
-        body: JSON.stringify({ success: false, reason: `No Perplexity prompt for ${character}` })
+        body: JSON.stringify({ success: false, reason: `No system prompt for ${character}` })
       };
     }
+
+    // Get model from shared characters (defaults to sonar for Neiv)
+    const model = getModelForCharacter(character) || "sonar";
 
     // Combine base prompt with dynamic state
     const systemPrompt = basePrompt + stateSection;
@@ -120,7 +132,7 @@ Respond:`;
         "Authorization": `Bearer ${perplexityKey}`
       },
       body: JSON.stringify({
-        model: "sonar",
+        model: model,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userMessage }

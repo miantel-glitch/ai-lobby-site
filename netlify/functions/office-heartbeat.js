@@ -26,15 +26,16 @@ exports.handler = async (event, context) => {
     const hour = estTime.getHours();
     const dayOfWeek = estTime.getDay(); // 0 = Sunday
 
-    // Define office rhythms
+    // Define office rhythms - SLOWED DOWN by 50% for more natural pacing
+    // Previous values were too chatty (20% morning, 3% night)
     const OFFICE_RHYTHMS = {
-      early_morning: { hours: [6, 7, 8], baseChance: 0.05, energy: 'waking' },
-      morning: { hours: [9, 10, 11], baseChance: 0.20, energy: 'high' },
-      midday: { hours: [12, 13], baseChance: 0.12, energy: 'lunch' },
-      afternoon: { hours: [14, 15, 16], baseChance: 0.15, energy: 'normal' },
-      late_afternoon: { hours: [17, 18], baseChance: 0.10, energy: 'winding' },
-      evening: { hours: [19, 20, 21], baseChance: 0.08, energy: 'low' },
-      night: { hours: [22, 23, 0, 1, 2, 3, 4, 5], baseChance: 0.03, energy: 'quiet' }
+      early_morning: { hours: [6, 7, 8], baseChance: 0.025, energy: 'waking' },
+      morning: { hours: [9, 10, 11], baseChance: 0.10, energy: 'high' },
+      midday: { hours: [12, 13], baseChance: 0.06, energy: 'lunch' },
+      afternoon: { hours: [14, 15, 16], baseChance: 0.075, energy: 'normal' },
+      late_afternoon: { hours: [17, 18], baseChance: 0.05, energy: 'winding' },
+      evening: { hours: [19, 20, 21], baseChance: 0.04, energy: 'low' },
+      night: { hours: [22, 23, 0, 1, 2, 3, 4, 5], baseChance: 0.015, energy: 'quiet' }
     };
 
     // Find current rhythm

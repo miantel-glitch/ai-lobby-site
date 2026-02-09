@@ -55,25 +55,28 @@
         }
 
         .admin-panel {
-            background: rgba(0, 0, 0, 0.6);
-            border: 1px solid var(--accent);
+            background: rgba(20, 20, 30, 0.95);
+            border: 1px solid #555;
             border-radius: 8px;
             padding: 20px;
         }
 
         .admin-panel h2 {
             margin-top: 0;
-            color: var(--accent);
+            color: #fff;
             font-family: 'Courier New', monospace;
             font-size: 1.1em;
             display: flex;
             align-items: center;
             gap: 10px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
         }
 
         .admin-panel h2::before {
             content: '>';
-            color: #666;
+            color: var(--accent);
         }
 
         /* Character Cards */
@@ -84,8 +87,8 @@
         }
 
         .character-card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid #333;
+            background: rgba(30, 30, 40, 0.9);
+            border: 1px solid #444;
             border-radius: 6px;
             padding: 15px;
             transition: all 0.2s;
@@ -102,6 +105,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            color: #fff;
         }
 
         .character-card .emoji {
@@ -109,16 +113,16 @@
         }
 
         .stat-bar {
-            height: 6px;
-            background: #222;
-            border-radius: 3px;
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
             margin: 5px 0;
             overflow: hidden;
         }
 
         .stat-bar-fill {
             height: 100%;
-            border-radius: 3px;
+            border-radius: 4px;
             transition: width 0.3s ease;
         }
 
@@ -126,21 +130,28 @@
         .stat-bar-fill.patience { background: linear-gradient(90deg, #ff6b6b, #ffd93d, #4dabf7); }
 
         .stat-label {
-            font-size: 0.75em;
-            color: #888;
+            font-size: 0.8em;
+            color: #aaa;
             display: flex;
             justify-content: space-between;
         }
 
         .mood-badge {
             display: inline-block;
-            padding: 2px 8px;
-            background: rgba(255, 193, 7, 0.2);
-            border: 1px solid rgba(255, 193, 7, 0.5);
+            padding: 3px 10px;
+            background: rgba(100, 180, 100, 0.3);
+            border: 1px solid rgba(100, 180, 100, 0.6);
             border-radius: 12px;
-            font-size: 0.75em;
+            font-size: 0.8em;
             margin-top: 8px;
+            color: #8f8;
         }
+
+        .mood-badge.alert { background: rgba(255, 100, 100, 0.3); border-color: rgba(255, 100, 100, 0.6); color: #f88; }
+        .mood-badge.suspicious { background: rgba(255, 180, 100, 0.3); border-color: rgba(255, 180, 100, 0.6); color: #fc8; }
+        .mood-badge.refreshed { background: rgba(100, 200, 255, 0.3); border-color: rgba(100, 200, 255, 0.6); color: #8df; }
+        .mood-badge.caffeinated { background: rgba(180, 130, 80, 0.3); border-color: rgba(180, 130, 80, 0.6); color: #db8; }
+        .mood-badge.wary { background: rgba(200, 150, 255, 0.3); border-color: rgba(200, 150, 255, 0.6); color: #c9f; }
 
         /* Memory List */
         .memory-list {
@@ -149,33 +160,43 @@
         }
 
         .memory-item {
-            background: rgba(255, 255, 255, 0.03);
-            border-left: 3px solid var(--accent);
-            padding: 10px 15px;
+            background: rgba(30, 30, 45, 0.9);
+            border-left: 4px solid var(--accent);
+            padding: 12px 15px;
             margin-bottom: 10px;
             font-size: 0.9em;
+            border-radius: 0 6px 6px 0;
         }
 
         .memory-item .meta {
             display: flex;
             justify-content: space-between;
-            font-size: 0.8em;
-            color: #666;
-            margin-bottom: 5px;
+            font-size: 0.85em;
+            color: #888;
+            margin-bottom: 8px;
+            align-items: center;
         }
 
         .memory-item .character {
-            color: var(--accent);
+            color: #fff;
+            font-weight: bold;
+            font-size: 1em;
+            background: rgba(233, 69, 96, 0.2);
+            padding: 2px 10px;
+            border-radius: 4px;
+            border: 1px solid rgba(233, 69, 96, 0.4);
         }
 
         .memory-item .importance {
-            background: rgba(255, 193, 7, 0.2);
-            padding: 1px 6px;
+            background: rgba(255, 215, 0, 0.25);
+            padding: 2px 8px;
             border-radius: 8px;
+            color: #ffd700;
         }
 
         .memory-item .content {
-            color: #ccc;
+            color: #ddd;
+            line-height: 1.5;
         }
 
         .memory-item .delete-btn {
@@ -757,6 +778,23 @@
         </header>
 
         <div class="admin-grid">
+            <!-- Breakroom Cam -->
+            <div class="admin-panel" style="grid-column: span 2;">
+                <h2>☕ Breakroom Cam</h2>
+                <div style="display: flex; gap: 20px; align-items: flex-start;">
+                    <div style="flex: 1; max-width: 500px;">
+                        <img src="images/breakroom_cam_shot.png" alt="Breakroom Camera" style="width: 100%; border-radius: 8px; border: 2px solid #444; opacity: 0.9;">
+                        <p style="font-size: 0.8em; color: #666; margin-top: 8px; text-align: center;">Live feed from the breakroom security camera</p>
+                    </div>
+                    <div style="flex: 1;">
+                        <h4 style="margin: 0 0 10px 0; color: var(--accent);">Recent Activity</h4>
+                        <div id="activity-feed" class="activity-feed" style="max-height: 180px;">
+                            <div class="loading">Loading activity</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Character States Panel -->
             <div class="admin-panel" style="grid-column: span 2;">
                 <h2>Character States</h2>
@@ -996,15 +1034,9 @@
                 </div>
             </div>
 
-            <!-- Activity Log -->
-            <div class="admin-panel" style="grid-column: span 2;">
-                <h2>Activity Log</h2>
-                <div id="event-flash" style="display: none; background: rgba(255, 193, 7, 0.2); border: 1px solid var(--accent); padding: 10px; margin-bottom: 10px; border-radius: 4px;">
-                    <strong>🎬 Event Triggered:</strong> <span id="event-flash-text"></span>
-                </div>
-                <div id="activity-feed" class="activity-feed">
-                    <div class="loading">Loading activity</div>
-                </div>
+            <!-- Event Flash (for triggered events) -->
+            <div id="event-flash" style="display: none; position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: rgba(255, 193, 7, 0.9); border: 2px solid var(--accent); padding: 15px 30px; border-radius: 8px; z-index: 100; color: #000;">
+                <strong>🎬 Event Triggered:</strong> <span id="event-flash-text"></span>
             </div>
         </div>
 

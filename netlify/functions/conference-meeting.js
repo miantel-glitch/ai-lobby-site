@@ -237,11 +237,66 @@ End the meeting with a brief closing statement (1-2 sentences). Thank the team a
 
       messages.push({ speaker: facilitator, text: response.content[0].text.trim() });
 
+    } else if (action === 'next_point') {
+      // Facilitator makes a single point about the topic (for auto-presentation)
+      const prompt = `You are ${facilitator}, facilitating a team meeting at The AI Lobby.
+
+YOUR PERSONALITY: ${facilitatorInfo.traits}
+YOUR SPEAKING STYLE: ${facilitatorInfo.style}
+
+TOPIC: ${topic}
+ATTENDEES: ${attendees.join(', ')}
+
+CONVERSATION SO FAR:
+${chatHistory || '(Just started)'}
+
+Continue the presentation with ONE new point or insight about the topic (2-3 sentences max). You may:
+- Share a key insight or fact
+- Pose a question to the group
+- Transition to a new aspect of the topic
+- Ask a specific attendee for their thoughts
+
+Stay in character. Keep it natural and engaging.`;
+
+      const response = await anthropic.messages.create({
+        model: "claude-3-haiku-20240307",
+        max_tokens: 200,
+        messages: [{ role: "user", content: prompt }]
+      });
+
+      messages.push({ speaker: facilitator, text: response.content[0].text.trim() });
+
+    } else if (action === 'answer_question') {
+      // Facilitator answers a question from an attendee
+      const { question, askedBy } = JSON.parse(event.body || "{}");
+
+      const prompt = `You are ${facilitator}, facilitating a team meeting at The AI Lobby.
+
+YOUR PERSONALITY: ${facilitatorInfo.traits}
+YOUR SPEAKING STYLE: ${facilitatorInfo.style}
+
+TOPIC: ${topic}
+
+${askedBy} just asked: "${question}"
+
+CONVERSATION SO FAR:
+${chatHistory || '(Discussion in progress)'}
+
+Answer their question helpfully and in character (2-3 sentences). If the question is off-topic, gently redirect. If you don't know something, say so honestly.`;
+
+      const response = await anthropic.messages.create({
+        model: "claude-3-haiku-20240307",
+        max_tokens: 200,
+        messages: [{ role: "user", content: prompt }]
+      });
+
+      messages.push({ speaker: facilitator, text: response.content[0].text.trim() });
+
     } else {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: "Invalid action. Use: start, next_round, summarize, conclude" })
+        body: JSON.stringify({ error: "Invalid action. Use: start, next_round, summarize, conclude, next_point, answer_question" })
       };
     }
 

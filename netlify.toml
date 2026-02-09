@@ -18,11 +18,12 @@
 #   schedule = "* * * * *"
 
 # Office Heartbeat - Natural rhythms for AI activity
-# Runs every 2 minutes with smart time-of-day and momentum awareness
-# Mornings are busier (20% chance), nights are quiet (3% chance)
+# Runs every 5 minutes with smart time-of-day and momentum awareness
+# Mornings are busier (10% chance), nights are quiet (1.5% chance)
 # Respects conversation momentum - stays quiet when humans are active
+# SLOWED DOWN: Previously every 2 mins, now every 5 for more natural pacing
 [functions."office-heartbeat"]
-  schedule = "*/2 * * * *"
+  schedule = "*/5 * * * *"
 
 # Scheduled function for Narrator morning recap
 # Runs once per day at 7 AM EST (12:00 UTC) to kick off the day

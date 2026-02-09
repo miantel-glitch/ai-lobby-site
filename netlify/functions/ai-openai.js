@@ -1,6 +1,8 @@
 // AI OpenAI - Routes specific characters to OpenAI/ChatGPT API for authentic responses
 // Currently handles: Kevin (via ChatGPT)
 
+const { getSystemPrompt, getDiscordFlair, getModelForCharacter } = require('./shared/characters');
+
 exports.handler = async (event, context) => {
   const headers = {
     "Content-Type": "application/json",
@@ -15,7 +17,14 @@ exports.handler = async (event, context) => {
 
   try {
     console.log("ai-openai received body:", event.body);
-    const { character, chatHistory, maybeRespond, conferenceRoom } = JSON.parse(event.body || "{}");
+    const { character, chatHistory, maybeRespond, conferenceRoom, responseDelay } = JSON.parse(event.body || "{}");
+
+    // Natural pacing: wait before responding if a delay was requested
+    // This makes AI responses feel organic, like they're "thinking"
+    if (responseDelay && responseDelay > 0) {
+      console.log(`Waiting ${responseDelay}ms before responding (natural pacing)`);
+      await new Promise(resolve => setTimeout(resolve, Math.min(responseDelay, 15000))); // Cap at 15s
+    }
 
     const openaiKey = process.env.OPENAI_API_KEY;
     const supabaseUrl = process.env.SUPABASE_URL;
@@ -61,15 +70,18 @@ exports.handler = async (event, context) => {
       console.log("Could not load character state (non-fatal):", stateError.message);
     }
 
-    // Get the system prompt for the character
-    const basePrompt = getOpenAIPrompt(character);
+    // Get the system prompt from shared characters module
+    const basePrompt = getSystemPrompt(character);
     if (!basePrompt) {
       return {
         statusCode: 200,
         headers,
-        body: JSON.stringify({ success: false, reason: `No OpenAI prompt for ${character}` })
+        body: JSON.stringify({ success: false, reason: `No system prompt for ${character}` })
       };
     }
+
+    // Get model from shared characters (defaults to gpt-4o-mini for Kevin)
+    const model = getModelForCharacter(character) || "gpt-4o-mini";
 
     // Combine base prompt with dynamic state
     const systemPrompt = basePrompt + stateSection;
@@ -120,7 +132,7 @@ Respond:`;
         "Authorization": `Bearer ${openaiKey}`
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: model,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userMessage }

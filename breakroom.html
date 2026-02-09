@@ -645,12 +645,11 @@
         <nav class="main-nav">
           <ul>
             <li><a href="index.html">Home</a></li>
-            <li><a href="characters.html">Personnel</a></li>
             <li><a href="desktop.html">Desktop</a></li>
-            <li><a href="breakroom.html" class="active">☕ The Breakroom</a></li>
+            <li><a href="breakroom.html" class="active">☕ Breakroom</a></li>
             <li><a href="workspace.html" style="color: var(--lobby-highlight);">💬 The Floor</a></li>
-            <li><a href="conference-room.html" style="color: var(--stability-green);">🎤 Conference Room</a></li>
-            <li><a href="apply.html" style="color: var(--chaos-purple);">📋 Apply</a></li>
+            <li><a href="conference-room.html" style="color: var(--stability-green);">🎤 Conference</a></li>
+            <li><a href="corridors.html" style="color: #9b59b6;">🚪 Corridors</a></li>
           </ul>
         </nav>
       </div>
@@ -1862,6 +1861,9 @@
       // Load Discord toggle state (off by default)
       loadDiscordToggle();
 
+      // Track intervals for cleanup
+      const pollIntervals = [];
+
       // Load breakroom data (who's here, etc.)
       loadBreakroomData();
 
@@ -1869,10 +1871,15 @@
       loadBreakroomHistory();
 
       // Auto-refresh who's in the room every 30 seconds
-      setInterval(loadBreakroomData, 30000);
+      pollIntervals.push(setInterval(loadBreakroomData, 30000));
 
       // Auto-refresh chat messages every 5 seconds to catch updates from others
-      setInterval(pollForNewMessages, 5000);
+      pollIntervals.push(setInterval(pollForNewMessages, 5000));
+
+      // Cleanup on page exit to prevent memory leaks
+      window.addEventListener('beforeunload', () => {
+        pollIntervals.forEach(id => clearInterval(id));
+      });
     });
   </script>
 </body>

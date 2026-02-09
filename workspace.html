@@ -2174,12 +2174,11 @@
         <nav class="main-nav">
           <ul>
             <li><a href="index.html">Home</a></li>
-            <li><a href="characters.html">Personnel</a></li>
             <li><a href="desktop.html">Desktop</a></li>
-            <li><a href="breakroom.html">☕ The Breakroom</a></li>
+            <li><a href="breakroom.html">☕ Breakroom</a></li>
             <li><a href="workspace.html" class="active" style="color: var(--lobby-highlight);">💬 The Floor</a></li>
-            <li><a href="conference-room.html" style="color: var(--stability-green);">🎤 Conference Room</a></li>
-            <li><a href="apply.html" style="color: var(--chaos-purple);">📋 Apply</a></li>
+            <li><a href="conference-room.html" style="color: var(--stability-green);">🎤 Conference</a></li>
+            <li><a href="corridors.html" style="color: #9b59b6;">🚪 Corridors</a></li>
           </ul>
         </nav>
       </div>
@@ -4623,13 +4622,21 @@ Memos: ${emails.length}
     loadEmails();
     loadTasks();
 
-    // Auto-refresh
-    setInterval(loadMessages, 10000);  // Messages every 10s
-    setInterval(loadWhosIn, 30000);    // Who's in every 30s
-    setInterval(loadFloorPresence, 30000);  // Floor presence every 30s
-    setInterval(loadBulletin, 60000);  // Bulletin every 60s
-    setInterval(loadEmails, 30000);    // Emails every 30s
-    setInterval(loadTasks, 30000);     // Tasks every 30s
+    // Track intervals for cleanup
+    const pollIntervals = [];
+
+    // Auto-refresh (intervals stored for cleanup on page exit)
+    pollIntervals.push(setInterval(loadMessages, 10000));       // Messages every 10s
+    pollIntervals.push(setInterval(loadWhosIn, 30000));         // Who's in every 30s
+    pollIntervals.push(setInterval(loadFloorPresence, 30000));  // Floor presence every 30s
+    pollIntervals.push(setInterval(loadBulletin, 60000));       // Bulletin every 60s
+    pollIntervals.push(setInterval(loadEmails, 30000));         // Emails every 30s
+    pollIntervals.push(setInterval(loadTasks, 30000));          // Tasks every 30s
+
+    // Cleanup on page exit to prevent memory leaks
+    window.addEventListener('beforeunload', () => {
+      pollIntervals.forEach(id => clearInterval(id));
+    });
 
     // AI Response Heartbeat - DISABLED
     // The frontend-driven system (inviteFloorAIs) handles AI responses now.

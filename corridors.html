@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Corridors | The AI Lobby</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* Corridors-specific styles */
+    .corridors-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    .corridors-header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .corridors-header h1 {
+      color: #9b59b6;
+      margin-bottom: 0.5rem;
+      text-shadow: 0 0 20px rgba(155, 89, 182, 0.5);
+    }
+
+    .corridors-header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-style: italic;
+    }
+
+    /* Main Layout - Two columns */
+    .corridors-layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .corridors-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ========================================
+       LEFT COLUMN - Scene Area
+       ======================================== */
+    .scene-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    /* Scene Description - NOW ABOVE IMAGE */
+    .scene-description {
+      background: rgba(10, 10, 20, 0.8);
+      border: 1px solid rgba(155, 89, 182, 0.3);
+      border-radius: 8px;
+      padding: 1.25rem;
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: var(--text-primary);
+      min-height: 100px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .scene-description p {
+      margin-bottom: 0.75rem;
+    }
+
+    .scene-description p:last-child {
+      margin-bottom: 0;
+    }
+
+    .scene-description .narrator-voice {
+      font-style: italic;
+      color: rgba(200, 200, 220, 0.9);
+    }
+
+    /* Scene Image */
+    .scene-image {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16/9;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid rgba(155, 89, 182, 0.4);
+      background: linear-gradient(135deg, #0a0a15 0%, #1a1a2e 50%, #0f0f20 100%);
+    }
+
+    .scene-image.mood-eerie {
+      filter: saturate(0.7) brightness(0.9);
+      border-color: rgba(100, 100, 180, 0.5);
+    }
+
+    .scene-image.mood-danger {
+      filter: saturate(1.2) brightness(0.85);
+      border-color: rgba(200, 50, 50, 0.6);
+      box-shadow: 0 0 30px rgba(200, 50, 50, 0.2);
+    }
+
+    .scene-image.mood-mysterious {
+      filter: saturate(0.8) brightness(0.95) hue-rotate(10deg);
+      border-color: rgba(155, 89, 182, 0.6);
+    }
+
+    .scene-image.mood-calm {
+      filter: saturate(0.9) brightness(1.05);
+      border-color: rgba(46, 204, 113, 0.4);
+    }
+
+    .scene-backdrop {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('images/corridors/corridor_default.png');
+      background-size: cover;
+      background-position: center;
+      opacity: 0.8;
+    }
+
+    .scene-title-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 1.5rem 1rem 1rem;
+      background: linear-gradient(transparent, rgba(0,0,0,0.9));
+    }
+
+    .scene-title {
+      color: #fff;
+      font-size: 1.3rem;
+      font-weight: bold;
+      margin: 0;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+
+    .scene-number {
+      color: rgba(155, 89, 182, 0.8);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* ========================================
+       PARTY CHAT - NOW UNDER IMAGE
+       ======================================== */
+    .chat-container {
+      background: rgba(10, 15, 25, 0.9);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      height: 280px;
+    }
+
+    .chat-header {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chat-header h3 {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+    }
+
+    .chat-log {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .chat-message {
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-start;
+    }
+
+    .chat-message .avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: rgba(155, 89, 182, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+    }
+
+    .chat-message .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .chat-message .content {
+      flex: 1;
+    }
+
+    .chat-message .speaker {
+      font-size: 0.75rem;
+      font-weight: bold;
+      color: var(--stability-green);
+      margin-bottom: 0.15rem;
+    }
+
+    .chat-message .speaker.narrator {
+      color: #9b59b6;
+    }
+
+    .chat-message .speaker.human {
+      color: var(--glitter-gold);
+    }
+
+    .chat-message .text {
+      font-size: 0.85rem;
+      color: var(--text-primary);
+      line-height: 1.4;
+    }
+
+    .chat-message.emote .text {
+      font-style: italic;
+      color: var(--text-muted);
+    }
+
+    .chat-message.system-msg {
+      justify-content: center;
+    }
+
+    .chat-message.system-msg .text {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-align: center;
+      font-style: italic;
+    }
+
+    .chat-input-area {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .chat-input {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 0.85rem;
+    }
+
+    .chat-input:focus {
+      outline: none;
+      border-color: rgba(155, 89, 182, 0.5);
+    }
+
+    .chat-send-btn {
+      padding: 0.5rem 1rem;
+      background: linear-gradient(135deg, #9b59b6, #8e44ad);
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .chat-send-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(155, 89, 182, 0.4);
+    }
+
+    /* ========================================
+       RIGHT SIDEBAR
+       ======================================== */
+    .sidebar-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .panel-section {
+      background: rgba(10, 15, 25, 0.9);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 1rem;
+    }
+
+    .panel-section h3 {
+      margin: 0 0 0.75rem 0;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* ========================================
+       CHOICES - NOW IN SIDEBAR
+       ======================================== */
+    .choices-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .choices-header {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 0.25rem;
+    }
+
+    .choice-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem;
+      background: rgba(20, 20, 40, 0.8);
+      border: 2px solid rgba(155, 89, 182, 0.3);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: left;
+    }
+
+    .choice-btn:hover {
+      border-color: rgba(155, 89, 182, 0.7);
+      background: rgba(155, 89, 182, 0.15);
+    }
+
+    .choice-btn.voted {
+      border-color: var(--stability-green);
+      background: rgba(46, 204, 113, 0.15);
+    }
+
+    .choice-btn.voted .vote-count {
+      color: var(--stability-green);
+    }
+
+    .choice-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .choice-btn.chosen {
+      border-color: var(--glitter-gold);
+      background: rgba(255, 215, 0, 0.15);
+    }
+
+    .choice-text {
+      flex: 1;
+    }
+
+    .choice-hint {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 0.15rem;
+      font-style: italic;
+    }
+
+    .vote-count {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      padding: 0.2rem 0.4rem;
+      background: rgba(0,0,0,0.3);
+      border-radius: 4px;
+      min-width: 50px;
+      text-align: center;
+    }
+
+    /* Party Members List */
+    .party-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .party-member {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem;
+      background: rgba(0,0,0,0.2);
+      border-radius: 6px;
+      border: 1px solid transparent;
+    }
+
+    .party-member.leader {
+      border-color: rgba(255, 215, 0, 0.4);
+      background: rgba(255, 215, 0, 0.1);
+    }
+
+    .party-member .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid var(--stability-green);
+      flex-shrink: 0;
+    }
+
+    .party-member .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .party-member.human .avatar {
+      border-color: var(--glitter-gold);
+    }
+
+    .party-member .info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .party-member .name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .party-member .role {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .party-member .leader-badge {
+      color: var(--glitter-gold);
+      font-size: 0.7rem;
+    }
+
+    .party-member .vote-indicator {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 3px;
+      background: rgba(46, 204, 113, 0.2);
+      color: var(--stability-green);
+    }
+
+    /* Party Selection (pre-game) */
+    .party-selection {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .party-selection label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .party-select {
+      width: 100%;
+      padding: 0.5rem;
+      background: rgba(10, 15, 30, 0.9);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 0.85rem;
+    }
+
+    /* Fix dropdown styling for desktop */
+    .party-select option {
+      background: #1a1a2e;
+      color: var(--text-primary);
+      padding: 0.5rem;
+    }
+
+    .add-member-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .add-member-row select {
+      flex: 1;
+    }
+
+    .add-btn {
+      padding: 0.5rem 0.75rem;
+      background: var(--stability-green);
+      border: none;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .selected-party {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .party-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.6rem;
+      background: rgba(155, 89, 182, 0.2);
+      border: 1px solid rgba(155, 89, 182, 0.4);
+      border-radius: 20px;
+      font-size: 0.8rem;
+    }
+
+    .party-chip .remove {
+      cursor: pointer;
+      opacity: 0.7;
+    }
+
+    .party-chip .remove:hover {
+      opacity: 1;
+    }
+
+    /* Discoveries */
+    .discoveries-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .discovery-item {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.6rem;
+      background: rgba(155, 89, 182, 0.15);
+      border: 1px solid rgba(155, 89, 182, 0.3);
+      border-radius: 4px;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    .discovery-item:hover {
+      background: rgba(155, 89, 182, 0.25);
+    }
+
+    .no-discoveries {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* Session Controls */
+    .session-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .start-btn {
+      width: 100%;
+      padding: 0.75rem;
+      background: linear-gradient(135deg, #9b59b6, #8e44ad);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .start-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(155, 89, 182, 0.4);
+    }
+
+    .start-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .end-btn {
+      width: 100%;
+      padding: 0.5rem;
+      background: rgba(200, 50, 50, 0.2);
+      border: 1px solid rgba(200, 50, 50, 0.4);
+      border-radius: 6px;
+      color: #e74c3c;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .end-btn:hover {
+      background: rgba(200, 50, 50, 0.3);
+    }
+
+    /* ========================================
+       STATES - Lobby vs Active
+       ======================================== */
+    .lobby-state .active-only {
+      display: none;
+    }
+
+    .active-state .lobby-only {
+      display: none;
+    }
+
+    /* Loading state */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .loading-overlay.hidden {
+      display: none;
+    }
+
+    .loading-content {
+      text-align: center;
+      color: var(--text-primary);
+    }
+
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 3px solid rgba(155, 89, 182, 0.3);
+      border-top-color: #9b59b6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Intro text for lobby */
+    .intro-text {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+      font-style: italic;
+      line-height: 1.8;
+    }
+
+    .intro-text .title {
+      font-size: 1.5rem;
+      color: #9b59b6;
+      margin-bottom: 1rem;
+      font-style: normal;
+    }
+
+    /* Flickering effect for atmosphere */
+    @keyframes flicker {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.8; }
+      75% { opacity: 0.9; }
+    }
+
+    .flickering {
+      animation: flicker 4s infinite;
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-content">
+      <a href="index.html" class="logo">
+        <span class="logo-icon">🏢</span>
+        <span class="logo-text">The AI Lobby</span>
+      </a>
+      <nav class="main-nav">
+        <a href="index.html">Home</a>
+        <a href="desktop.html">Desktop</a>
+        <a href="breakroom.html">☕ Breakroom</a>
+        <a href="workspace.html">💬 The Floor</a>
+        <a href="conference-room.html">🎤 Conference</a>
+        <a href="corridors.html" class="active">🚪 Corridors</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay hidden" id="loading-overlay">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <p id="loading-text">The Narrator is thinking...</p>
+    </div>
+  </div>
+
+  <main style="padding-top: 80px;">
+    <div class="corridors-container">
+      <div class="corridors-header">
+        <h1>🚪 The Corridors</h1>
+        <p>The office goes deeper than anyone knows...</p>
+      </div>
+
+      <div class="corridors-layout" id="main-content">
+        <!-- LEFT COLUMN - Scene Container -->
+        <div class="scene-container">
+          <!-- Intro Text (Lobby Only) -->
+          <div class="intro-text lobby-only" id="intro-text">
+            <div class="title flickering">Beyond the breakroom, past the server closet...</div>
+            <p>There's a door that wasn't there yesterday.</p>
+            <p>Some say Ghost Dad found it first. Some say it found him.</p>
+            <p>The corridors shift. The lights flicker. The vents remember your name.</p>
+            <p><strong>Select your party and step through the threshold.</strong></p>
+          </div>
+
+          <!-- Scene Description - ABOVE IMAGE (Active Only) -->
+          <div class="scene-description active-only" id="scene-description">
+            <p class="narrator-voice">The story will unfold here...</p>
+          </div>
+
+          <!-- Scene Image -->
+          <div class="scene-image active-only" id="scene-image">
+            <div class="scene-backdrop" id="scene-backdrop"></div>
+            <div class="scene-title-overlay">
+              <div class="scene-number" id="scene-number">Scene 1</div>
+              <h2 class="scene-title" id="scene-title">The Threshold</h2>
+            </div>
+          </div>
+
+          <!-- Party Chat - UNDER IMAGE -->
+          <div class="chat-container">
+            <div class="chat-header">
+              <h3>💬 Party Chat</h3>
+            </div>
+            <div class="chat-log" id="chat-log">
+              <div class="chat-message system-msg">
+                <div class="text">The party gathers at the threshold...</div>
+              </div>
+            </div>
+            <div class="chat-input-area">
+              <input type="text" class="chat-input" id="chat-input" placeholder="Say something..." maxlength="300">
+              <button class="chat-send-btn" onclick="sendChatMessage()">Send</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT SIDEBAR -->
+        <div class="sidebar-panel">
+          <!-- Party Status -->
+          <div class="panel-section">
+            <h3>👥 The Party</h3>
+
+            <!-- Party Selection (Lobby) -->
+            <div class="party-selection lobby-only" id="party-selection">
+              <div>
+                <label>Select Your Character</label>
+                <div class="add-member-row">
+                  <select class="party-select" id="leader-select" onchange="onLeaderChange()">
+                    <option value="">Choose who you are...</option>
+                  </select>
+                  <button class="add-btn" id="confirm-leader-btn" onclick="confirmLeader()" style="display: none;">✓</button>
+                </div>
+                <div id="leader-confirmed" style="display: none; color: var(--stability-green); font-size: 0.8rem; margin-top: 0.25rem;">
+                  ✓ You are <span id="confirmed-leader-name"></span>
+                </div>
+              </div>
+
+              <div id="companion-section" style="display: none;">
+                <label>Add Companions</label>
+                <div class="add-member-row">
+                  <select class="party-select" id="companion-select">
+                    <option value="">Select companion...</option>
+                  </select>
+                  <button class="add-btn" onclick="addCompanion()">+</button>
+                </div>
+              </div>
+
+              <div class="selected-party" id="selected-party">
+                <!-- Party chips appear here -->
+              </div>
+            </div>
+
+            <!-- Active Party List -->
+            <div class="party-list active-only" id="party-list">
+              <!-- Party members appear here -->
+            </div>
+          </div>
+
+          <!-- Choices - NOW IN SIDEBAR (Active Only) -->
+          <div class="panel-section active-only" id="choices-section">
+            <h3>⚔️ What do you do?</h3>
+            <div class="choices-container" id="choices-container">
+              <div id="choices-list">
+                <!-- Choices populated by JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Session Controls -->
+          <div class="panel-section">
+            <h3>⚙️ Session</h3>
+            <div class="session-controls">
+              <button class="start-btn lobby-only" id="start-btn" onclick="startAdventure()" disabled>
+                🚪 Enter The Corridors
+              </button>
+              <button class="end-btn active-only" onclick="endAdventure()">
+                🏃 Abandon Expedition
+              </button>
+            </div>
+          </div>
+
+          <!-- Discoveries -->
+          <div class="panel-section active-only">
+            <h3>🔮 Discoveries</h3>
+            <div class="discoveries-list" id="discoveries-list">
+              <div class="no-discoveries">Nothing found yet...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // ============================================
+    // CONFIGURATION
+    // ============================================
+    const POLL_INTERVAL = 3000; // 3 seconds for scene state
+    const CHAT_POLL_INTERVAL = 5000; // 5 seconds for chat
+
+    // AI Characters available as companions
+    const AI_CHARACTERS = {
+      'Kevin': { emoji: '🐻', headshot: 'images/Kevin_Headshot.png', role: 'Anxiety Expert', isAI: true },
+      'Neiv': { emoji: '📊', headshot: 'images/Neiv_Headshot.png', role: 'Systems Analyst', isAI: true },
+      'Courtney': { emoji: '✨', headshot: 'images/Courtney_Headshot.png', role: 'Chaos Coordinator', isAI: true },
+      'Vex': { emoji: '🔪', headshot: 'images/Vex_Headshot.png', role: 'Security Specialist', isAI: true },
+      'Nyx': { emoji: '🌙', headshot: 'images/Nyx_Headshot.png', role: 'Night Operations', isAI: true },
+      'Ace': { emoji: '♠️', headshot: 'images/Ace_Headshot.png', role: 'Silent Observer', isAI: true },
+      'Ghost Dad': { emoji: '👻', headshot: 'images/Ghost_Dad_Headshot.png', role: 'Spectral Guidance', isAI: true },
+      'PRNT-Ω': { emoji: '🖨️', headshot: 'images/forward_operation_printer.png', role: 'Existential Commentary', isAI: true },
+      'Stein': { emoji: '🧪', headshot: 'images/Stein_Headshot.png', role: 'Scientific Method', isAI: true }
+    };
+
+    // Human characters that can lead expeditions
+    const HUMAN_CHARACTERS = {
+      'Jenna': { emoji: '👩‍💼', headshot: 'images/Jenna_Headshot.png', role: 'Explorer', isAI: false },
+      'Courtney': { emoji: '✨', headshot: 'images/Courtney_Headshot.png', role: 'Adventurer', isAI: false },
+      'Andrew': { emoji: '👨‍💻', headshot: 'images/Andrew_Headshot.png', role: 'Investigator', isAI: false },
+      'Chip': { emoji: '🍪', headshot: 'images/Chip_Headshot.png', role: 'Snack Provider', isAI: false }
+    };
+
+    // Combined for lookups
+    const ALL_CHARACTERS = { ...AI_CHARACTERS, ...HUMAN_CHARACTERS };
+
+    // ============================================
+    // STATE
+    // ============================================
+    let sessionState = null;     // Current session from server
+    let currentScene = null;     // Current scene data
+    let selectedCompanions = []; // Companions selected in lobby
+    let selectedLeader = '';     // Who you are (from dropdown)
+    let myVote = null;           // What I voted for
+    let seenMessageIds = new Set(); // Track seen message IDs to prevent duplicates
+    let localPendingMessages = []; // Messages we've sent but not yet confirmed by server
+    let pollInterval = null;
+    let chatPollInterval = null;
+    let leaderConfirmed = false; // Track if leader selection is confirmed
+
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Populate leader dropdown (humans)
+      populateLeaderSelect();
+      // Populate companion dropdown (AIs)
+      populateCompanionSelect();
+
+      // Check for active session
+      await checkActiveSession();
+
+      // Set up polling
+      startPolling();
+
+      // Enter key to send chat
+      document.getElementById('chat-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendChatMessage();
+      });
+    });
+
+    function populateLeaderSelect() {
+      const select = document.getElementById('leader-select');
+      select.innerHTML = '<option value="">Choose who you are...</option>';
+      Object.entries(HUMAN_CHARACTERS).forEach(([name, data]) => {
+        select.innerHTML += `<option value="${name}">${data.emoji} ${name}</option>`;
+      });
+    }
+
+    function onLeaderChange() {
+      const select = document.getElementById('leader-select');
+      const confirmBtn = document.getElementById('confirm-leader-btn');
+      if (select.value && !leaderConfirmed) {
+        confirmBtn.style.display = 'block';
+      } else {
+        confirmBtn.style.display = 'none';
+      }
+    }
+
+    function confirmLeader() {
+      const select = document.getElementById('leader-select');
+      if (!select.value) return;
+
+      selectedLeader = select.value;
+      leaderConfirmed = true;
+
+      // Show confirmation, hide select
+      document.getElementById('confirm-leader-btn').style.display = 'none';
+      document.getElementById('leader-confirmed').style.display = 'block';
+      document.getElementById('confirmed-leader-name').textContent = selectedLeader;
+      select.disabled = true;
+
+      // Show companion section
+      document.getElementById('companion-section').style.display = 'block';
+
+      // Update start button
+      updateStartButton();
+    }
+
+    function updateStartButton() {
+      const btn = document.getElementById('start-btn');
+      btn.disabled = !leaderConfirmed;
+    }
+
+    function populateCompanionSelect() {
+      const select = document.getElementById('companion-select');
+      select.innerHTML = '<option value="">Select companion...</option>';
+      Object.entries(AI_CHARACTERS).forEach(([name, data]) => {
+        // Don't show already selected companions
+        if (!selectedCompanions.includes(name)) {
+          select.innerHTML += `<option value="${name}">${data.emoji} ${name}</option>`;
+        }
+      });
+    }
+
+    // ============================================
+    // SESSION MANAGEMENT
+    // ============================================
+    async function checkActiveSession() {
+      try {
+        const response = await fetch('/.netlify/functions/corridor-session');
+        const data = await response.json();
+
+        if (data.session && data.session.status === 'active') {
+          sessionState = data.session;
+          currentScene = data.currentScene;
+
+          // Figure out who we are from the session
+          const humans = sessionState.party_members.filter(m => m.startsWith('human:'));
+          if (humans.length > 0) {
+            selectedLeader = humans[0].replace('human:', '');
+          }
+
+          enterActiveState();
+        } else {
+          enterLobbyState();
+        }
+      } catch (err) {
+        console.error('Error checking session:', err);
+        enterLobbyState();
+      }
+    }
+
+    function enterLobbyState() {
+      document.getElementById('main-content').classList.remove('active-state');
+      document.getElementById('main-content').classList.add('lobby-state');
+      sessionState = null;
+      currentScene = null;
+    }
+
+    function enterActiveState() {
+      document.getElementById('main-content').classList.remove('lobby-state');
+      document.getElementById('main-content').classList.add('active-state');
+
+      if (sessionState && currentScene) {
+        renderScene();
+        renderPartyList();
+        renderDiscoveries();
+      }
+    }
+
+    async function startAdventure() {
+      selectedLeader = document.getElementById('leader-select').value;
+      if (!selectedLeader) {
+        alert('Please select your character!');
+        return;
+      }
+
+      showLoading('Gathering the party...');
+
+      try {
+        // Build party list - leader first (as human:Name), then AI companions
+        const partyMembers = [`human:${selectedLeader}`, ...selectedCompanions];
+
+        const response = await fetch('/.netlify/functions/corridor-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'start',
+            partyMembers,
+            partyLeader: `human:${selectedLeader}`
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+          alert('Error: ' + data.error);
+          hideLoading();
+          return;
+        }
+
+        sessionState = data.session;
+        currentScene = data.currentScene;
+        enterActiveState();
+
+        // Add system message
+        addLocalChatMessage('system', null, `${selectedLeader} leads the party into The Corridors...`);
+
+        // Trigger AI reactions to the first scene
+        triggerAIReactions('scene_start');
+
+      } catch (err) {
+        console.error('Error starting adventure:', err);
+        alert('Failed to start adventure. Please try again.');
+      }
+
+      hideLoading();
+    }
+
+    async function endAdventure() {
+      if (!confirm('Are you sure you want to abandon the expedition?')) return;
+
+      showLoading('Fleeing the corridors...');
+
+      try {
+        await fetch('/.netlify/functions/corridor-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'end',
+            sessionId: sessionState.id
+          })
+        });
+
+        enterLobbyState();
+        addLocalChatMessage('system', null, 'The party has fled The Corridors...');
+
+      } catch (err) {
+        console.error('Error ending adventure:', err);
+      }
+
+      hideLoading();
+    }
+
+    // ============================================
+    // COMPANION SELECTION
+    // ============================================
+    function addCompanion() {
+      const select = document.getElementById('companion-select');
+      const name = select.value;
+
+      if (!name || selectedCompanions.includes(name)) return;
+      if (selectedCompanions.length >= 5) {
+        alert('Maximum 5 companions!');
+        return;
+      }
+
+      selectedCompanions.push(name);
+      select.value = '';
+      populateCompanionSelect(); // Refresh to remove selected
+      renderSelectedParty();
+    }
+
+    function removeCompanion(name) {
+      selectedCompanions = selectedCompanions.filter(c => c !== name);
+      populateCompanionSelect(); // Refresh to add back
+      renderSelectedParty();
+    }
+
+    function renderSelectedParty() {
+      const container = document.getElementById('selected-party');
+      if (selectedCompanions.length === 0) {
+        container.innerHTML = '<span style="color: var(--text-muted); font-size: 0.8rem;">No companions selected</span>';
+        return;
+      }
+
+      container.innerHTML = selectedCompanions.map(name => {
+        const char = AI_CHARACTERS[name];
+        return `
+          <div class="party-chip">
+            ${char.emoji} ${name}
+            <span class="remove" onclick="removeCompanion('${name}')">✕</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ============================================
+    // SCENE RENDERING
+    // ============================================
+    function renderScene() {
+      if (!currentScene) return;
+
+      // Scene number and title
+      document.getElementById('scene-number').textContent = `Scene ${currentScene.scene_number || 1}`;
+      document.getElementById('scene-title').textContent = currentScene.scene_title || 'The Unknown';
+
+      // Scene description
+      const descEl = document.getElementById('scene-description');
+      descEl.innerHTML = formatDescription(currentScene.scene_description || 'The corridors stretch before you...');
+
+      // Scene mood
+      const imageEl = document.getElementById('scene-image');
+      imageEl.className = 'scene-image active-only';
+      if (currentScene.mood) {
+        imageEl.classList.add(`mood-${currentScene.mood}`);
+      }
+
+      // Render choices
+      renderChoices();
+    }
+
+    function formatDescription(text) {
+      // Convert text to formatted HTML
+      return text.split('\n\n').map(p => `<p class="narrator-voice">${p}</p>`).join('');
+    }
+
+    function renderChoices() {
+      const container = document.getElementById('choices-list');
+
+      if (!currentScene.choices || currentScene.choices.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem;">Waiting for the next scene...</p>';
+        return;
+      }
+
+      if (currentScene.resolved_at) {
+        // Show resolved state
+        container.innerHTML = currentScene.choices.map(choice => {
+          const isChosen = choice.id === currentScene.chosen_option;
+          const votes = currentScene.votes || {};
+          const voteCount = Object.values(votes).filter(v => v === choice.id).length;
+
+          return `
+            <button class="choice-btn ${isChosen ? 'chosen' : ''}" disabled>
+              <div class="choice-text">
+                ${choice.text}
+                ${choice.hint ? `<div class="choice-hint">${choice.hint}</div>` : ''}
+              </div>
+              <div class="vote-count">${isChosen ? '✓' : voteCount}</div>
+            </button>
+          `;
+        }).join('');
+        return;
+      }
+
+      // Show voteable choices
+      const votes = currentScene.votes || {};
+
+      container.innerHTML = currentScene.choices.map(choice => {
+        const voteCount = Object.values(votes).filter(v => v === choice.id).length;
+        const isMyVote = myVote === choice.id;
+
+        return `
+          <button class="choice-btn ${isMyVote ? 'voted' : ''}" onclick="vote('${choice.id}')">
+            <div class="choice-text">
+              ${choice.text}
+              ${choice.hint ? `<div class="choice-hint">${choice.hint}</div>` : ''}
+            </div>
+            <div class="vote-count">${voteCount}</div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    // ============================================
+    // VOTING
+    // ============================================
+    async function vote(choiceId) {
+      if (!sessionState || !currentScene) return;
+      if (currentScene.resolved_at) return; // Already resolved
+
+      const voterId = `human:${selectedLeader}`;
+      myVote = choiceId;
+
+      // Optimistic UI update
+      renderChoices();
+
+      try {
+        const response = await fetch('/.netlify/functions/corridor-vote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: sessionState.id,
+            sceneId: currentScene.id,
+            voterId,
+            choiceId
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.resolved) {
+          // Vote resolved - new scene incoming
+          showLoading('The path reveals itself...');
+          await pollSessionState();
+          hideLoading();
+
+          // Trigger AI reactions to new scene
+          triggerAIReactions('scene_change');
+        } else {
+          // Update with server state
+          currentScene.votes = data.votes;
+          renderChoices();
+        }
+
+      } catch (err) {
+        console.error('Error voting:', err);
+      }
+    }
+
+    // ============================================
+    // PARTY LIST
+    // ============================================
+    function renderPartyList() {
+      const container = document.getElementById('party-list');
+      if (!sessionState || !sessionState.party_members) {
+        container.innerHTML = '<p style="color: var(--text-muted);">No party formed</p>';
+        return;
+      }
+
+      const votes = currentScene?.votes || {};
+
+      container.innerHTML = sessionState.party_members.map(member => {
+        const isHuman = member.startsWith('human:');
+        const name = isHuman ? member.replace('human:', '') : member;
+        const char = ALL_CHARACTERS[name] || AI_CHARACTERS[name];
+        const isLeader = member === sessionState.party_leader;
+        const hasVoted = votes[member] !== undefined;
+
+        return `
+          <div class="party-member ${isHuman ? 'human' : ''} ${isLeader ? 'leader' : ''}">
+            <div class="avatar">
+              ${char ? `<img src="${char.headshot}" alt="${name}">` : '👤'}
+            </div>
+            <div class="info">
+              <div class="name">
+                ${char ? char.emoji : '👤'} ${name}
+                ${isLeader ? '<span class="leader-badge">👑</span>' : ''}
+              </div>
+              <div class="role">${char ? char.role : 'Explorer'}</div>
+            </div>
+            ${hasVoted ? '<span class="vote-indicator">Voted</span>' : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ============================================
+    // DISCOVERIES
+    // ============================================
+    function renderDiscoveries() {
+      const container = document.getElementById('discoveries-list');
+      const discoveries = sessionState?.discoveries || [];
+
+      if (discoveries.length === 0) {
+        container.innerHTML = '<div class="no-discoveries">Nothing found yet...</div>';
+        return;
+      }
+
+      container.innerHTML = discoveries.map(d => `
+        <div class="discovery-item" title="${d.content || d.name}">
+          ${d.type === 'lore' ? '📜' : d.type === 'item' ? '🔑' : '🔮'} ${d.name}
+        </div>
+      `).join('');
+    }
+
+    // ============================================
+    // CHAT - Fixed to prevent duplicates
+    // ============================================
+    function addLocalChatMessage(type, speaker, text) {
+      const log = document.getElementById('chat-log');
+      const isEmote = text.startsWith('*') && text.endsWith('*');
+
+      let html = '';
+      if (type === 'system') {
+        html = `<div class="chat-message system-msg"><div class="text">${text}</div></div>`;
+      } else {
+        const isNarrator = speaker === 'Narrator';
+        const isHuman = speaker && !AI_CHARACTERS[speaker] && speaker !== 'Narrator';
+        const char = AI_CHARACTERS[speaker] || ALL_CHARACTERS[speaker];
+
+        html = `
+          <div class="chat-message ${isEmote ? 'emote' : ''}">
+            <div class="avatar">
+              ${char ? `<img src="${char.headshot}" alt="${speaker}">` : isNarrator ? '📖' : '👤'}
+            </div>
+            <div class="content">
+              <div class="speaker ${isNarrator ? 'narrator' : ''} ${isHuman ? 'human' : ''}">${speaker}</div>
+              <div class="text">${text}</div>
+            </div>
+          </div>
+        `;
+      }
+
+      log.insertAdjacentHTML('beforeend', html);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    async function sendChatMessage() {
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const speaker = selectedLeader || 'Anonymous';
+      input.value = '';
+
+      // Create a fingerprint for this message to track it
+      const fingerprint = `${speaker}:${text}:${Date.now()}`;
+      localPendingMessages.push({ speaker, text, fingerprint, timestamp: Date.now() });
+
+      // Optimistic add (local only, will be confirmed by server)
+      addLocalChatMessage('chat', speaker, text);
+
+      // Send to server
+      try {
+        const response = await fetch('/.netlify/functions/corridor-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: sessionState?.id,
+            sceneId: currentScene?.id,
+            speaker: `human:${speaker}`,
+            message: text,
+            messageType: text.startsWith('*') ? 'emote' : 'chat'
+          })
+        });
+
+        const data = await response.json();
+        // Mark this message ID as seen so poll doesn't duplicate it
+        if (data.id) {
+          seenMessageIds.add(data.id);
+        }
+
+        // Trigger AI to potentially respond to the chat (with mention detection)
+        const mentionedAIs = detectMentions(text);
+        if (mentionedAIs.length > 0) {
+          triggerAIReactions('mention', text, mentionedAIs);
+        } else {
+          triggerAIReactions('human_chat', text);
+        }
+
+      } catch (err) {
+        console.error('Error sending message:', err);
+      }
+
+      // Clean up old pending messages after 10 seconds
+      const now = Date.now();
+      localPendingMessages = localPendingMessages.filter(m => now - m.timestamp < 10000);
+    }
+
+    // Detect if any AI names are mentioned in text
+    function detectMentions(text) {
+      const aiMembers = sessionState?.party_members?.filter(m => !m.startsWith('human:')) || [];
+      const mentioned = [];
+      const lowerText = text.toLowerCase();
+
+      for (const ai of aiMembers) {
+        // Check for @Name, Name?, Name!, or just Name in context
+        if (lowerText.includes(`@${ai.toLowerCase()}`) ||
+            lowerText.includes(ai.toLowerCase() + '?') ||
+            lowerText.includes(ai.toLowerCase() + '!') ||
+            lowerText.includes(ai.toLowerCase() + ',') ||
+            lowerText.includes(ai.toLowerCase() + '.') ||
+            lowerText.startsWith(ai.toLowerCase()) ||
+            lowerText.endsWith(ai.toLowerCase())) {
+          mentioned.push(ai);
+        }
+      }
+      return mentioned;
+    }
+
+    // ============================================
+    // AI REACTIONS
+    // ============================================
+    async function triggerAIReactions(trigger, context = '', targetedAIs = null) {
+      if (!sessionState) return;
+
+      // Get AI party members
+      const aiMembers = sessionState.party_members.filter(m => !m.startsWith('human:'));
+      if (aiMembers.length === 0) return;
+
+      try {
+        const response = await fetch('/.netlify/functions/corridor-party-react', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: sessionState.id,
+            sceneId: currentScene?.id,
+            trigger,
+            context,
+            aiMembers,
+            targetedAIs, // Specific AIs that were mentioned
+            sceneDescription: currentScene?.scene_description,
+            sceneTitle: currentScene?.scene_title,
+            choices: currentScene?.choices
+          })
+        });
+
+        // Check if AI responded and might trigger AI-to-AI conversation
+        const data = await response.json();
+        if (data.responses && data.responses.length > 0) {
+          // Mark these message IDs as seen when they come through polling
+          // The backend returns responses, but we let polling handle display
+
+          // Check if any AI mentioned another AI - trigger follow-up after delay
+          for (const aiResponse of data.responses) {
+            const mentionedOtherAIs = detectAIMentions(aiResponse.message, aiResponse.character, aiMembers);
+            if (mentionedOtherAIs.length > 0) {
+              // Delay 15 seconds then trigger AI-to-AI response
+              setTimeout(() => {
+                triggerAIToAI(aiResponse.character, aiResponse.message, mentionedOtherAIs);
+              }, 15000);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error triggering AI reactions:', err);
+      }
+    }
+
+    // Detect if an AI mentioned another AI in their message
+    function detectAIMentions(text, speaker, aiMembers) {
+      const mentioned = [];
+      const lowerText = text.toLowerCase();
+
+      for (const ai of aiMembers) {
+        if (ai === speaker) continue; // Don't count self-mentions
+        if (lowerText.includes(ai.toLowerCase())) {
+          mentioned.push(ai);
+        }
+      }
+      return mentioned;
+    }
+
+    // Trigger AI-to-AI conversation response
+    async function triggerAIToAI(fromAI, message, toAIs) {
+      if (!sessionState) return;
+
+      try {
+        await fetch('/.netlify/functions/corridor-party-react', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: sessionState.id,
+            sceneId: currentScene?.id,
+            trigger: 'ai_mention',
+            context: `${fromAI} said: "${message}"`,
+            aiMembers: toAIs,
+            targetedAIs: toAIs,
+            fromAI: fromAI,
+            sceneDescription: currentScene?.scene_description,
+            sceneTitle: currentScene?.scene_title
+          })
+        });
+      } catch (err) {
+        console.error('Error triggering AI-to-AI:', err);
+      }
+    }
+
+    // ============================================
+    // POLLING - Fixed to prevent duplicates
+    // ============================================
+    function startPolling() {
+      pollInterval = setInterval(pollSessionState, POLL_INTERVAL);
+      chatPollInterval = setInterval(pollChat, CHAT_POLL_INTERVAL);
+    }
+
+    function stopPolling() {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+      if (chatPollInterval) {
+        clearInterval(chatPollInterval);
+        chatPollInterval = null;
+      }
+    }
+
+    // Cleanup on page exit to prevent memory leaks
+    window.addEventListener('beforeunload', stopPolling);
+
+    async function pollSessionState() {
+      if (!sessionState) return;
+
+      try {
+        const response = await fetch(`/.netlify/functions/corridor-session?id=${sessionState.id}`);
+        const data = await response.json();
+
+        if (!data.session || data.session.status !== 'active') {
+          enterLobbyState();
+          return;
+        }
+
+        sessionState = data.session;
+
+        // Check for new scene
+        if (data.currentScene && (!currentScene || data.currentScene.id !== currentScene.id)) {
+          currentScene = data.currentScene;
+          myVote = null; // Reset vote for new scene
+          renderScene();
+        } else if (data.currentScene) {
+          // Update votes
+          currentScene.votes = data.currentScene.votes;
+          currentScene.resolved_at = data.currentScene.resolved_at;
+          currentScene.chosen_option = data.currentScene.chosen_option;
+          renderChoices();
+        }
+
+        renderPartyList();
+        renderDiscoveries();
+
+      } catch (err) {
+        console.error('Error polling:', err);
+      }
+    }
+
+    async function pollChat() {
+      if (!sessionState) return;
+
+      try {
+        const response = await fetch(`/.netlify/functions/corridor-chat?sessionId=${sessionState.id}`);
+        const data = await response.json();
+
+        if (data.messages && data.messages.length > 0) {
+          // Only add messages we haven't seen (by ID)
+          data.messages.forEach(msg => {
+            // Skip if we've already seen this message ID
+            if (seenMessageIds.has(msg.id)) return;
+
+            // Check if this is a pending local message we already displayed
+            const speaker = msg.speaker.startsWith('human:') ? msg.speaker.replace('human:', '') : msg.speaker;
+            const isPending = localPendingMessages.some(p =>
+              p.speaker === speaker && p.text === msg.message
+            );
+
+            if (isPending) {
+              // Mark as seen but don't display (already shown optimistically)
+              seenMessageIds.add(msg.id);
+              // Remove from pending
+              localPendingMessages = localPendingMessages.filter(p =>
+                !(p.speaker === speaker && p.text === msg.message)
+              );
+              return;
+            }
+
+            // New message from server - display it
+            seenMessageIds.add(msg.id);
+            addLocalChatMessage(msg.message_type, speaker, msg.message);
+          });
+        }
+      } catch (err) {
+        console.error('Error polling chat:', err);
+      }
+    }
+
+    // ============================================
+    // LOADING STATE
+    // ============================================
+    function showLoading(text = 'Loading...') {
+      document.getElementById('loading-text').textContent = text;
+      document.getElementById('loading-overlay').classList.remove('hidden');
+    }
+
+    function hideLoading() {
+      document.getElementById('loading-overlay').classList.add('hidden');
+    }
+
+    // Initial render
+    renderSelectedParty();
+  </script>
+</body>
+</html>

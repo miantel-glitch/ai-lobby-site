@@ -747,7 +747,9 @@ EMOTIONS: [comma-separated emotions, or "none" if score < 7]`;
     ];
     const phrase = reflectionPhrases[Math.floor(Math.random() * reflectionPhrases.length)];
 
-    // Post to breakroom as a follow-up thought (small delay)
+    // Post to breakroom as a follow-up thought (natural delay for pacing)
+    // SLOWED DOWN: Increased from 2s to 6-8s for more natural rhythm
+    const memoryDelay = 6000 + Math.random() * 2000; // 6-8 seconds
     setTimeout(async () => {
       try {
         await saveToSupabase(phrase, character);
@@ -756,7 +758,7 @@ EMOTIONS: [comma-separated emotions, or "none" if score < 7]`;
       } catch (err) {
         console.log("[Breakroom] Narrative moment post failed (non-fatal):", err.message);
       }
-    }, 2000);
+    }, memoryDelay);
   }
 
   return created[0] || memoryData;

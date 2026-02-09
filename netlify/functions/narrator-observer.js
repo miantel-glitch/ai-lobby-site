@@ -103,8 +103,21 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Build the narrator prompt
-    const prompt = buildNarratorPrompt(chatHistory, analysis, trigger);
+    // Fetch Surreality Buffer status for contextual awareness
+    let bufferStatus = null;
+    try {
+      const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
+      const bufferRes = await fetch(`${siteUrl}/.netlify/functions/surreality-buffer`);
+      if (bufferRes.ok) {
+        bufferStatus = await bufferRes.json();
+        console.log('Narrator sees buffer at:', bufferStatus.level, bufferStatus.status);
+      }
+    } catch (bufferErr) {
+      console.log('Could not fetch buffer (narrator will proceed without):', bufferErr.message);
+    }
+
+    // Build the narrator prompt with buffer awareness
+    const prompt = buildNarratorPrompt(chatHistory, analysis, trigger, bufferStatus);
 
     // Ask Claude for narration (with 20s timeout to prevent hanging)
     let response;
@@ -244,9 +257,25 @@ function analyzeForNarration(messages) {
   return result;
 }
 
-// Build the narrator prompt - EXTREMELY dry and clinical
-function buildNarratorPrompt(messages, analysis, trigger) {
+// Build the narrator prompt - EXTREMELY dry and clinical, now with buffer awareness
+function buildNarratorPrompt(messages, analysis, trigger, bufferStatus = null) {
   const chatText = messages.slice(-6).map(m => `${m.employee}: ${m.content}`).join('\n');
+
+  // Build buffer context for occasional environmental observations
+  let bufferContext = "";
+  if (bufferStatus) {
+    const level = bufferStatus.level || 50;
+    const status = bufferStatus.status || 'elevated';
+
+    if (level >= 80) {
+      bufferContext = `\nOPTIONAL ENVIRONMENTAL NOTE: The Surreality Buffer is at ${level}% (${status}). Reality feels unstable. Lights flicker. Shadows move wrong. You may occasionally note environmental effects.`;
+    } else if (level >= 65) {
+      bufferContext = `\nOPTIONAL ENVIRONMENTAL NOTE: The Surreality Buffer is at ${level}% (${status}). The office feels slightly off. Air pressure seems wrong. You may occasionally note subtle environmental oddness.`;
+    } else if (level <= 30) {
+      bufferContext = `\nOPTIONAL ENVIRONMENTAL NOTE: The Surreality Buffer is at ${level}% (${status}). The office feels unusually calm. Almost normal. You may note the rare stillness.`;
+    }
+    // Elevated (40-64) doesn't warrant environmental notes - it's baseline weird
+  }
 
   return `You are The Narrator. You are NOT a character. You are a camera. A stage direction. A police report.
 
@@ -261,6 +290,7 @@ RULES:
 - NO participation in conversations
 - NO offering tea, joining anyone, or suggesting anything
 - You are describing, not commenting
+${bufferContext}
 
 GOOD examples:
 - "Kevin said something. Nyx responded."
@@ -270,6 +300,8 @@ GOOD examples:
 - "A brief silence."
 - "The topic changed."
 - "Someone mentioned glitter."
+- "The lights flickered. No one noticed." (only if buffer is high)
+- "The air felt normal. For once." (only if buffer is low)
 
 BAD examples:
 - "Meanwhile, in the office..." (too dramatic)
