@@ -1,6 +1,8 @@
 // AI Lobby Internal Email/Memo System
 // Public emails for lore building - everyone can see!
 
+const { createEmailMemory } = require('./shared/email-memory');
+
 exports.handler = async (event, context) => {
   const headers = {
     "Access-Control-Allow-Origin": "*",
@@ -201,8 +203,8 @@ exports.handler = async (event, context) => {
       // Employee flair for Discord
       const employeeFlair = {
         "Kevin": { emoji: "✨", color: 16766720 },
-        "Courtney": { emoji: "👁️", color: 3447003 },
-        "Jenna": { emoji: "📖", color: 10181046 },
+        "Asuna": { emoji: "👁️", color: 3447003 },
+        "Vale": { emoji: "📖", color: 10181046 },
         "Neiv": { emoji: "📊", color: 15844367 },
         "Ace": { emoji: "🔒", color: 2067276 },
         "Vex": { emoji: "⚙️", color: 9807270 },
@@ -215,8 +217,8 @@ exports.handler = async (event, context) => {
 
       const headshots = {
         "Kevin": "https://ai-lobby.netlify.app/images/Kevin_Headshot.png",
-        "Courtney": "https://ai-lobby.netlify.app/images/Courtney_Headshot.png",
-        "Jenna": "https://ai-lobby.netlify.app/images/Jenna_Headshot.png",
+        "Asuna": "https://ai-lobby.netlify.app/images/Asuna_Headshot.png",
+        "Vale": "https://ai-lobby.netlify.app/images/Vale_Headshot.png",
         "Neiv": "https://ai-lobby.netlify.app/images/Neiv_Headshot.png",
         "Ace": "https://ai-lobby.netlify.app/images/Ace_Headshot.png",
         "Vex": "https://ai-lobby.netlify.app/images/Vex_Headshot.png",
@@ -260,6 +262,13 @@ exports.handler = async (event, context) => {
           })
         });
       }
+
+      // Fire-and-forget: Create memories for AI recipients
+      createEmailMemory(
+        { from_employee, to_employee, subject: sanitizedSubject, body: sanitizedBody },
+        supabaseUrl,
+        supabaseKey
+      ).catch(err => console.log('[email] Memory creation failed (non-fatal):', err.message));
 
       return {
         statusCode: 200,
