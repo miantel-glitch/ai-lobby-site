@@ -1491,7 +1491,7 @@ async function getRecentEmails(characterName, supabaseUrl, supabaseKey) {
     // Fetch emails TO this character or TO "All Staff" in the last 48 hours
     // Using OR filter: to_employee matches character name or "All Staff"
     const response = await fetch(
-      `${supabaseUrl}/rest/v1/emails?or=(to_employee.eq.${encodeURIComponent(characterName)},to_employee.eq.All Staff)&created_at=gte.${fortyEightHoursAgo}&order=created_at.desc&limit=5&select=from_employee,to_employee,subject,body,created_at`,
+      `${supabaseUrl}/rest/v1/emails?or=(to_employee.eq.${encodeURIComponent(characterName)},to_employee.eq.${encodeURIComponent('All Staff')})&created_at=gte.${fortyEightHoursAgo}&order=created_at.desc&limit=5&select=from_employee,to_employee,subject,body,created_at`,
       {
         headers: {
           "apikey": supabaseKey,
