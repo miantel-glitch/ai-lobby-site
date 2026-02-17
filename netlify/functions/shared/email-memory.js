@@ -9,11 +9,12 @@ async function createEmailMemory(emailData, supabaseUrl, supabaseKey) {
   const { from_employee, to_employee, subject, body } = emailData;
 
   // Determine which AI characters should receive this memory
-  const aiNames = getAICharacterNames();
+  // Raquel Voss is excluded — she only has access to floor chat, not email context
+  const aiNames = getAICharacterNames().filter(name => name !== 'Raquel Voss');
   const recipients = [];
 
   if (to_employee === 'All Staff') {
-    // All AI characters get the memory
+    // All AI characters get the memory (except Raquel)
     recipients.push(...aiNames);
   } else if (aiNames.includes(to_employee)) {
     // Direct recipient is an AI

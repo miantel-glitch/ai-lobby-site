@@ -1484,7 +1484,11 @@ async function getRecentBreakroomMessages(characterName, supabaseUrl, supabaseKe
 
 // Fetch recent emails/memos for this character (last 48 hours, max 5)
 // Returns emails where this character is the recipient OR sent to "All Staff"
+// Raquel Voss is excluded — she only has access to floor chat for context
 async function getRecentEmails(characterName, supabaseUrl, supabaseKey) {
+  // Raquel doesn't get email awareness — she monitors the floor, not inboxes
+  if (characterName === 'Raquel Voss') return [];
+
   try {
     const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
 
