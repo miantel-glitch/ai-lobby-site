@@ -687,8 +687,8 @@ async function triggerMentionedAIs(raquelMessage, speaker, supabaseUrl, supabase
   };
 
   // Route to the correct provider
-  const openrouterChars = ["Kevin", "Rowena", "Sebastian", "Declan", "Mack", "The Subtitle"];
-  const perplexityChars = ["Neiv"];
+  const openrouterChars = ["Kevin", "Rowena", "Sebastian", "Declan", "Mack", "Neiv", "The Subtitle"];
+  const perplexityChars = [];
   const geminiChars = [];
 
   let endpoint;

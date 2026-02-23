@@ -930,9 +930,9 @@ exports.handler = async (event, context) => {
     const chatHistoryWithPresence = floorPresenceHeader + '\n\n' + messages.map(m => `${m.employee}: ${m.content}`).join('\n');
 
     // Route to the correct provider for authentic character voices
-    const openrouterChars = ["Kevin", "Rowena", "Sebastian", "Declan", "Mack", "The Subtitle"];
+    const openrouterChars = ["Kevin", "Rowena", "Sebastian", "Declan", "Mack", "Neiv", "The Subtitle"];
     const grokChars = ["Jae", "Steele"];
-    const perplexityChars = ["Neiv"];
+    const perplexityChars = [];
     const geminiChars = [];
 
     // For sparks and chains, force response (don't let AI decide to stay silent)

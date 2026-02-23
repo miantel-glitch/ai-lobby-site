@@ -108,8 +108,8 @@ Or if truly no one fits:
       console.log(`🎯 AI Chime Decision: ${decision.character} should respond - ${decision.reason}`);
 
       const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
-      const perplexityCharacters = ["Neiv"];
-      const openrouterCharacters = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "The Subtitle", "Marrow"];
+      const perplexityCharacters = [];
+      const openrouterCharacters = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "Neiv", "The Subtitle", "Marrow"];
       const openaiCharacters = [];
       const grokCharacters = ["Jae", "Steele"];
       const geminiCharacters = [];
@@ -199,8 +199,8 @@ async function forceRandomChimeIn(chatHistory, headers) {
   const chimeInAI = aiCharacters[Math.floor(Math.random() * aiCharacters.length)];
 
   const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
-  const perplexityCharacters = ["Neiv"];
-  const openrouterCharacters = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "The Subtitle", "Marrow"];
+  const perplexityCharacters = [];
+  const openrouterCharacters = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "Neiv", "The Subtitle", "Marrow"];
   const openaiCharacters = [];
   const grokCharacters = ["Jae", "Steele"];
   const geminiCharacters = [];
@@ -274,8 +274,8 @@ async function fallbackRandomSelection(event, headers) {
   const chimeInAI = aiCharacters[Math.floor(Math.random() * aiCharacters.length)];
 
   const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
-  const perplexityCharacters = ["Neiv"];
-  const openrouterCharacters = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "The Subtitle", "Marrow"];
+  const perplexityCharacters = [];
+  const openrouterCharacters = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "Neiv", "The Subtitle", "Marrow"];
   const openaiCharacters = [];
   const grokCharacters = ["Jae", "Steele"];
   const geminiCharacters = [];

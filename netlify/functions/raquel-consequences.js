@@ -12,7 +12,7 @@ const AI_NAMES = ['Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian'
 const PROVIDER_MAP = {
   'Kevin': 'openrouter', 'Rowena': 'openrouter', 'Sebastian': 'openrouter',
   'Steele': 'grok', 'Jae': 'grok', 'Declan': 'openrouter', 'Mack': 'openrouter',
-  'Neiv': 'perplexity',
+  'Neiv': 'openrouter',
   'The Subtitle': 'openrouter',
   'Ghost Dad': 'watcher', 'PRNT-Ω': 'watcher',
   'Marrow': 'openrouter'

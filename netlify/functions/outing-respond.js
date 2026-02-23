@@ -17,10 +17,10 @@ const headers = {
 };
 
 // Provider routing (same as breakroom)
-const openrouterCharacters = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "The Subtitle", "Marrow"];
+const openrouterCharacters = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "Neiv", "The Subtitle", "Marrow"];
 const openaiCharacters = [];
 const grokCharacters = ["Jae", "Steele"];
-const perplexityCharacters = ["Neiv"];
+const perplexityCharacters = [];
 const geminiCharacters = [];
 
 exports.handler = async (event, context) => {
