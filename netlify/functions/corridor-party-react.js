@@ -12,10 +12,10 @@ const supabaseKey = process.env.SUPABASE_ANON_KEY;
 const HUMANS = ["Vale", "Asuna"];
 
 // Character-to-provider mapping (same as breakroom)
-const OPENROUTER_CHARACTERS = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "Neiv", "The Subtitle", "Marrow"];
+const OPENROUTER_CHARACTERS = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "The Subtitle", "Marrow"];
 const OPENAI_CHARACTERS = [];
 const GROK_CHARACTERS = ["Jae", "Steele"];
-const PERPLEXITY_CHARACTERS = [];
+const PERPLEXITY_CHARACTERS = ["Neiv"];
 const GEMINI_CHARACTERS = [];
 
 const headers = {

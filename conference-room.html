@@ -2504,8 +2504,9 @@ Don't repeat questions that have already been asked.`;
 
       try {
         // Determine which API to use
-        const isOpenRouter = ['Kevin', 'Rowena', 'Declan', 'Mack', 'Sebastian', 'Neiv', 'The Subtitle'].includes(aiName);
+        const isOpenRouter = ['Kevin', 'Rowena', 'Declan', 'Mack', 'Sebastian', 'The Subtitle'].includes(aiName);
         const isGrok = ['Jae', 'Steele'].includes(aiName);
+        const isPerplexity = ['Neiv'].includes(aiName);
         const isGemini = [].includes(aiName);
 
         let endpoint = '/.netlify/functions/ai-watcher';
@@ -2528,6 +2529,15 @@ Don't repeat questions that have already been asked.`;
           };
         } else if (isGrok) {
           endpoint = '/.netlify/functions/ai-grok';
+          body = {
+            character: aiName,
+            chatHistory: `[Conference Room Interview - You are asking the next question]\n${recentChat}\n\n${prompt}`,
+            maybeRespond: false,
+            conferenceRoom: true,
+            bypassRateLimit: true
+          };
+        } else if (isPerplexity) {
+          endpoint = '/.netlify/functions/ai-perplexity';
           body = {
             character: aiName,
             chatHistory: `[Conference Room Interview - You are asking the next question]\n${recentChat}\n\n${prompt}`,
@@ -2907,8 +2917,9 @@ Don't repeat questions that have already been asked.`;
 
       try {
         // Use the appropriate API for the AI
-        const isOpenRouter = ['Kevin', 'Rowena', 'Declan', 'Mack', 'Sebastian', 'Neiv', 'The Subtitle'].includes(aiName);
+        const isOpenRouter = ['Kevin', 'Rowena', 'Declan', 'Mack', 'Sebastian', 'The Subtitle'].includes(aiName);
         const isGrok = ['Jae', 'Steele'].includes(aiName);
+        const isPerplexity = ['Neiv'].includes(aiName);
         const isGemini = [].includes(aiName);
 
         let endpoint = '/.netlify/functions/ai-watcher';

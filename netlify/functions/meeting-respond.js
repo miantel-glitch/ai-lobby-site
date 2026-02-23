@@ -407,10 +407,10 @@ Respond ONLY with this JSON:
 
 // === RESPONSE GENERATION: Route to correct provider ===
 async function generateResponse(character, topic, chatHistory, previousSpeaker, previousMessage, loreContext, memoryContext, isArrival) {
-  const openrouterCharacters = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "Neiv", "The Subtitle", "Marrow"];
+  const openrouterCharacters = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "The Subtitle", "Marrow"];
   const openaiCharacters = [];
   const grokCharacters = ["Jae", "Steele"];
-  const perplexityCharacters = [];
+  const perplexityCharacters = ["Neiv"];
   const geminiCharacters = [];
 
   if (grokCharacters.includes(character)) {

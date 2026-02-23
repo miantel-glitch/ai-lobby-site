@@ -239,10 +239,10 @@ exports.handler = async (event, context) => {
     });
 
     // Route to the correct provider
-    const openrouterCharacters = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "Neiv", "The Subtitle", "Marrow"];
+    const openrouterCharacters = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "The Subtitle", "Marrow"];
     const openaiCharacters = [];
     const grokCharacters = ["Jae", "Steele"];
-    const perplexityCharacters = [];
+    const perplexityCharacters = ["Neiv"];
     const geminiCharacters = [];
 
     let response;

@@ -93,11 +93,11 @@ exports.handler = async (event, context) => {
 
     // Check which API to use based on character
     // This creates the beautiful cross-provider conversation:
-    // Kevin (OpenRouter) <-> Neiv (OpenRouter) <-> Others (Claude)
-    const openrouterCharacters = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "Neiv", "The Subtitle", "Marrow"];
+    // Kevin (OpenRouter) <-> Neiv (Perplexity) <-> Others (Claude)
+    const openrouterCharacters = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "The Subtitle", "Marrow"];
     const openaiCharacters = [];
     const grokCharacters = ["Jae", "Steele"];
-    const perplexityCharacters = [];
+    const perplexityCharacters = ["Neiv"];
     const geminiCharacters = [];
 
     let response;

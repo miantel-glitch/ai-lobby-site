@@ -240,10 +240,10 @@ exports.handler = async (event, context) => {
     console.log(`[Auto-Poke] Mode: ${pickedMode.mode}, target: ${curiosityContext.target || 'none'}`);
 
     // === ROUTE TO CORRECT PROVIDER ===
-    const openrouterChars = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "Neiv", "The Subtitle", "Marrow"];
+    const openrouterChars = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "The Subtitle", "Marrow"];
     const openaiChars = [];
     const grokChars = ["Jae", "Steele"];
-    const perplexityChars = [];
+    const perplexityChars = ["Neiv"];
     const geminiChars = [];
 
     let providerUrl;

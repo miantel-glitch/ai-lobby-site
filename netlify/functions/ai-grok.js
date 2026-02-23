@@ -687,12 +687,15 @@ async function triggerMentionedAIs(raquelMessage, speaker, supabaseUrl, supabase
   };
 
   // Route to the correct provider
-  const openrouterChars = ["Kevin", "Rowena", "Sebastian", "Declan", "Mack", "Neiv", "The Subtitle"];
+  const openrouterChars = ["Kevin", "Rowena", "Sebastian", "Declan", "Mack", "The Subtitle"];
+  const perplexityChars = ["Neiv"];
   const geminiChars = [];
 
   let endpoint;
   if (openrouterChars.includes(target)) {
     endpoint = `${siteUrl}/.netlify/functions/ai-openrouter`;
+  } else if (perplexityChars.includes(target)) {
+    endpoint = `${siteUrl}/.netlify/functions/ai-perplexity`;
   } else if (geminiChars.includes(target)) {
     endpoint = `${siteUrl}/.netlify/functions/ai-gemini`;
   } else {

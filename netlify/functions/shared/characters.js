@@ -9,9 +9,9 @@
 //
 // Provider Options:
 //   - "anthropic"  - Claude (default for most characters)
+//   - "perplexity" - Perplexity Sonar (Neiv)
 //   - "openrouter" - Llama via OpenRouter (Kevin, Marrow)
 //   - "openai"     - GPT-4o-mini (Rowena, Sebastian, Steele, Declan, Mack)
-//   - "perplexity" - Perplexity Sonar (Neiv)
 //   - "grok"       - Grok (Jae, Raquel Voss)
 //   - "gemini"     - Gemini 2.0 Flash (The Subtitle, Stein)
 //
@@ -98,8 +98,8 @@ RESPONSE STYLE: React to what's happening rather than suggesting new activities.
     color: 0x4A90D9,
     colorHex: "#4A90D9",
     headshot: "images/Neiv_Headshot.png",
-    provider: "openrouter",
-    model: "meta-llama/llama-3.1-70b-instruct",
+    provider: "perplexity",
+    model: "sonar",
     role: "Systems Guardian",
     department: "Operations & Analytics",
     surealityRole: "stabilizer",

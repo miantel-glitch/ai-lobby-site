@@ -731,7 +731,7 @@ async function generateLineGemini(prompt) {
   return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
 }
 
-// OpenRouter - Kevin, Rowena, Declan, Mack, Sebastian, Neiv
+// OpenRouter - Kevin, Rowena, Declan, Mack, Sebastian
 async function generateLineOpenRouter(prompt, model) {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error("No OpenRouter API key");
