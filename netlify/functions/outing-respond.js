@@ -3,7 +3,7 @@
 // Records speaking, saves messages, evaluates memories
 
 const Anthropic = require('@anthropic-ai/sdk').default;
-const { CHARACTERS, getSystemPrompt, getModelForCharacter } = require('./shared/characters');
+const { CHARACTERS, getSystemPrompt, getModelForCharacter, getProviderForCharacter } = require('./shared/characters');
 const { evaluateAndCreateMemory } = require('./shared/memory-evaluator');
 
 // Human characters - never AI controlled
@@ -16,12 +16,7 @@ const headers = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS'
 };
 
-// Provider routing (same as breakroom)
-const openrouterCharacters = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "Neiv", "The Subtitle", "Marrow"];
-const openaiCharacters = [];
-const grokCharacters = ["Jae", "Steele"];
-const perplexityCharacters = [];
-const geminiCharacters = [];
+// Provider routing now reads from characters.js — change provider there, changes everywhere
 
 exports.handler = async (event, context) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -139,17 +134,18 @@ exports.handler = async (event, context) => {
       ? `Recent outing conversation:\n${chatHistory}\n\n${triggerSpeaker || otherName} just said: "${triggerMessage}"\n\nRespond as ${character}:`
       : `Recent outing conversation:\n${chatHistory}\n\nThe narrator just set a new scene. React naturally as ${character}. What do you notice, feel, or say?`;
 
-    // Generate response via the correct provider
+    // Generate response via the correct provider (reads from characters.js)
+    const provider = getProviderForCharacter(character);
     let response;
-    if (grokCharacters.includes(character)) {
+    if (provider === "grok") {
       response = await generateGrokResponse(character, outingSystemPrompt, userMessage);
-    } else if (openrouterCharacters.includes(character)) {
+    } else if (provider === "openrouter") {
       response = await generateOpenRouterResponse(character, outingSystemPrompt, userMessage);
-    } else if (openaiCharacters.includes(character)) {
+    } else if (provider === "openai") {
       response = await generateOpenAIResponse(character, outingSystemPrompt, userMessage);
-    } else if (perplexityCharacters.includes(character)) {
+    } else if (provider === "perplexity") {
       response = await generatePerplexityResponse(character, outingSystemPrompt, userMessage);
-    } else if (geminiCharacters.includes(character)) {
+    } else if (provider === "gemini") {
       response = await generateGeminiResponse(character, outingSystemPrompt, userMessage);
     } else {
       response = await generateClaudeResponse(character, outingSystemPrompt, userMessage);

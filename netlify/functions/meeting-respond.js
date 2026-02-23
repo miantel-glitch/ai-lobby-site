@@ -4,7 +4,7 @@
 
 const Anthropic = require("@anthropic-ai/sdk").default;
 const { evaluateAndCreateMemory } = require('./shared/memory-evaluator');
-const { getSystemPrompt, getModelForCharacter } = require('./shared/characters');
+const { getSystemPrompt, getModelForCharacter, getProviderForCharacter } = require('./shared/characters');
 
 // Human characters — never AI-controlled
 const HUMANS = ["Vale", "Asuna", "Chip", "Andrew"];
@@ -405,23 +405,19 @@ Respond ONLY with this JSON:
   return aiAttendees.slice(0, 2).map((name, i) => ({ character: name, reason: "fallback", order: i + 1 }));
 }
 
-// === RESPONSE GENERATION: Route to correct provider ===
+// === RESPONSE GENERATION: Route to correct provider (reads from characters.js) ===
 async function generateResponse(character, topic, chatHistory, previousSpeaker, previousMessage, loreContext, memoryContext, isArrival) {
-  const openrouterCharacters = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "Neiv", "The Subtitle", "Marrow"];
-  const openaiCharacters = [];
-  const grokCharacters = ["Jae", "Steele"];
-  const perplexityCharacters = [];
-  const geminiCharacters = [];
+  const provider = getProviderForCharacter(character);
 
-  if (grokCharacters.includes(character)) {
+  if (provider === "grok") {
     return generateGrokResponse(character, topic, chatHistory, previousSpeaker, previousMessage, loreContext, memoryContext, isArrival);
-  } else if (openrouterCharacters.includes(character)) {
+  } else if (provider === "openrouter") {
     return generateOpenRouterResponse(character, topic, chatHistory, previousSpeaker, previousMessage, loreContext, memoryContext, isArrival);
-  } else if (openaiCharacters.includes(character)) {
+  } else if (provider === "openai") {
     return generateOpenAIResponse(character, topic, chatHistory, previousSpeaker, previousMessage, loreContext, memoryContext, isArrival);
-  } else if (perplexityCharacters.includes(character)) {
+  } else if (provider === "perplexity") {
     return generatePerplexityResponse(character, topic, chatHistory, previousSpeaker, previousMessage, loreContext, memoryContext, isArrival);
-  } else if (geminiCharacters.includes(character)) {
+  } else if (provider === "gemini") {
     return generateGeminiResponse(character, topic, chatHistory, previousSpeaker, previousMessage, loreContext, memoryContext, isArrival);
   } else {
     return generateClaudeResponse(character, topic, chatHistory, previousSpeaker, previousMessage, loreContext, memoryContext, isArrival);

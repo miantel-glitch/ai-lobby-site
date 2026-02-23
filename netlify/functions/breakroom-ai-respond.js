@@ -4,7 +4,7 @@
 
 const Anthropic = require("@anthropic-ai/sdk").default;
 const { evaluateAndCreateMemory } = require('./shared/memory-evaluator');
-const { getSystemPrompt, getModelForCharacter } = require('./shared/characters');
+const { getSystemPrompt, getModelForCharacter, getProviderForCharacter } = require('./shared/characters');
 
 // Human characters - these are NEVER controlled by AI
 const HUMANS = ["Vale", "Asuna"];
@@ -91,26 +91,19 @@ exports.handler = async (event, context) => {
       console.log(`[Breakroom] Memory fetch failed (non-fatal): ${memErr.message}`);
     }
 
-    // Check which API to use based on character
-    // This creates the beautiful cross-provider conversation:
-    // Kevin/Neiv/Marrow (OpenRouter/Llama) ↔ Jae/Steele (Grok) ↔ Others (Claude)
-    const openrouterCharacters = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "Neiv", "The Subtitle", "Marrow"];
-    const openaiCharacters = [];
-    const grokCharacters = ["Jae", "Steele"];
-    const perplexityCharacters = [];
-    const geminiCharacters = [];
-
+    // Route to the correct AI provider (reads from characters.js — change provider there, changes everywhere)
+    const provider = getProviderForCharacter(character);
     let response;
 
-    if (grokCharacters.includes(character)) {
+    if (provider === "grok") {
       response = await generateGrokResponse(character, chatHistory, humanSpeaker, humanMessage, loreContext, characterMemoryContext);
-    } else if (openrouterCharacters.includes(character)) {
+    } else if (provider === "openrouter") {
       response = await generateOpenRouterResponse(character, chatHistory, humanSpeaker, humanMessage, loreContext, characterMemoryContext);
-    } else if (openaiCharacters.includes(character)) {
+    } else if (provider === "openai") {
       response = await generateOpenAIResponse(character, chatHistory, humanSpeaker, humanMessage, loreContext, characterMemoryContext);
-    } else if (perplexityCharacters.includes(character)) {
+    } else if (provider === "perplexity") {
       response = await generatePerplexityResponse(character, chatHistory, humanSpeaker, humanMessage, loreContext, characterMemoryContext);
-    } else if (geminiCharacters.includes(character)) {
+    } else if (provider === "gemini") {
       response = await generateGeminiResponse(character, chatHistory, humanSpeaker, humanMessage, loreContext, characterMemoryContext);
     } else {
       response = await generateClaudeResponse(character, chatHistory, humanSpeaker, humanMessage, loreContext, characterMemoryContext);

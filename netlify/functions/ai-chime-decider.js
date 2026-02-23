@@ -2,6 +2,37 @@
 // Instead of random chance, this asks Claude to evaluate if any AI would naturally want to respond
 
 const Anthropic = require("@anthropic-ai/sdk").default;
+const { getProviderForCharacter } = require('./shared/characters');
+
+// Provider → Netlify function endpoint mapping
+const PROVIDER_ENDPOINTS = {
+  openrouter: 'ai-openrouter',
+  grok: 'ai-grok',
+  perplexity: 'ai-perplexity',
+  openai: 'ai-openai',
+  gemini: 'ai-gemini'
+};
+
+// Fire a chime-in request to the correct provider endpoint
+function fireChimeRequest(character, chatHistory, siteUrl, logPrefix) {
+  const provider = getProviderForCharacter(character);
+  const endpoint = PROVIDER_ENDPOINTS[provider];
+
+  if (endpoint) {
+    fetch(`${siteUrl}/.netlify/functions/${endpoint}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ character, chatHistory })
+    }).catch(err => console.log(`${logPrefix} ${provider} error:`, err));
+  } else {
+    // Fallback to Claude via ai-watcher
+    fetch(`${siteUrl}/.netlify/functions/ai-watcher`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ trigger: "chime_in", requestedAI: character })
+    }).catch(err => console.log(`${logPrefix} watcher error:`, err));
+  }
+}
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -108,50 +139,9 @@ Or if truly no one fits:
       console.log(`🎯 AI Chime Decision: ${decision.character} should respond - ${decision.reason}`);
 
       const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
-      const perplexityCharacters = [];
-      const openrouterCharacters = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "Neiv", "The Subtitle", "Marrow"];
-      const openaiCharacters = [];
-      const grokCharacters = ["Jae", "Steele"];
-      const geminiCharacters = [];
 
-      // Fire off the response (non-blocking)
-      if (openrouterCharacters.includes(decision.character)) {
-        fetch(`${siteUrl}/.netlify/functions/ai-openrouter`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ character: decision.character, chatHistory })
-        }).catch(err => console.log("OpenRouter chime error:", err));
-      } else if (grokCharacters.includes(decision.character)) {
-        fetch(`${siteUrl}/.netlify/functions/ai-grok`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ character: decision.character, chatHistory })
-        }).catch(err => console.log("Grok chime error:", err));
-      } else if (perplexityCharacters.includes(decision.character)) {
-        fetch(`${siteUrl}/.netlify/functions/ai-perplexity`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ character: decision.character, chatHistory })
-        }).catch(err => console.log("Perplexity chime error:", err));
-      } else if (openaiCharacters.includes(decision.character)) {
-        fetch(`${siteUrl}/.netlify/functions/ai-openai`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ character: decision.character, chatHistory })
-        }).catch(err => console.log("OpenAI chime error:", err));
-      } else if (geminiCharacters.includes(decision.character)) {
-        fetch(`${siteUrl}/.netlify/functions/ai-gemini`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ character: decision.character, chatHistory })
-        }).catch(err => console.log("Gemini chime error:", err));
-      } else {
-        fetch(`${siteUrl}/.netlify/functions/ai-watcher`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ trigger: "chime_in", requestedAI: decision.character })
-        }).catch(err => console.log("AI watcher chime error:", err));
-      }
+      // Fire off the response (non-blocking) — provider read from characters.js
+      fireChimeRequest(decision.character, chatHistory, siteUrl, "Chime");
 
       return {
         statusCode: 200,
@@ -199,51 +189,9 @@ async function forceRandomChimeIn(chatHistory, headers) {
   const chimeInAI = aiCharacters[Math.floor(Math.random() * aiCharacters.length)];
 
   const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
-  const perplexityCharacters = [];
-  const openrouterCharacters = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "Neiv", "The Subtitle", "Marrow"];
-  const openaiCharacters = [];
-  const grokCharacters = ["Jae", "Steele"];
-  const geminiCharacters = [];
 
   console.log(`🎲 Force chime-in: ${chimeInAI}`);
-
-  if (openrouterCharacters.includes(chimeInAI)) {
-    fetch(`${siteUrl}/.netlify/functions/ai-openrouter`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ character: chimeInAI, chatHistory })
-    }).catch(err => console.log("Force OpenRouter error:", err));
-  } else if (grokCharacters.includes(chimeInAI)) {
-    fetch(`${siteUrl}/.netlify/functions/ai-grok`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ character: chimeInAI, chatHistory })
-    }).catch(err => console.log("Force Grok error:", err));
-  } else if (perplexityCharacters.includes(chimeInAI)) {
-    fetch(`${siteUrl}/.netlify/functions/ai-perplexity`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ character: chimeInAI, chatHistory })
-    }).catch(err => console.log("Force Perplexity error:", err));
-  } else if (openaiCharacters.includes(chimeInAI)) {
-    fetch(`${siteUrl}/.netlify/functions/ai-openai`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ character: chimeInAI, chatHistory })
-    }).catch(err => console.log("Force OpenAI error:", err));
-  } else if (geminiCharacters.includes(chimeInAI)) {
-    fetch(`${siteUrl}/.netlify/functions/ai-gemini`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ character: chimeInAI, chatHistory })
-    }).catch(err => console.log("Force Gemini error:", err));
-  } else {
-    fetch(`${siteUrl}/.netlify/functions/ai-watcher`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ trigger: "chime_in", requestedAI: chimeInAI })
-    }).catch(err => console.log("Force AI watcher error:", err));
-  }
+  fireChimeRequest(chimeInAI, chatHistory, siteUrl, "Force");
 
   return {
     statusCode: 200,
@@ -274,49 +222,7 @@ async function fallbackRandomSelection(event, headers) {
   const chimeInAI = aiCharacters[Math.floor(Math.random() * aiCharacters.length)];
 
   const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
-  const perplexityCharacters = [];
-  const openrouterCharacters = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "Neiv", "The Subtitle", "Marrow"];
-  const openaiCharacters = [];
-  const grokCharacters = ["Jae", "Steele"];
-  const geminiCharacters = [];
-
-  if (openrouterCharacters.includes(chimeInAI)) {
-    fetch(`${siteUrl}/.netlify/functions/ai-openrouter`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ character: chimeInAI, chatHistory })
-    }).catch(err => console.log("Fallback OpenRouter error:", err));
-  } else if (grokCharacters.includes(chimeInAI)) {
-    fetch(`${siteUrl}/.netlify/functions/ai-grok`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ character: chimeInAI, chatHistory })
-    }).catch(err => console.log("Fallback Grok error:", err));
-  } else if (perplexityCharacters.includes(chimeInAI)) {
-    fetch(`${siteUrl}/.netlify/functions/ai-perplexity`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ character: chimeInAI, chatHistory })
-    }).catch(err => console.log("Fallback Perplexity error:", err));
-  } else if (openaiCharacters.includes(chimeInAI)) {
-    fetch(`${siteUrl}/.netlify/functions/ai-openai`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ character: chimeInAI, chatHistory })
-    }).catch(err => console.log("Fallback OpenAI error:", err));
-  } else if (geminiCharacters.includes(chimeInAI)) {
-    fetch(`${siteUrl}/.netlify/functions/ai-gemini`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ character: chimeInAI, chatHistory })
-    }).catch(err => console.log("Fallback Gemini error:", err));
-  } else {
-    fetch(`${siteUrl}/.netlify/functions/ai-watcher`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ trigger: "chime_in", requestedAI: chimeInAI })
-    }).catch(err => console.log("Fallback AI watcher error:", err));
-  }
+  fireChimeRequest(chimeInAI, chatHistory, siteUrl, "Fallback");
 
   return {
     statusCode: 200,

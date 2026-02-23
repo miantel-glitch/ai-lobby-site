@@ -3,6 +3,7 @@
 // Flow: check timing → generate host prompt → save → trigger attendee responses → update counters
 
 const Anthropic = require("@anthropic-ai/sdk").default;
+const { getProviderForCharacter } = require('./shared/characters');
 
 const HUMANS = ["Vale", "Asuna", "Chip", "Andrew"];
 
@@ -25,12 +26,7 @@ const characterPersonalities = {
   }
 };
 
-// Provider routing (same as meeting-respond.js)
-const openrouterCharacters = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "Neiv", "The Subtitle", "Marrow"];
-const openaiCharacters = [];
-const grokCharacters = ["Jae", "Steele"];
-const perplexityCharacters = [];
-const geminiCharacters = [];
+// Provider routing now reads from characters.js — change provider there, changes everywhere
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -304,15 +300,16 @@ Write a brief wrap-up statement (2-3 sentences). Thank everyone for their input,
 // === GENERATE HOST MESSAGE via provider routing ===
 async function generateHostMessage(host, prompt) {
   try {
-    if (openrouterCharacters.includes(host)) {
+    const provider = getProviderForCharacter(host);
+    if (provider === "openrouter") {
       return await generateOpenRouter(prompt, host);
-    } else if (grokCharacters.includes(host)) {
+    } else if (provider === "grok") {
       return await generateGrok(prompt, host);
-    } else if (openaiCharacters.includes(host)) {
+    } else if (provider === "openai") {
       return await generateOpenAI(prompt, host);
-    } else if (perplexityCharacters.includes(host)) {
+    } else if (provider === "perplexity") {
       return await generatePerplexity(prompt, host);
-    } else if (geminiCharacters.includes(host)) {
+    } else if (provider === "gemini") {
       return await generateGemini(prompt, host);
     } else {
       return await generateClaude(prompt, host);

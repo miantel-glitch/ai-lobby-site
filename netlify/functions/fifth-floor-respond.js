@@ -238,24 +238,19 @@ exports.handler = async (event, context) => {
       willingnessLabel, managerName, selectedCharacters, volunteerNames
     });
 
-    // Route to the correct provider
-    const openrouterCharacters = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "Neiv", "The Subtitle", "Marrow"];
-    const openaiCharacters = [];
-    const grokCharacters = ["Jae", "Steele"];
-    const perplexityCharacters = [];
-    const geminiCharacters = [];
-
+    // Route to the correct AI provider (reads from characters.js — change provider there, changes everywhere)
+    const provider = getProviderForCharacter(character);
     let response;
 
-    if (grokCharacters.includes(character)) {
+    if (provider === "grok") {
       response = await generateGrokResponse(systemPrompt, userMessage, character);
-    } else if (openrouterCharacters.includes(character)) {
+    } else if (provider === "openrouter") {
       response = await generateOpenRouterResponse(systemPrompt, userMessage, character);
-    } else if (openaiCharacters.includes(character)) {
+    } else if (provider === "openai") {
       response = await generateOpenAIResponse(systemPrompt, userMessage, character);
-    } else if (perplexityCharacters.includes(character)) {
+    } else if (provider === "perplexity") {
       response = await generatePerplexityResponse(systemPrompt, userMessage, character);
-    } else if (geminiCharacters.includes(character)) {
+    } else if (provider === "gemini") {
       response = await generateGeminiResponse(systemPrompt, userMessage, character);
     } else {
       response = await generateClaudeResponse(systemPrompt, userMessage, character);
