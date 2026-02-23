@@ -69,6 +69,38 @@ exports.handler = async (event, context) => {
       };
     }
 
+    // RATE LIMIT: Prevent double responses when multiple human messages trigger the same AI
+    // (e.g., Vale and Asuna both send messages quickly, both triggers pick Neiv)
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    try {
+      const recentCheck = await fetch(
+        `${supabaseUrl}/rest/v1/breakroom_messages?speaker=eq.${encodeURIComponent(character)}&is_ai=eq.true&order=created_at.desc&limit=1`,
+        {
+          headers: {
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`
+          }
+        }
+      );
+      if (recentCheck.ok) {
+        const recent = await recentCheck.json();
+        if (recent.length > 0) {
+          const secondsAgo = (Date.now() - new Date(recent[0].created_at).getTime()) / 1000;
+          if (secondsAgo < 10) {
+            console.log(`[Breakroom] ${character} spoke ${secondsAgo.toFixed(1)}s ago — skipping to prevent double response`);
+            return {
+              statusCode: 200,
+              headers,
+              body: JSON.stringify({ success: false, reason: `${character} spoke too recently (${secondsAgo.toFixed(1)}s ago)` })
+            };
+          }
+        }
+      }
+    } catch (rateErr) {
+      console.log(`[Breakroom] Rate check failed (non-fatal): ${rateErr.message}`);
+    }
+
     // Fetch lore context (non-blocking, uses cache after first call)
     const loreContext = await getLoreSummary();
 
