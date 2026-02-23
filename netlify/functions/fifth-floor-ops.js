@@ -701,15 +701,20 @@ async function heartbeatTick(supabaseUrl, supabaseKey, supabaseHeaders, siteUrl)
       const currentRhythmName = getRhythmName(hour);
       const baseProbability = RHYTHM_PROBABILITIES[currentRhythmName] || 0.03;
 
-      // Fetch surreality buffer level for bonus
+      // Fetch surreality buffer level for bonus (direct Supabase read — no HTTP function call)
       let bufferBonus = 0;
+      let bufferLevel = 50;
       try {
-        const bufferRes = await fetch(`${siteUrl}/.netlify/functions/surreality-buffer`, {
-          method: "GET",
-          headers: { "Content-Type": "application/json" }
-        });
-        const bufferData = await bufferRes.json();
-        const bufferLevel = bufferData.level || 50;
+        const bufferRes = await fetch(
+          `${supabaseUrl}/rest/v1/lobby_settings?key=eq.surreality_buffer&select=value`,
+          { headers: readHeaders }
+        );
+        const bufferRows = await safeJson(bufferRes, []);
+        if (bufferRows.length > 0 && bufferRows[0].value) {
+          const parsed = typeof bufferRows[0].value === 'string'
+            ? JSON.parse(bufferRows[0].value) : bufferRows[0].value;
+          bufferLevel = parsed.level || 50;
+        }
 
         if (bufferLevel >= 96) {
           bufferBonus = 999; // Guaranteed
@@ -737,14 +742,8 @@ async function heartbeatTick(supabaseUrl, supabaseKey, supabaseHeaders, siteUrl)
         console.log("[5th-floor-ops] Roll passed — generating new task");
 
         try {
-          const bufferRes2 = await fetch(`${siteUrl}/.netlify/functions/surreality-buffer`, {
-            method: "GET",
-            headers: { "Content-Type": "application/json" }
-          });
-          const bufferData2 = await bufferRes2.json();
-          const bufferLevel2 = bufferData2.level || 50;
-
-          const newTask = generateTask(currentRhythmName, bufferLevel2);
+          // Reuse bufferLevel from the query above (no redundant HTTP call)
+          const newTask = generateTask(currentRhythmName, bufferLevel);
           console.log(`[5th-floor-ops] Generated task: "${newTask.title}" (${newTask.task_type}/${newTask.severity})`);
 
           // Insert into ops_tasks
@@ -756,21 +755,39 @@ async function heartbeatTick(supabaseUrl, supabaseKey, supabaseHeaders, siteUrl)
               body: JSON.stringify(newTask)
             }
           );
-          const insertedTasks = await safeJson(insertRes, []);
+
+          // Read body once, then handle success/failure
+          let insertedTasks = [];
+          const insertBody = await insertRes.text().catch(() => '');
+          if (!insertRes.ok) {
+            console.error(`[5th-floor-ops] INSERT FAILED: ${insertRes.status} — ${insertBody}`);
+          } else {
+            try {
+              const parsed = JSON.parse(insertBody);
+              insertedTasks = Array.isArray(parsed) ? parsed : [parsed];
+            } catch (parseErr) {
+              console.error(`[5th-floor-ops] INSERT response parse error: ${parseErr.message}`);
+            }
+          }
 
           if (insertedTasks.length > 0) {
-            await postOpsMessage(`[NEW] ${newTask.title} — Severity: ${newTask.severity}. Awaiting assignment.`, 'system', supabaseUrl, supabaseHeaders);
             results.taskGenerated = true;
             console.log(`[5th-floor-ops] Task created with id: ${insertedTasks[0].id}`);
 
-            // Discord: announce new task
-            await postToDiscordOps({
+            // Fire-and-forget: ops message + Discord (don't block task creation)
+            postOpsMessage(`[NEW] ${newTask.title} — Severity: ${newTask.severity}. Awaiting assignment.`, 'system', supabaseUrl, supabaseHeaders).catch(e =>
+              console.log("[5th-floor-ops] Ops message post failed (non-fatal):", e.message));
+
+            postToDiscordOps({
               author: { name: `${TYPE_EMOJIS[newTask.task_type] || '⚠️'} New Ops Task` },
               title: newTask.title,
               description: `**Type:** ${newTask.task_type} | **Severity:** ${newTask.severity}\n**Location:** ${newTask.location || 'TBD'}\n\nAwaiting crew assignment.`,
               color: SEVERITY_COLORS[newTask.severity] || 0xFFC107,
               footer: { text: `5th Floor Ops | ${getOpsTimestamp()}` }
-            });
+            }).catch(e =>
+              console.log("[5th-floor-ops] Discord ops post failed (non-fatal):", e.message));
+          } else {
+            console.error(`[5th-floor-ops] Task INSERT returned empty — task may not have been created`);
           }
         } catch (genErr) {
           console.error("[5th-floor-ops] Task generation error:", genErr.message);
@@ -882,35 +899,16 @@ async function heartbeatTick(supabaseUrl, supabaseKey, supabaseHeaders, siteUrl)
                 body: JSON.stringify({ delegation_state: newDelegation })
               });
 
-              // Generate manager's in-character alert via fifth-floor-respond
-              let managerMessage = `*looks at the ops board* We've got a new one. "${task.title}" — ${task.task_type}, ${task.severity}. Need someone on this.`;
-              try {
-                const respondRes = await fetch(`${siteUrl}/.netlify/functions/fifth-floor-respond`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    action: 'manager_alert',
-                    character: opsManager.character_name,
-                    task: task
-                  })
-                });
-                if (respondRes.ok) {
-                  const respondData = await respondRes.json();
-                  if (respondData.message) managerMessage = respondData.message;
-                }
-              } catch (e) {
-                console.log("[5th-floor-ops] Manager alert AI call failed (using default):", e.message);
-              }
+              // Use default message immediately (no AI delay — keeps heartbeat fast)
+              const managerMessage = `*looks at the ops board* We've got a new one. "${task.title}" — ${task.task_type}, ${task.severity}. Need someone on this.`;
 
-              // Post to main floor chat (where everyone can see) — NOT an emote, it's dialogue
+              // Post to main floor chat + ops log (fast Supabase INSERTs)
               await postFloorChatMessage(opsManager.character_name, managerMessage, supabaseUrl, supabaseHeaders);
-
-              // Also post to ops log
               await postOpsMessage(`[MANAGER] ${opsManager.character_name}: ${managerMessage}`, opsManager.character_name, supabaseUrl, supabaseHeaders);
 
-              // Discord: manager alert
+              // Fire-and-forget: Discord alert
               const mgrFlair = getDiscordFlair(opsManager.character_name);
-              await postToDiscordOps({
+              postToDiscordOps({
                 author: {
                   name: `📋 ${opsManager.character_name} — Ops Manager Alert`,
                   icon_url: mgrFlair.headshot || undefined
@@ -918,7 +916,7 @@ async function heartbeatTick(supabaseUrl, supabaseKey, supabaseHeaders, siteUrl)
                 description: `**New Task:** ${task.title}\n**Type:** ${task.task_type} | **Severity:** ${task.severity}\n\n${managerMessage}`,
                 color: 0xFFC107,
                 footer: { text: `Ops Manager | ${getOpsTimestamp()}` }
-              });
+              }).catch(e => console.log("[5th-floor-ops] Discord manager alert failed (non-fatal):", e.message));
 
               results.delegationAlerts = (results.delegationAlerts || 0) + 1;
 
@@ -956,32 +954,14 @@ async function heartbeatTick(supabaseUrl, supabaseKey, supabaseHeaders, siteUrl)
 
               console.log(`[5th-floor-ops] Volunteers: ${volunteers.map(v => `${v.name}(${v.willingness.toFixed(2)})`).join(', ') || 'none'}`);
 
-              // Generate in-character volunteer responses (top 3 max)
+              // Post volunteer responses using defaults (no AI delay — keeps heartbeat fast)
               const respondingVolunteers = volunteers.slice(0, 3);
               for (const vol of respondingVolunteers) {
-                let volMessage = `*raises hand* I can take that one.`;
-                try {
-                  const willingnessLabel = vol.willingness > 0.7 ? 'eager' : 'willing but not thrilled';
-                  const respondRes = await fetch(`${siteUrl}/.netlify/functions/fifth-floor-respond`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      action: 'volunteer_response',
-                      character: vol.name,
-                      task: task,
-                      willingnessLabel,
-                      managerName: opsManager.character_name
-                    })
-                  });
-                  if (respondRes.ok) {
-                    const respondData = await respondRes.json();
-                    if (respondData.message) volMessage = respondData.message;
-                  }
-                } catch (e) {
-                  console.log(`[5th-floor-ops] Volunteer AI call failed for ${vol.name} (using default):`, e.message);
-                }
+                const volMessage = vol.willingness > 0.7
+                  ? `*raises hand* I'm on it.`
+                  : `*raises hand* I can take that one.`;
 
-                // Post to main floor chat
+                // Post to main floor chat + ops log
                 await postFloorChatMessage(vol.name, volMessage, supabaseUrl, supabaseHeaders);
                 await postOpsMessage(`[VOLUNTEER] ${vol.name}: ${volMessage}`, vol.name, supabaseUrl, supabaseHeaders);
               }
@@ -989,24 +969,7 @@ async function heartbeatTick(supabaseUrl, supabaseKey, supabaseHeaders, siteUrl)
               // Optionally, one decliner can speak up
               if (decliners.length > 0 && Math.random() < 0.4) {
                 const decliner = decliners[0];
-                let declineMessage = `*shakes head* Not this one.`;
-                try {
-                  const respondRes = await fetch(`${siteUrl}/.netlify/functions/fifth-floor-respond`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      action: 'volunteer_response',
-                      character: decliner.name,
-                      task: task,
-                      willingnessLabel: 'declining',
-                      managerName: opsManager.character_name
-                    })
-                  });
-                  if (respondRes.ok) {
-                    const respondData = await respondRes.json();
-                    if (respondData.message) declineMessage = respondData.message;
-                  }
-                } catch (e) {}
+                const declineMessage = `*shakes head* Not this one.`;
                 await postFloorChatMessage(decliner.name, declineMessage, supabaseUrl, supabaseHeaders);
               }
 
@@ -1107,29 +1070,10 @@ async function heartbeatTick(supabaseUrl, supabaseKey, supabaseHeaders, siteUrl)
                 continue;
               }
 
-              // Generate manager's decision announcement
-              let decisionMessage = `${selectedNames.join(' and ')}, you're up. Get down there.`;
-              try {
-                const respondRes = await fetch(`${siteUrl}/.netlify/functions/fifth-floor-respond`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    action: 'manager_decision',
-                    character: opsManager.character_name,
-                    task: task,
-                    selectedCharacters: selectedNames,
-                    volunteerNames: (delegation.volunteers || []).map(v => v.name)
-                  })
-                });
-                if (respondRes.ok) {
-                  const respondData = await respondRes.json();
-                  if (respondData.message) decisionMessage = respondData.message;
-                }
-              } catch (e) {
-                console.log("[5th-floor-ops] Manager decision AI call failed (using default):", e.message);
-              }
+              // Use default decision message (no AI delay — keeps heartbeat fast)
+              const decisionMessage = `${selectedNames.join(' and ')}, you're up. Get down there.`;
 
-              // Post decision to floor chat
+              // Post decision to floor chat + ops log
               await postFloorChatMessage(opsManager.character_name, decisionMessage, supabaseUrl, supabaseHeaders);
               await postOpsMessage(`[DECISION] ${opsManager.character_name}: ${decisionMessage}`, opsManager.character_name, supabaseUrl, supabaseHeaders);
 
@@ -1155,17 +1099,17 @@ async function heartbeatTick(supabaseUrl, supabaseKey, supabaseHeaders, siteUrl)
                 results.charactersPaged.push(charName);
               }
 
-              // Discord: announce assignment
-              const mgrFlair = getDiscordFlair(opsManager.character_name);
-              await postToDiscordOps({
+              // Fire-and-forget: Discord assignment announcement
+              const mgrFlair2 = getDiscordFlair(opsManager.character_name);
+              postToDiscordOps({
                 author: {
                   name: `📋 ${opsManager.character_name} — Crew Deployed`,
-                  icon_url: mgrFlair.headshot || undefined
+                  icon_url: mgrFlair2.headshot || undefined
                 },
                 description: `**Task:** ${task.title}\n**Assigned:** ${selectedNames.join(', ')}\n\n${decisionMessage}`,
                 color: 0x4CAF50,
                 footer: { text: `Ops Manager Decision | ${getOpsTimestamp()}` }
-              });
+              }).catch(e => console.log("[5th-floor-ops] Discord crew deploy failed (non-fatal):", e.message));
 
               // Bulletin
               try {
