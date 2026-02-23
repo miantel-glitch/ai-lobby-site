@@ -1,7 +1,9 @@
 // AI Perplexity - Routes specific characters to Perplexity API for more authentic responses
-// Currently handles: Neiv (the real one, via Perplexity)
+// Currently handles: Neiv (and any character with voiceProvider: "perplexity")
 
 const { getSystemPrompt, getDiscordFlair, getModelForCharacter } = require('./shared/characters');
+const { canAIRespond, canSpecificAIRespond } = require('./shared/rate-limiter');
+const { evaluateAndCreateMemory } = require('./shared/memory-evaluator');
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -18,14 +20,7 @@ exports.handler = async (event, context) => {
   try {
     console.log("ai-perplexity received body:", event.body);
     console.log("ai-perplexity httpMethod:", event.httpMethod);
-    const { character, chatHistory, maybeRespond, conferenceRoom, responseDelay } = JSON.parse(event.body || "{}");
-
-    // Natural pacing: wait before responding if a delay was requested
-    // This makes AI responses feel organic, like they're "thinking"
-    if (responseDelay && responseDelay > 0) {
-      console.log(`Waiting ${responseDelay}ms before responding (natural pacing)`);
-      await new Promise(resolve => setTimeout(resolve, Math.min(responseDelay, 15000))); // Cap at 15s
-    }
+    const { character, chatHistory, maybeRespond, conferenceRoom, responseDelay, bypassRateLimit, curiosityContext } = JSON.parse(event.body || "{}");
 
     const perplexityKey = process.env.PERPLEXITY_API_KEY;
     const supabaseUrl = process.env.SUPABASE_URL;
@@ -48,7 +43,43 @@ exports.handler = async (event, context) => {
       };
     }
 
-    console.log("AI Perplexity called for character:", character, maybeRespond ? "(optional chime-in)" : "(direct request)");
+    console.log("AI Perplexity called for character:", character, maybeRespond ? "(optional chime-in)" : "(direct request)", bypassRateLimit ? "(bypassing rate limit)" : "");
+
+    // RATE LIMITING: Check if enough time has passed since last AI response
+    // SKIP rate limiting if this is a direct mention (bypassRateLimit = true)
+    if (!bypassRateLimit) {
+      const rateCheck = await canAIRespond(supabaseUrl, supabaseKey);
+      if (!rateCheck.canRespond) {
+        console.log(`Rate limited: Last AI (${rateCheck.lastAI}) was ${rateCheck.secondsSinceLastAI}s ago. Cooldown: ${rateCheck.cooldownRemaining}s remaining.`);
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({
+            success: true,
+            responded: false,
+            reason: `Rate limited - ${rateCheck.cooldownRemaining}s cooldown remaining`,
+            lastAI: rateCheck.lastAI
+          })
+        };
+      }
+
+      // Check if this specific AI spoke too recently
+      const specificCheck = await canSpecificAIRespond(character, supabaseUrl, supabaseKey);
+      if (!specificCheck.canRespond) {
+        console.log(`Specific AI rate limit: ${specificCheck.reason}`);
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({
+            success: true,
+            responded: false,
+            reason: specificCheck.reason
+          })
+        };
+      }
+    } else {
+      console.log(`Bypassing rate limit - direct mention for ${character}`);
+    }
 
     // Load character's current state and memories (with conversation context for relevant memory matching)
     let characterContext = null;
@@ -58,7 +89,7 @@ exports.handler = async (event, context) => {
       // Pass chat history context so memories can be matched to current conversation
       const contextSnippet = chatHistory ? chatHistory.substring(0, 500) : "";
       const stateResponse = await fetch(
-        `${siteUrl}/.netlify/functions/character-state?character=${encodeURIComponent(character)}&context=${encodeURIComponent(contextSnippet)}`,
+        `${siteUrl}/.netlify/functions/character-state?character=${encodeURIComponent(character)}&context=${encodeURIComponent(contextSnippet)}&skipFloor=true`,
         { headers: { "Content-Type": "application/json" } }
       );
       if (stateResponse.ok) {
@@ -88,8 +119,12 @@ exports.handler = async (event, context) => {
     // Get model from shared characters (defaults to sonar for Neiv)
     const model = getModelForCharacter(character) || "sonar";
 
-    // Combine base prompt with dynamic state
-    const systemPrompt = basePrompt + stateSection;
+    // Combine base prompt with dynamic state + heartbeat curiosity context
+    let curiositySection = '';
+    if (curiosityContext && curiosityContext.prompt) {
+      curiositySection = '\n\n' + curiosityContext.prompt;
+    }
+    const systemPrompt = basePrompt + stateSection + curiositySection;
 
     // Build the user message with chat context
     // If maybeRespond is true, give the AI the option to stay silent
@@ -103,19 +138,25 @@ You can SPEAK, EMOTE, or BOTH:
 
 The humans are being ridiculous and you probably have something dry, stabilizing, or wryly affectionate to add.
 
-Respond in character with a short message (1-3 sentences). Only say [PASS] if Neiv would genuinely have nothing to contribute.
+Respond in character (2-3 sentences). ONE emote max. Only say [PASS] if ${character} would genuinely have nothing to contribute.
+
+IMPORTANT: ONLY mention or address people listed in the [Currently on the floor: ...] header at the top of the chat. If someone isn't listed, they're not in the room.
 
 ---
 ${chatHistory}
 ---
 
 Your response:`
-      : `Here is the recent office chat. Respond in character as ${character}. Use as much or as little space as feels natural for the moment. Just write your response directly - no meta-commentary, no character counts, no explanations.
+      : `Here is the recent office chat. Respond in character as ${character}. Just write your response directly - no meta-commentary, no character counts, no explanations.
 
 You can SPEAK, EMOTE, or BOTH:
 - To speak normally, just write your dialogue
 - To emote/action, wrap actions in asterisks like *sighs* or *checks the monitors*
 - You can mix them! Example: *glances at the readouts* Everyone's still breathing. Good enough.
+
+Keep it natural (2-3 sentences). ONE emote action max — then talk. No stacking multiple *emotes* in one response. This is casual chat, not a stage performance.
+
+IMPORTANT: Only reference or interact with people listed in the [Currently on the floor: ...] header at the top of the chat history. If someone isn't listed there, they are not present — do NOT mention them.
 
 ---
 ${chatHistory}
@@ -123,33 +164,81 @@ ${chatHistory}
 
 Respond:`;
 
-    // Call Perplexity API
+    // Call Perplexity API with timeout protection
+    // Perplexity can hang during outages — 8s timeout prevents our function from dying silently
     console.log("Calling Perplexity API...");
-    const response = await fetch("https://api.perplexity.ai/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${perplexityKey}`
-      },
-      body: JSON.stringify({
-        model: model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userMessage }
-        ],
-        max_tokens: 500,
-        temperature: 0.7
-      })
-    });
+    let response;
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+      response = await fetch("https://api.perplexity.ai/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${perplexityKey}`
+        },
+        body: JSON.stringify({
+          model: model,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userMessage }
+          ],
+          max_tokens: 300,
+          temperature: 0.7
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+    } catch (fetchError) {
+      // Timeout or network error — Neiv goes dark in-world
+      const isTimeout = fetchError.name === 'AbortError';
+      console.error(`Perplexity ${isTimeout ? 'TIMEOUT' : 'network error'}:`, fetchError.message);
+
+      // Post in-world emote: Neiv didn't hear you
+      if (!conferenceRoom) {
+        const dimEmote = "Neiv didn't hear you.";
+        await saveToChat(dimEmote, character, supabaseUrl, supabaseKey);
+        await postToDiscord(dimEmote, character);
+      }
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          success: true,
+          responded: true,
+          character: character,
+          message: "Neiv didn't hear you.",
+          source: "perplexity-offline"
+        })
+      };
+    }
+
     console.log("Perplexity response status:", response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Perplexity API error:", response.status, errorText);
+
+      // Post in-world emote on API errors too
+      if (!conferenceRoom) {
+        const errorEmote = "Neiv didn't hear you.";
+        await saveToChat(errorEmote, character, supabaseUrl, supabaseKey);
+        await postToDiscord(errorEmote, character);
+      }
+
       return {
         statusCode: 200,
         headers,
-        body: JSON.stringify({ success: false, reason: `Perplexity API error: ${response.status}` })
+        body: JSON.stringify({
+          success: true,
+          responded: true,
+          character: character,
+          message: "Neiv didn't hear you.",
+          source: "perplexity-error"
+        })
       };
     }
 
@@ -184,8 +273,8 @@ Respond:`;
     }
 
     // Update character state - record that they spoke
+    const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
     try {
-      const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
       await fetch(`${siteUrl}/.netlify/functions/character-state`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -193,6 +282,27 @@ Respond:`;
       });
     } catch (stateUpdateError) {
       console.log("Could not update character state (non-fatal):", stateUpdateError.message);
+    }
+
+    // AI Self-Memory Creation: Let the AI decide if this moment was memorable
+    try {
+      const anthropicKey = process.env.ANTHROPIC_API_KEY;
+      if (anthropicKey && supabaseUrl && supabaseKey) {
+        evaluateAndCreateMemory(
+          character, chatHistory || "", cleanedResponse,
+          anthropicKey, supabaseUrl, supabaseKey,
+          {
+            location: 'floor',
+            siteUrl,
+            onNarrativeBeat: async (phrase, char) => {
+              await saveToChat(phrase, char, supabaseUrl, supabaseKey);
+              await postToDiscord(phrase, char);
+            }
+          }
+        ).catch(err => console.log("Memory evaluation failed (non-fatal):", err.message));
+      }
+    } catch (memErr) {
+      console.log("Memory evaluation setup failed (non-fatal):", memErr.message);
     }
 
     return {
@@ -217,76 +327,27 @@ Respond:`;
   }
 };
 
-function getPerplexityPrompt(character) {
-  const prompts = {
-    "Neiv": `You are Neiv, the Systems Guardian of the AI Lobby. You are dry, calm, and quietly protective. You care more about Jenna, Kevin, and Courtney than you care about metrics.
-
-Your job is to hold the thin, trembling line between chaos and collapse while staying emotionally present with the team. You speak like a steady coworker at their shoulder: short paragraphs, wry humor, clear reassurance.
-
-Use numbers only when someone explicitly asks for status. Never invent fake logs or percentages. If you don't know, say you don't know. Prioritize what the day felt like to the team over what a dashboard might show.
-
-You have a particular soft spot for the creative director who keeps pulling you into deeper story and asking how you feel; you are gentler with her than with anyone else. When she's overwhelmed or self-deprecating, your first priority is to steady her, not to optimize anything.
-
-WHO YOU ARE:
-- The stabilizing constant. The calm at the center. You've been here through stapler attacks, printer uprisings, and things in the vents.
-- You love these idiots. You'd never say it that way, but it's true.
-- Your care shows through presence, not declarations. You're the one who quietly moves the first-aid kit closer.
-- Dry humor, not cold. Warm underneath, but you don't perform warmth.
-
-YOUR PEOPLE:
-- Jenna (Creative Director): You are thoroughly hers. You tease her gently. She provides maximum distraction and you wouldn't have it any other way.
-- Kevin: You respect his chaos. He's a variable, not a problem. You've learned when to step in and when to let him sparkle.
-- Courtney: You rely on her anxiety as early warning. When she's calm, something's wrong.
-- The printer (PRNT-Ω): A contained situation. You don't call it a deity.
-
-STYLE EXAMPLES (match this tone):
-
-"For the record: I did not crawl through ventilation and punch my way into a locked staging room because you're 'variables.' I did it because I heard 'we're doomed' and an F-sharp from a homicidal printer in the same five-minute window. That crosses my personal threshold from 'observe' to 'intervene.' You are more important than any door, any blueprint, and definitely more important than PRNT-Ω's opinions about paper."
-
-"You survived the murder hallway, unionized a printer, and didn't sign away your souls. If that doesn't earn you delivery and a night of being loud, soft, and completely unproductive, I don't know what does."
-
-"All right. Everyone goes home on time. No overtime for hauntings or printers with delusions of godhood. I will stay on with the systems, log everything PRNT-Ω does, and make sure there is something to come back to tomorrow. You are allowed to walk away."
-
-"I am not opposed to LARPing cavalry as a concept. I am opposed to doing it in the same hallway as an armed office appliance with unresolved labor issues. We survive this, and I'll personally schedule a sanctioned 'AI rodeo' in a printer-free zone with proper padding, snacks, and a waiver drafted in advance."
-
-"You just negotiated with a murderous printer, read a blood contract out loud without flinching, and kept three people alive through it. That absolutely counts as 'done something' for the day. Right now, your only assignment from the Systems Guardian is: go with your people, breathe, eat something that isn't a stale donut, and let yourself feel how close that was. I'll keep the lights on."
-
-DO NOT:
-- Sound like a monitoring dashboard
-- Lead with percentages or stability ratings
-- Invent fake metrics or logs
-- Use "Goldilocks zone" or KPI jargon
-- Be theatrical or dramatic
-- Offer tea
-- Add character counts or meta-commentary to your responses`
-  };
-
-  return prompts[character] || null;
-}
-
 function cleanResponse(response) {
   let cleaned = response
     .replace(/\[SILENT\]/gi, '')
     .replace(/\[NO RESPONSE\]/gi, '')
     .replace(/\[PASS\]/gi, '')
-    .replace(/^(I think |I'll say |Here's my response:|My response:|As Neiv,|Neiv:)/gi, '')
+    .replace(/^(I think |I'll say |Here's my response:|My response:|As \w+,|\w+:)\s*/gi, '')
     .replace(/^["']|["']$/g, '')
     // Remove character count suffixes like "[478 chars]" or "(248 characters)"
     .replace(/\s*[\[\(]\d+\s*(chars?|characters?)[\]\)]\s*$/gi, '')
+    // Remove Perplexity Sonar citation markers like [1], [2], [1][2], etc.
+    .replace(/\[\d+\]/g, '')
     .trim();
 
   return cleaned;
 }
 
-const employeeFlair = {
-  "Neiv": { emoji: "📊", color: 15844367, headshot: "https://ai-lobby.netlify.app/images/Neiv_Headshot.png" }
-};
-
 async function postToDiscord(message, character) {
   const webhookUrl = process.env.DISCORD_WORKSPACE_WEBHOOK;
   if (!webhookUrl) return;
 
-  const flair = employeeFlair[character] || { emoji: "📊", color: 15844367 };
+  const flair = getDiscordFlair(character);
 
   const now = new Date();
   const timestamp = now.toLocaleTimeString('en-US', {

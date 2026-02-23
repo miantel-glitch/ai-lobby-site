@@ -708,7 +708,7 @@ async function generatePerplexityResponse(character, chatHistory, previousSpeake
   const perplexityKey = process.env.PERPLEXITY_API_KEY;
   if (!perplexityKey) {
     console.error("Missing Perplexity API key — Neiv goes dark");
-    return null;
+    return "Neiv didn't hear you.";
   }
 
   const personality = characterPersonalities[character];
@@ -761,9 +761,9 @@ Keep it short (2-3 sentences). ONE emote max — then talk. No stacking *actions
 ${isAIConversation ? "Ask a follow-up or share a related thought to keep the chat going." : ""}`;
 
   try {
-    // 20s timeout — Perplexity can hang during outages
+    // 12s timeout — Perplexity can hang during outages
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000);
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
 
     const response = await fetch("https://api.perplexity.ai/chat/completions", {
       method: "POST",
@@ -788,7 +788,7 @@ ${isAIConversation ? "Ask a follow-up or share a related thought to keep the cha
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`Perplexity API error: ${response.status} - ${errorText}`);
-      return null;
+      return "Neiv didn't hear you.";
     }
 
     const data = await response.json();
@@ -803,7 +803,7 @@ ${isAIConversation ? "Ask a follow-up or share a related thought to keep the cha
   } catch (error) {
     const isTimeout = error.name === 'AbortError';
     console.error(`Perplexity ${isTimeout ? 'TIMEOUT' : 'fetch error'}:`, error.message);
-    return null;
+    return "Neiv didn't hear you.";
   }
 }
 
