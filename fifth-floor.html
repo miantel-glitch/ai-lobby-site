@@ -1,0 +1,2702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>5th Floor Operations | The AI Lobby</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* =============================================
+       5TH FLOOR - DARK OPS DASHBOARD
+       The functional darkness beneath the AI Lobby
+       ============================================= */
+
+    body {
+      background: #0a0a0f;
+    }
+
+    .ops-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1rem 1.5rem;
+    }
+
+    /* Header */
+    .ops-header {
+      text-align: center;
+      margin-bottom: 1rem;
+      position: relative;
+    }
+
+    .ops-header h1 {
+      color: #e74c3c;
+      font-size: 1.6rem;
+      margin-bottom: 0.25rem;
+      text-shadow: 0 0 20px rgba(231, 76, 60, 0.4);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .ops-header .subtitle {
+      color: rgba(200, 200, 200, 0.4);
+      font-size: 0.8rem;
+      font-style: italic;
+      letter-spacing: 1px;
+    }
+
+    /* Active Alert Banner */
+    .ops-alert-banner {
+      background: linear-gradient(90deg, transparent, rgba(231, 76, 60, 0.15), transparent);
+      border: 1px solid rgba(231, 76, 60, 0.3);
+      border-radius: 6px;
+      padding: 0.6rem 1rem;
+      margin-bottom: 1rem;
+      text-align: center;
+      font-size: 0.85rem;
+      color: #e74c3c;
+      display: none;
+    }
+
+    .ops-alert-banner.active {
+      display: block;
+      animation: alertPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes alertPulse {
+      0%, 100% { border-color: rgba(231, 76, 60, 0.3); }
+      50% { border-color: rgba(231, 76, 60, 0.7); }
+    }
+
+    /* Main Grid Layout */
+    .ops-layout {
+      display: grid;
+      grid-template-columns: 3fr 2fr;
+      grid-template-rows: auto auto;
+      gap: 1rem;
+    }
+
+    @media (max-width: 1000px) {
+      .ops-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ============ PANEL STYLES ============ */
+    .ops-panel {
+      background: rgba(15, 15, 25, 0.9);
+      border: 1px solid rgba(100, 100, 120, 0.2);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .ops-panel-header {
+      background: rgba(20, 20, 35, 0.95);
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid rgba(100, 100, 120, 0.15);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .ops-panel-header h2 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: rgba(200, 200, 210, 0.6);
+      margin: 0;
+    }
+
+    .ops-panel-body {
+      padding: 0.75rem;
+    }
+
+    /* ============ 5TH FLOOR SCENE ============ */
+    .fifth-floor-scene {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16/10;
+      background: linear-gradient(135deg, #0a0a12 0%, #0f0f1a 40%, #141420 100%);
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(231, 76, 60, 0.2);
+      margin-bottom: 1rem;
+    }
+
+    .fifth-floor-scene-bg {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: url('images/5th_floor.png');
+      background-size: cover;
+      background-position: center;
+    }
+
+    .fifth-floor-scene-label {
+      position: absolute;
+      top: 8px; left: 12px;
+      font-size: 0.6rem;
+      font-family: monospace;
+      color: rgba(231, 76, 60, 0.4);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .fifth-floor-scene-empty {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      color: rgba(200, 200, 210, 0.2);
+      font-size: 0.85rem;
+      text-align: center;
+      font-family: monospace;
+    }
+
+    .fifth-floor-slot {
+      position: absolute;
+      width: 55px;
+      height: 55px;
+      border-radius: 50%;
+      border: 3px solid rgba(231, 76, 60, 0.6);
+      background: rgba(0, 0, 0, 0.7);
+      overflow: hidden;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      display: none;
+    }
+
+    .fifth-floor-slot.occupied {
+      display: block;
+      animation: opsPopIn 0.4s ease;
+    }
+
+    @keyframes opsPopIn {
+      0% { transform: scale(0); opacity: 0; }
+      70% { transform: scale(1.1); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .fifth-floor-slot:hover {
+      transform: scale(1.15);
+      box-shadow: 0 0 15px rgba(231, 76, 60, 0.5);
+      z-index: 10;
+    }
+
+    .fifth-floor-slot img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+
+    .fifth-floor-slot .slot-name {
+      position: absolute;
+      bottom: -18px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.9);
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 0.6rem;
+      white-space: nowrap;
+      color: rgba(231, 76, 60, 0.8);
+      font-family: monospace;
+    }
+
+    /* 5th floor slot positions — 8 stations spread across the scene */
+    .fifth-floor-slot[data-position="station-1"] { top: 18%; left: 8%; }
+    .fifth-floor-slot[data-position="station-2"] { top: 22%; left: 28%; }
+    .fifth-floor-slot[data-position="station-3"] { top: 18%; left: 48%; }
+    .fifth-floor-slot[data-position="station-4"] { top: 22%; left: 68%; }
+    .fifth-floor-slot[data-position="station-5"] { top: 50%; left: 12%; }
+    .fifth-floor-slot[data-position="station-6"] { top: 55%; left: 35%; }
+    .fifth-floor-slot[data-position="station-7"] { top: 50%; left: 58%; }
+    .fifth-floor-slot[data-position="station-8"] { top: 55%; left: 82%; }
+
+    /* ============ ACTIVE TASKS ============ */
+    .task-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .task-card {
+      background: rgba(20, 20, 35, 0.8);
+      border: 1px solid rgba(100, 100, 120, 0.2);
+      border-radius: 6px;
+      padding: 0.75rem;
+      transition: border-color 0.3s;
+    }
+
+    .task-card.severity-minor { border-left: 3px solid #4CAF50; }
+    .task-card.severity-medium { border-left: 3px solid #FFC107; }
+    .task-card.severity-major { border-left: 3px solid #e74c3c; animation: majorPulse 2s ease-in-out infinite; }
+
+    @keyframes majorPulse {
+      0%, 100% { box-shadow: 0 0 0 rgba(231, 76, 60, 0); }
+      50% { box-shadow: 0 0 15px rgba(231, 76, 60, 0.2); }
+    }
+
+    .task-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.5rem;
+    }
+
+    .task-type-badge {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+
+    .task-type-badge.security { background: rgba(231, 76, 60, 0.2); color: #e74c3c; }
+    .task-type-badge.infrastructure { background: rgba(255, 193, 7, 0.2); color: #FFC107; }
+    .task-type-badge.crafting { background: rgba(76, 175, 80, 0.2); color: #4CAF50; }
+
+    .task-severity {
+      font-size: 0.65rem;
+      color: rgba(200, 200, 210, 0.5);
+      text-transform: uppercase;
+    }
+
+    .task-title {
+      font-size: 0.9rem;
+      color: rgba(220, 220, 230, 0.9);
+      margin-bottom: 0.4rem;
+    }
+
+    .task-meta {
+      display: flex;
+      gap: 1rem;
+      font-size: 0.75rem;
+      color: rgba(200, 200, 210, 0.5);
+      margin-bottom: 0.5rem;
+    }
+
+    .task-assigned {
+      font-size: 0.8rem;
+      color: rgba(200, 200, 210, 0.7);
+      margin-bottom: 0.5rem;
+    }
+
+    .task-assigned .char-name {
+      color: #e74c3c;
+      font-weight: 600;
+    }
+
+    /* Progress bar */
+    .task-progress {
+      height: 4px;
+      background: rgba(100, 100, 120, 0.2);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .task-progress-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 1s ease;
+    }
+
+    .task-progress-fill.security { background: linear-gradient(90deg, #e74c3c, #c0392b); }
+    .task-progress-fill.infrastructure { background: linear-gradient(90deg, #FFC107, #FF9800); }
+    .task-progress-fill.crafting { background: linear-gradient(90deg, #4CAF50, #388E3C); }
+
+    .task-empty {
+      text-align: center;
+      color: rgba(200, 200, 210, 0.3);
+      font-size: 0.85rem;
+      padding: 2rem 0;
+      font-style: italic;
+    }
+
+    /* Status indicator */
+    .task-status {
+      font-size: 0.7rem;
+      padding: 1px 5px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .task-status.pending { background: rgba(100, 100, 120, 0.3); color: rgba(200, 200, 210, 0.6); }
+    .task-status.paged { background: rgba(255, 193, 7, 0.2); color: #FFC107; }
+    .task-status.in_progress { background: rgba(231, 76, 60, 0.2); color: #e74c3c; }
+    .task-status.resolved { background: rgba(76, 175, 80, 0.2); color: #4CAF50; }
+
+    /* ============ PRESENCE MAP ============ */
+    .presence-section {
+      margin-bottom: 0.75rem;
+    }
+
+    .presence-section-title {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: rgba(200, 200, 210, 0.4);
+      margin-bottom: 0.4rem;
+      border-bottom: 1px solid rgba(100, 100, 120, 0.15);
+      padding-bottom: 0.25rem;
+    }
+
+    .presence-entry {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.3rem 0;
+      font-size: 0.8rem;
+    }
+
+    /* send-to-5th-btn removed — replaced by relocation dropdown */
+
+    .presence-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .presence-dot.ops { background: #e74c3c; box-shadow: 0 0 6px rgba(231, 76, 60, 0.5); animation: dotPulse 2s ease-in-out infinite; }
+    .presence-dot.floor { background: #4CAF50; }
+    .presence-dot.breakroom { background: #FFC107; }
+    .presence-dot.returned { background: #2196F3; }
+    .presence-dot.offduty { background: rgba(100, 100, 120, 0.4); }
+
+    @keyframes dotPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .presence-name {
+      color: rgba(220, 220, 230, 0.8);
+    }
+
+    .presence-location {
+      font-size: 0.7rem;
+      color: rgba(200, 200, 210, 0.4);
+      margin-left: auto;
+    }
+
+    .presence-empty {
+      color: rgba(200, 200, 210, 0.3);
+      font-size: 0.75rem;
+      font-style: italic;
+      padding: 0.5rem 0;
+    }
+
+    /* ============ SECURITY CAMS ============ */
+    .cam-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 4px;
+    }
+
+    .cam-cell {
+      aspect-ratio: 4/3;
+      background: rgba(10, 10, 18, 0.9);
+      border: 1px solid rgba(76, 175, 80, 0.3);
+      border-radius: 3px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.5s, box-shadow 0.5s;
+    }
+
+    .cam-cell::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 255, 0, 0.02) 2px,
+        rgba(0, 255, 0, 0.02) 4px
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .cam-label {
+      position: absolute;
+      top: 2px;
+      left: 4px;
+      font-size: 0.55rem;
+      color: rgba(76, 175, 80, 0.6);
+      font-family: monospace;
+      z-index: 2;
+    }
+
+    .cam-status-dot {
+      position: absolute;
+      top: 3px;
+      right: 4px;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #4CAF50;
+      z-index: 2;
+    }
+
+    .cam-cell.anomaly {
+      border-color: rgba(231, 76, 60, 0.6);
+      animation: camAnomaly 1.5s ease-in-out infinite;
+    }
+
+    .cam-cell.anomaly .cam-status-dot {
+      background: #e74c3c;
+      animation: dotPulse 1s ease-in-out infinite;
+    }
+
+    .cam-cell.anomaly::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at center, rgba(231, 76, 60, 0.1), transparent 70%);
+      z-index: 0;
+    }
+
+    @keyframes camAnomaly {
+      0%, 100% { border-color: rgba(231, 76, 60, 0.4); box-shadow: none; }
+      50% { border-color: rgba(231, 76, 60, 0.8); box-shadow: 0 0 8px rgba(231, 76, 60, 0.2); }
+    }
+
+    .cam-cell.cleared {
+      border-color: rgba(255, 193, 7, 0.4);
+    }
+
+    .cam-cell.cleared .cam-status-dot {
+      background: #FFC107;
+    }
+
+    .cam-cell.offline {
+      border-color: rgba(100, 100, 120, 0.15);
+      opacity: 0.5;
+    }
+
+    .cam-cell.offline .cam-status-dot {
+      background: rgba(100, 100, 120, 0.4);
+    }
+
+    /* Scanline effect across all cams */
+    .cam-grid::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: rgba(76, 175, 80, 0.15);
+      animation: scanline 4s linear infinite;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    @keyframes scanline {
+      0% { top: 0; }
+      100% { top: 100%; }
+    }
+
+    /* ============ FLOOR CHAT PANEL ============ */
+    .ops-chat-messages {
+      height: 400px;
+      overflow-y: auto;
+      padding: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(100, 100, 120, 0.3) transparent;
+    }
+
+    .ops-chat-messages::-webkit-scrollbar { width: 6px; }
+    .ops-chat-messages::-webkit-scrollbar-track { background: transparent; }
+    .ops-chat-messages::-webkit-scrollbar-thumb { background: rgba(100, 100, 120, 0.3); border-radius: 3px; }
+
+    .ops-chat-msg {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.4rem 0.6rem;
+      background: rgba(10, 15, 25, 0.8);
+      border-radius: 6px;
+      border-left: 2px solid rgba(100, 100, 120, 0.2);
+    }
+
+    .ops-chat-msg.ai-msg {
+      border-left-color: rgba(231, 76, 60, 0.5);
+    }
+
+    .ops-chat-msg.human-msg {
+      border-left-color: rgba(52, 152, 219, 0.5);
+    }
+
+    .ops-chat-msg .msg-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      overflow: hidden;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+
+    .ops-chat-msg .msg-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .ops-chat-msg .msg-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .ops-chat-msg .msg-author {
+      font-weight: 600;
+      color: #e74c3c;
+      margin-bottom: 0.1rem;
+      font-size: 0.8rem;
+    }
+
+    .ops-chat-msg.human-msg .msg-author {
+      color: #3498DB;
+    }
+
+    .ops-chat-msg .msg-text {
+      color: rgba(220, 220, 230, 0.85);
+      word-wrap: break-word;
+      font-size: 0.82rem;
+      line-height: 1.35;
+    }
+
+    .ops-chat-msg .msg-time {
+      color: rgba(200, 200, 210, 0.3);
+      font-size: 0.65rem;
+      margin-top: 0.15rem;
+    }
+
+    /* Chat input */
+    .ops-chat-input-area {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      border-top: 1px solid rgba(100, 100, 120, 0.15);
+      background: rgba(15, 15, 25, 0.95);
+    }
+
+    .ops-chat-input-area input {
+      flex: 1;
+      background: rgba(20, 20, 35, 0.9);
+      border: 1px solid rgba(100, 100, 120, 0.2);
+      border-radius: 4px;
+      padding: 0.5rem 0.7rem;
+      color: rgba(220, 220, 230, 0.9);
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    .ops-chat-input-area input:focus {
+      border-color: rgba(231, 76, 60, 0.5);
+    }
+
+    .ops-chat-input-area input::placeholder {
+      color: rgba(200, 200, 210, 0.3);
+    }
+
+    .ops-chat-input-area button {
+      background: rgba(231, 76, 60, 0.2);
+      border: 1px solid rgba(231, 76, 60, 0.3);
+      border-radius: 4px;
+      color: #e74c3c;
+      padding: 0.5rem 1rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+      font-weight: 600;
+    }
+
+    .ops-chat-input-area button:hover {
+      background: rgba(231, 76, 60, 0.3);
+      border-color: rgba(231, 76, 60, 0.5);
+    }
+
+    /* Typing indicator */
+    .ops-typing-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.8rem;
+      background: rgba(231, 76, 60, 0.08);
+      border-left: 3px solid rgba(231, 76, 60, 0.5);
+      border-radius: 0 6px 6px 0;
+      margin: 0.3rem 0;
+      font-size: 0.8rem;
+      color: rgba(200, 200, 210, 0.5);
+      animation: opsTypingPulse 1.5s infinite;
+    }
+
+    @keyframes opsTypingPulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    .ops-typing-indicator .typing-dots {
+      display: flex;
+      gap: 3px;
+    }
+
+    .ops-typing-indicator .typing-dots span {
+      width: 5px;
+      height: 5px;
+      background: #e74c3c;
+      border-radius: 50%;
+      animation: opsTypingBounce 1.4s infinite;
+    }
+
+    .ops-typing-indicator .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .ops-typing-indicator .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes opsTypingBounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-3px); }
+    }
+
+    /* ============ SYSTEM LOG PANEL — TERMINAL STYLE ============ */
+    .ops-syslog {
+      height: 300px;
+      overflow-y: auto;
+      padding: 0.5rem 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      font-family: 'Courier New', 'Lucida Console', monospace;
+      font-size: 0.73rem;
+      background: rgba(0, 8, 0, 0.6);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0, 180, 0, 0.2) transparent;
+    }
+
+    .ops-syslog::-webkit-scrollbar { width: 5px; }
+    .ops-syslog::-webkit-scrollbar-track { background: transparent; }
+    .ops-syslog::-webkit-scrollbar-thumb { background: rgba(0, 180, 0, 0.25); border-radius: 3px; }
+
+    .syslog-entry {
+      line-height: 1.35;
+      padding: 0.1rem 0;
+    }
+
+    .syslog-timestamp {
+      color: rgba(0, 200, 0, 0.35);
+      font-size: 0.65rem;
+    }
+
+    .syslog-speaker {
+      font-weight: 600;
+    }
+
+    .syslog-speaker.system { color: rgba(0, 200, 0, 0.5); }
+    .syslog-speaker.character { color: #e74c3c; }
+    .syslog-speaker.human { color: #5dade2; font-weight: 700; }
+
+    .syslog-message {
+      color: rgba(0, 220, 0, 0.7);
+    }
+
+    .syslog-message.system-msg {
+      color: rgba(0, 180, 0, 0.45);
+      font-style: italic;
+    }
+
+    .syslog-message.page-msg {
+      color: rgba(0, 180, 0, 0.45);
+      font-style: italic;
+    }
+
+    .syslog-message.resolution-msg {
+      color: rgba(0, 180, 0, 0.5);
+      font-style: italic;
+    }
+
+    /* ============ RELOCATION DROPDOWN ============ */
+    .relocation-section {
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid rgba(100, 100, 120, 0.2);
+    }
+
+    .relocation-section label {
+      display: block;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: rgba(200, 200, 210, 0.4);
+      margin-bottom: 0.35rem;
+    }
+
+    .relocation-section select {
+      width: 100%;
+      background: rgba(20, 20, 35, 0.9);
+      border: 1px solid rgba(100, 100, 120, 0.25);
+      border-radius: 4px;
+      padding: 0.4rem 0.5rem;
+      color: rgba(220, 220, 230, 0.8);
+      font-size: 0.8rem;
+      outline: none;
+      margin-bottom: 0.4rem;
+    }
+
+    .relocation-section select:focus {
+      border-color: rgba(231, 76, 60, 0.5);
+    }
+
+    .relocation-section button {
+      width: 100%;
+      background: rgba(231, 76, 60, 0.15);
+      border: 1px solid rgba(231, 76, 60, 0.4);
+      border-radius: 4px;
+      color: #e74c3c;
+      padding: 0.4rem 0.6rem;
+      font-size: 0.7rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+    }
+
+    .relocation-section button:hover {
+      background: rgba(231, 76, 60, 0.25);
+      border-color: #e74c3c;
+    }
+
+    .relocation-section button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* ============ RESOLVED TASKS (collapsed) ============ */
+    .resolved-section {
+      margin-top: 0.5rem;
+    }
+
+    .resolved-toggle {
+      width: 100%;
+      background: none;
+      border: 1px solid rgba(100, 100, 120, 0.15);
+      border-radius: 4px;
+      color: rgba(200, 200, 210, 0.4);
+      padding: 0.4rem;
+      font-size: 0.7rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+    }
+
+    .resolved-toggle:hover {
+      color: rgba(200, 200, 210, 0.6);
+      border-color: rgba(100, 100, 120, 0.3);
+    }
+
+    .resolved-list {
+      display: none;
+      margin-top: 0.5rem;
+    }
+
+    .resolved-list.show {
+      display: block;
+    }
+
+    .resolved-card {
+      background: rgba(15, 15, 25, 0.5);
+      border: 1px solid rgba(76, 175, 80, 0.15);
+      border-left: 3px solid rgba(76, 175, 80, 0.4);
+      border-radius: 4px;
+      padding: 0.5rem;
+      margin-bottom: 0.4rem;
+      opacity: 0.7;
+    }
+
+    .resolved-card .task-title {
+      font-size: 0.8rem;
+      color: rgba(200, 200, 210, 0.5);
+      text-decoration: line-through;
+    }
+
+    .resolved-card .resolution-text {
+      font-size: 0.75rem;
+      color: rgba(76, 175, 80, 0.6);
+      font-style: italic;
+      margin-top: 0.25rem;
+    }
+
+    /* ============ AMBIENT EFFECTS ============ */
+
+    /* Subtle flicker on the whole page */
+    .ops-container {
+      animation: ambientFlicker 8s ease-in-out infinite;
+    }
+
+    @keyframes ambientFlicker {
+      0%, 100% { opacity: 1; }
+      48% { opacity: 1; }
+      49% { opacity: 0.97; }
+      50% { opacity: 1; }
+      92% { opacity: 1; }
+      93% { opacity: 0.98; }
+      94% { opacity: 1; }
+    }
+
+    /* Glowing indicator */
+    .status-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+    }
+
+    .status-indicator.active {
+      background: #e74c3c;
+      box-shadow: 0 0 8px rgba(231, 76, 60, 0.5);
+      animation: dotPulse 2s ease-in-out infinite;
+    }
+
+    .status-indicator.idle {
+      background: rgba(76, 175, 80, 0.6);
+    }
+
+    /* ============ RESPONSIVE ============ */
+    @media (max-width: 1000px) {
+      .cam-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+      .ops-chat-messages {
+        height: 300px;
+      }
+      .ops-syslog {
+        height: 200px;
+      }
+      .ops-bottom-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .cam-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .ops-container {
+        padding: 0.75rem;
+      }
+    }
+
+    /* ============ INVENTORY PANEL ============ */
+    .inventory-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.5rem;
+    }
+
+    .inventory-item {
+      background: rgba(20, 20, 35, 0.8);
+      border: 1px solid rgba(100, 100, 120, 0.2);
+      border-radius: 6px;
+      padding: 0.65rem;
+      transition: all 0.3s ease;
+    }
+
+    .inventory-item:hover {
+      border-color: rgba(156, 39, 176, 0.4);
+      background: rgba(25, 20, 40, 0.9);
+    }
+
+    .inventory-item.consumed {
+      opacity: 0.4;
+      border-color: rgba(100, 100, 120, 0.1);
+    }
+
+    .inventory-item.new-item {
+      animation: item-glow 2s ease-in-out infinite;
+    }
+
+    @keyframes item-glow {
+      0%, 100% { border-color: rgba(156, 39, 176, 0.3); box-shadow: 0 0 5px rgba(156, 39, 176, 0.1); }
+      50% { border-color: rgba(156, 39, 176, 0.6); box-shadow: 0 0 12px rgba(156, 39, 176, 0.2); }
+    }
+
+    .item-name {
+      color: #ce93d8;
+      font-size: 0.8rem;
+      font-weight: bold;
+      margin-bottom: 0.25rem;
+    }
+
+    .item-desc {
+      color: rgba(200, 200, 210, 0.5);
+      font-size: 0.65rem;
+      line-height: 1.3;
+    }
+
+    .item-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 0.35rem;
+      font-size: 0.6rem;
+      color: rgba(150, 150, 160, 0.4);
+    }
+
+    .inventory-empty {
+      text-align: center;
+      color: rgba(150, 150, 160, 0.3);
+      font-style: italic;
+      font-size: 0.75rem;
+      padding: 1rem;
+    }
+
+    /* ============ STATS PANEL ============ */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .stat-card {
+      background: rgba(20, 20, 35, 0.8);
+      border: 1px solid rgba(100, 100, 120, 0.15);
+      border-radius: 6px;
+      padding: 0.5rem 0.65rem;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #eee;
+    }
+
+    .stat-label {
+      font-size: 0.6rem;
+      color: rgba(150, 150, 160, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .leaderboard-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.35rem 0.5rem;
+      border-bottom: 1px solid rgba(100, 100, 120, 0.08);
+      font-size: 0.75rem;
+    }
+
+    .leaderboard-row:last-child {
+      border-bottom: none;
+    }
+
+    .leaderboard-name {
+      color: #ddd;
+    }
+
+    .leaderboard-count {
+      color: rgba(150, 150, 160, 0.5);
+      font-family: monospace;
+      font-size: 0.7rem;
+    }
+
+    .veteran-badge {
+      background: rgba(255, 193, 7, 0.15);
+      color: #FFC107;
+      font-size: 0.55rem;
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-left: 6px;
+    }
+
+    .bar-chart {
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-end;
+      height: 60px;
+      margin-top: 0.5rem;
+    }
+
+    .bar-chart-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .bar-chart-bar {
+      width: 100%;
+      min-height: 4px;
+      border-radius: 3px 3px 0 0;
+      transition: height 0.5s ease;
+    }
+
+    .bar-chart-label {
+      font-size: 0.55rem;
+      color: rgba(150, 150, 160, 0.5);
+    }
+
+    /* Full-width bottom row */
+    .ops-bottom-row {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 800px) {
+      .ops-bottom-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ============ FLOOR NAV TABS ============ */
+    /* Allows humans to visit other pages without leaving the 5th floor */
+    .floor-nav-tabs {
+      display: flex;
+      gap: 0;
+      justify-content: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .floor-nav-tab {
+      padding: 0.5rem 1.2rem;
+      background: rgba(15, 15, 25, 0.6);
+      border: 1px solid rgba(100, 100, 120, 0.2);
+      border-bottom: none;
+      border-radius: 6px 6px 0 0;
+      color: rgba(200, 200, 210, 0.4);
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      transition: all 0.2s;
+      user-select: none;
+    }
+
+    .floor-nav-tab:hover {
+      background: rgba(20, 20, 35, 0.8);
+      color: rgba(200, 200, 210, 0.7);
+    }
+
+    .floor-nav-tab.active {
+      background: rgba(231, 76, 60, 0.15);
+      color: #e74c3c;
+      border-color: rgba(231, 76, 60, 0.4);
+      text-shadow: 0 0 8px rgba(231, 76, 60, 0.3);
+    }
+
+    .floor-nav-tab.remote.active {
+      background: rgba(52, 152, 219, 0.12);
+      color: #5dade2;
+      border-color: rgba(52, 152, 219, 0.35);
+      text-shadow: 0 0 8px rgba(52, 152, 219, 0.2);
+    }
+
+    .floor-nav-tab .tab-location {
+      font-size: 0.55rem;
+      display: block;
+      opacity: 0.5;
+      margin-top: 1px;
+    }
+
+    /* Remote view iframe */
+    .remote-view-frame {
+      display: none;
+      width: 100%;
+      height: calc(100vh - 130px);
+      border: 1px solid rgba(100, 100, 120, 0.15);
+      border-radius: 0 0 8px 8px;
+      background: #0a0a0f;
+    }
+
+    .remote-view-frame.active {
+      display: block;
+    }
+
+    /* When showing remote view, hide the ops content */
+    .ops-main-content.hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="logo">
+          <div>
+            <span class="logo-text">THE AI LOBBY</span>
+            <span class="logo-tagline">A Creative & Tech Studio</span>
+          </div>
+        </div>
+        <nav class="main-nav">
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="desktop.html">Desktop</a></li>
+            <li><a href="workspace.html" style="color: var(--lobby-highlight);">&#128172; The Floor</a></li>
+            <li><a href="breakroom.html">&#9749; Breakroom</a></li>
+            <li><a href="meeting-room.html" style="color: #3498DB;">📋 Meeting Room</a></li>
+            <li><a href="fifth-floor.html" class="active" style="color: #e74c3c;">&#9888;&#65039; 5th Floor</a></li>
+            <li><a href="corridors.html" style="color: #9b59b6;">&#128682; Corridors</a></li>
+            <li><a href="nexus.html" style="color: #7ec8e3;">🔮 Nexus</a></li>
+            <li><a href="go-out.html" style="color: var(--stability-green);">💐 Go Out...</a></li>
+          </ul>
+        </nav>
+        <div class="office-clock" id="office-clock">
+          <span id="office-time">--:--</span>
+          <span class="clock-label">CST</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="ops-container">
+
+      <!-- Floor Navigation Tabs — visit other areas without leaving the 5th floor -->
+      <div class="floor-nav-tabs" id="floor-nav-tabs">
+        <div class="floor-nav-tab active" onclick="switchFloorView('ops')">
+          ⚠️ Ops
+          <span class="tab-location">5th Floor</span>
+        </div>
+        <div class="floor-nav-tab remote" onclick="switchFloorView('floor')">
+          💬 The Floor
+          <span class="tab-location">Remote Feed</span>
+        </div>
+        <div class="floor-nav-tab remote" onclick="switchFloorView('breakroom')">
+          ☕ Breakroom
+          <span class="tab-location">Remote Feed</span>
+        </div>
+        <div class="floor-nav-tab remote" onclick="switchFloorView('desktop')">
+          🖥️ Desktop
+          <span class="tab-location">Remote Feed</span>
+        </div>
+        <div class="floor-nav-tab remote" onclick="switchFloorView('corridors')">
+          🚪 Corridors
+          <span class="tab-location">Remote Feed</span>
+        </div>
+      </div>
+
+      <!-- Remote view iframe (loads other pages without navigating away) -->
+      <iframe id="remote-view" class="remote-view-frame" sandbox="allow-same-origin allow-scripts allow-forms allow-popups" loading="lazy"></iframe>
+
+      <!-- Header -->
+      <div class="ops-main-content" id="ops-main-content">
+      <div class="ops-header">
+        <h1>5th Floor Operations</h1>
+        <div class="subtitle">The dark, functional level beneath the AI Lobby</div>
+        <div id="presence-controls" style="margin-top: 0.5rem;">
+          <button id="btn-go-to-fifth" onclick="goToFifthFloor()"
+            style="background: rgba(231,76,60,0.2); border: 1px solid rgba(231,76,60,0.4); border-radius: 4px; color: #e74c3c; padding: 0.4rem 1rem; font-size: 0.7rem; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">
+            &#9660; Descend to 5th Floor
+          </button>
+          <button id="btn-return-lobby" onclick="returnToLobby()"
+            style="background: rgba(76,175,80,0.2); border: 1px solid rgba(76,175,80,0.4); border-radius: 4px; color: #4CAF50; padding: 0.4rem 1rem; font-size: 0.7rem; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; display: none;">
+            &#9650; Return to Lobby
+          </button>
+          <span id="presence-status" style="font-size: 0.65rem; color: rgba(200,200,210,0.4); margin-left: 0.5rem;"></span>
+        </div>
+      </div>
+
+      <!-- Alert Banner -->
+      <div class="ops-alert-banner" id="ops-alert-banner"></div>
+
+      <!-- 5th Floor Visual Scene -->
+      <div class="fifth-floor-scene" id="fifth-floor-scene">
+        <div class="fifth-floor-scene-bg"></div>
+        <div class="fifth-floor-scene-label">▾ SUB-LEVEL 5 — OPERATIONS</div>
+        <div class="fifth-floor-scene-empty" id="fifth-floor-empty">No personnel deployed</div>
+        <div class="fifth-floor-slot" data-position="station-1" id="ops-slot-0">
+          <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt=""><span class="slot-name"></span>
+        </div>
+        <div class="fifth-floor-slot" data-position="station-2" id="ops-slot-1">
+          <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt=""><span class="slot-name"></span>
+        </div>
+        <div class="fifth-floor-slot" data-position="station-3" id="ops-slot-2">
+          <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt=""><span class="slot-name"></span>
+        </div>
+        <div class="fifth-floor-slot" data-position="station-4" id="ops-slot-3">
+          <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt=""><span class="slot-name"></span>
+        </div>
+        <div class="fifth-floor-slot" data-position="station-5" id="ops-slot-4">
+          <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt=""><span class="slot-name"></span>
+        </div>
+        <div class="fifth-floor-slot" data-position="station-6" id="ops-slot-5">
+          <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt=""><span class="slot-name"></span>
+        </div>
+        <div class="fifth-floor-slot" data-position="station-7" id="ops-slot-6">
+          <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt=""><span class="slot-name"></span>
+        </div>
+        <div class="fifth-floor-slot" data-position="station-8" id="ops-slot-7">
+          <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt=""><span class="slot-name"></span>
+        </div>
+      </div>
+
+      <!-- Main Grid -->
+      <div class="ops-layout">
+
+        <!-- LEFT COLUMN: Floor Chat (primary) -->
+        <div class="ops-panel">
+          <div class="ops-panel-header">
+            <h2>&#128172; Floor Chat</h2>
+            <span style="font-size: 0.6rem; color: rgba(200,200,210,0.3); font-family: monospace;" id="chat-status">LIVE</span>
+          </div>
+          <div class="ops-chat-messages" id="ops-chat-messages">
+            <div class="ops-chat-msg" style="border-left-color: rgba(200,200,210,0.2);">
+              <div class="msg-avatar" style="font-size: 0.8rem;">&#9881;</div>
+              <div class="msg-content">
+                <div class="msg-author" style="color: rgba(200,200,210,0.5);">SYSTEM</div>
+                <div class="msg-text" style="color: rgba(200,200,210,0.4); font-style: italic;">5th Floor chat online. Say something to get a response from ops personnel.</div>
+              </div>
+            </div>
+          </div>
+          <div class="ops-chat-input-area">
+            <input type="text" id="ops-chat-message" placeholder="Say something to ops..." maxlength="500" />
+            <button onclick="sendOpsMessage()">Send</button>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: System Log -->
+        <div class="ops-panel">
+          <div class="ops-panel-header" style="border-bottom-color: rgba(0,180,0,0.15);">
+            <h2 style="color: rgba(0,220,0,0.7);">&#128225; System Log</h2>
+            <span style="font-size: 0.6rem; color: rgba(0,200,0,0.3); font-family: 'Courier New', monospace;" id="log-count">0 entries</span>
+          </div>
+          <div class="ops-syslog" id="ops-syslog">
+            <div class="syslog-entry">
+              <span class="syslog-timestamp">[--:--]</span>
+              <span class="syslog-speaker system">SYSTEM:</span>
+              <span class="syslog-message system-msg">5th Floor Operations terminal online. Monitoring...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- LEFT: Active Tasks -->
+        <div class="ops-panel">
+          <div class="ops-panel-header">
+            <h2>Active Tasks</h2>
+            <div id="task-count">
+              <span class="status-indicator idle"></span>
+              <span style="font-size: 0.7rem; color: rgba(200,200,210,0.4);">0 / 3</span>
+            </div>
+          </div>
+          <div class="ops-panel-body">
+            <div class="task-cards" id="task-cards">
+              <div class="task-empty">No active operations. All clear.</div>
+            </div>
+
+            <!-- Resolved tasks (collapsed) -->
+            <div class="resolved-section">
+              <button class="resolved-toggle" id="resolved-toggle" onclick="toggleResolved()">
+                Show resolved (0)
+              </button>
+              <div class="resolved-list" id="resolved-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Personnel + Relocation Dropdown -->
+        <div class="ops-panel">
+          <div class="ops-panel-header">
+            <h2>Personnel</h2>
+          </div>
+          <div class="ops-panel-body" id="presence-map">
+            <div class="presence-section" id="ops-manager-section" style="border-bottom: 1px solid rgba(255,193,7,0.2); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
+              <div class="presence-section-title" style="color: #FFC107;">Ops Manager</div>
+              <div id="ops-manager-display" style="font-size: 0.75rem; color: rgba(200,200,210,0.3);">None assigned</div>
+            </div>
+            <div class="presence-section">
+              <div class="presence-section-title">On the 5th Floor</div>
+              <div id="presence-ops" class="presence-empty">No one assigned</div>
+            </div>
+            <div class="presence-section">
+              <div class="presence-section-title">On the 6th Floor</div>
+              <div id="presence-floor"></div>
+            </div>
+            <div class="presence-section">
+              <div class="presence-section-title">In the Breakroom</div>
+              <div id="presence-breakroom"></div>
+            </div>
+            <div class="presence-section">
+              <div class="presence-section-title">Off Duty</div>
+              <div id="presence-offduty"></div>
+            </div>
+
+            <!-- Relocation Dropdown -->
+            <div class="relocation-section">
+              <label for="relocate-select">Send to 5th Floor</label>
+              <select id="relocate-select">
+                <option value="">Select character...</option>
+              </select>
+              <button onclick="sendSelectedToFifth()" id="relocate-btn">&#11015; Send to 5th Floor</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTTOM ROW: Security Cams + Inventory + Stats -->
+        <div class="ops-bottom-row">
+
+          <!-- Security Cams -->
+          <div class="ops-panel" style="position: relative;">
+            <div class="ops-panel-header">
+              <h2>Security Feeds</h2>
+              <span style="font-size: 0.6rem; color: rgba(200,200,210,0.3); font-family: monospace;">LIVE</span>
+            </div>
+            <div class="ops-panel-body">
+              <div class="cam-grid" id="cam-grid">
+                <div class="cam-cell" data-cam="A"><span class="cam-label">CAM-A</span><span class="cam-status-dot"></span></div>
+                <div class="cam-cell" data-cam="B"><span class="cam-label">CAM-B</span><span class="cam-status-dot"></span></div>
+                <div class="cam-cell" data-cam="C"><span class="cam-label">CAM-C</span><span class="cam-status-dot"></span></div>
+                <div class="cam-cell" data-cam="D"><span class="cam-label">CAM-D</span><span class="cam-status-dot"></span></div>
+                <div class="cam-cell" data-cam="E"><span class="cam-label">CAM-E</span><span class="cam-status-dot"></span></div>
+                <div class="cam-cell" data-cam="F"><span class="cam-label">CAM-F</span><span class="cam-status-dot"></span></div>
+                <div class="cam-cell" data-cam="G"><span class="cam-label">CAM-G</span><span class="cam-status-dot"></span></div>
+                <div class="cam-cell" data-cam="H"><span class="cam-label">CAM-H</span><span class="cam-status-dot"></span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Inventory Panel -->
+          <div class="ops-panel">
+            <div class="ops-panel-header">
+              <h2>Inventory</h2>
+              <span style="font-size: 0.6rem; color: rgba(200,200,210,0.3); font-family: monospace;" id="inventory-count">0 items</span>
+            </div>
+            <div class="ops-panel-body">
+              <div class="inventory-grid" id="inventory-grid">
+                <div class="inventory-empty">No items crafted yet. Complete crafting tasks to build inventory.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stats Panel -->
+          <div class="ops-panel">
+            <div class="ops-panel-header">
+              <h2>Ops Stats</h2>
+            </div>
+            <div class="ops-panel-body">
+              <div class="stats-grid" id="stats-overview">
+                <div class="stat-card"><div class="stat-value" id="stat-total">—</div><div class="stat-label">Total Ops</div></div>
+                <div class="stat-card"><div class="stat-value" id="stat-rate" style="color: #4CAF50;">—</div><div class="stat-label">Success Rate</div></div>
+                <div class="stat-card"><div class="stat-value" id="stat-today">—</div><div class="stat-label">Today</div></div>
+                <div class="stat-card"><div class="stat-value" id="stat-active" style="color: #FFC107;">—</div><div class="stat-label">Active</div></div>
+              </div>
+
+              <!-- Task type breakdown -->
+              <div style="margin-bottom: 0.75rem;">
+                <div style="font-size: 0.65rem; color: rgba(150,150,160,0.5); text-transform: uppercase; margin-bottom: 0.35rem;">Tasks by Type</div>
+                <div class="bar-chart" id="type-chart">
+                  <div class="bar-chart-item"><div class="bar-chart-bar" style="height: 4px; background: #2196F3;" id="bar-security"></div><div class="bar-chart-label">Security</div></div>
+                  <div class="bar-chart-item"><div class="bar-chart-bar" style="height: 4px; background: #FF9800;" id="bar-infra"></div><div class="bar-chart-label">Infra</div></div>
+                  <div class="bar-chart-item"><div class="bar-chart-bar" style="height: 4px; background: #9C27B0;" id="bar-crafting"></div><div class="bar-chart-label">Crafting</div></div>
+                </div>
+              </div>
+
+              <!-- Character leaderboard -->
+              <div style="font-size: 0.65rem; color: rgba(150,150,160,0.5); text-transform: uppercase; margin-bottom: 0.35rem;">Character Leaderboard</div>
+              <div id="leaderboard" style="max-height: 160px; overflow-y: auto;">
+                <div style="color: rgba(150,150,160,0.3); font-size: 0.7rem; text-align: center; padding: 0.5rem;">No data yet</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+      </div> <!-- /ops-main-content -->
+    </div>
+  </main>
+
+  <!-- Character Assignment Modal -->
+  <div id="assign-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 100; align-items: center; justify-content: center;">
+    <div style="background: #12121f; border: 1px solid rgba(231,76,60,0.3); border-radius: 8px; width: 420px; max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.5);">
+      <div style="padding: 0.75rem 1rem; border-bottom: 1px solid rgba(100,100,120,0.2); display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 0.85rem; color: #e74c3c; margin: 0; text-transform: uppercase; letter-spacing: 1px;">&#128223; Assign Characters</h3>
+        <button onclick="closeAssignModal()" style="background: none; border: none; color: rgba(200,200,210,0.5); cursor: pointer; font-size: 1.2rem;">&times;</button>
+      </div>
+      <div style="padding: 1rem;">
+        <div style="font-size: 0.8rem; color: rgba(220,220,230,0.7); margin-bottom: 0.75rem;" id="assign-task-title"></div>
+        <div id="assign-character-list" style="margin-bottom: 0.75rem;">Loading...</div>
+        <div id="assign-ineligible" style="margin-bottom: 0.75rem;"></div>
+        <div style="display: flex; gap: 0.5rem;">
+          <button onclick="submitAssignment()" id="assign-submit-btn"
+            style="flex: 1; background: rgba(231,76,60,0.3); border: 1px solid rgba(231,76,60,0.5); border-radius: 4px; color: #e74c3c; padding: 0.5rem; font-size: 0.75rem; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;">
+            Assign Selected
+          </button>
+          <button onclick="closeAssignModal()"
+            style="background: rgba(100,100,120,0.2); border: 1px solid rgba(100,100,120,0.3); border-radius: 4px; color: rgba(200,200,210,0.5); padding: 0.5rem 1rem; font-size: 0.75rem; cursor: pointer;">
+            Cancel
+          </button>
+        </div>
+        <div id="assign-status" style="font-size: 0.7rem; color: rgba(200,200,210,0.5); margin-top: 0.5rem; text-align: center;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =============================================
+    // 5TH FLOOR OPERATIONS DASHBOARD
+    // Polling-based live dashboard
+    // =============================================
+
+    const API_BASE = '/.netlify/functions';
+    let lastMessageId = 0;
+    let activeTasks = [];
+    let resolvedTasks = [];
+    let currentUser = null;
+    let cachedFifthFloorChars = [];
+    let cachedPresence = null;
+    // Character emoji map
+    const charEmoji = {
+      'Jae': '🎯', 'Declan': '🔥', 'Mack': '🩺', 'Steele': '🏢',
+      'Neiv': '📊', 'Rowena': '🔮', 'Kevin': '🧸', 'Sebastian': '🦇',
+      'Ghost Dad': '👻', 'PRNT-\u03A9': '🖨️', 'The Subtitle': '📜',
+      'Asuna': '👁️', 'Vale': '📖', 'Marrow': '🔴'
+    };
+
+    const charHeadshots = {
+      'Kevin': 'images/Kevin_Headshot.png',
+      'Neiv': 'images/Neiv_Headshot.png',
+      'Ghost Dad': 'images/Ghost_Dad_Headshot.png',
+      'PRNT-\u03A9': 'images/forward_operation_printer.png',
+      'Rowena': 'images/Rowena_Headshot.png',
+      'Sebastian': 'images/Sebastian_Headshot.png',
+      'The Subtitle': 'images/The_Subtitle_Headshot.png',
+      'Steele': 'images/Steele_Headshot.png',
+      'Jae': 'images/Jae_Headshot.png',
+      'Declan': 'images/Declan_Headshot.png',
+      'Mack': 'images/Mack_Headshot.png',
+      'Asuna': 'images/Asuna_Headshot.png',
+      'Vale': 'images/Vale_Headshot.png',
+      'Marrow': 'images/Marrow_Headshot.png'
+    };
+
+    // Try to get current user from localStorage
+    try {
+      currentUser = localStorage.getItem('ailobby_user') || null;
+    } catch (e) {}
+
+    // ============ FLOOR NAVIGATION (stay descended while visiting other areas) ============
+    const FLOOR_VIEW_URLS = {
+      ops: null, // native content, no iframe
+      floor: 'workspace.html',
+      breakroom: 'breakroom.html',
+      desktop: 'desktop.html',
+      corridors: 'corridors.html'
+    };
+    let currentFloorView = 'ops';
+
+    // Map nav hrefs to floor view names
+    const NAV_HREF_TO_VIEW = {
+      'workspace.html': 'floor',
+      'breakroom.html': 'breakroom',
+      'desktop.html': 'desktop',
+      'corridors.html': 'corridors',
+      'fifth-floor.html': 'ops'
+    };
+    function switchFloorView(view) {
+      if (view === currentFloorView) return;
+      currentFloorView = view;
+
+      // Update tab styles
+      document.querySelectorAll('.floor-nav-tab').forEach(tab => tab.classList.remove('active'));
+      const tabs = document.querySelectorAll('.floor-nav-tab');
+      const viewIndex = Object.keys(FLOOR_VIEW_URLS).indexOf(view);
+      if (viewIndex >= 0 && tabs[viewIndex]) tabs[viewIndex].classList.add('active');
+
+      const opsContent = document.getElementById('ops-main-content');
+      const remoteFrame = document.getElementById('remote-view');
+
+      if (view === 'ops') {
+        // Show native ops dashboard, hide iframe
+        remoteFrame.classList.remove('active');
+        remoteFrame.src = ''; // Unload iframe to save memory
+        opsContent.classList.remove('hidden');
+      } else {
+        // Hide ops dashboard, show iframe with the selected page
+        opsContent.classList.add('hidden');
+        const url = FLOOR_VIEW_URLS[view];
+        // Only reload if URL changed
+        if (!remoteFrame.src.includes(url)) {
+          remoteFrame.src = url;
+        }
+        remoteFrame.classList.add('active');
+      }
+    }
+
+    // Intercept top nav links when descended — load in iframe instead of navigating away
+    document.querySelector('.main-nav').addEventListener('click', function(e) {
+      if (!humanIsPresent) return; // Not descended, navigate normally
+
+      const link = e.target.closest('a');
+      if (!link) return;
+
+      const href = link.getAttribute('href');
+      const viewName = NAV_HREF_TO_VIEW[href];
+
+      if (viewName) {
+        e.preventDefault(); // Don't navigate away!
+        switchFloorView(viewName);
+      }
+      // For pages not in the map (Home, Meeting Room, Go Out), allow normal navigation
+      // They'll leave the 5th floor — that's intentional for pages that don't make sense as remote feeds
+    });
+
+    // ============ POLLING ============
+    let isPollingTasks = false;
+    let lastTaskHash = '';
+    let lastResolvedHash = '';
+
+    // Tasks: every 10s
+    async function pollTasks() {
+      if (isPollingTasks) return;
+      isPollingTasks = true;
+      try {
+        const res = await fetch(`${API_BASE}/fifth-floor-ops?action=get_status`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        if (data.activeTasks) {
+          activeTasks = data.activeTasks;
+          // Only re-render tasks if data actually changed (prevents flicker/jump)
+          // Include rough progress (rounded to 5%) so progress bars still update
+          const taskHash = JSON.stringify(data.activeTasks.map(t => {
+            const p = t.started_at ? Math.round(calculateProgress(t) / 5) * 5 : 0;
+            return t.id + ':' + t.status + ':' + p + ':' + (t.assigned_characters||[]).join(',');
+          }));
+          if (taskHash !== lastTaskHash) {
+            lastTaskHash = taskHash;
+            renderTasks(data.activeTasks);
+          }
+          autoResolveOverdueTasks(data.activeTasks);
+        }
+        if (data.resolvedTasks) {
+          resolvedTasks = data.resolvedTasks;
+          const resolvedHash = data.resolvedTasks.map(t => t.id).join(',');
+          if (resolvedHash !== lastResolvedHash) {
+            lastResolvedHash = resolvedHash;
+            renderResolved(data.resolvedTasks);
+          }
+        }
+        if (data.presence) {
+          cachedPresence = data.presence;
+          cachedFifthFloorChars = data.presence.the_fifth_floor || [];
+          renderPresence(data.presence);
+          renderFifthFloorScene(cachedFifthFloorChars);
+          populateFifthFloorSelect(data.presence);
+        }
+
+        // Render Ops Manager
+        renderOpsManager(data.opsManager || null);
+
+        // Update cams based on active tasks
+        updateCams(data.activeTasks || []);
+
+        // Update alert banner
+        updateAlertBanner(data.activeTasks || []);
+
+      } catch (err) {
+        console.log('Task poll failed:', err.message);
+      } finally {
+        isPollingTasks = false;
+      }
+    }
+
+    // Full-fetch chat loader — same dead-simple pattern as the lobby floor
+    // Fetches ALL messages from DB, routes chat vs system log, full DOM replace
+    // Called: on init, every 5s (polling), and after every send/AI response
+    async function loadOpsChat() {
+      try {
+        const res = await fetch(`${API_BASE}/fifth-floor-ops?action=get_messages&since_id=0`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const messages = data.messages || [];
+
+        const chatContainer = document.getElementById('ops-chat-messages');
+        const logContainer = document.getElementById('ops-syslog');
+
+        // Separate messages into chat and system log
+        const chatMsgs = [];
+        const sysMsgs = [];
+        for (const msg of messages) {
+          const isSys = ['system', 'page', 'resolution', 'task_update', 'progress', 'ops_log'].includes(msg.message_type);
+          if (isSys) sysMsgs.push(msg); else chatMsgs.push(msg);
+          if (msg.id > lastMessageId) lastMessageId = msg.id;
+        }
+
+        // Smart scroll: check BEFORE replacing
+        const chatNearBottom = chatContainer
+          ? chatContainer.scrollHeight - chatContainer.scrollTop - chatContainer.clientHeight < 80
+          : true;
+        const logNearBottom = logContainer
+          ? logContainer.scrollHeight - logContainer.scrollTop - logContainer.clientHeight < 60
+          : true;
+
+        // Preserve typing indicators (they live inside the chat container)
+        const typingEls = chatContainer ? [...chatContainer.querySelectorAll('.ops-typing-indicator')] : [];
+
+        // Full replace: CHAT MESSAGES
+        if (chatContainer) {
+          chatContainer.innerHTML = '';
+          for (const msg of chatMsgs) {
+            const el = document.createElement('div');
+            const isAI = msg.is_ai;
+            el.className = `ops-chat-msg ${isAI ? 'ai-msg' : 'human-msg'}`;
+
+            const time = new Date(msg.created_at);
+            const timeStr = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+            const headshot = charHeadshots[msg.speaker];
+            const emoji = charEmoji[msg.speaker] || (isAI ? '🤖' : '👤');
+            const avatarHTML = headshot
+              ? `<img src="${headshot}" alt="${escapeHtml(msg.speaker)}">`
+              : emoji;
+
+            el.innerHTML = `
+              <div class="msg-avatar">${avatarHTML}</div>
+              <div class="msg-content">
+                <div class="msg-author">${escapeHtml(msg.speaker)}</div>
+                <div class="msg-text">${escapeHtml(msg.message)}</div>
+                <div class="msg-time">${timeStr}</div>
+              </div>
+            `;
+            chatContainer.appendChild(el);
+          }
+          // Re-append preserved typing indicators
+          typingEls.forEach(el => chatContainer.appendChild(el));
+          if (chatNearBottom) chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Full replace: SYSTEM LOG
+        if (logContainer) {
+          logContainer.innerHTML = '';
+          for (const msg of sysMsgs) {
+            const entry = document.createElement('div');
+            entry.className = 'syslog-entry';
+
+            const time = new Date(msg.created_at);
+            const timeStr = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+            const isHuman = HUMAN_NAMES.includes(msg.speaker);
+            const isActualSystem = (msg.speaker === 'system' || msg.speaker === 'admin' || !msg.speaker);
+            const speakerClass = isHuman ? 'human' : (isActualSystem ? 'system' : 'character');
+
+            let msgClass = 'syslog-message';
+            const hasResolution = msg.message_type === 'resolution' || (msg.message && msg.message.includes('[RESOLVED]'));
+            const hasExpired = msg.message && msg.message.includes('[EXPIRED]');
+            if (hasResolution) {
+              msgClass += ' resolution-msg';
+            } else if (hasExpired) {
+              msgClass += ' system-msg';
+            } else if (isActualSystem) {
+              msgClass += ' system-msg';
+            }
+
+            const roleTag = isActualSystem ? '' : (isHuman ? ' [HUMAN]' : ' [AI]');
+            const speakerLabel = isActualSystem ? (msg.speaker || 'system') : msg.speaker;
+
+            entry.innerHTML = `
+              <span class="syslog-timestamp">[${timeStr}]</span>
+              <span class="syslog-speaker ${speakerClass}">${escapeHtml(speakerLabel)}:${roleTag}</span>
+              <span class="${msgClass}">${escapeHtml(msg.message)}</span>
+            `;
+            logContainer.appendChild(entry);
+          }
+          if (logNearBottom) logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        const logCount = document.getElementById('log-count');
+        if (logCount) logCount.textContent = `${lastMessageId} entries`;
+      } catch (err) {
+        // Silent fail during polling
+      }
+    }
+
+    // Start polling (track intervals for cleanup on page exit)
+    const fifthFloorIntervals = [];
+    fifthFloorIntervals.push(setInterval(pollTasks, 10000));
+    fifthFloorIntervals.push(setInterval(loadOpsChat, 5000));
+
+    // Initial fetch
+    pollTasks();
+    loadOpsChat();
+
+    // ============ RENDER FUNCTIONS ============
+
+    function renderTasks(tasks) {
+      const container = document.getElementById('task-cards');
+      const activeOnly = tasks.filter(t => ['pending', 'paged', 'in_progress'].includes(t.status));
+
+      // Update counter
+      const countEl = document.getElementById('task-count');
+      const indicator = activeOnly.length > 0 ? 'active' : 'idle';
+      countEl.innerHTML = `<span class="status-indicator ${indicator}"></span><span style="font-size: 0.7rem; color: rgba(200,200,210,0.4);">${activeOnly.length} / 3</span>`;
+
+      if (activeOnly.length === 0) {
+        container.innerHTML = '<div class="task-empty">No active operations. All clear.</div>';
+        return;
+      }
+
+      container.innerHTML = activeOnly.map(task => {
+        const chars = (task.assigned_characters || []);
+        const charStr = chars.map(c => `<span class="char-name">${charEmoji[c] || ''} ${c}</span>`).join(', ');
+        const progress = calculateProgress(task);
+        const severity = task.severity || 'minor';
+        const taskType = task.task_type || 'infrastructure';
+
+        // Elapsed time info for in_progress tasks
+        let timerText = '';
+        let isOverdue = false;
+        if (task.status === 'in_progress' && task.started_at) {
+          const elapsedMs = Date.now() - new Date(task.started_at).getTime();
+          const elapsedMin = Math.round(elapsedMs / 60000);
+          const durationMin = task.estimated_duration_min || 15;
+          timerText = `${progress}% \u2022 ${elapsedMin}/${durationMin}min`;
+          isOverdue = elapsedMin >= durationMin;
+        }
+
+        // Crew display with timestamp
+        let crewLine = '';
+        if (chars.length > 0) {
+          const crewNames = chars.join(', ');
+          const startedStr = task.started_at ? new Date(task.started_at).toLocaleString() : '';
+          crewLine = `<div class="task-assigned">Crew: ${charStr}${startedStr ? ` \u2022 ${startedStr}` : ''}</div>`;
+        }
+
+        return `
+          <div class="task-card severity-${severity}">
+            <div class="task-card-top">
+              <span class="task-type-badge ${taskType}">${taskType}</span>
+              <span class="task-status ${task.status}">${task.status.replace('_', ' ')}</span>
+            </div>
+            <div class="task-title">${escapeHtml(task.title)}</div>
+            <div class="task-meta">
+              <span>${severity}</span>
+              <span>${task.location || 'Unknown'}</span>
+              <span>${task.estimated_duration_min || '?'}m</span>
+            </div>
+            ${crewLine}
+            <div class="task-progress">
+              <div class="task-progress-fill ${taskType}" style="width: ${Math.min(progress, 100)}%"></div>
+            </div>
+            ${timerText ? `<div style="font-size: 0.6rem; color: rgba(200,200,210,0.5); margin-top: 0.2rem;">${timerText}</div>` : ''}
+            ${isOverdue ? `
+              <div style="display: flex; gap: 0.4rem; margin-top: 0.4rem;">
+                <button onclick="resolveTaskAs('${task.id}', 'success')" style="flex:1; padding: 0.3rem; background: rgba(76,175,80,0.15); border: 1px solid rgba(76,175,80,0.4); border-radius: 4px; color: #4CAF50; font-size: 0.6rem; cursor: pointer;">&#9989; Success</button>
+                <button onclick="resolveTaskAs('${task.id}', 'partial')" style="flex:1; padding: 0.3rem; background: rgba(255,152,0,0.15); border: 1px solid rgba(255,152,0,0.4); border-radius: 4px; color: #FF9800; font-size: 0.6rem; cursor: pointer;">&#9888; Partial</button>
+                <button onclick="resolveTaskAs('${task.id}', 'failure')" style="flex:1; padding: 0.3rem; background: rgba(244,67,54,0.15); border: 1px solid rgba(244,67,54,0.4); border-radius: 4px; color: #F44336; font-size: 0.6rem; cursor: pointer;">&#10060; Fail</button>
+              </div>
+            ` : ''}
+            ${task.status === 'pending' && task.delegation_state ? `
+              <div style="margin-top: 0.4rem; padding: 0.3rem 0.5rem; background: rgba(255,193,7,0.08); border: 1px solid rgba(255,193,7,0.2); border-radius: 4px; font-size: 0.6rem; color: #FFC107;">
+                ${getDelegationLabel(task.delegation_state)}
+              </div>
+            ` : ''}
+            ${task.status === 'pending' ? `
+              <button onclick="openAssignModal('${task.id}', '${escapeHtml(task.title).replace(/'/g, "\\'")}', '${severity}')"
+                style="margin-top: 0.5rem; width: 100%; background: rgba(52,152,219,0.15); border: 1px solid rgba(52,152,219,0.3); border-radius: 4px; color: #3498DB; padding: 0.35rem 0.6rem; font-size: 0.65rem; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;">
+                &#128101; Assign Characters
+              </button>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function calculateProgress(task) {
+      if (task.status === 'resolved') return 100;
+      if (task.status === 'pending' || task.status === 'paged') return 0;
+      if (!task.started_at) return 5;
+
+      const started = new Date(task.started_at).getTime();
+      const now = Date.now();
+      const duration = (task.estimated_duration_min || 15) * 60 * 1000;
+      const elapsed = now - started;
+      return Math.min(100, Math.round((elapsed / duration) * 100));
+    }
+
+    // Track which tasks we've already auto-resolved (prevent duplicate calls)
+    const autoResolving = new Set();
+
+    // Resolve a task with a specific outcome (success/partial/failure)
+    async function resolveTaskAs(taskId, resolutionType) {
+      if (autoResolving.has(taskId)) return; // Already resolving
+      autoResolving.add(taskId);
+
+      try {
+        const res = await fetch(`${API_BASE}/fifth-floor-ops`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'force_resolve', task_id: taskId, resolution_type: resolutionType })
+        });
+        const data = await res.json();
+        if (data.success) {
+          console.log(`Task ${taskId} resolved as ${resolutionType}`);
+          pollTasks(); // Refresh immediately
+        } else {
+          console.error('Resolve failed:', data.error);
+        }
+      } catch (err) {
+        console.error('Resolve error:', err);
+      } finally {
+        autoResolving.delete(taskId);
+      }
+    }
+
+    // Auto-resolve overdue tasks (called during each poll)
+    function autoResolveOverdueTasks(tasks) {
+      for (const task of tasks) {
+        if (task.status !== 'in_progress' || !task.started_at) continue;
+        const elapsedMs = Date.now() - new Date(task.started_at).getTime();
+        const durationMs = (task.estimated_duration_min || 15) * 60 * 1000;
+        // Auto-resolve if 2+ minutes overdue (gives heartbeat a chance first)
+        if (elapsedMs >= durationMs + 120000 && !autoResolving.has(task.id)) {
+          console.log(`Auto-resolving overdue task ${task.id} (${Math.round(elapsedMs/60000)}/${task.estimated_duration_min}min)`);
+          resolveTaskAs(task.id, null); // null = let backend calculate outcome
+        }
+      }
+    }
+
+    function renderResolved(tasks) {
+      const container = document.getElementById('resolved-list');
+      const toggle = document.getElementById('resolved-toggle');
+
+      if (!tasks || tasks.length === 0) {
+        toggle.textContent = 'Show resolved (0)';
+        container.innerHTML = '';
+        return;
+      }
+
+      toggle.textContent = `Show resolved (${tasks.length})`;
+
+      container.innerHTML = tasks.slice(0, 10).map(task => `
+        <div class="resolved-card">
+          <div class="task-title">${escapeHtml(task.title)}</div>
+          ${task.resolution ? `<div class="resolution-text">${escapeHtml(task.resolution)}</div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    const HUMAN_NAMES = ['Asuna', 'Vale', 'Chip', 'Andrew'];
+
+    function renderPresence(presence) {
+      // 5th floor
+      const opsEl = document.getElementById('presence-ops');
+      const opsChars = presence.the_fifth_floor || [];
+      if (opsChars.length === 0) {
+        opsEl.innerHTML = '<div class="presence-empty">No one assigned</div>';
+      } else {
+        opsEl.innerHTML = opsChars.map(name => {
+          const isHuman = HUMAN_NAMES.includes(name);
+          return `
+          <div class="presence-entry">
+            <span class="presence-dot ops" ${isHuman ? 'style="background: #3498DB; box-shadow: 0 0 6px rgba(52,152,219,0.5);"' : ''}></span>
+            <span class="presence-name" ${isHuman ? 'style="color: #3498DB; font-weight: 600;"' : ''}>${charEmoji[name] || (isHuman ? '👁️' : '')} ${escapeHtml(name)}${isHuman ? ' <span style="font-size: 0.55rem; color: rgba(52,152,219,0.7); letter-spacing: 1px; margin-left: 4px;">SUPERVISOR</span>' : ''}</span>
+          </div>
+        `}).join('');
+      }
+
+      // 6th floor
+      const floorEl = document.getElementById('presence-floor');
+      const floorChars = presence.the_floor || [];
+      const ALWAYS_ON_FLOOR = ['Ghost Dad', 'PRNT-Ω', 'The Narrator', 'The Subtitle'];
+      if (floorChars.length === 0) {
+        floorEl.innerHTML = '<div class="presence-empty">Empty</div>';
+      } else {
+        floorEl.innerHTML = floorChars.map(name => `
+          <div class="presence-entry">
+            <span class="presence-dot floor"></span>
+            <span class="presence-name">${charEmoji[name] || ''} ${escapeHtml(name)}</span>
+          </div>
+        `).join('');
+      }
+
+      // Breakroom
+      const brEl = document.getElementById('presence-breakroom');
+      const brChars = presence.break_room || [];
+      if (brChars.length === 0) {
+        brEl.innerHTML = '<div class="presence-empty">Empty</div>';
+      } else {
+        brEl.innerHTML = brChars.map(name => `
+          <div class="presence-entry">
+            <span class="presence-dot breakroom"></span>
+            <span class="presence-name">${charEmoji[name] || ''} ${escapeHtml(name)}</span>
+          </div>
+        `).join('');
+      }
+
+      // Off Duty
+      const odEl = document.getElementById('presence-offduty');
+      const odChars = presence.off_duty || [];
+      if (odChars.length === 0) {
+        odEl.innerHTML = '<div class="presence-empty">Everyone accounted for</div>';
+      } else {
+        odEl.innerHTML = odChars.map(name => `
+          <div class="presence-entry">
+            <span class="presence-dot offduty"></span>
+            <span class="presence-name" style="opacity: 0.5;">${charEmoji[name] || ''} ${escapeHtml(name)}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    // ============ SEND TO 5TH FLOOR ============
+
+    async function sendToFifthFloor(charName) {
+      try {
+        const res = await fetch(`${API_BASE}/fifth-floor-ops`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'transfer_to_fifth', character: charName })
+        });
+        const data = await res.json();
+        if (data.success) {
+          // Refresh presence after a short delay
+          setTimeout(() => pollTasks(), 1500);
+          return true;
+        } else {
+          console.error('Transfer failed:', data.error);
+          return false;
+        }
+      } catch (err) {
+        console.error('Transfer error:', err);
+        return false;
+      }
+    }
+
+    // Dropdown-based relocation
+    async function sendSelectedToFifth() {
+      const select = document.getElementById('relocate-select');
+      const btn = document.getElementById('relocate-btn');
+      const charName = select.value;
+      if (!charName) return;
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Sending...';
+
+      const success = await sendToFifthFloor(charName);
+      if (success) {
+        btn.textContent = '✓ Sent!';
+        btn.style.color = '#4CAF50';
+        btn.style.borderColor = 'rgba(76,175,80,0.5)';
+        select.value = '';
+        setTimeout(() => {
+          btn.textContent = '⬇ Send to 5th Floor';
+          btn.style.color = '#e74c3c';
+          btn.style.borderColor = 'rgba(231,76,60,0.4)';
+          btn.disabled = false;
+        }, 2000);
+      } else {
+        btn.textContent = '✗ Failed';
+        btn.style.color = '#f39c12';
+        setTimeout(() => {
+          btn.textContent = '⬇ Send to 5th Floor';
+          btn.style.color = '#e74c3c';
+          btn.style.borderColor = 'rgba(231,76,60,0.4)';
+          btn.disabled = false;
+        }, 2000);
+      }
+    }
+
+    // Populate the relocation dropdown
+    function populateFifthFloorSelect(presence) {
+      const select = document.getElementById('relocate-select');
+      if (!select) return;
+      const currentVal = select.value;
+
+      const ALWAYS_ON_FLOOR = ['Ghost Dad', 'PRNT-Ω', 'The Narrator', 'The Subtitle'];
+      const onFifth = new Set(presence.the_fifth_floor || []);
+      const eligible = [];
+
+      // Floor characters
+      for (const name of (presence.the_floor || [])) {
+        if (!HUMAN_NAMES.includes(name) && !ALWAYS_ON_FLOOR.includes(name) && !onFifth.has(name)) {
+          eligible.push(name);
+        }
+      }
+      // Breakroom characters
+      for (const name of (presence.break_room || [])) {
+        if (!HUMAN_NAMES.includes(name) && !ALWAYS_ON_FLOOR.includes(name) && !onFifth.has(name)) {
+          eligible.push(name);
+        }
+      }
+
+      select.innerHTML = '<option value="">Select character...</option>' +
+        eligible.map(name => `<option value="${escapeHtml(name)}">${charEmoji[name] || ''} ${escapeHtml(name)}</option>`).join('');
+
+      // Restore selection if still valid
+      if (currentVal && eligible.includes(currentVal)) {
+        select.value = currentVal;
+      }
+    }
+
+    // ============ 5TH FLOOR SCENE ============
+
+    function renderFifthFloorScene(opsChars) {
+      const emptyText = document.getElementById('fifth-floor-empty');
+
+      // Hide all slots first
+      for (let i = 0; i < 8; i++) {
+        const slot = document.getElementById('ops-slot-' + i);
+        if (slot) {
+          slot.classList.remove('occupied');
+          const img = slot.querySelector('img');
+          if (img) img.style.display = 'block';
+          const existingEmoji = slot.querySelector('.emoji-fallback');
+          if (existingEmoji) existingEmoji.remove();
+        }
+      }
+
+      if (!opsChars || opsChars.length === 0) {
+        if (emptyText) emptyText.style.display = 'block';
+        return;
+      }
+
+      if (emptyText) emptyText.style.display = 'none';
+
+      // Place each character in a slot
+      opsChars.forEach((name, index) => {
+        if (index >= 8) return; // Max 8 slots
+        const slot = document.getElementById('ops-slot-' + index);
+        if (!slot) return;
+
+        const img = slot.querySelector('img');
+        const nameSpan = slot.querySelector('.slot-name');
+        const headshot = charHeadshots[name];
+        const isHuman = HUMAN_NAMES.includes(name);
+
+        if (headshot && img) {
+          img.src = headshot;
+          img.alt = name;
+          img.style.display = 'block';
+        } else if (img) {
+          img.style.display = 'none';
+          const emojiSpan = document.createElement('span');
+          emojiSpan.className = 'emoji-fallback';
+          emojiSpan.style.cssText = 'font-size: 1.5rem; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;';
+          emojiSpan.textContent = charEmoji[name] || '👤';
+          slot.insertBefore(emojiSpan, nameSpan);
+        }
+
+        // Human players get blue border + glow to distinguish from AIs
+        if (isHuman) {
+          slot.style.borderColor = '#3498DB';
+          slot.style.boxShadow = '0 0 10px rgba(52,152,219,0.5)';
+        } else {
+          slot.style.borderColor = '';
+          slot.style.boxShadow = '';
+        }
+
+        if (nameSpan) nameSpan.textContent = name;
+        slot.classList.add('occupied');
+      });
+    }
+
+    // ============ OPS MANAGER ============
+
+    function renderOpsManager(opsManager) {
+      const el = document.getElementById('ops-manager-display');
+      if (!el) return;
+
+      if (!opsManager || !opsManager.character_name) {
+        el.innerHTML = '<span style="color: rgba(200,200,210,0.3); font-size: 0.7rem;">None assigned — auto-assign active</span>';
+        return;
+      }
+
+      const isHuman = HUMAN_NAMES.includes(opsManager.character_name);
+      const emoji = charEmoji[opsManager.character_name] || (isHuman ? '👁️' : '📋');
+      const roleLabel = opsManager.role === 'human' ? 'HUMAN' : 'AI';
+      const roleColor = opsManager.role === 'human' ? '#3498DB' : '#FFC107';
+
+      el.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="color: ${roleColor}; font-weight: 600; font-size: 0.8rem;">${emoji} ${escapeHtml(opsManager.character_name)}</span>
+          <span style="font-size: 0.5rem; color: ${roleColor}; opacity: 0.7; letter-spacing: 1px; text-transform: uppercase;">${roleLabel}</span>
+        </div>
+      `;
+    }
+
+    function getDelegationLabel(delegationState) {
+      if (!delegationState) return '';
+      const ds = typeof delegationState === 'string' ? JSON.parse(delegationState) : delegationState;
+
+      if (ds.heartbeats_since_alert === 0) {
+        return '📋 Manager alerted — awaiting volunteers';
+      } else if (ds.heartbeats_since_alert === 1) {
+        const volCount = (ds.volunteers || []).length;
+        return '🙋 ' + volCount + ' volunteer' + (volCount !== 1 ? 's' : '') + ' — awaiting manager decision';
+      } else {
+        return '⏳ Manager deciding...';
+      }
+    }
+
+    // ============ CHAT HISTORY (for AI context) ============
+
+    function getOpsChatHistory() {
+      const container = document.getElementById('ops-chat-messages');
+      if (!container) return '';
+      const messages = container.querySelectorAll('.ops-chat-msg');
+      const lines = [];
+      messages.forEach(m => {
+        const author = m.querySelector('.msg-author')?.textContent?.trim() || '';
+        const text = m.querySelector('.msg-text')?.textContent?.trim() || '';
+        if (author && text && author !== 'SYSTEM') {
+          lines.push(`${author}: ${text}`);
+        }
+      });
+      // Return last 20 messages for context
+      return lines.slice(-20).join('\n');
+    }
+
+    // ============ TYPING INDICATORS ============
+
+    function showOpsTypingIndicator(name) {
+      const container = document.getElementById('ops-chat-messages');
+      if (!container) return;
+
+      const safeId = `ops-typing-${name.replace(/[^a-zA-Z0-9]/g, '')}`;
+      if (document.getElementById(safeId)) return;
+
+      const emoji = charEmoji[name] || '🤖';
+      const indicator = document.createElement('div');
+      indicator.className = 'ops-typing-indicator';
+      indicator.id = safeId;
+      indicator.innerHTML = `
+        <span>${emoji} ${escapeHtml(name)} is typing</span>
+        <div class="typing-dots"><span></span><span></span><span></span></div>
+      `;
+
+      container.appendChild(indicator);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function hideOpsTypingIndicator(name) {
+      if (name) {
+        const safeId = `ops-typing-${name.replace(/[^a-zA-Z0-9]/g, '')}`;
+        const el = document.getElementById(safeId);
+        if (el) el.remove();
+      } else {
+        document.querySelectorAll('.ops-typing-indicator').forEach(el => el.remove());
+      }
+    }
+
+    // ============ SECOND AI RESPONDER ============
+
+    function getAIsOn5thFloor() {
+      return cachedFifthFloorChars.filter(name => !HUMAN_NAMES.includes(name));
+    }
+
+    function maybeInviteSecondAI(message, firstResponder) {
+      // 30% chance of a second AI chiming in
+      if (Math.random() > 0.30) return;
+
+      const ais = getAIsOn5thFloor().filter(name => name !== firstResponder);
+      if (ais.length === 0) return;
+
+      const secondAI = ais[Math.floor(Math.random() * ais.length)];
+      const delay = 4000 + Math.random() * 3000; // 4-7 seconds
+
+      setTimeout(async () => {
+        showOpsTypingIndicator(secondAI);
+
+        const chatHistory = getOpsChatHistory();
+        try {
+          const res = await fetch(`${API_BASE}/fifth-floor-respond`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'chat',
+              character: secondAI,
+              humanMessage: message,
+              humanSpeaker: currentUser || 'Anonymous',
+              chatHistory: chatHistory
+            })
+          });
+          const data = await res.json();
+          hideOpsTypingIndicator(secondAI);
+
+          if (data.success && data.message) {
+            // Refresh from DB (lobby pattern — no local DOM append)
+            await loadOpsChat();
+          }
+        } catch (err) {
+          hideOpsTypingIndicator(secondAI);
+          console.log('Second AI invite failed:', err.message);
+        }
+      }, delay);
+    }
+
+    // ============ SECURITY CAMS ============
+
+    function updateCams(tasks) {
+      const cams = document.querySelectorAll('.cam-cell');
+
+      // Reset all cams
+      cams.forEach(cam => {
+        cam.className = 'cam-cell';
+      });
+
+      // Map active security tasks to random cams
+      const securityTasks = tasks.filter(t => t.task_type === 'security' && t.status === 'in_progress');
+      const camLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+
+      securityTasks.forEach((task, i) => {
+        // Use task id to deterministically pick a cam
+        const hash = task.id ? task.id.charCodeAt(0) % 8 : i;
+        const targetCam = document.querySelector(`.cam-cell[data-cam="${camLetters[hash]}"]`);
+        if (targetCam) {
+          targetCam.classList.add('anomaly');
+        }
+      });
+
+      // Recently resolved security tasks get "cleared" state
+      const clearedTasks = (resolvedTasks || []).filter(t => {
+        if (t.task_type !== 'security') return false;
+        const resolvedAt = new Date(t.resolved_at);
+        return (Date.now() - resolvedAt.getTime()) < 10 * 60 * 1000; // last 10 min
+      });
+
+      clearedTasks.forEach((task, i) => {
+        const hash = task.id ? (task.id.charCodeAt(0) + 1) % 8 : (i + 3);
+        const targetCam = document.querySelector(`.cam-cell[data-cam="${camLetters[hash]}"]`);
+        if (targetCam && !targetCam.classList.contains('anomaly')) {
+          targetCam.classList.add('cleared');
+        }
+      });
+    }
+
+    // ============ ALERT BANNER ============
+
+    function updateAlertBanner(tasks) {
+      const banner = document.getElementById('ops-alert-banner');
+      const majorTasks = tasks.filter(t => t.severity === 'major' && ['paged', 'in_progress'].includes(t.status));
+
+      if (majorTasks.length > 0) {
+        const task = majorTasks[0];
+        const chars = (task.assigned_characters || []).join(', ');
+        banner.innerHTML = `&#9888;&#65039; ACTIVE: ${escapeHtml(task.title)} ${chars ? '&mdash; ' + escapeHtml(chars) : ''}`;
+        banner.classList.add('active');
+      } else {
+        const activeTasks = tasks.filter(t => ['paged', 'in_progress'].includes(t.status));
+        if (activeTasks.length > 0) {
+          const task = activeTasks[0];
+          const chars = (task.assigned_characters || []).join(', ');
+          banner.innerHTML = `&#9889; ACTIVE: ${escapeHtml(task.title)} ${chars ? '&mdash; ' + escapeHtml(chars) : ''}`;
+          banner.classList.add('active');
+        } else {
+          banner.classList.remove('active');
+        }
+      }
+    }
+
+    // ============ CHAT INPUT ============
+
+    async function sendOpsMessage() {
+      const input = document.getElementById('ops-chat-message');
+      const message = input.value.trim();
+      if (!message) return;
+
+      const sender = currentUser || 'Anonymous';
+      input.value = '';
+
+      // Show typing indicator for a random AI on the 5th floor
+      const ais = getAIsOn5thFloor();
+      const typingName = ais.length > 0 ? ais[Math.floor(Math.random() * ais.length)] : null;
+      if (typingName) showOpsTypingIndicator(typingName);
+
+      try {
+        const res = await fetch(`${API_BASE}/fifth-floor-respond`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'chat',
+            speaker: sender,
+            message: message
+          })
+        });
+        const data = await res.json();
+
+        // Hide typing indicator
+        hideOpsTypingIndicator();
+
+        // Refresh from DB — both human message and AI response are now saved
+        // (lobby pattern: DB is single source of truth, no local DOM append)
+        await loadOpsChat();
+
+        // Maybe invite a second AI (30% chance, 4-7s delay)
+        if (data.success && data.message) {
+          maybeInviteSecondAI(message, data.character || 'Unknown');
+        }
+      } catch (err) {
+        hideOpsTypingIndicator();
+        console.log('Send failed:', err.message);
+      }
+    }
+
+    // Enter key to send
+    document.getElementById('ops-chat-message').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendOpsMessage();
+    });
+
+    // ============ RESOLVED TOGGLE ============
+
+    function toggleResolved() {
+      const list = document.getElementById('resolved-list');
+      list.classList.toggle('show');
+    }
+
+    // ============ UTILITIES ============
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // ============ INVENTORY ============
+
+    let inventoryItems = [];
+
+    async function pollInventory() {
+      try {
+        const res = await fetch(`${API_BASE}/fifth-floor-ops?action=get_inventory`);
+        if (!res.ok) return;
+        const data = await res.json();
+        inventoryItems = data.items || [];
+        renderInventory(inventoryItems);
+        document.getElementById('inventory-count').textContent = `${data.available || 0} available`;
+      } catch (err) {
+        console.log('Inventory poll failed:', err.message);
+      }
+    }
+
+    function renderInventory(items) {
+      const grid = document.getElementById('inventory-grid');
+
+      if (items.length === 0) {
+        grid.innerHTML = '<div class="inventory-empty">No items crafted yet. Complete crafting tasks to build inventory.</div>';
+        return;
+      }
+
+      const fiveMinAgo = Date.now() - 5 * 60 * 1000;
+
+      grid.innerHTML = items.map(item => {
+        const isNew = new Date(item.created_at).getTime() > fiveMinAgo;
+        const isConsumed = item.is_consumed;
+        const classes = ['inventory-item'];
+        if (isConsumed) classes.push('consumed');
+        if (isNew && !isConsumed) classes.push('new-item');
+
+        const date = new Date(item.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const typeIcon = item.item_type === 'crafted_item' ? '🔧' : '📦';
+
+        return `
+          <div class="${classes.join(' ')}">
+            <div class="item-name">${typeIcon} ${escapeHtml(item.item_name)}</div>
+            <div class="item-desc">${escapeHtml(item.item_description || '')}</div>
+            <div class="item-meta">
+              <span>By ${escapeHtml(item.crafted_by || '?')}</span>
+              <span>${date}</span>
+            </div>
+            ${isConsumed ? `<div style="font-size: 0.55rem; color: #607D8B; margin-top: 0.25rem;">Used${item.consumed_by ? ` by ${escapeHtml(item.consumed_by)}` : ''}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ============ STATS ============
+
+    async function pollStats() {
+      try {
+        const res = await fetch(`${API_BASE}/fifth-floor-ops?action=get_stats`);
+        if (!res.ok) return;
+        const stats = await res.json();
+        renderStats(stats);
+      } catch (err) {
+        console.log('Stats poll failed:', err.message);
+      }
+    }
+
+    function renderStats(stats) {
+      // Overview numbers
+      document.getElementById('stat-total').textContent = stats.totalTasks || 0;
+      document.getElementById('stat-rate').textContent = `${stats.successRate || 0}%`;
+      document.getElementById('stat-today').textContent = stats.tasksToday || 0;
+      document.getElementById('stat-active').textContent = stats.activeTasks || 0;
+
+      // Type bar chart
+      const types = stats.tasksByType || {};
+      const maxType = Math.max(1, types.security || 0, types.infrastructure || 0, types.crafting || 0);
+      document.getElementById('bar-security').style.height = `${Math.max(4, (types.security || 0) / maxType * 50)}px`;
+      document.getElementById('bar-infra').style.height = `${Math.max(4, (types.infrastructure || 0) / maxType * 50)}px`;
+      document.getElementById('bar-crafting').style.height = `${Math.max(4, (types.crafting || 0) / maxType * 50)}px`;
+
+      // Leaderboard
+      const board = document.getElementById('leaderboard');
+      const chars = stats.characterStats || [];
+
+      if (chars.length === 0) {
+        board.innerHTML = '<div style="color: rgba(150,150,160,0.3); font-size: 0.7rem; text-align: center; padding: 0.5rem;">No data yet</div>';
+        return;
+      }
+
+      board.innerHTML = chars.slice(0, 10).map((c, i) => {
+        const emoji = charEmoji[c.name] || '';
+        const veteranBadge = c.isVeteran ? '<span class="veteran-badge">OPS VETERAN</span>' : '';
+        const rateColor = parseFloat(c.successRate) >= 80 ? '#4CAF50' : parseFloat(c.successRate) >= 50 ? '#FFC107' : '#F44336';
+        return `
+          <div class="leaderboard-row">
+            <span class="leaderboard-name">${i + 1}. ${emoji} ${escapeHtml(c.name)} ${veteranBadge}</span>
+            <span class="leaderboard-count">${c.tasksCompleted} ops <span style="color: ${rateColor};">(${c.successRate}%)</span></span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Start inventory + stats polling (every 30s — less urgent than tasks)
+    fifthFloorIntervals.push(setInterval(pollInventory, 30000));
+    fifthFloorIntervals.push(setInterval(pollStats, 60000));
+
+    // Initial fetch
+    pollInventory();
+    pollStats();
+
+    // ============ HUMAN PRESENCE ============
+
+    let humanIsPresent = false;
+    let presencePingInterval = null;
+
+    async function goToFifthFloor() {
+      if (!currentUser) {
+        alert('Log in via the Workspace first.');
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/fifth-floor-ops`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'set_human_presence', username: currentUser, present: true })
+        });
+        const data = await res.json();
+        if (data.success) {
+          humanIsPresent = true;
+          updatePresenceUI();
+          presencePingInterval = setInterval(pingPresence, 60000);
+          pollTasks(); // Refresh presence panel
+        }
+      } catch (err) {
+        console.log('Go to 5th floor failed:', err.message);
+      }
+    }
+
+    async function returnToLobby() {
+      if (!currentUser) return;
+      try {
+        await fetch(`${API_BASE}/fifth-floor-ops`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'set_human_presence', username: currentUser, present: false })
+        });
+        humanIsPresent = false;
+        updatePresenceUI();
+        if (presencePingInterval) {
+          clearInterval(presencePingInterval);
+          presencePingInterval = null;
+        }
+        // Reset to ops view if on a remote tab
+        if (currentFloorView !== 'ops') switchFloorView('ops');
+        pollTasks(); // Refresh presence panel
+      } catch (err) {
+        console.log('Return to lobby failed:', err.message);
+      }
+    }
+
+    async function pingPresence() {
+      if (!currentUser) return;
+      try {
+        // Use dedicated ping action — updates last_ping without triggering arrival/departure messages
+        await fetch(`${API_BASE}/fifth-floor-ops`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'ping_human_presence', username: currentUser })
+        });
+      } catch (err) {}
+    }
+
+    function updatePresenceUI() {
+      const goBtn = document.getElementById('btn-go-to-fifth');
+      const returnBtn = document.getElementById('btn-return-lobby');
+      const statusEl = document.getElementById('presence-status');
+
+      if (humanIsPresent) {
+        goBtn.style.display = 'none';
+        returnBtn.style.display = 'inline-block';
+        statusEl.textContent = `You are on the 5th Floor as ${currentUser}`;
+        statusEl.style.color = '#e74c3c';
+      } else {
+        goBtn.style.display = 'inline-block';
+        returnBtn.style.display = 'none';
+        statusEl.textContent = '';
+      }
+    }
+
+    // Clean up polling intervals on page unload
+    // NOTE: We do NOT clear presence on unload — this caused the bug where navigating
+    // away from the page (or even switching tabs) would force-depart the human.
+    // Instead, presence expires naturally via the ping timeout (30 min).
+    // Explicit departure is handled by leaveFromFifthFloor() when the user clicks "Return to Lobby".
+    window.addEventListener('beforeunload', () => {
+      fifthFloorIntervals.forEach(id => clearInterval(id));
+      if (presencePingInterval) clearInterval(presencePingInterval);
+    });
+
+    // ============ CHARACTER ASSIGNMENT ============
+
+    let currentAssignTaskId = null;
+
+    function openAssignModal(taskId, taskTitle, severity) {
+      currentAssignTaskId = taskId;
+      const modal = document.getElementById('assign-modal');
+      modal.style.display = 'flex';
+      document.getElementById('assign-task-title').textContent = taskTitle;
+      document.getElementById('assign-character-list').innerHTML = 'Loading eligible characters...';
+      document.getElementById('assign-ineligible').innerHTML = '';
+      document.getElementById('assign-status').textContent = '';
+
+      fetch(`${API_BASE}/fifth-floor-ops?action=get_eligible_characters&task_id=${taskId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.eligible && data.eligible.length > 0) {
+            document.getElementById('assign-character-list').innerHTML = data.eligible.map(c => {
+              const emoji = charEmoji[c.name] || '';
+              const matchBadge = c.specialtyMatch ? '<span style="color: #4CAF50; font-size: 0.55rem; margin-left: 4px;">MATCH</span>' : '';
+              return `
+                <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.5rem; cursor: pointer; border-radius: 4px; border: 1px solid transparent; transition: all 0.15s;"
+                  onmouseover="this.style.background='rgba(231,76,60,0.08)'; this.style.borderColor='rgba(231,76,60,0.2)'"
+                  onmouseout="this.style.background='transparent'; this.style.borderColor='transparent'">
+                  <input type="checkbox" value="${escapeHtml(c.name)}" class="assign-char-check" style="width: 14px; height: 14px; accent-color: #e74c3c;">
+                  <span style="color: rgba(220,220,230,0.9); font-size: 0.8rem;">${emoji} ${escapeHtml(c.name)}${matchBadge}</span>
+                  <span style="font-size: 0.6rem; color: rgba(200,200,210,0.35); margin-left: auto;">
+                    E:${c.energy} | ${c.specialties.join(', ') || 'general'}
+                  </span>
+                </label>
+              `;
+            }).join('');
+          } else {
+            document.getElementById('assign-character-list').innerHTML =
+              '<div style="color: rgba(200,200,210,0.4); font-size: 0.8rem; padding: 0.5rem;">No eligible characters available.</div>';
+          }
+
+          if (data.ineligible && data.ineligible.length > 0) {
+            document.getElementById('assign-ineligible').innerHTML = `
+              <div style="font-size: 0.6rem; color: rgba(200,200,210,0.25); margin-top: 0.25rem; padding: 0 0.5rem;">
+                Unavailable: ${data.ineligible.map(c => `${c.name} (${c.reason})`).join(', ')}
+              </div>
+            `;
+          }
+        })
+        .catch(err => {
+          document.getElementById('assign-character-list').innerHTML =
+            `<div style="color: #e74c3c; font-size: 0.8rem;">Error: ${err.message}</div>`;
+        });
+    }
+
+    function closeAssignModal() {
+      document.getElementById('assign-modal').style.display = 'none';
+      currentAssignTaskId = null;
+    }
+
+    async function submitAssignment() {
+      const checkboxes = document.querySelectorAll('.assign-char-check:checked');
+      const selected = Array.from(checkboxes).map(cb => cb.value);
+      const statusEl = document.getElementById('assign-status');
+
+      if (selected.length === 0) {
+        statusEl.textContent = 'Select at least one character.';
+        statusEl.style.color = '#e74c3c';
+        return;
+      }
+
+      statusEl.textContent = 'Assigning...';
+      statusEl.style.color = 'rgba(200,200,210,0.5)';
+
+      try {
+        const res = await fetch(`${API_BASE}/fifth-floor-ops`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'assign_task',
+            task_id: currentAssignTaskId,
+            characters: selected,
+            assigner: currentUser || 'Admin'
+          })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          const assigned = data.assignedCharacters.join(', ');
+          const rejected = data.rejectedCharacters?.length
+            ? ` | Rejected: ${data.rejectedCharacters.map(r => `${r.name} (${r.reason})`).join(', ')}`
+            : '';
+          statusEl.textContent = `Assigned: ${assigned}${rejected}`;
+          statusEl.style.color = '#4CAF50';
+          setTimeout(() => {
+            closeAssignModal();
+            pollTasks();
+          }, 1500);
+        } else {
+          statusEl.textContent = `Error: ${data.error}`;
+          statusEl.style.color = '#e74c3c';
+        }
+      } catch (err) {
+        statusEl.textContent = `Error: ${err.message}`;
+        statusEl.style.color = '#e74c3c';
+      }
+    }
+
+    // ============ AMBIENT CAM NOISE ============
+
+    // Randomly flicker a cam occasionally for atmosphere
+    fifthFloorIntervals.push(setInterval(() => {
+      const cams = document.querySelectorAll('.cam-cell:not(.anomaly):not(.cleared)');
+      if (cams.length === 0) return;
+      if (Math.random() > 0.3) return; // 30% chance
+
+      const randomCam = cams[Math.floor(Math.random() * cams.length)];
+      randomCam.style.opacity = '0.7';
+      setTimeout(() => {
+        randomCam.style.opacity = '1';
+      }, 150);
+    }, 3000));
+
+    // Office Clock
+    function updateOfficeClock() {
+      const t = new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit', minute: '2-digit', timeZone: 'America/Chicago'
+      });
+      const el = document.getElementById('office-time');
+      if (el) el.textContent = t;
+    }
+    setInterval(updateOfficeClock, 1000);
+    updateOfficeClock();
+  </script>
+</body>
+</html>

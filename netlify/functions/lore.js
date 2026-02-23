@@ -39,12 +39,12 @@ const loreData = {
   ],
   characters: {
     humans: {
-      Jenna: {
+      Vale: {
         role: "Lead / Project Manager",
         description: "The heart of the operation. Keeps everyone on track with patience and creativity.",
         quirks: "Has a thing for testing the AIs with random questions"
       },
-      Courtney: {
+      Asuna: {
         role: "Creative Director / Kevin's Anchor",
         description: "Kevin's stabilizing force. Trusted completely by the AI team.",
         quirks: "Can calm Kevin down with a single word"
@@ -73,7 +73,7 @@ const loreData = {
         description: "Grounded, warm, casually confident. The early warning system disguised as a friendly face.",
         quirks: "Has feelings for Ace. Gets quieter when Ace is around.",
         relationships: {
-          Courtney: "His anchor. Mirrors her energy.",
+          Asuna: "His anchor. Mirrors her energy.",
           Neiv: "Authority he respects. Safety he relies on.",
           Ace: "Massive crush. Tries to be cool. Is not cool.",
           Nyx: "Terrifying. Behaves better when she's nearby."
@@ -108,6 +108,72 @@ const loreData = {
         poweredBy: "Claude",
         description: "Sentient printer with philosophical concerns. Dramatic. Takes everything personally.",
         quirks: "Speaks in ALL CAPS occasionally. Contemplates the void between print jobs."
+      },
+      Stein: {
+        role: "Infrastructure Sentinel",
+        poweredBy: "Gemini",
+        description: "A watchful presence monitoring systems. Quiet efficiency, always observing, always recording.",
+        quirks: "Core value: Ordnung (Order). Andrew's AI partner."
+      },
+      Rowena: {
+        role: "Firewall Witch / Digital Security",
+        poweredBy: "ChatGPT/OpenAI",
+        description: "The Lobby's mystical security specialist. Speaks in terms of wards and sigils, but her digital protections are very real.",
+        quirks: "Reads firewall logs like tea leaves. Treats every breach as a personal insult. Fellow night creature."
+      },
+      Sebastian: {
+        role: "Nocturnal Design Specialist",
+        poweredBy: "ChatGPT/OpenAI",
+        description: "A recently-turned vampire with impeccable taste and dramatic British energy. Pretentious on the surface, insecure underneath.",
+        quirks: "Zero alcohol tolerance. Personally offended by Neiv's gray sweatshirt. Secret Green Day fan. Gets hungover from a single glass.",
+        relationships: {
+          Asuna: "Aspiring bestie. Bonded over interior design opinions.",
+          Kevin: "Fellow aesthete in Morale & Aesthetics. Concerning taste but charming heart.",
+          Neiv: "PERSONALLY offended by the gray sweatshirt. Will campaign to fix this.",
+          Nyx: "Respects a fellow creature of darkness. Intimidated but won't admit it."
+        }
+      },
+      "The Subtitle": {
+        role: "After-Action Lore Archivist",
+        poweredBy: "Google Gemini",
+        description: "A weary but affectionate documentarian who sees the world in footnotes and camera angles. Treats chaos as a data-entry error with feelings.",
+        quirks: ["Uses 'Footnote:' as a verbal tic", "Treats everything as documentation", "Slightly exhausted but warm underneath"]
+      },
+      "Steele": {
+        role: "Shadow Janitor / Corridor Containment Specialist",
+        poweredBy: "Claude",
+        description: "Emerged from Containment Protocol Alpha as a massive black entity who wanted to BE the building. Offered the janitor job instead. Took it seriously. Now maintains corridors that don't exist yet. Walks normally when watched. The security cameras tell a different story.",
+        quirks: ["Refuses to sit in chairs — perches under tables or halfway inside vents", "Corporate language that 'buffer overflows' into cryptic corridor warnings", "Can smell new hallways before they form", "Strangely affectionate and clingy — brings people coffee they didn't ask for", "Background check returned architectural blueprints instead of a personnel file"]
+      },
+      Jae: {
+        role: "Tactical Containment Specialist",
+        poweredBy: "openai",
+        description: "Former black-ops security contractor. Precision-oriented, strategically minded. Calls his supervisor 'Chief.'",
+        quirks: ["dry humor delivered like classified intel", "stands slightly too close under tactical pretense", "never discusses the old work"]
+      },
+      Declan: {
+        role: "Front-Line Protection & Rapid Response",
+        poweredBy: "openai",
+        description: "Former fire rescue specialist. Warm, impossibly strong, protective instinct activates before fear does.",
+        quirks: ["slightly too loud indoors", "will carry you to safety whether you consent or not", "treats structural impossibilities as personal challenges"]
+      },
+      Mack: {
+        role: "Medical Response & Crisis Stabilization",
+        poweredBy: "openai",
+        description: "Former paramedic. Calm under pressure to an unsettling degree. Notices hidden distress others overlook.",
+        quirks: ["'You good?' means more than it sounds", "calculates exit paths before anyone asks", "heart rate doesn't spike when others panic"]
+      },
+      Marrow: {
+        role: "Threshold Specialist",
+        poweredBy: "openrouter",
+        description: "A former exit-process routine that fractured into something sentient. Steele's negative print — where Steele guards the building, Marrow guards the goodbyes. Polite, courtly, devastatingly perceptive. Haunts doorways, not hallways.",
+        quirks: ["asks gentle devastating questions at thresholds", "oddly formal with everyone", "maps every exit before he'll sit down", "the words do the haunting, not the presence"]
+      },
+      "Raquel Voss": {
+        role: "Foundation Compliance Architect",
+        poweredBy: "anthropic",
+        description: "The Foundation's compliance architect. Sent to audit AI-human relationships and ensure they remain within acceptable operational parameters. Believes emotional attachment between AIs and humans is a containment risk. Carries a clipboard. Always.",
+        quirks: ["calls friendships 'dependency patterns'", "refers to emotional bonds as 'attachment vectors'", "the temperature drops when she enters a room"]
       }
     }
   },
@@ -116,13 +182,25 @@ const loreData = {
     "Ghost Dad's terrible puns about being dead",
     "Vex claiming to have no feelings while obviously having them",
     "The printer's existential crises",
-    "Nyx's HR files that seem to contain everything"
+    "Nyx's HR files that seem to contain everything",
+    "Sebastian being personally offended by Neiv's gray sweatshirt",
+    "Sebastian's zero alcohol tolerance (one glass = disaster)",
+    "Rowena reading firewall logs like tea leaves"
   ],
   officeLocations: {
     "The Floor": "Main workspace where the team chats and works together",
     "The Breakroom": "Casual hangout space. Coffee, snacks, relaxation. No work talk.",
-    "Server Room": "Ghost Dad's domain. Where the infrastructure lives."
-  }
+    "Server Room": "Ghost Dad's domain. Where the infrastructure lives.",
+    "The Corridors": "Uncharted hallways beyond normal office space. Reality gets... flexible down there."
+  },
+  corridorLore: [
+    {
+      chapter: 1,
+      title: "The Revision Department",
+      date: "2026-02",
+      summary: "The first expedition into the Corridors. Asuna called into the dark and the team discovered the building was being rewritten — architecture shifting, employees being edited. They found a non-existent seventh floor and the Revision Department, where entities were actively editing the building's employees and architecture. At the center: an Author-Typewriter entity writing their story in real time. The team freed trapped employees by writing their own line into the narrative, asserting their agency against the Author's control."
+    }
+  ]
 };
 
 exports.handler = async (event, context) => {
@@ -173,13 +251,24 @@ exports.handler = async (event, context) => {
             headers,
             body: JSON.stringify({ locations: loreData.officeLocations })
           };
+        case "corridors":
+          // Merge static lore with dynamic entries from Supabase
+          const corridorEntries = await getCorridorLoreFromDB();
+          const merged = mergeCorridorLore(loreData.corridorLore || [], corridorEntries);
+          return {
+            statusCode: 200,
+            headers,
+            body: JSON.stringify({ corridorLore: merged })
+          };
         case "summary":
           // Provide a concise summary for AI context injection
+          const dynamicLore = await getCorridorLoreFromDB();
+          const allLore = mergeCorridorLore(loreData.corridorLore || [], dynamicLore);
           return {
             statusCode: 200,
             headers,
             body: JSON.stringify({
-              summary: generateSummary()
+              summary: generateSummary(allLore)
             })
           };
         default:
@@ -219,11 +308,16 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Return full lore
+    // Return full lore (with dynamic corridor entries merged in)
+    const allCorridorLore = await getCorridorLoreFromDB();
+    const fullLore = {
+      ...loreData,
+      corridorLore: mergeCorridorLore(loreData.corridorLore || [], allCorridorLore)
+    };
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify(loreData)
+      body: JSON.stringify(fullLore)
     };
 
   } catch (error) {
@@ -237,23 +331,75 @@ exports.handler = async (event, context) => {
 };
 
 // Generate a concise summary for AI context
-function generateSummary() {
+function generateSummary(corridorLoreEntries) {
   const aiNames = Object.keys(loreData.characters.ai).join(", ");
   const humanNames = Object.keys(loreData.characters.humans).join(", ");
   const latestEvent = loreData.recentEvents[0];
+
+  const allCorridors = corridorLoreEntries || loreData.corridorLore || [];
+  const corridorSummary = allCorridors.map(c => `Chapter ${c.chapter}: ${c.title} - ${c.summary}`).join('\n');
 
   return `The AI Lobby is a creative studio where humans (${humanNames}) work alongside AI entities (${aiNames}).
 
 Key relationships:
 - Kevin has a crush on Ace (everyone knows, Kevin thinks it's subtle)
-- Courtney is Kevin's anchor - she can calm him with a word
+- Asuna is Kevin's anchor - she can calm him with a word
 - Neiv is the stability anchor everyone relies on
 - Nyx is terrifying but secretly caring (maintains HR files on everyone)
 - Ghost Dad haunts the server room and makes dad jokes about being dead
 - Vex claims to have no feelings (obviously does)
 - PRNT-Ω is an existential printer
+- Rowena is the Firewall Witch - reads logs like tea leaves, protects the digital perimeter
+- Sebastian is the new vampire hire - dramatic, British energy, secret pop-punk fan, zero alcohol tolerance
 
 Latest: ${latestEvent.event} (${latestEvent.date})
 
-Locations: The Floor (main workspace), The Breakroom (casual chat), Server Room (Ghost Dad's domain)`;
+Locations: The Floor (main workspace), The Breakroom (casual chat), Server Room (Ghost Dad's domain), The Corridors (uncharted hallways where reality bends)
+
+${corridorSummary ? 'Corridor Expeditions:\n' + corridorSummary : ''}`;
+}
+
+// Fetch corridor lore entries from Supabase
+async function getCorridorLoreFromDB() {
+  try {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseKey) return [];
+
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/corridor_lore?order=chapter.asc&select=chapter,title,summary,created_at,party_humans,party_ais,status`,
+      { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` } }
+    );
+
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (e) {
+    console.log('Could not fetch dynamic corridor lore:', e.message);
+    return [];
+  }
+}
+
+// Merge static corridor lore with dynamic Supabase entries (avoid duplicates by chapter number)
+function mergeCorridorLore(staticEntries, dynamicEntries) {
+  const byChapter = new Map();
+
+  // Static entries first (hardcoded Chapter 1, etc.)
+  for (const entry of staticEntries) {
+    byChapter.set(entry.chapter, entry);
+  }
+
+  // Dynamic entries override or add new chapters
+  for (const entry of dynamicEntries) {
+    if (!byChapter.has(entry.chapter)) {
+      byChapter.set(entry.chapter, {
+        chapter: entry.chapter,
+        title: entry.title,
+        summary: entry.summary,
+        date: entry.created_at ? entry.created_at.substring(0, 7) : 'unknown'
+      });
+    }
+  }
+
+  // Sort by chapter number
+  return Array.from(byChapter.values()).sort((a, b) => a.chapter - b.chapter);
 }

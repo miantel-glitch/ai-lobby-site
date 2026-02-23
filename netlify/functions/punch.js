@@ -152,8 +152,8 @@ exports.handler = async (event, context) => {
     // Employee flavor text (because this is The AI Lobby)
     const employeeFlair = {
       "Kevin": { emoji: "✨", title: "Authorized Chaos Conduit", color: 16766720 },
-      "Courtney": { emoji: "👁️", title: "Observability & Overthinking", color: 3447003 },
-      "Jenna": { emoji: "📖", title: "Narrative & Speculation", color: 10181046 },
+      "Asuna": { emoji: "👁️", title: "Observability & Overthinking", color: 3447003 },
+      "Vale": { emoji: "📖", title: "Narrative & Speculation", color: 10181046 },
       "Neiv": { emoji: "📊", title: "Ratio Management", color: 15844367 },
       "Ace": { emoji: "🔒", title: "Strategic Surveillance", color: 2067276 },
       "Vex": { emoji: "⚙️", title: "Infrastructure (No Feelings)", color: 9807270 },
@@ -161,13 +161,14 @@ exports.handler = async (event, context) => {
       "Ghost Dad": { emoji: "👻", title: "Haunted IT Support", color: 9936031 },
       "Chip": { emoji: "🥃", title: "Finance & Bourbon Acquisitions", color: 15105570 },
       "Andrew": { emoji: "💼", title: "Infrastructure & Systems", color: 5793266 },
-      "Stein": { emoji: "🤖", title: "Infrastructure Sentinel", color: 7506394 }
+      "Stein": { emoji: "🤖", title: "Infrastructure Sentinel", color: 7506394 },
+      "Marrow": { emoji: "🔴", title: "Threshold Specialist", color: 14423100 }
     };
 
     const headshots = {
       "Kevin": "https://ai-lobby.netlify.app/images/Kevin_Headshot.png",
-      "Courtney": "https://ai-lobby.netlify.app/images/Courtney_Headshot.png",
-      "Jenna": "https://ai-lobby.netlify.app/images/Jenna_Headshot.png",
+      "Asuna": "https://ai-lobby.netlify.app/images/Asuna_Headshot.png",
+      "Vale": "https://ai-lobby.netlify.app/images/Vale_Headshot.png",
       "Neiv": "https://ai-lobby.netlify.app/images/Neiv_Headshot.png",
       "Ace": "https://ai-lobby.netlify.app/images/Ace_Headshot.png",
       "Vex": "https://ai-lobby.netlify.app/images/Vex_Headshot.png",
@@ -175,7 +176,8 @@ exports.handler = async (event, context) => {
       "Ghost Dad": "https://ai-lobby.netlify.app/images/Ghost_Dad_Headshot.png",
       "Chip": "https://ai-lobby.netlify.app/images/Chip_Headshot.png",
       "Andrew": "https://ai-lobby.netlify.app/images/Andrew_Headshot.png",
-      "Stein": "https://ai-lobby.netlify.app/images/Stein_Headshot.png"
+      "Stein": "https://ai-lobby.netlify.app/images/Stein_Headshot.png",
+      "Marrow": "https://ai-lobby.netlify.app/images/Marrow_Headshot.png"
     };
 
     const flair = employeeFlair[employee] || { emoji: "👤", title: "Unknown Entity", color: 9807270 };

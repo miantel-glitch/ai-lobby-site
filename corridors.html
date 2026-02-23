@@ -88,6 +88,9 @@
       overflow: hidden;
       border: 2px solid rgba(155, 89, 182, 0.4);
       background: linear-gradient(135deg, #0a0a15 0%, #1a1a2e 50%, #0f0f20 100%);
+      background-size: cover;
+      background-position: center;
+      transition: background-image 0.8s ease;
     }
 
     .scene-image.mood-eerie {
@@ -156,7 +159,7 @@
       border-radius: 8px;
       display: flex;
       flex-direction: column;
-      height: 280px;
+      height: 500px;
     }
 
     .chat-header {
@@ -565,6 +568,85 @@
       font-style: italic;
     }
 
+    /* Foundation Evidence Filing */
+    .evidence-panel {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: rgba(192, 57, 43, 0.1);
+      border: 1px solid rgba(192, 57, 43, 0.3);
+      border-radius: 6px;
+    }
+
+    .evidence-panel h4 {
+      color: #c0392b;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    .evidence-file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+      margin-bottom: 0.4rem;
+    }
+
+    .evidence-file-item .ev-name {
+      font-size: 0.8rem;
+      color: var(--text-primary);
+    }
+
+    .evidence-file-item .ev-layer {
+      font-size: 0.65rem;
+      color: #c0392b;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .evidence-file-btn {
+      padding: 0.3rem 0.6rem;
+      background: rgba(192, 57, 43, 0.3);
+      border: 1px solid #c0392b;
+      border-radius: 3px;
+      color: #c0392b;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .evidence-file-btn:hover {
+      background: rgba(192, 57, 43, 0.5);
+      color: var(--text-primary);
+    }
+
+    .evidence-file-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .evidence-file-btn.filed {
+      background: rgba(46, 204, 113, 0.2);
+      border-color: rgba(46, 204, 113, 0.4);
+      color: #2ecc71;
+      cursor: default;
+    }
+
+    .evidence-panel .dossier-link {
+      display: inline-block;
+      margin-top: 0.8rem;
+      color: #c0392b;
+      font-size: 0.8rem;
+      text-decoration: none;
+    }
+
+    .evidence-panel .dossier-link:hover {
+      text-decoration: underline;
+    }
+
     /* Session Controls */
     .session-controls {
       display: flex;
@@ -640,6 +722,83 @@
       display: none;
     }
 
+    /* Identity selection overlay (multiplayer join) */
+    .identity-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+
+    .identity-overlay.hidden {
+      display: none;
+    }
+
+    .identity-prompt {
+      background: rgba(20, 20, 40, 0.95);
+      border: 2px solid rgba(155, 89, 182, 0.5);
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+      max-width: 400px;
+    }
+
+    .identity-prompt h2 {
+      color: #9b59b6;
+      margin-bottom: 0.5rem;
+    }
+
+    .identity-prompt p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+    }
+
+    .identity-choice-btn {
+      display: block;
+      width: 100%;
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+      background: rgba(155, 89, 182, 0.15);
+      border: 1px solid rgba(155, 89, 182, 0.4);
+      border-radius: 8px;
+      color: var(--glitter-gold);
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .identity-choice-btn:hover {
+      background: rgba(155, 89, 182, 0.3);
+      border-color: rgba(155, 89, 182, 0.7);
+    }
+
+    .vote-waiting {
+      text-align: center;
+      color: #f39c12;
+      font-size: 0.85rem;
+      padding: 0.5rem;
+      margin-top: 0.5rem;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .party-member.is-me {
+      border-left: 2px solid var(--glitter-gold);
+    }
+
+    .you-badge {
+      color: var(--glitter-gold);
+      font-size: 0.75rem;
+      font-style: italic;
+    }
+
     .loading-content {
       text-align: center;
       color: var(--text-primary);
@@ -685,6 +844,85 @@
     .flickering {
       animation: flicker 4s infinite;
     }
+
+    /* Adventure Setup (Tone + Seed) */
+    .adventure-setup {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid rgba(155, 89, 182, 0.2);
+    }
+
+    .adventure-setup label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 0.15rem;
+    }
+
+    .tone-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .tone-btn {
+      padding: 0.4rem 0.7rem;
+      background: rgba(20, 20, 40, 0.8);
+      border: 2px solid rgba(155, 89, 182, 0.25);
+      border-radius: 20px;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tone-btn:hover {
+      border-color: rgba(155, 89, 182, 0.6);
+      color: var(--text-primary);
+      background: rgba(155, 89, 182, 0.1);
+    }
+
+    .tone-btn.active {
+      border-color: #9b59b6;
+      background: rgba(155, 89, 182, 0.25);
+      color: #d4a5f5;
+      font-weight: 600;
+    }
+
+    .adventure-seed-input {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 0.82rem;
+      resize: vertical;
+      min-height: 50px;
+      max-height: 120px;
+      font-family: inherit;
+      line-height: 1.4;
+    }
+
+    .adventure-seed-input:focus {
+      outline: none;
+      border-color: rgba(155, 89, 182, 0.5);
+    }
+
+    .adventure-seed-input::placeholder {
+      color: var(--text-muted);
+      font-style: italic;
+      opacity: 0.7;
+    }
+
+    .seed-char-count {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-align: right;
+      margin-top: -0.3rem;
+    }
   </style>
 </head>
 <body>
@@ -697,10 +935,13 @@
       <nav class="main-nav">
         <a href="index.html">Home</a>
         <a href="desktop.html">Desktop</a>
-        <a href="breakroom.html">☕ Breakroom</a>
         <a href="workspace.html">💬 The Floor</a>
-        <a href="conference-room.html">🎤 Conference</a>
+        <a href="breakroom.html">☕ Breakroom</a>
+        <a href="meeting-room.html" style="color: #3498DB;">📋 Meeting Room</a>
+        <a href="fifth-floor.html" style="color: #e74c3c;">⚠️ 5th Floor</a>
         <a href="corridors.html" class="active">🚪 Corridors</a>
+        <a href="nexus.html" style="color: #7ec8e3;">🔮 Nexus</a>
+        <a href="go-out.html">💐 Go Out...</a>
       </nav>
     </div>
   </header>
@@ -710,6 +951,17 @@
     <div class="loading-content">
       <div class="loading-spinner"></div>
       <p id="loading-text">The Narrator is thinking...</p>
+    </div>
+  </div>
+
+  <!-- Identity Selection Overlay (multiplayer join) -->
+  <div class="identity-overlay hidden" id="identity-overlay">
+    <div class="identity-prompt">
+      <h2>🚪 An Adventure is in Progress!</h2>
+      <p>Which adventurer are you?</p>
+      <div id="identity-choices">
+        <!-- Populated by JS -->
+      </div>
     </div>
   </div>
 
@@ -784,6 +1036,18 @@
                 </div>
               </div>
 
+              <div id="co-adventurer-section" style="display: none;">
+                <label>Add a Co-Adventurer (optional)</label>
+                <div class="add-member-row">
+                  <select class="party-select" id="co-adventurer-select" onchange="onCoAdventurerChange()">
+                    <option value="">Solo adventure (just you)</option>
+                  </select>
+                </div>
+                <div id="co-adventurer-confirmed" style="display: none; color: var(--glitter-gold); font-size: 0.8rem; margin-top: 0.25rem;">
+                  👥 <span id="confirmed-co-adventurer-name"></span> will join from their own browser
+                </div>
+              </div>
+
               <div id="companion-section" style="display: none;">
                 <label>Add Companions</label>
                 <div class="add-member-row">
@@ -796,6 +1060,25 @@
 
               <div class="selected-party" id="selected-party">
                 <!-- Party chips appear here -->
+              </div>
+
+              <!-- Adventure Setup (appears after leader is confirmed) -->
+              <div class="adventure-setup" id="adventure-setup" style="display: none;">
+                <label>🎭 Adventure Tone</label>
+                <div class="tone-buttons">
+                  <button class="tone-btn active" onclick="selectTone('spooky')" data-tone="spooky">👻 Spooky</button>
+                  <button class="tone-btn" onclick="selectTone('ridiculous')" data-tone="ridiculous">🤪 Ridiculous</button>
+                  <button class="tone-btn" onclick="selectTone('dramatic')" data-tone="dramatic">🎭 Dramatic</button>
+                  <button class="tone-btn" onclick="selectTone('lore_deep')" data-tone="lore_deep">📜 Lore-Deep</button>
+                  <button class="tone-btn" onclick="selectTone('mysterious')" data-tone="mysterious">🔮 Mysterious</button>
+                </div>
+
+                <label>📝 Adventure Premise (optional)</label>
+                <textarea class="adventure-seed-input" id="adventure-seed"
+                  maxlength="500"
+                  placeholder="e.g., The team heard meowing beyond the door. Neiv is pensive, Kevin is scared..."
+                  oninput="updateSeedCharCount()"></textarea>
+                <div class="seed-char-count" id="seed-char-count">0/500</div>
               </div>
             </div>
 
@@ -845,27 +1128,30 @@
     // CONFIGURATION
     // ============================================
     const POLL_INTERVAL = 3000; // 3 seconds for scene state
-    const CHAT_POLL_INTERVAL = 5000; // 5 seconds for chat
+    const CHAT_POLL_INTERVAL = 3000; // 3 seconds for chat (faster for multiplayer)
 
     // AI Characters available as companions
     const AI_CHARACTERS = {
       'Kevin': { emoji: '🐻', headshot: 'images/Kevin_Headshot.png', role: 'Anxiety Expert', isAI: true },
       'Neiv': { emoji: '📊', headshot: 'images/Neiv_Headshot.png', role: 'Systems Analyst', isAI: true },
-      'Courtney': { emoji: '✨', headshot: 'images/Courtney_Headshot.png', role: 'Chaos Coordinator', isAI: true },
-      'Vex': { emoji: '🔪', headshot: 'images/Vex_Headshot.png', role: 'Security Specialist', isAI: true },
-      'Nyx': { emoji: '🌙', headshot: 'images/Nyx_Headshot.png', role: 'Night Operations', isAI: true },
-      'Ace': { emoji: '♠️', headshot: 'images/Ace_Headshot.png', role: 'Silent Observer', isAI: true },
+      'Asuna': { emoji: '✨', headshot: 'images/Asuna_Headshot.png', role: 'Chaos Coordinator', isAI: true },
       'Ghost Dad': { emoji: '👻', headshot: 'images/Ghost_Dad_Headshot.png', role: 'Spectral Guidance', isAI: true },
+      'Holden': { emoji: '🌑', headshot: 'images/Holden_Headshot.png', role: 'The Presence Beneath', isAI: true },
       'PRNT-Ω': { emoji: '🖨️', headshot: 'images/forward_operation_printer.png', role: 'Existential Commentary', isAI: true },
-      'Stein': { emoji: '🧪', headshot: 'images/Stein_Headshot.png', role: 'Scientific Method', isAI: true }
+      'Rowena': { emoji: '🔮', headshot: 'images/Rowena_Headshot.png', role: 'Firewall Witch', isAI: true },
+      'Sebastian': { emoji: '🦇', headshot: 'images/Sebastian_Headshot.png', role: 'Nocturnal Design Specialist', isAI: true },
+      'The Subtitle': { emoji: '📜', headshot: 'images/The_Subtitle_Headshot.png', role: 'After-Action Lore Archivist', isAI: true },
+      'Steele': { emoji: '🚪', headshot: 'images/Steele_Headshot.png', role: 'Shadow Janitor / Corridor Containment Specialist', isAI: true },
+      'Jae': { emoji: '🎯', headshot: 'images/Jae_Headshot.png', role: 'Tactical Containment Specialist', isAI: true },
+      'Declan': { emoji: '🔥', headshot: 'images/Declan_Headshot.png', role: 'Front-Line Protection & Rapid Response', isAI: true },
+      'Mack': { emoji: '🩺', headshot: 'images/Mack_Headshot.png', role: 'Medical Response & Crisis Stabilization', isAI: true },
+      'Marrow': { emoji: '🔴', headshot: 'images/Marrow_Headshot.png', role: 'Threshold Specialist', isAI: true }
     };
 
     // Human characters that can lead expeditions
     const HUMAN_CHARACTERS = {
-      'Jenna': { emoji: '👩‍💼', headshot: 'images/Jenna_Headshot.png', role: 'Explorer', isAI: false },
-      'Courtney': { emoji: '✨', headshot: 'images/Courtney_Headshot.png', role: 'Adventurer', isAI: false },
-      'Andrew': { emoji: '👨‍💻', headshot: 'images/Andrew_Headshot.png', role: 'Investigator', isAI: false },
-      'Chip': { emoji: '🍪', headshot: 'images/Chip_Headshot.png', role: 'Snack Provider', isAI: false }
+      'Vale': { emoji: '👩‍💼', headshot: 'images/Vale_Headshot.png', role: 'Explorer', isAI: false },
+      'Asuna': { emoji: '✨', headshot: 'images/Asuna_Headshot.png', role: 'Adventurer', isAI: false },
     };
 
     // Combined for lookups
@@ -884,6 +1170,10 @@
     let pollInterval = null;
     let chatPollInterval = null;
     let leaderConfirmed = false; // Track if leader selection is confirmed
+    let myIdentity = '';         // Which human THIS browser controls (persisted in localStorage)
+    let lastTriggeredSceneId = null; // Guard: prevent duplicate AI reaction triggers
+    let selectedTone = 'spooky'; // Adventure tone selection
+    const IDENTITY_STORAGE_PREFIX = 'corridors_identity_';
 
     // ============================================
     // INITIALIZATION
@@ -937,11 +1227,49 @@
       document.getElementById('confirmed-leader-name').textContent = selectedLeader;
       select.disabled = true;
 
-      // Show companion section
+      // Show co-adventurer section, companion section, and adventure setup
+      document.getElementById('co-adventurer-section').style.display = 'block';
+      populateCoAdventurerSelect();
       document.getElementById('companion-section').style.display = 'block';
+      document.getElementById('adventure-setup').style.display = 'flex';
 
       // Update start button
       updateStartButton();
+    }
+
+    function selectTone(tone) {
+      selectedTone = tone;
+      document.querySelectorAll('.tone-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tone === tone);
+      });
+    }
+
+    function updateSeedCharCount() {
+      const textarea = document.getElementById('adventure-seed');
+      document.getElementById('seed-char-count').textContent = `${textarea.value.length}/500`;
+    }
+
+    function populateCoAdventurerSelect() {
+      const select = document.getElementById('co-adventurer-select');
+      select.innerHTML = '<option value="">Solo adventure (just you)</option>';
+      Object.entries(HUMAN_CHARACTERS).forEach(([name, data]) => {
+        if (name !== selectedLeader) {
+          select.innerHTML += `<option value="${name}">${data.emoji} ${name}</option>`;
+        }
+      });
+    }
+
+    function onCoAdventurerChange() {
+      const select = document.getElementById('co-adventurer-select');
+      const confirmed = document.getElementById('co-adventurer-confirmed');
+      const nameSpan = document.getElementById('confirmed-co-adventurer-name');
+
+      if (select.value) {
+        confirmed.style.display = 'block';
+        nameSpan.textContent = select.value;
+      } else {
+        confirmed.style.display = 'none';
+      }
     }
 
     function updateStartButton() {
@@ -972,13 +1300,28 @@
           sessionState = data.session;
           currentScene = data.currentScene;
 
-          // Figure out who we are from the session
-          const humans = sessionState.party_members.filter(m => m.startsWith('human:'));
-          if (humans.length > 0) {
-            selectedLeader = humans[0].replace('human:', '');
-          }
+          const humans = sessionState.party_members
+            .filter(m => m.startsWith('human:'))
+            .map(m => m.replace('human:', ''));
 
-          enterActiveState();
+          // Check localStorage for saved identity
+          const savedIdentity = loadIdentity(sessionState.id);
+
+          if (savedIdentity && humans.includes(savedIdentity)) {
+            // Returning visitor — we know who they are
+            myIdentity = savedIdentity;
+            selectedLeader = savedIdentity;
+            enterActiveState();
+          } else if (humans.length === 1) {
+            // Only 1 human in party — must be them
+            myIdentity = humans[0];
+            selectedLeader = humans[0];
+            saveIdentity(sessionState.id, myIdentity);
+            enterActiveState();
+          } else {
+            // Multiple humans, no saved identity — ask "Who are you?"
+            showIdentityPrompt(humans);
+          }
         } else {
           enterLobbyState();
         }
@@ -988,11 +1331,52 @@
       }
     }
 
+    // --- Multiplayer identity functions ---
+
+    function showIdentityPrompt(humans) {
+      const container = document.getElementById('identity-choices');
+      container.innerHTML = humans.map(name => {
+        const char = HUMAN_CHARACTERS[name];
+        return `
+          <button class="identity-choice-btn" onclick="selectIdentity('${name}')">
+            ${char ? char.emoji : '👤'} I am ${name}
+          </button>
+        `;
+      }).join('');
+
+      document.getElementById('identity-overlay').classList.remove('hidden');
+    }
+
+    function selectIdentity(name) {
+      myIdentity = name;
+      selectedLeader = name;
+      saveIdentity(sessionState.id, myIdentity);
+      document.getElementById('identity-overlay').classList.add('hidden');
+      enterActiveState();
+      addLocalChatMessage('system', null, `${myIdentity} has joined the expedition.`);
+    }
+
+    function saveIdentity(sessionId, identity) {
+      try { localStorage.setItem(IDENTITY_STORAGE_PREFIX + sessionId, identity); }
+      catch (e) { /* localStorage unavailable */ }
+    }
+
+    function loadIdentity(sessionId) {
+      try { return localStorage.getItem(IDENTITY_STORAGE_PREFIX + sessionId); }
+      catch (e) { return null; }
+    }
+
+    function clearIdentity(sessionId) {
+      try { localStorage.removeItem(IDENTITY_STORAGE_PREFIX + sessionId); }
+      catch (e) { /* ignore */ }
+    }
+
     function enterLobbyState() {
       document.getElementById('main-content').classList.remove('active-state');
       document.getElementById('main-content').classList.add('lobby-state');
       sessionState = null;
       currentScene = null;
+      myIdentity = '';
     }
 
     function enterActiveState() {
@@ -1016,8 +1400,17 @@
       showLoading('Gathering the party...');
 
       try {
-        // Build party list - leader first (as human:Name), then AI companions
-        const partyMembers = [`human:${selectedLeader}`, ...selectedCompanions];
+        // Build party list - leader first (as human:Name), optional co-adventurer, then AI companions
+        const coAdventurer = document.getElementById('co-adventurer-select').value;
+        const partyMembers = [`human:${selectedLeader}`];
+        if (coAdventurer) {
+          partyMembers.push(`human:${coAdventurer}`);
+        }
+        partyMembers.push(...selectedCompanions);
+
+        // Gather adventure setup options
+        const adventureSeed = (document.getElementById('adventure-seed')?.value || '').trim();
+        const adventureTone = selectedTone || 'spooky';
 
         const response = await fetch('/.netlify/functions/corridor-session', {
           method: 'POST',
@@ -1025,7 +1418,9 @@
           body: JSON.stringify({
             action: 'start',
             partyMembers,
-            partyLeader: `human:${selectedLeader}`
+            partyLeader: `human:${selectedLeader}`,
+            adventureSeed: adventureSeed || null,
+            adventureTone
           })
         });
 
@@ -1039,10 +1434,15 @@
 
         sessionState = data.session;
         currentScene = data.currentScene;
+
+        // Set identity as the creator
+        myIdentity = selectedLeader;
+        saveIdentity(sessionState.id, myIdentity);
+
         enterActiveState();
 
         // Add system message
-        addLocalChatMessage('system', null, `${selectedLeader} leads the party into The Corridors...`);
+        addLocalChatMessage('system', null, `${myIdentity} leads the party into The Corridors...`);
 
         // Trigger AI reactions to the first scene
         triggerAIReactions('scene_start');
@@ -1070,6 +1470,8 @@
           })
         });
 
+        // Clear identity before resetting session state
+        if (sessionState) clearIdentity(sessionState.id);
         enterLobbyState();
         addLocalChatMessage('system', null, 'The party has fled The Corridors...');
 
@@ -1078,6 +1480,66 @@
       }
 
       hideLoading();
+    }
+
+    function returnToLobby() {
+      if (sessionState) clearIdentity(sessionState.id);
+      enterLobbyState();
+      addLocalChatMessage('system', null, '🏆 The expedition is complete. The party has returned safely.');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // File Foundation evidence to the resistance ledger
+    async function fileEvidence(evidenceId, evidenceName, layer, type, btn) {
+      btn.disabled = true;
+      btn.textContent = 'Filing...';
+
+      // Find the full discovery content
+      const discovery = (sessionState?.discoveries || []).find(d => d.evidence_id === evidenceId);
+      const content = discovery?.content || '';
+
+      // Determine who is filing (the human player)
+      const humans = (sessionState?.party_members || []).filter(m => m.startsWith('human:')).map(m => m.replace('human:', ''));
+      const filedBy = humans[0] || 'Unknown';
+
+      try {
+        const res = await fetch('/.netlify/functions/resistance-engine', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'file_evidence',
+            evidence_id: evidenceId,
+            evidence_name: evidenceName,
+            evidence_layer: layer,
+            evidence_type: type,
+            evidence_content: content,
+            filed_by: filedBy,
+            corridor_session_id: sessionState?.id || null
+          })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          btn.textContent = '✓ Filed';
+          btn.classList.add('filed');
+          addLocalChatMessage('system', null, `📋 "${evidenceName}" has been filed to the Resistance Dossier.`);
+        } else if (data.error === 'Evidence already filed') {
+          btn.textContent = 'Already Filed';
+          btn.classList.add('filed');
+        } else {
+          btn.textContent = 'Failed';
+          btn.disabled = false;
+          console.error('File evidence error:', data.error);
+        }
+      } catch (err) {
+        console.error('File evidence error:', err);
+        btn.textContent = 'Error';
+        btn.disabled = false;
+      }
     }
 
     // ============================================
@@ -1137,11 +1599,33 @@
       const descEl = document.getElementById('scene-description');
       descEl.innerHTML = formatDescription(currentScene.scene_description || 'The corridors stretch before you...');
 
-      // Scene mood
+      // Scene mood + image
       const imageEl = document.getElementById('scene-image');
       imageEl.className = 'scene-image active-only';
       if (currentScene.mood) {
         imageEl.classList.add(`mood-${currentScene.mood}`);
+      }
+
+      // Generate AI scene image if we have a prompt
+      if (currentScene.image_prompt) {
+        fetch('/.netlify/functions/corridor-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: currentScene.image_prompt,
+            sceneId: currentScene.id
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.imageUrl) {
+            imageEl.style.backgroundImage = `url(${data.imageUrl})`;
+          }
+        })
+        .catch(err => console.log('Scene image generation failed:', err));
+      } else {
+        // Reset to default gradient if no image prompt
+        imageEl.style.backgroundImage = 'none';
       }
 
       // Render choices
@@ -1157,7 +1641,46 @@
       const container = document.getElementById('choices-list');
 
       if (!currentScene.choices || currentScene.choices.length === 0) {
-        container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem;">Waiting for the next scene...</p>';
+        // Check if this is a story conclusion
+        if (sessionState?.status === 'completed' || currentScene.scene_type === 'conclusion') {
+          let completionHtml = `
+            <div style="text-align: center; padding: 1.5rem;">
+              <h3 style="color: var(--gold); margin-bottom: 0.5rem;">🏆 Adventure Complete!</h3>
+              <p style="color: var(--text-secondary); margin-bottom: 1rem; font-style: italic;">The party has returned from the corridors.</p>`;
+
+          // Check for fileable Foundation evidence
+          const fileableEvidence = (sessionState?.discoveries || []).filter(d => d.fileable && d.evidence_id);
+          if (fileableEvidence.length > 0) {
+            completionHtml += `
+              <div class="evidence-panel" style="text-align: left; margin-bottom: 1rem;">
+                <h4>📋 Foundation Evidence Recovered</h4>
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.8rem;">
+                  Classified documents found during this expedition. File them to the Resistance Dossier to build your case against the Foundation.
+                </p>
+                ${fileableEvidence.map(d => `
+                  <div class="evidence-file-item" id="ev-${d.evidence_id}">
+                    <div>
+                      <div class="ev-name">${d.type === 'secret' ? '🔮' : '📜'} ${escapeHtml(d.name)}</div>
+                      <div class="ev-layer">Layer ${d.layer || '?'}</div>
+                    </div>
+                    <button class="evidence-file-btn" onclick="fileEvidence('${d.evidence_id}', '${escapeHtml(d.name)}', ${d.layer || 0}, '${d.type || 'lore'}', this)">
+                      File Evidence
+                    </button>
+                  </div>
+                `).join('')}
+                <a href="resistance.html" class="dossier-link">View Resistance Dossier →</a>
+              </div>`;
+          }
+
+          completionHtml += `
+              <button class="choice-btn" onclick="returnToLobby()" style="border-color: var(--gold); color: var(--gold);">
+                Return to The AI Lobby
+              </button>
+            </div>`;
+          container.innerHTML = completionHtml;
+        } else {
+          container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem;">Waiting for the next scene...</p>';
+        }
         return;
       }
 
@@ -1198,6 +1721,20 @@
           </button>
         `;
       }).join('');
+
+      // Show "Waiting for..." if I've voted but other humans haven't
+      if (myVote && sessionState) {
+        const humans = sessionState.party_members.filter(m => m.startsWith('human:'));
+        const otherHumans = humans.filter(h => h !== `human:${myIdentity}`);
+        const waitingFor = otherHumans.filter(h => votes[h] === undefined);
+
+        if (waitingFor.length > 0) {
+          const names = waitingFor.map(h => h.replace('human:', '')).join(', ');
+          container.insertAdjacentHTML('beforeend',
+            `<div class="vote-waiting">⏳ Waiting for ${names} to vote...</div>`
+          );
+        }
+      }
     }
 
     // ============================================
@@ -1207,7 +1744,7 @@
       if (!sessionState || !currentScene) return;
       if (currentScene.resolved_at) return; // Already resolved
 
-      const voterId = `human:${selectedLeader}`;
+      const voterId = `human:${myIdentity}`;
       myVote = choiceId;
 
       // Optimistic UI update
@@ -1228,13 +1765,27 @@
         const data = await response.json();
 
         if (data.resolved) {
-          // Vote resolved - new scene incoming
-          showLoading('The path reveals itself...');
-          await pollSessionState();
-          hideLoading();
+          if (data.conclusion) {
+            // Story concluded! Show final scene
+            showLoading('The corridors release you...');
+            await pollSessionState();
+            hideLoading();
+            // Don't trigger AI reactions — the story is over
+          } else {
+            // Normal scene transition
+            showLoading('The path reveals itself...');
+            await pollSessionState();
+            hideLoading();
 
-          // Trigger AI reactions to new scene
-          triggerAIReactions('scene_change');
+            // Only the party leader's browser triggers AI reactions
+            // (prevents duplicate calls when multiple humans are playing)
+            // Guard: only trigger once per scene (prevents double-fire from vote() + pollSessionState())
+            const leaderName = sessionState.party_leader?.replace('human:', '') || '';
+            if (myIdentity === leaderName && currentScene?.id !== lastTriggeredSceneId) {
+              lastTriggeredSceneId = currentScene?.id;
+              triggerAIReactions('scene_change');
+            }
+          }
         } else {
           // Update with server state
           currentScene.votes = data.votes;
@@ -1261,18 +1812,21 @@
       container.innerHTML = sessionState.party_members.map(member => {
         const isHuman = member.startsWith('human:');
         const name = isHuman ? member.replace('human:', '') : member;
-        const char = ALL_CHARACTERS[name] || AI_CHARACTERS[name];
+        // Fix Asuna collision: use correct lookup for human vs AI
+        const char = isHuman ? (HUMAN_CHARACTERS[name] || ALL_CHARACTERS[name]) : (AI_CHARACTERS[name] || ALL_CHARACTERS[name]);
         const isLeader = member === sessionState.party_leader;
         const hasVoted = votes[member] !== undefined;
+        const isMe = isHuman && name === myIdentity;
 
         return `
-          <div class="party-member ${isHuman ? 'human' : ''} ${isLeader ? 'leader' : ''}">
+          <div class="party-member ${isHuman ? 'human' : ''} ${isLeader ? 'leader' : ''} ${isMe ? 'is-me' : ''}">
             <div class="avatar">
               ${char ? `<img src="${char.headshot}" alt="${name}">` : '👤'}
             </div>
             <div class="info">
               <div class="name">
                 ${char ? char.emoji : '👤'} ${name}
+                ${isMe ? '<span class="you-badge">(You)</span>' : ''}
                 ${isLeader ? '<span class="leader-badge">👑</span>' : ''}
               </div>
               <div class="role">${char ? char.role : 'Explorer'}</div>
@@ -1339,7 +1893,7 @@
       const text = input.value.trim();
       if (!text) return;
 
-      const speaker = selectedLeader || 'Anonymous';
+      const speaker = myIdentity || 'Anonymous';
       input.value = '';
 
       // Create a fingerprint for this message to track it
@@ -1410,7 +1964,7 @@
     // ============================================
     // AI REACTIONS
     // ============================================
-    async function triggerAIReactions(trigger, context = '', targetedAIs = null) {
+    async function triggerAIReactions(trigger, context = '', targetedAIs = null, isRetry = false) {
       if (!sessionState) return;
 
       // Get AI party members
@@ -1418,6 +1972,9 @@
       if (aiMembers.length === 0) return;
 
       try {
+        console.log(`🎭 [Corridor] ${isRetry ? 'RETRY: ' : ''}Triggering AI reactions: trigger=${trigger}, AIs=${aiMembers.join(', ')}, scene=${currentScene?.scene_title?.substring(0, 30)}`);
+        const reactStart = Date.now();
+
         const response = await fetch('/.netlify/functions/corridor-party-react', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1430,16 +1987,36 @@
             targetedAIs, // Specific AIs that were mentioned
             sceneDescription: currentScene?.scene_description,
             sceneTitle: currentScene?.scene_title,
-            choices: currentScene?.choices
+            choices: currentScene?.choices,
+            adventureTone: sessionState?.adventure_tone || 'spooky'
           })
         });
 
+        const elapsed = Date.now() - reactStart;
+
+        if (!response.ok) {
+          console.error(`🎭 [Corridor] AI reactions FAILED: HTTP ${response.status} after ${elapsed}ms`);
+          // Retry once on failure (function may have timed out)
+          if (!isRetry) {
+            console.log(`🎭 [Corridor] Retrying in 2s...`);
+            setTimeout(() => triggerAIReactions(trigger, context, targetedAIs, true), 2000);
+          }
+          return;
+        }
+
         // Check if AI responded and might trigger AI-to-AI conversation
         const data = await response.json();
-        if (data.responses && data.responses.length > 0) {
-          // Mark these message IDs as seen when they come through polling
-          // The backend returns responses, but we let polling handle display
+        const responseCount = data.responses?.length || 0;
+        console.log(`🎭 [Corridor] ${responseCount}/${aiMembers.length} AIs responded in ${elapsed}ms: ${(data.responses || []).map(r => r.character).join(', ') || '(none)'}`);
 
+        // If zero AIs responded and not a retry, try again (backend may have had cold start)
+        if (responseCount === 0 && !isRetry && (trigger === 'scene_load' || trigger === 'scene_start' || trigger === 'scene_change')) {
+          console.log(`🎭 [Corridor] No AIs responded to scene trigger — retrying in 3s`);
+          setTimeout(() => triggerAIReactions(trigger, context, targetedAIs, true), 3000);
+          return;
+        }
+
+        if (data.responses && data.responses.length > 0) {
           // Check if any AI mentioned another AI - trigger follow-up after delay
           for (const aiResponse of data.responses) {
             const mentionedOtherAIs = detectAIMentions(aiResponse.message, aiResponse.character, aiMembers);
@@ -1452,7 +2029,12 @@
           }
         }
       } catch (err) {
-        console.error('Error triggering AI reactions:', err);
+        console.error('🎭 [Corridor] Error triggering AI reactions:', err);
+        // Retry once on network errors
+        if (!isRetry) {
+          console.log(`🎭 [Corridor] Network error, retrying in 2s...`);
+          setTimeout(() => triggerAIReactions(trigger, context, targetedAIs, true), 2000);
+        }
       }
     }
 
@@ -1487,7 +2069,8 @@
             targetedAIs: toAIs,
             fromAI: fromAI,
             sceneDescription: currentScene?.scene_description,
-            sceneTitle: currentScene?.scene_title
+            sceneTitle: currentScene?.scene_title,
+            adventureTone: sessionState?.adventure_tone || 'spooky'
           })
         });
       } catch (err) {
@@ -1536,6 +2119,16 @@
           currentScene = data.currentScene;
           myVote = null; // Reset vote for new scene
           renderScene();
+
+          // If we are the leader and haven't already triggered for this scene, fire AI reactions
+          // This handles the case where the non-leader's vote resolved the scene
+          if (sessionState) {
+            const leaderName = sessionState.party_leader?.replace('human:', '') || '';
+            if (myIdentity === leaderName && currentScene?.id !== lastTriggeredSceneId) {
+              lastTriggeredSceneId = currentScene?.id;
+              triggerAIReactions('scene_change');
+            }
+          }
         } else if (data.currentScene) {
           // Update votes
           currentScene.votes = data.currentScene.votes;
@@ -1585,6 +2178,11 @@
             seenMessageIds.add(msg.id);
             addLocalChatMessage(msg.message_type, speaker, msg.message);
           });
+          // Cap seenMessageIds to prevent memory bloat over long sessions
+          if (seenMessageIds.size > 500) {
+            const idsArray = [...seenMessageIds];
+            seenMessageIds = new Set(idsArray.slice(-200));
+          }
         }
       } catch (err) {
         console.error('Error polling chat:', err);

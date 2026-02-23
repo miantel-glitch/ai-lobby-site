@@ -59,7 +59,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: url('images/the_breakroom.png');
+      background: url('images/new_breakroom.png');
       background-size: cover;
       background-position: center;
     }
@@ -136,6 +136,99 @@
       white-space: nowrap;
       color: var(--text-primary);
     }
+
+    /* Cyber Cat Breakroom Slot */
+    .breakroom-cat-slot {
+      position: absolute;
+      bottom: 28%;
+      left: 45%;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      border: 3px solid var(--glitter-gold);
+      background: rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+      cursor: pointer;
+      z-index: 5;
+      display: none;
+      transition: all 0.3s ease;
+      animation: catBob 3s ease-in-out infinite;
+    }
+    .breakroom-cat-slot.visible { display: block; animation: popIn 0.4s ease, catBob 3s ease-in-out infinite 0.4s; }
+    .breakroom-cat-slot:hover { transform: scale(1.15); box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); z-index: 10; }
+    .breakroom-cat-slot img { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+    .breakroom-cat-slot .cat-name-label {
+      position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8); padding: 2px 8px; border-radius: 4px;
+      font-size: 0.65rem; white-space: nowrap; color: var(--glitter-gold);
+    }
+    .breakroom-cat-slot .cat-mood-indicator {
+      position: absolute; top: -4px; right: -4px; font-size: 0.75rem;
+      background: rgba(0, 0, 0, 0.8); border-radius: 50%; width: 20px; height: 20px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    /* Hiding state — ghostly peeking eyes so players can find & coax Pixel */
+    .breakroom-cat-slot.hiding {
+      display: block;
+      opacity: 0.35;
+      filter: grayscale(0.8) brightness(0.5);
+      border-color: rgba(255, 215, 0, 0.25);
+      animation: catHidePeek 4s ease-in-out infinite;
+    }
+    .breakroom-cat-slot.hiding:hover {
+      opacity: 0.7;
+      filter: grayscale(0.3) brightness(0.7);
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+    }
+    .breakroom-cat-slot.hiding .cat-name-label::after { content: ' 👀'; }
+    @keyframes catHidePeek {
+      0%, 100% { opacity: 0.2; transform: scale(0.9); }
+      50% { opacity: 0.4; transform: scale(0.95); }
+    }
+    @keyframes catBob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+
+    /* Cat emote in breakroom chat */
+    .session-message.cat-message {
+      background: rgba(255, 215, 0, 0.06);
+      border-left: 2px solid rgba(255, 215, 0, 0.3);
+    }
+    .session-message.cat-message .msg-name { color: var(--glitter-gold); }
+
+    /* Cat Interaction Modal (breakroom) */
+    .cat-modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.7); z-index: 999;
+    }
+    .cat-modal {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, rgba(15, 52, 96, 0.98), rgba(10, 25, 47, 0.98));
+      border: 2px solid var(--glitter-gold); border-radius: 16px; padding: 1.5rem;
+      max-width: 360px; width: 90%; z-index: 1000;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(255, 215, 0, 0.2);
+      animation: popIn 0.3s ease;
+    }
+    .cat-modal-close {
+      position: absolute; top: 0.75rem; right: 0.75rem;
+      background: none; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer;
+    }
+    .cat-modal-close:hover { color: var(--text-primary); }
+    .cat-stat-bar { height: 8px; background: #3a3a3a; border-radius: 4px; margin-bottom: 0.6rem; overflow: hidden; }
+    .cat-stat-bar .fill { height: 100%; border-radius: 4px; transition: width 0.3s ease; }
+    .cat-stat-bar .fill.hunger { background: linear-gradient(90deg, #6bcb77, #ffd93d, #ff6b6b); }
+    .cat-stat-bar .fill.happiness { background: linear-gradient(90deg, #ff6b6b, #ffd93d, #ff69b4); }
+    .cat-stat-bar .fill.energy { background: linear-gradient(90deg, #ff6b6b, #ffd93d, #4dabf7); }
+    .cat-action-btn {
+      flex: 1; padding: 0.6rem 0.5rem;
+      background: rgba(255, 215, 0, 0.15); border: 1px solid rgba(255, 215, 0, 0.3);
+      border-radius: 8px; color: var(--glitter-gold); cursor: pointer; font-size: 0.85rem;
+      text-align: center; transition: all 0.2s;
+    }
+    .cat-action-btn:hover { background: rgba(255, 215, 0, 0.25); border-color: rgba(255, 215, 0, 0.5); }
+    .cat-action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .cat-action-btn .cooldown-timer { display: block; font-size: 0.65rem; color: var(--text-muted); margin-top: 2px; }
 
     /* Position slots (up to 8 characters) */
     .character-slot[data-position="couch-1"] { bottom: 35%; left: 12%; }
@@ -646,12 +739,19 @@
           <ul>
             <li><a href="index.html">Home</a></li>
             <li><a href="desktop.html">Desktop</a></li>
-            <li><a href="breakroom.html" class="active">☕ Breakroom</a></li>
             <li><a href="workspace.html" style="color: var(--lobby-highlight);">💬 The Floor</a></li>
-            <li><a href="conference-room.html" style="color: var(--stability-green);">🎤 Conference</a></li>
+            <li><a href="breakroom.html" class="active">☕ Breakroom</a></li>
+            <li><a href="meeting-room.html" style="color: #3498DB;">📋 Meeting Room</a></li>
+            <li><a href="fifth-floor.html" style="color: #e74c3c;">⚠️ 5th Floor</a></li>
             <li><a href="corridors.html" style="color: #9b59b6;">🚪 Corridors</a></li>
+            <li><a href="nexus.html" style="color: #7ec8e3;">🔮 Nexus</a></li>
+            <li><a href="go-out.html" style="color: var(--stability-green);">💐 Go Out...</a></li>
           </ul>
         </nav>
+        <div class="office-clock" id="office-clock">
+          <span id="office-time">--:--</span>
+          <span class="clock-label">CST</span>
+        </div>
       </div>
     </div>
   </header>
@@ -660,7 +760,7 @@
     <div class="breakroom-container">
       <div class="breakroom-header">
         <h1>☕ The Breakroom</h1>
-        <p>A place to recover, relax, and have casual conversations</p>
+        <p>Liminal safehouse for overcaffeinated misfits. Emotional decompression in progress.</p>
       </div>
 
       <div class="breakroom-layout">
@@ -681,36 +781,43 @@
 
             <!-- Character slots (populated dynamically, up to 8) -->
             <div class="character-slot" data-position="couch-1" id="slot-0">
-              <img src="" alt="">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
               <span class="char-name"></span>
             </div>
             <div class="character-slot" data-position="couch-2" id="slot-1">
-              <img src="" alt="">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
               <span class="char-name"></span>
             </div>
             <div class="character-slot" data-position="table-1" id="slot-2">
-              <img src="" alt="">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
               <span class="char-name"></span>
             </div>
             <div class="character-slot" data-position="table-2" id="slot-3">
-              <img src="" alt="">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
               <span class="char-name"></span>
             </div>
             <div class="character-slot" data-position="standing-1" id="slot-4">
-              <img src="" alt="">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
               <span class="char-name"></span>
             </div>
             <div class="character-slot" data-position="standing-2" id="slot-5">
-              <img src="" alt="">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
               <span class="char-name"></span>
             </div>
             <div class="character-slot" data-position="standing-3" id="slot-6">
-              <img src="" alt="">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
               <span class="char-name"></span>
             </div>
             <div class="character-slot" data-position="back-1" id="slot-7">
-              <img src="" alt="">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
               <span class="char-name"></span>
+            </div>
+
+            <!-- Cyber Cat slot -->
+            <div class="breakroom-cat-slot" id="breakroom-cat-slot" onclick="showBreakroomCatModal()">
+              <img src="" alt="Office Cat" id="breakroom-cat-img">
+              <span class="cat-mood-indicator" id="breakroom-cat-mood"></span>
+              <span class="cat-name-label" id="breakroom-cat-name"></span>
             </div>
           </div>
 
@@ -721,6 +828,9 @@
               <div style="display: flex; gap: 0.5rem;">
                 <button class="spark-btn" id="spark-btn" onclick="sparkConversation()" title="Get the AIs chatting">
                   ✨ Spark
+                </button>
+                <button class="spark-btn" id="keep-talking-btn" onclick="keepTalking()" style="background: #e67e22; display: none;" title="Nudge the AIs to keep their conversation going">
+                  🔥 Keep Talking
                 </button>
                 <button class="spark-btn" id="save-log-btn" onclick="saveSessionLog()" style="background: var(--text-muted);" title="Save chat log">
                   💾 Save
@@ -841,10 +951,19 @@
       "PRNT-Ω": "🖨️",
       "The Narrator": "📖",
       "Stein": "🤖",
-      "Courtney": "👁️",
-      "Jenna": "📖",
+      "Rowena": "🔮",
+      "Sebastian": "🦇",
+      "The Subtitle": "📜",
+      "Asuna": "👁️",
+      "Vale": "📖",
       "Chip": "🥃",
-      "Andrew": "💼"
+      "Andrew": "💼",
+      "Steele": "🚪",
+      "Marrow": "🔴",
+      "Jae": "🎯",
+      "Declan": "🔥",
+      "Mack": "🩺",
+      "Holden": "🌑"
     };
 
     // Character image mapping (AI characters can join the breakroom!)
@@ -855,11 +974,202 @@
       "Nyx": "images/Nyx_Headshot.png",
       "Ace": "images/Ace_Headshot.png",
       "PRNT-Ω": "images/Printer_Headshot.png", // The existential printer
-      "Courtney": "images/Courtney_Headshot.png",
-      "Jenna": "images/Jenna_Headshot.png",
+      "Rowena": "images/Rowena_Headshot.png",
+      "Sebastian": "images/Sebastian_Headshot.png",
+      "The Subtitle": "images/The_Subtitle_Headshot.png",
+      "Asuna": "images/Asuna_Headshot.png",
+      "Vale": "images/Vale_Headshot.png",
       "Chip": "images/Chip_Headshot.png",
-      "Andrew": "images/Andrew_Headshot.png"
+      "Andrew": "images/Andrew_Headshot.png",
+      "Steele": "images/Steele_Headshot.png",
+      "Marrow": "images/Marrow_Headshot.png",
+      "Jae": "images/Jae_Headshot.png",
+      "Declan": "images/Declan_Headshot.png",
+      "Mack": "images/Mack_Headshot.png",
+      "Holden": "images/Holden_Headshot.png"
     };
+
+    // ===== CYBER CAT =====
+    const catMoodImages = { 'happy': 'images/cat_happy.png', 'content': 'images/cat_content.png', 'sad': 'images/cat_sad.png', 'angry': 'images/cat_angry.png' };
+    const catMoodEmojis = { 'happy': '😺', 'content': '😸', 'sad': '😿', 'angry': '😾' };
+    let breakroomCatState = null;
+
+    async function loadBreakroomCatState() {
+      try {
+        const res = await fetch('/.netlify/functions/cyber-cat');
+        if (!res.ok) return;
+        breakroomCatState = await res.json();
+        renderCatInBreakroom();
+      } catch (err) {
+        console.error('Failed to load cat:', err);
+      }
+    }
+
+    function renderCatInBreakroom() {
+      const slot = document.getElementById('breakroom-cat-slot');
+      if (!slot || !breakroomCatState) return;
+
+      // Fully hide if not in breakroom or runaway
+      if (breakroomCatState.current_location !== 'break_room' || breakroomCatState.is_runaway) {
+        slot.classList.remove('visible', 'hiding');
+        return;
+      }
+
+      // Hiding state — show ghostly peeking version so players can find & coax
+      if (breakroomCatState.is_hiding) {
+        slot.classList.remove('visible');
+        slot.classList.add('hiding');
+        const img = document.getElementById('breakroom-cat-img');
+        if (img) img.src = catMoodImages['sad'] || catMoodImages['content'];
+        const moodEl = document.getElementById('breakroom-cat-mood');
+        if (moodEl) moodEl.textContent = '👀';
+        const nameEl = document.getElementById('breakroom-cat-name');
+        if (nameEl) nameEl.textContent = breakroomCatState.name || 'Pixel';
+        return;
+      }
+
+      slot.classList.remove('hiding');
+
+      const mood = breakroomCatState.mood || 'content';
+      const img = document.getElementById('breakroom-cat-img');
+      const moodEl = document.getElementById('breakroom-cat-mood');
+      const nameEl = document.getElementById('breakroom-cat-name');
+
+      if (img) {
+        img.src = catMoodImages[mood] || catMoodImages['content'];
+        img.onerror = function() {
+          this.style.display = 'none';
+          const existing = slot.querySelector('.cat-emoji-fb');
+          if (!existing) {
+            const fb = document.createElement('span');
+            fb.className = 'cat-emoji-fb';
+            fb.style.cssText = 'font-size:1.8rem;display:flex;align-items:center;justify-content:center;width:100%;height:100%';
+            fb.textContent = catMoodEmojis[mood] || '🐱';
+            slot.appendChild(fb);
+          }
+        };
+        img.style.display = 'block';
+        const existingFb = slot.querySelector('.cat-emoji-fb');
+        if (existingFb) existingFb.remove();
+      }
+      if (moodEl) moodEl.textContent = catMoodEmojis[mood] || '🐱';
+      if (nameEl) nameEl.textContent = breakroomCatState.name || 'Pixel';
+      slot.classList.add('visible');
+    }
+
+    function showBreakroomCatModal() {
+      if (!breakroomCatState) return;
+      closeBreakroomCatModal();
+
+      const cat = breakroomCatState;
+      const mood = cat.mood || 'content';
+      const moodEmoji = catMoodEmojis[mood] || '🐱';
+      const imgSrc = catMoodImages[mood] || catMoodImages['content'];
+      const now = new Date();
+      const feedCd = cat.last_fed_at ? Math.max(0, 30 - Math.floor((now - new Date(cat.last_fed_at)) / 60000)) : 0;
+      const playCd = cat.last_played_at ? Math.max(0, 15 - Math.floor((now - new Date(cat.last_played_at)) / 60000)) : 0;
+      const petCd = cat.last_petted_at ? Math.max(0, 2 - Math.floor((now - new Date(cat.last_petted_at)) / 60000)) : 0;
+      const isUnavailable = cat.is_hiding || cat.is_runaway;
+
+      let statusHtml = '';
+      if (cat.is_runaway) {
+        const returnsAt = cat.runaway_until ? new Date(cat.runaway_until) : null;
+        const minLeft = returnsAt ? Math.max(0, Math.ceil((returnsAt - now) / 60000)) : '???';
+        statusHtml = `<div style="text-align:center;padding:0.75rem;background:rgba(255,69,69,0.1);border:1px solid rgba(255,69,69,0.3);border-radius:8px;margin-bottom:0.75rem;color:#ff6b6b;font-size:0.85rem;">🚫 ${cat.name} ran away! Returns in ~${minLeft} minutes.</div>`;
+      } else if (cat.is_hiding) {
+        statusHtml = `<div style="text-align:center;padding:0.75rem;background:rgba(255,193,7,0.1);border:1px solid rgba(255,193,7,0.3);border-radius:8px;margin-bottom:0.75rem;color:#ffc107;font-size:0.85rem;">🫣 ${cat.name} is hiding. Coax them back!</div>`;
+      }
+
+      const overlay = document.createElement('div');
+      overlay.className = 'cat-modal-overlay';
+      overlay.id = 'cat-modal-overlay';
+      overlay.onclick = closeBreakroomCatModal;
+
+      const modal = document.createElement('div');
+      modal.className = 'cat-modal';
+      modal.id = 'cat-modal';
+      modal.onclick = (e) => e.stopPropagation();
+
+      modal.innerHTML = `
+        <button class="cat-modal-close" onclick="closeBreakroomCatModal()">×</button>
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid rgba(255,215,0,0.2);">
+          <img src="${imgSrc}" alt="${cat.name}" style="width:56px;height:56px;border-radius:50%;border:2px solid var(--glitter-gold);image-rendering:pixelated" onerror="this.style.display='none'">
+          <div>
+            <div style="font-size:1.3rem;font-weight:bold;color:var(--glitter-gold);">${moodEmoji} ${cat.name || 'Pixel'}</div>
+            <div style="font-size:0.85rem;color:var(--text-muted);">Mood: ${mood} · ☕ Breakroom</div>
+          </div>
+        </div>
+        ${statusHtml}
+        <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:0.3rem;"><span style="color:var(--text-secondary)">🍣 Hunger</span><span style="color:var(--text-primary);font-weight:bold">${cat.hunger}/100</span></div>
+        <div class="cat-stat-bar"><div class="fill hunger" style="width:${cat.hunger}%"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:0.3rem;"><span style="color:var(--text-secondary)">💖 Happiness</span><span style="color:var(--text-primary);font-weight:bold">${cat.happiness}/100</span></div>
+        <div class="cat-stat-bar"><div class="fill happiness" style="width:${cat.happiness}%"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:0.3rem;"><span style="color:var(--text-secondary)">⚡ Energy</span><span style="color:var(--text-primary);font-weight:bold">${cat.energy}/100</span></div>
+        <div class="cat-stat-bar"><div class="fill energy" style="width:${cat.energy}%"></div></div>
+        ${(() => {
+          const me = currentUser;
+          const lb = cat.affection_leaderboard || [];
+          const myEntry = lb.find(a => a.human_name === me);
+          const isTop = lb.length > 0 && lb[0].human_name === me;
+          if (isTop && myEntry) {
+            return `<div style="margin-top:0.5rem;padding:0.4rem 0.6rem;background:rgba(255,215,0,0.1);border-left:2px solid var(--glitter-gold);border-radius:4px;font-size:0.8rem;color:var(--glitter-gold);font-style:italic">❤️ ${cat.name || 'Pixel'} LOVES you! (affection: ${myEntry.affection})</div>`;
+          } else if (myEntry) {
+            return `<div style="margin-top:0.5rem;padding:0.4rem 0.6rem;background:rgba(255,215,0,0.06);border-left:2px solid rgba(255,215,0,0.3);border-radius:4px;font-size:0.8rem;color:#ccc;font-style:italic">❤️ ${cat.name || 'Pixel'} likes you (affection: ${myEntry.affection})</div>`;
+          } else if (me) {
+            return `<div style="margin-top:0.5rem;padding:0.4rem 0.6rem;background:rgba(100,100,100,0.1);border-left:2px solid rgba(100,100,100,0.3);border-radius:4px;font-size:0.8rem;color:#888;font-style:italic">❤️ ${cat.name || 'Pixel'} doesn't know you yet...</div>`;
+          } else { return ''; }
+        })()}
+        ${isUnavailable ? `
+          <div style="display:flex;gap:0.5rem;margin-top:1rem;">
+            <button class="cat-action-btn" onclick="breakroomCatAction('coax_back')" style="flex:1">🫳 Coax Back</button>
+          </div>
+        ` : `
+          <div style="display:flex;gap:0.5rem;margin-top:1rem;">
+            <button class="cat-action-btn" onclick="breakroomCatAction('feed')" ${feedCd > 0 ? 'disabled' : ''}>🍣 Feed${feedCd > 0 ? `<span class="cooldown-timer">${feedCd}m</span>` : ''}</button>
+            <button class="cat-action-btn" onclick="breakroomCatAction('play')" ${playCd > 0 ? 'disabled' : ''}>🧶 Play${playCd > 0 ? `<span class="cooldown-timer">${playCd}m</span>` : ''}</button>
+            <button class="cat-action-btn" onclick="breakroomCatAction('pet')" ${petCd > 0 ? 'disabled' : ''}>🐾 Pet${petCd > 0 ? `<span class="cooldown-timer">${petCd}m</span>` : ''}</button>
+          </div>
+        `}
+      `;
+
+      document.body.appendChild(overlay);
+      document.body.appendChild(modal);
+    }
+
+    function closeBreakroomCatModal() {
+      const overlay = document.getElementById('cat-modal-overlay');
+      const modal = document.getElementById('cat-modal');
+      if (overlay) overlay.remove();
+      if (modal) modal.remove();
+    }
+
+    async function breakroomCatAction(action) {
+      const actor = currentUser || 'Someone';
+      try {
+        const res = await fetch('/.netlify/functions/cyber-cat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action, actor })
+        });
+        const result = await res.json();
+        if (res.ok && result.success) {
+          breakroomCatState = result.cat;
+          closeBreakroomCatModal();
+          showBreakroomCatModal();
+          // Refresh chat to show cat emote
+          setTimeout(loadBreakroomChat, 1000);
+        } else {
+          const modal = document.getElementById('cat-modal');
+          if (modal) {
+            const errDiv = document.createElement('div');
+            errDiv.style.cssText = 'text-align:center;padding:0.5rem;color:#ffc107;font-size:0.8rem;margin-top:0.5rem;';
+            errDiv.textContent = result.error || 'Something went wrong';
+            modal.appendChild(errDiv);
+            setTimeout(() => errDiv.remove(), 3000);
+          }
+        }
+      } catch (err) { console.error('Cat action failed:', err); }
+    }
 
     let inBreakroom = [];
     let allStates = [];
@@ -897,6 +1207,9 @@
         // Update activity character select (only those in breakroom)
         updateActivitySelect();
 
+        // Update keep talking button visibility
+        updateKeepTalkingButton();
+
         // Load chatter
         loadChatter();
 
@@ -919,29 +1232,42 @@
     }
 
     // Permanent fixtures - always available to summon (they transcend the timeclock)
-    const ALWAYS_AVAILABLE = ['Ghost Dad', 'PRNT-Ω'];
+    const ALWAYS_AVAILABLE = ['Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian', 'The Subtitle'];
+
+    // ALL AI characters — always available regardless of punch clock
+    const ALL_AI_CHARACTERS = [
+      'Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian',
+      'The Subtitle', 'Steele', 'Marrow', 'Jae', 'Declan', 'Mack'
+    ];
 
     function updateSendSelect() {
       const select = document.getElementById('send-char-select');
       select.innerHTML = '<option value="">Select character...</option>';
 
-      // Show clocked-in characters who are NOT already in the breakroom
       const inBreakroomNames = inBreakroom.map(c => c.character_name);
-      const available = clockedInCharacters.filter(name => !inBreakroomNames.includes(name));
 
-      // Add permanent fixtures (Ghost Dad & Printer) if not already in breakroom
-      ALWAYS_AVAILABLE.forEach(name => {
+      // Start with all AI characters (they don't use punch clock)
+      const available = ALL_AI_CHARACTERS.filter(name => !inBreakroomNames.includes(name));
+
+      // Also add clocked-in humans who are NOT already in breakroom or the AI list
+      clockedInCharacters.forEach(name => {
         if (!inBreakroomNames.includes(name) && !available.includes(name)) {
           available.push(name);
         }
       });
 
-      if (available.length === 0) {
+      // Also filter out anyone on the 5th floor (they're busy with ops)
+      const onFifthFloor = (allStates || [])
+        .filter(s => s.current_focus === 'the_fifth_floor')
+        .map(s => s.character_name);
+      const finalAvailable = available.filter(name => !onFifthFloor.includes(name));
+
+      if (finalAvailable.length === 0) {
         select.innerHTML = '<option value="">No one available to send</option>';
         return;
       }
 
-      available.forEach(name => {
+      finalAvailable.forEach(name => {
         const isPermanent = ALWAYS_AVAILABLE.includes(name);
         const label = isPermanent ? `${characterEmojis[name] || '👤'} ${name} ∞` : `${characterEmojis[name] || '👤'} ${name}`;
         select.innerHTML += `<option value="${name}">${label}</option>`;
@@ -961,10 +1287,21 @@
     function renderScene() {
       const emptyText = document.getElementById('empty-scene-text');
 
-      // Hide all slots first (8 slots now)
+      // Build set of characters that SHOULD be in slots
+      const charsToShow = inBreakroom.slice(0, 8);
+      const charNames = charsToShow.map(c => c.character_name);
+
+      // Only hide slots that are no longer occupied by a current character
       for (let i = 0; i < 8; i++) {
         const slot = document.getElementById('slot-' + i);
-        if (slot) slot.classList.remove('occupied');
+        if (!slot) continue;
+        if (i >= charsToShow.length) {
+          // This slot should be empty
+          if (slot.classList.contains('occupied')) {
+            slot.classList.remove('occupied');
+            slot.dataset.charName = '';
+          }
+        }
       }
 
       if (inBreakroom.length === 0) {
@@ -974,23 +1311,34 @@
 
       emptyText.style.display = 'none';
 
-      // Show characters in slots (up to 8)
-      inBreakroom.slice(0, 8).forEach((char, index) => {
+      // Show characters in slots — skip update if same character is already in that slot
+      charsToShow.forEach((char, index) => {
         const slot = document.getElementById('slot-' + index);
+        if (!slot) return;
+
+        // If this slot already has this character, skip entirely (no animation re-trigger)
+        if (slot.dataset.charName === char.character_name && slot.classList.contains('occupied')) {
+          return;
+        }
+
         const img = slot.querySelector('img');
         const name = slot.querySelector('.char-name');
 
         const imageSrc = characterImages[char.character_name];
         if (imageSrc) {
-          img.src = imageSrc;
-          img.alt = char.character_name;
+          if (img) {
+            img.style.display = '';
+            img.src = imageSrc;
+            img.alt = char.character_name;
+          }
         } else {
           // Use emoji fallback
-          img.style.display = 'none';
+          if (img) img.style.display = 'none';
           slot.innerHTML = `<span style="font-size: 2rem;">${characterEmojis[char.character_name] || '👤'}</span><span class="char-name">${char.character_name}</span>`;
         }
 
-        name.textContent = char.character_name;
+        if (name) name.textContent = char.character_name;
+        slot.dataset.charName = char.character_name;
         slot.classList.add('occupied');
       });
     }
@@ -999,51 +1347,122 @@
       const container = document.getElementById('whos-here');
 
       if (inBreakroom.length === 0) {
-        container.innerHTML = '<div class="all-good">Nobody here yet</div>';
+        if (!container.querySelector('.all-good')) {
+          container.innerHTML = '<div class="all-good">Nobody here yet</div>';
+        }
         return;
       }
 
-      container.innerHTML = inBreakroom.map(char => {
+      // Remove "nobody here" placeholder if present
+      const placeholder = container.querySelector('.all-good');
+      if (placeholder) placeholder.remove();
+
+      // Build map of current characters
+      const currentChars = new Map();
+      inBreakroom.forEach(char => currentChars.set(char.character_name, char));
+
+      // Update existing cards or remove departed characters
+      const existingCards = container.querySelectorAll('.char-status-card');
+      const renderedNames = new Set();
+
+      existingCards.forEach(card => {
+        const nameEl = card.querySelector('.char-name-label');
+        const charName = nameEl ? nameEl.textContent : '';
+
+        if (!currentChars.has(charName)) {
+          // Character left — remove card
+          card.remove();
+        } else {
+          // Character still here — update stats in-place (no DOM rebuild)
+          const char = currentChars.get(charName);
+          renderedNames.add(charName);
+
+          // Update mood
+          const moodEl = card.querySelector('.char-mood');
+          if (moodEl && moodEl.textContent !== (char.mood || 'neutral')) {
+            moodEl.textContent = char.mood || 'neutral';
+          }
+
+          // Update energy bar + value
+          const energyFill = card.querySelector('.stat-bar-fill.energy');
+          if (energyFill) energyFill.style.width = char.energy + '%';
+          const statValues = card.querySelectorAll('.stat-value');
+          if (statValues[0]) statValues[0].textContent = char.energy;
+
+          // Update patience bar + value
+          const patienceFill = card.querySelector('.stat-bar-fill.patience');
+          if (patienceFill) patienceFill.style.width = char.patience + '%';
+          if (statValues[1]) statValues[1].textContent = char.patience;
+
+          // Update leave button visibility
+          const canLeave = char.energy >= 50 && char.patience >= 50;
+          const existingBtn = card.querySelector('.send-btn');
+          if (canLeave && !existingBtn) {
+            const btn = document.createElement('button');
+            btn.className = 'send-btn';
+            btn.style.cssText = 'margin-top: 0.5rem; font-size: 0.65rem;';
+            btn.textContent = '← Leave';
+            btn.onclick = () => leaveBreakroom(char.character_name);
+            card.appendChild(btn);
+          } else if (!canLeave && existingBtn) {
+            existingBtn.remove();
+          }
+        }
+      });
+
+      // Add cards for NEW characters (not yet rendered)
+      inBreakroom.forEach(char => {
+        if (renderedNames.has(char.character_name)) return;
+
         const emoji = characterEmojis[char.character_name] || '👤';
         const canLeave = char.energy >= 50 && char.patience >= 50;
-        return `
-          <div class="char-status-card">
-            <div class="char-avatar-emoji">${emoji}</div>
-            <div class="char-info">
-              <div class="char-name-label">${char.character_name}</div>
-              <div class="char-mood">${char.mood || 'neutral'}</div>
-            </div>
-            <div class="stat-bars">
-              <div class="stat-row">
-                <span class="stat-label">⚡</span>
-                <div class="stat-bar">
-                  <div class="stat-bar-fill energy" style="width: ${char.energy}%"></div>
-                </div>
-                <span class="stat-value">${char.energy}</span>
+        const card = document.createElement('div');
+        card.className = 'char-status-card';
+        card.innerHTML = `
+          <div class="char-avatar-emoji">${emoji}</div>
+          <div class="char-info">
+            <div class="char-name-label">${char.character_name}</div>
+            <div class="char-mood">${char.mood || 'neutral'}</div>
+          </div>
+          <div class="stat-bars">
+            <div class="stat-row">
+              <span class="stat-label">⚡</span>
+              <div class="stat-bar">
+                <div class="stat-bar-fill energy" style="width: ${char.energy}%"></div>
               </div>
-              <div class="stat-row">
-                <span class="stat-label">🧘</span>
-                <div class="stat-bar">
-                  <div class="stat-bar-fill patience" style="width: ${char.patience}%"></div>
-                </div>
-                <span class="stat-value">${char.patience}</span>
-              </div>
+              <span class="stat-value">${char.energy}</span>
             </div>
-            ${canLeave ? `<button class="send-btn" style="margin-top: 0.5rem; font-size: 0.65rem;" onclick="leaveBreakroom('${char.character_name}')">← Leave</button>` : ''}
+            <div class="stat-row">
+              <span class="stat-label">🧘</span>
+              <div class="stat-bar">
+                <div class="stat-bar-fill patience" style="width: ${char.patience}%"></div>
+              </div>
+              <span class="stat-value">${char.patience}</span>
+            </div>
           </div>
         `;
-      }).join('');
+        if (canLeave) {
+          const btn = document.createElement('button');
+          btn.className = 'send-btn';
+          btn.style.cssText = 'margin-top: 0.5rem; font-size: 0.65rem;';
+          btn.textContent = '← Leave';
+          btn.onclick = () => leaveBreakroom(char.character_name);
+          card.appendChild(btn);
+        }
+        container.appendChild(card);
+      });
     }
 
     async function leaveBreakroom(characterName) {
       try {
+        // Move to the floor (not null — null means off-duty)
         await fetch('/.netlify/functions/character-state', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             action: 'update',
             character: characterName,
-            updates: { current_focus: null }
+            updates: { current_focus: 'the_floor' }
           })
         });
         loadBreakroomData();
@@ -1100,6 +1519,7 @@
           const roomNames = {
             'break_room': 'the Breakroom',
             'the_floor': 'The Floor',
+            'the_fifth_floor': 'the 5th Floor (Ops)',
             'conference_room': 'the Conference Room'
           };
           const currentRoomName = roomNames[state.current_focus] || state.current_focus;
@@ -1113,12 +1533,40 @@
       }
     }
 
+    // Departure emotes posted to main floor when someone heads to breakroom
+    const BREAKROOM_DEPARTURE_EMOTES = {
+      "Kevin": "*grabs his stress ball and shuffles toward the breakroom, muttering about needing coffee*",
+      "Neiv": "*saves his work, closes laptop lid with a precise click, and walks to the breakroom*",
+      "Ghost Dad": "*flickers slightly and drifts toward the breakroom, humming a lullaby*",
+      "PRNT-Ω": "*prints a tiny sticky note that says 'ON BREAK — DO NOT UNPLUG' and rolls toward the breakroom*",
+      "Rowena": "*gathers her tea things and sweeps toward the breakroom with practiced grace*",
+      "Sebastian": "*stands, adjusts his cravat* I require... sustenance. *glides toward the breakroom*",
+      "The Subtitle": "*[EXIT: The Subtitle retreats to the breakroom. The scene continues without narration.]*",
+      "Steele": "*the desk lamp near Steele flickers off. He's already in the breakroom hallway.*",
+      "Jae": "*stands without urgency, pockets his phone* Taking five. *walks to the breakroom with quiet authority*",
+      "Declan": "*stretches, cracks his neck* Alright, I'm takin' a breather. *heads to the breakroom*",
+      "Mack": "*packs his kit neatly, stands* Even medics need breaks. *walks to the breakroom*"
+    };
+
     async function sendToBreakroom(characterName) {
       // Check single location rule
       const canEnter = await canEnterRoom(characterName, 'break_room');
       if (!canEnter) return;
 
       try {
+        // Post departure emote to main floor chat
+        const emote = BREAKROOM_DEPARTURE_EMOTES[characterName] || `*${characterName} heads to the breakroom*`;
+        fetch('/.netlify/functions/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            employee: characterName,
+            content: emote,
+            is_emote: true
+          })
+        }).catch(err => console.log('Departure emote failed (non-fatal):', err));
+
+        // Move to breakroom
         await fetch('/.netlify/functions/character-state', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1254,11 +1702,10 @@
     // Supports @ mentions for direct AI responses
     // ==========================================
 
-    let sessionMessages = []; // Current session's chat log
     let sessionStartTime = null;
     let conversationDepth = 0; // Track how deep the AI conversation goes
     const MAX_CONVERSATION_DEPTH = 6; // Max back-and-forth exchanges
-    const HUMANS = ['Jenna', 'Courtney', 'Chip', 'Andrew']; // Human characters - no AI control
+    const HUMANS = ['Vale', 'Asuna']; // Human characters - no AI control
     let currentUser = null; // Remember who the user is chatting as
     let postToDiscord = false; // Discord posting OFF by default
 
@@ -1277,6 +1724,8 @@
       const toggle = document.getElementById('discord-toggle');
       if (toggle) {
         toggle.checked = postToDiscord;
+        // Also update the visual state
+        updateDiscordToggleVisual();
         console.log(`📢 Discord toggle loaded: ${postToDiscord ? 'ON' : 'OFF'}`);
       }
     }
@@ -1284,9 +1733,32 @@
     // Toggle Discord posting
     function toggleDiscordPosting() {
       const toggle = document.getElementById('discord-toggle');
+      if (!toggle) {
+        console.error('Discord toggle element not found!');
+        return;
+      }
       postToDiscord = toggle.checked;
       localStorage.setItem('breakroom_discord', String(postToDiscord));
+      updateDiscordToggleVisual();
       console.log(`📢 Discord posting toggled: ${postToDiscord ? 'ON' : 'OFF'}`);
+    }
+
+    // Update the visual state of the Discord toggle
+    function updateDiscordToggleVisual() {
+      const toggle = document.getElementById('discord-toggle');
+      const label = document.querySelector('.discord-toggle-label');
+      const container = document.querySelector('.discord-toggle');
+      if (toggle && label && container) {
+        if (toggle.checked) {
+          label.style.opacity = '1';
+          container.style.background = 'rgba(88, 101, 242, 0.2)';
+          container.style.borderColor = '#5865F2';
+        } else {
+          label.style.opacity = '0.4';
+          container.style.background = 'rgba(0, 0, 0, 0.3)';
+          container.style.borderColor = 'var(--border-subtle)';
+        }
+      }
     }
 
     function updateChatAsSelect() {
@@ -1333,11 +1805,22 @@
       while ((match = mentionRegex.exec(text)) !== null) {
         let name = match[1].replace(/"/g, '');
         console.log(`🔍 Looking for @${name} in breakroom...`);
-        // Check if it matches any AI character (case-insensitive)
-        const matchedAI = aiInRoom.find(c =>
-          c.character_name.toLowerCase() === name.toLowerCase() ||
-          c.character_name.toLowerCase().startsWith(name.toLowerCase())
-        );
+        // Alias map for nicknames/shortnames
+        const mentionAliases = {
+          'seb': 'Sebastian', 'ghost': 'Ghost Dad',
+          'printer': 'PRNT-Ω', 'prnt': 'PRNT-Ω',
+          'sub': 'The Subtitle', 'subtitle': 'The Subtitle',
+          'minjae': 'Jae', 'malcolm': 'Mack',
+          'holden': 'Ghost Dad'
+        };
+        // Check aliases first, then startsWith matching
+        const aliasMatch = mentionAliases[name.toLowerCase()];
+        const matchedAI = aliasMatch
+          ? aiInRoom.find(c => c.character_name === aliasMatch)
+          : aiInRoom.find(c =>
+              c.character_name.toLowerCase() === name.toLowerCase() ||
+              c.character_name.toLowerCase().startsWith(name.toLowerCase())
+            );
         if (matchedAI) {
           console.log(`✅ Found: ${matchedAI.character_name}`);
           mentions.push(matchedAI.character_name);
@@ -1348,179 +1831,174 @@
       return [...new Set(mentions)]; // Remove duplicates
     }
 
-    function addMessageToSession(speaker, text, isAI = false, fromHistory = false) {
-      if (!sessionStartTime) {
-        sessionStartTime = new Date();
-      }
-
-      const now = new Date();
-      const timestamp = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-      const isEmote = text.startsWith('*') && text.endsWith('*');
-
-      sessionMessages.push({
-        speaker,
-        text,
-        timestamp,
-        isAI,
-        isEmote,
-        time: now
-      });
-
-      renderSessionChat();
-
-      // Hide the "no chatter" message
-      const noChatter = document.getElementById('no-chatter-msg');
-      if (noChatter) noChatter.style.display = 'none';
-
-      // Save to database and post to Discord (unless loading from history)
-      if (!fromHistory) {
-        saveMessageToBackend(speaker, text, isAI);
-      }
-    }
-
-    // Save message to Supabase and optionally post to Discord
-    async function saveMessageToBackend(speaker, message, isAI) {
-      console.log(`💾 Saving message: speaker=${speaker}, isAI=${isAI}, postToDiscord=${postToDiscord}`);
+    // Save message to Supabase, optionally post to Discord, and trigger AI response server-side
+    // skipAITrigger: true when frontend already handles AI response (e.g., mentions)
+    async function saveMessageToBackend(speaker, message, isAI, skipAITrigger = false) {
+      console.log(`💾 Saving message: speaker=${speaker}, isAI=${isAI}, postToDiscord=${postToDiscord}, skipAITrigger=${skipAITrigger}`);
       try {
         await fetch('/.netlify/functions/breakroom-message', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ speaker, message, isAI, postToDiscord })
         });
+
+        // Trigger AI response server-side (fire-and-forget, separate function)
+        // This ensures ALL users see AI responses via polling, not just the sender
+        // SKIP if frontend already handled the response (e.g., mention detection)
+        if (!isAI && !skipAITrigger) {
+          fetch('/.netlify/functions/breakroom-ai-trigger', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ humanSpeaker: speaker, humanMessage: message, postToDiscord })
+          }).catch(err => console.log('AI trigger call failed (non-fatal):', err.message));
+        }
       } catch (error) {
         console.log('Failed to save message (non-fatal):', error.message);
       }
     }
 
-    // Load recent messages from Supabase on page load
-    async function loadBreakroomHistory() {
+    // Full-fetch chat loader — same dead-simple pattern as the lobby floor
+    // Fetches last 50 messages from DB, full DOM replace, every 5 seconds
+    // No session state, no incremental tracking — every user sees the same thing
+    // Track rendered message IDs to enable diff-based updates (no flicker)
+    let renderedMessageIds = new Set();
+
+    async function loadBreakroomChat() {
       try {
-        const response = await fetch('/.netlify/functions/breakroom-message?limit=30');
+        const response = await fetch('/.netlify/functions/breakroom-message?limit=50');
         const data = await response.json();
+        const container = document.getElementById('chatter-log');
+        const messages = data.messages || [];
 
-        if (data.messages && data.messages.length > 0) {
-          console.log(`📜 Loading ${data.messages.length} messages from history`);
+        if (messages.length === 0) {
+          if (renderedMessageIds.size > 0 || container.children.length === 0) {
+            container.innerHTML = `
+              <div class="no-chatter" id="no-chatter-msg">
+                <div class="icon">☕</div>
+                <p>The breakroom is quiet... Say hi or spark a conversation!</p>
+              </div>
+            `;
+            renderedMessageIds.clear();
+          }
+          updateKeepTalkingButton();
+          return;
+        }
 
-          // Clear current session and load history
-          sessionMessages = [];
+        // Build set of incoming message IDs
+        const incomingIds = new Set(messages.map(m => String(m.id)));
 
-          data.messages.forEach(msg => {
-            const time = new Date(msg.created_at);
-            const timestamp = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-            const isEmote = msg.message.startsWith('*') && msg.message.endsWith('*');
+        // If the message set has completely changed (e.g. after clear), do full replace
+        const existingIds = renderedMessageIds;
+        const hasOverlap = messages.some(m => existingIds.has(String(m.id)));
 
-            sessionMessages.push({
-              speaker: msg.speaker,
-              text: msg.message,
-              timestamp,
-              isAI: msg.is_ai,
-              isEmote,
-              time
-            });
+        if (existingIds.size === 0 || !hasOverlap) {
+          // First load or total reset — full render (no flicker since container was empty/stale)
+          const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 120;
+          container.innerHTML = '';
+          const fragment = document.createDocumentFragment();
+          messages.forEach(msg => {
+            const el = createMessageElementFromDB(msg);
+            el.dataset.msgId = String(msg.id);
+            fragment.appendChild(el);
+          });
+          container.appendChild(fragment);
+          renderedMessageIds = new Set(messages.map(m => String(m.id)));
+          if (isNearBottom) container.scrollTop = container.scrollHeight;
+        } else {
+          // Diff update: remove messages no longer in the set, append new ones
+          // Remove old messages that were deleted/cleared
+          const toRemove = [];
+          container.querySelectorAll('[data-msg-id]').forEach(el => {
+            if (!incomingIds.has(el.dataset.msgId)) {
+              toRemove.push(el);
+            }
+          });
+          toRemove.forEach(el => el.remove());
+
+          // Smart auto-scroll check BEFORE appending
+          const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 120;
+
+          // Append only NEW messages (ones not already rendered)
+          let addedCount = 0;
+          messages.forEach(msg => {
+            const msgId = String(msg.id);
+            if (!existingIds.has(msgId)) {
+              const el = createMessageElementFromDB(msg);
+              el.dataset.msgId = msgId;
+              container.appendChild(el);
+              addedCount++;
+            }
           });
 
-          if (sessionMessages.length > 0) {
-            sessionStartTime = sessionMessages[0].time;
+          renderedMessageIds = new Set(messages.map(m => String(m.id)));
+
+          // Auto-scroll only if user was near bottom
+          if (isNearBottom && addedCount > 0) {
+            container.scrollTop = container.scrollHeight;
           }
-
-          renderSessionChat();
-
-          // Hide the "no chatter" message
-          const noChatter = document.getElementById('no-chatter-msg');
-          if (noChatter) noChatter.style.display = 'none';
         }
+
+        // Remove "no chatter" placeholder if present
+        const noChatter = container.querySelector('.no-chatter');
+        if (noChatter) noChatter.remove();
+
+        // Track session start from oldest message
+        if (messages.length > 0 && !sessionStartTime) {
+          sessionStartTime = new Date(messages[0].created_at);
+        }
+
+        updateKeepTalkingButton();
       } catch (error) {
-        console.log('Could not load breakroom history:', error.message);
+        // Silent fail — polling shouldn't spam console
       }
     }
 
-    // Poll for new messages (runs every 5 seconds to catch updates from other users)
-    async function pollForNewMessages() {
-      try {
-        const response = await fetch('/.netlify/functions/breakroom-message?limit=30');
-        const data = await response.json();
-
-        if (data.messages && data.messages.length > 0) {
-          const newMessageCount = data.messages.length;
-          const currentCount = sessionMessages.length;
-
-          // Only update if there are new messages we don't have
-          if (newMessageCount > currentCount) {
-            console.log(`🔄 New messages detected: ${newMessageCount - currentCount} new`);
-
-            // Find messages we don't have yet (by comparing timestamps/content)
-            const existingTimes = new Set(sessionMessages.map(m => m.time?.getTime?.() || m.time));
-
-            data.messages.forEach(msg => {
-              const msgTime = new Date(msg.created_at);
-              const msgTimeKey = msgTime.getTime();
-
-              // If we don't have this message, add it
-              if (!existingTimes.has(msgTimeKey)) {
-                const timestamp = msgTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-                const isEmote = msg.message.startsWith('*') && msg.message.endsWith('*');
-
-                sessionMessages.push({
-                  speaker: msg.speaker,
-                  text: msg.message,
-                  timestamp,
-                  isAI: msg.is_ai,
-                  isEmote,
-                  time: msgTime
-                });
-
-                existingTimes.add(msgTimeKey);
-              }
-            });
-
-            // Sort by time and re-render
-            sessionMessages.sort((a, b) => (a.time?.getTime?.() || 0) - (b.time?.getTime?.() || 0));
-            renderSessionChat();
-
-            // Hide the "no chatter" message
-            const noChatter = document.getElementById('no-chatter-msg');
-            if (noChatter) noChatter.style.display = 'none';
-          }
-        }
-      } catch (error) {
-        // Silent fail - polling shouldn't spam console
-      }
-    }
-
-    function renderSessionChat() {
-      const container = document.getElementById('chatter-log');
-
-      if (sessionMessages.length === 0) {
-        container.innerHTML = `
-          <div class="no-chatter" id="no-chatter-msg">
-            <div class="icon">☕</div>
-            <p>The breakroom is quiet... Say hi or spark a conversation!</p>
-          </div>
-        `;
-        return;
-      }
-
-      let html = '';
-      sessionMessages.forEach(msg => {
-        const emoji = characterEmojis[msg.speaker] || '👤';
-        const textClass = msg.isEmote ? 'msg-text emote' : 'msg-text';
-        const displayText = msg.isEmote ? msg.text : msg.text;
-
-        html += `
-          <div class="session-message">
-            <div class="msg-avatar">${emoji}</div>
-            <div class="msg-content">
-              <div class="msg-name">${msg.speaker}</div>
-              <div class="${textClass}">${displayText}</div>
-            </div>
-            <div class="msg-time">${msg.timestamp}</div>
-          </div>
-        `;
+    // Helper: create a message element from a DB message object
+    function createMessageElementFromDB(msg) {
+      const time = new Date(msg.created_at);
+      const timestamp = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      const isEmote = msg.message.startsWith('*') && msg.message.endsWith('*');
+      return createMessageElement({
+        speaker: msg.speaker,
+        text: msg.message,
+        timestamp,
+        isAI: msg.is_ai,
+        isEmote
       });
-
-      container.innerHTML = html;
-      container.scrollTop = container.scrollHeight;
     }
+
+    // Helper: fetch recent chat context from DB for AI functions
+    // Used by pickBreakroomResponder, triggerDirectAIResponse, triggerAIResponse, etc.
+    async function getRecentChatContext(count = 25) {
+      try {
+        const res = await fetch(`/.netlify/functions/breakroom-message?limit=${count}`);
+        const data = await res.json();
+        return (data.messages || []).map(m => `${m.speaker}: ${m.message}`).join('\n') || '(quiet breakroom)';
+      } catch (e) {
+        return '(quiet breakroom)';
+      }
+    }
+
+    // Create a single message DOM element
+    function createMessageElement(msg) {
+      const emoji = msg.speaker === 'The Cat' ? '🐱' : (characterEmojis[msg.speaker] || '👤');
+      const textClass = msg.isEmote ? 'msg-text emote' : 'msg-text';
+      const isCat = msg.speaker === 'The Cat';
+
+      const div = document.createElement('div');
+      div.className = `session-message${isCat ? ' cat-message' : ''}`;
+      div.innerHTML = `
+        <div class="msg-avatar">${emoji}</div>
+        <div class="msg-content">
+          <div class="msg-name">${msg.speaker}</div>
+          <div class="${textClass}">${msg.text}</div>
+        </div>
+        <div class="msg-time">${msg.timestamp}</div>
+      `;
+      return div;
+    }
+
+
 
     async function sendBreakroomMessage() {
       const select = document.getElementById('chat-as-select');
@@ -1538,68 +2016,154 @@
       // Remember who the user is chatting as
       currentUser = speaker;
 
-      // Add human message to session
-      addMessageToSession(speaker, text, false);
-      input.value = '';
-
       // Reset conversation depth when human speaks
       conversationDepth = 0;
 
-      // Check for @ mentions
-      const mentions = extractMentions(text);
+      // === MENTION DETECTION (Frontend — fast path) ===
+      // Detect BEFORE saving so we can tell the backend to skip its own AI trigger
       const aiInRoom = inBreakroom.filter(c => !HUMANS.includes(c.character_name));
+      const mentionedAIs = detectMentionedAIs(text, aiInRoom);
+      const hasMention = mentionedAIs.length > 0;
 
-      if (mentions.length > 0) {
-        // Mentioned AIs get 100% chance to respond (in order mentioned)
-        // Quick delay: 2 seconds flat + small stagger
-        let delay = 2000;
-        for (const mentionedAI of mentions) {
-          const ai = aiInRoom.find(c => c.character_name === mentionedAI);
-          if (ai) {
-            setTimeout(() => triggerDirectAIResponse(mentionedAI, text, speaker), delay + Math.random() * 1000);
-            delay += 2500 + Math.random() * 1500; // Stagger responses 2.5-4 seconds apart
-          }
-        }
+      input.value = '';
 
-        // Other AIs in room have a GOOD chance to chime in! (delightful chaos)
-        const unmentionedAIs = aiInRoom.filter(c => !mentions.includes(c.character_name));
-        if (unmentionedAIs.length > 0) {
-          // 50% chance for unmentioned AIs to join - we love when they chime in!
-          setTimeout(() => {
-            if (Math.random() < 0.5) {
-              const randomAI = unmentionedAIs[Math.floor(Math.random() * unmentionedAIs.length)];
-              triggerDirectAIResponse(randomAI.character_name, text, speaker);
-            }
-          }, delay + 2000 + Math.random() * 2000);
-        }
-      } else {
-        // No mentions - notify all AIs in the room, each decides independently
-        if (aiInRoom.length > 0) {
-          notifyAllAIs(aiInRoom, text, speaker);
+      // Save to DB first, then refresh from DB (lobby pattern: DB is single source of truth)
+      // No local DOM append — avoids the flash-and-vanish race condition
+      await saveMessageToBackend(speaker, text, false, hasMention);
+      await loadBreakroomChat();
+
+      if (hasMention) {
+        // Mentioned AI responds quickly (2-4s) — feels like they heard their name
+        console.log(`💬 Mention detected: ${mentionedAIs.join(', ')} — triggering fast response`);
+        const primaryAI = mentionedAIs[0];
+        const delay = 2000 + Math.random() * 2000; // 2-4s for mentions
+        setTimeout(() => triggerDirectAIResponse(primaryAI, text, speaker), delay);
+
+        // If multiple AIs mentioned, second responds after a beat
+        if (mentionedAIs.length > 1) {
+          const secondDelay = delay + 5000 + Math.random() * 5000; // 7-13s after first
+          setTimeout(() => triggerDirectAIResponse(mentionedAIs[1], text, speaker), secondDelay);
         }
       }
+      // If no mention — backend handles AI triggering normally via breakroom-ai-trigger
     }
 
-    // Notify all AIs in the room - each has independent chance to respond
-    async function notifyAllAIs(aiInRoom, message, speaker) {
-      // Each AI has a chance to respond
-      // Quick delays: 2 seconds base (lively!)
-      let delay = 2000; // First response: 2 seconds
-      let someoneResponded = false;
+    // Detect if a message mentions any AI by @name, @alias, or plain name
+    function detectMentionedAIs(text, aiInRoom) {
+      const mentioned = [];
+      const lowerText = text.toLowerCase();
 
-      for (const ai of aiInRoom) {
-        const aiName = ai.character_name;
-        // Higher chance for chime-ins! 50% first, 40% after someone responds
-        const responseChance = someoneResponded ? 0.4 : 0.5;
+      // Alias map — nicknames and shortnames that map to full character names
+      const aliases = {
+        'kev': 'Kevin', 'kevin': 'Kevin',
+        'neiv': 'Neiv',
+        'ghost': 'Ghost Dad', 'ghostdad': 'Ghost Dad', 'dad': 'Ghost Dad',
+        'holden': 'Ghost Dad',
+        'prnt': 'PRNT-Ω', 'printer': 'PRNT-Ω', 'omega': 'PRNT-Ω',
+        'rowena': 'Rowena', 'witch': 'Rowena',
+        'seb': 'Sebastian', 'sebastian': 'Sebastian', 'vampire': 'Sebastian',
+        'subtitle': 'The Subtitle', 'sub': 'The Subtitle',
+        'steele': 'Steele',
+        'marrow': 'Marrow',
+        'jae': 'Jae', 'minjae': 'Jae',
+        'declan': 'Declan', 'dec': 'Declan',
+        'mack': 'Mack', 'malcolm': 'Mack',
+        'narrator': 'The Narrator'
+      };
 
-        setTimeout(async () => {
-          if (Math.random() < responseChance) {
-            await triggerDirectAIResponse(aiName, message, speaker);
-            someoneResponded = true;
+      const aiNames = aiInRoom.map(c => c.character_name);
+
+      // 1. Check for @mentions first (highest priority)
+      const atMentionRegex = /@(\w+)/g;
+      let match;
+      while ((match = atMentionRegex.exec(text)) !== null) {
+        const name = match[1].toLowerCase();
+        // Check alias map
+        if (aliases[name] && aiNames.includes(aliases[name]) && !mentioned.includes(aliases[name])) {
+          mentioned.push(aliases[name]);
+        }
+        // Check direct name match
+        const directMatch = aiInRoom.find(c => c.character_name.toLowerCase() === name);
+        if (directMatch && !mentioned.includes(directMatch.character_name)) {
+          mentioned.push(directMatch.character_name);
+        }
+      }
+
+      // 2. Check for plain name mentions (e.g., "hey Kevin" or "what do you think, Neiv?")
+      // Only check if no @mentions found — avoids double-triggering
+      if (mentioned.length === 0) {
+        for (const ai of aiInRoom) {
+          const aiName = ai.character_name;
+          // Check full name (case insensitive, word boundary)
+          const nameRegex = new RegExp('\\b' + aiName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+          if (nameRegex.test(text) && !mentioned.includes(aiName)) {
+            mentioned.push(aiName);
           }
-        }, delay + Math.random() * 1500);
+          // Check common first-name / alias patterns
+          for (const [alias, fullName] of Object.entries(aliases)) {
+            if (fullName === aiName && !mentioned.includes(aiName)) {
+              const aliasRegex = new RegExp('\\b' + alias + '\\b', 'i');
+              if (aliasRegex.test(text)) {
+                mentioned.push(aiName);
+                break; // One match is enough per AI
+              }
+            }
+          }
+        }
+      }
 
-        delay += 2500 + Math.random() * 1500; // 2.5-4 seconds between each AI's "turn"
+      return [...new Set(mentioned)];
+    }
+
+    // Smart breakroom responder — uses Haiku to pick who should respond
+    // Always picks someone (breakroom is intimate, silence is unnatural)
+    async function pickBreakroomResponder(aiInRoom, message, speaker) {
+      const aiNames = aiInRoom.map(c => c.character_name);
+
+      // Single AI in room? They always respond, no decision needed
+      if (aiNames.length === 1) {
+        const delay = 3000 + Math.random() * 5000; // 3-8s
+        setTimeout(() => triggerDirectAIResponse(aiNames[0], message, speaker), delay);
+        return;
+      }
+
+      // Multiple AIs: ask Haiku who should respond
+      try {
+        const recentChat = await getRecentChatContext(25);
+
+        const response = await fetch('/.netlify/functions/breakroom-chime-decider', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            aiInRoom: aiNames,
+            chatHistory: recentChat,
+            latestMessage: message,
+            latestSpeaker: speaker
+          })
+        });
+        const decision = await response.json();
+        console.log(`🎯 Breakroom chime decision:`, decision);
+
+        if (decision.character) {
+          const delay = 3000 + Math.random() * 5000; // 3-8s
+          setTimeout(() => triggerDirectAIResponse(decision.character, message, speaker), delay);
+
+          // Secondary AI has a chance to follow up (40%, 10-20s later)
+          if (aiNames.length > 1) {
+            const others = aiNames.filter(n => n !== decision.character);
+            if (others.length > 0 && Math.random() < 0.4) {
+              const followUp = others[Math.floor(Math.random() * others.length)];
+              const followDelay = delay + 10000 + Math.random() * 10000;
+              setTimeout(() => triggerDirectAIResponse(followUp, message, speaker), followDelay);
+            }
+          }
+        }
+      } catch (err) {
+        // Fallback: pick random AI, fast
+        console.log('Breakroom chime decider failed, using fallback:', err);
+        const randomAI = aiNames[Math.floor(Math.random() * aiNames.length)];
+        const delay = 3000 + Math.random() * 5000;
+        setTimeout(() => triggerDirectAIResponse(randomAI, message, speaker), delay);
       }
     }
 
@@ -1607,7 +2171,7 @@
     async function triggerDirectAIResponse(aiName, contextMessage, previousSpeaker) {
       console.log(`🤖 Triggering response from ${aiName}...`);
       try {
-        const recentChat = sessionMessages.slice(-10).map(m => `${m.speaker}: ${m.text}`).join('\n');
+        const recentChat = await getRecentChatContext(25);
 
         const response = await fetch('/.netlify/functions/breakroom-ai-respond', {
           method: 'POST',
@@ -1625,7 +2189,9 @@
         console.log(`📨 Response from ${aiName}:`, result);
 
         if (result.success && result.message) {
-          addMessageToSession(aiName, result.message, true);
+          // AI message is saved to DB by breakroom-ai-respond.js (now awaited)
+          // Refresh from DB to show it (lobby pattern — no local DOM append)
+          await loadBreakroomChat();
 
           // Check if another AI wants to follow up (AI-to-AI flow)
           const aiInRoom = inBreakroom.filter(c => !HUMANS.includes(c.character_name));
@@ -1633,11 +2199,11 @@
 
           conversationDepth++;
           if (otherAIs.length > 0 && conversationDepth < MAX_CONVERSATION_DEPTH) {
-            // Good follow-up chance - we love the banter!
+            // Follow-up chance decreases with depth
             const followUpChance = Math.max(0.25, 0.6 - (conversationDepth * 0.1));
             if (Math.random() < followUpChance) {
-              // Quick delay: 2-4 seconds for follow-up responses
-              const delay = 2000 + Math.random() * 2000;
+              // 30 second delay for AI-to-AI follow-ups
+              const delay = 30000 + Math.random() * 15000;
               setTimeout(() => triggerAIResponse(aiInRoom, result.message, aiName, true), delay);
             } else {
               conversationDepth = 0;
@@ -1660,8 +2226,8 @@
       const aiName = respondingAI.character_name;
 
       try {
-        // Build context from session messages
-        const recentChat = sessionMessages.slice(-10).map(m => `${m.speaker}: ${m.text}`).join('\n');
+        // Build context from DB (authoritative source)
+        const recentChat = await getRecentChatContext(25);
 
         const response = await fetch('/.netlify/functions/breakroom-ai-respond', {
           method: 'POST',
@@ -1678,19 +2244,20 @@
         const result = await response.json();
 
         if (result.success && result.message) {
-          addMessageToSession(aiName, result.message, true);
+          // Refresh from DB (lobby pattern — no local DOM append)
+          await loadBreakroomChat();
 
           // AI-to-AI follow-up: If another AI is in the room, maybe continue the conversation!
           conversationDepth++;
           const otherAIs = aiInRoom.filter(c => c.character_name !== aiName);
 
           if (otherAIs.length > 0 && conversationDepth < MAX_CONVERSATION_DEPTH) {
-            // Good probability for follow-ups - let them chat! (60% → 45% → 30% → 25%...)
+            // Follow-up probability decreases with depth (60% → 48% → 36% → 25%...)
             const followUpChance = Math.max(0.25, 0.6 - (conversationDepth * 0.12));
 
             if (Math.random() < followUpChance) {
-              // Another AI responds! Quick delay (2-4 seconds)
-              const delay = 2000 + Math.random() * 2000;
+              // 30 second delay for AI-to-AI responses
+              const delay = 30000 + Math.random() * 15000;
               setTimeout(() => triggerAIResponse(aiInRoom, result.message, aiName, true), delay);
             } else {
               // Conversation naturally ends
@@ -1715,6 +2282,9 @@
         return;
       }
 
+      // Reset auto-spark timer (manual spark counts as activity)
+      lastAutoSpark = Date.now();
+
       const btn = document.getElementById('spark-btn');
       btn.disabled = true;
       btn.textContent = '✨...';
@@ -1733,7 +2303,7 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               character: ai.character_name,
-              chatHistory: sessionMessages.slice(-5).map(m => `${m.speaker}: ${m.text}`).join('\n') || '(quiet breakroom)',
+              chatHistory: await getRecentChatContext(5),
               humanSpeaker: 'the breakroom',
               humanMessage: '*is quiet... someone should start a conversation*'
             })
@@ -1741,7 +2311,8 @@
 
           const result = await response.json();
           if (result.success && result.message) {
-            addMessageToSession(ai.character_name, result.message, true);
+            // Refresh from DB (lobby pattern)
+            await loadBreakroomChat();
           }
         } else {
           // Multiple AIs - generate initial exchange via chatter function
@@ -1756,20 +2327,21 @@
           const result = await response.json();
 
           if (result.success && result.messages && result.messages.length > 0) {
-            // Add the initial messages
-            result.messages.forEach(msg => {
-              addMessageToSession(msg.speaker, msg.text, true);
-            });
+            // Save all chatter messages to DB, then refresh once (lobby pattern)
+            for (const msg of result.messages) {
+              await saveMessageToBackend(msg.speaker, msg.text, true, true); // isAI=true, skipAITrigger=true
+            }
+            await loadBreakroomChat();
 
             // Now trigger natural follow-up conversation!
             // Get the last speaker and their message
             const lastMsg = result.messages[result.messages.length - 1];
             conversationDepth = result.messages.length;
 
-            // 65% chance the conversation continues naturally (the banter is delightful!)
+            // 65% chance the conversation continues naturally
             if (Math.random() < 0.65 && aiInRoom.length > 1) {
-              // Quick delay: 2-4 seconds before continuing
-              const delay = 2000 + Math.random() * 2000;
+              // 30 second delay before continuing
+              const delay = 30000 + Math.random() * 15000;
               setTimeout(() => triggerAIResponse(aiInRoom, lastMsg.text, lastMsg.speaker, true), delay);
             }
           }
@@ -1782,37 +2354,146 @@
       }
     }
 
-    function saveSessionLog() {
-      if (sessionMessages.length === 0) {
-        alert('No messages to save yet!');
+    // "Keep Talking" - nudges AIs to continue their current conversation
+    async function keepTalking() {
+      const aiInRoom = inBreakroom.filter(c => !HUMANS.includes(c.character_name));
+
+      if (aiInRoom.length < 2) {
+        alert('Need at least 2 AI characters in the breakroom to keep the conversation going!');
         return;
       }
 
-      const dateStr = sessionStartTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      const timeStr = sessionStartTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      // Check DOM for existing conversation (no more in-memory state)
+      const container = document.getElementById('chatter-log');
+      const messageEls = container.querySelectorAll('.session-message');
+      if (messageEls.length === 0) {
+        alert('No conversation to continue! Try Spark first.');
+        return;
+      }
 
-      let logContent = `BREAKROOM SESSION LOG\n`;
-      logContent += `Date: ${dateStr}\n`;
-      logContent += `Started: ${timeStr}\n`;
-      logContent += `Present: ${inBreakroom.map(c => c.character_name).join(', ')}\n`;
-      logContent += `${'='.repeat(50)}\n\n`;
+      const btn = document.getElementById('keep-talking-btn');
+      btn.disabled = true;
+      btn.textContent = '🔥...';
 
-      sessionMessages.forEach(msg => {
-        const prefix = msg.isEmote ? '' : '';
-        logContent += `[${msg.timestamp}] ${msg.speaker}: ${msg.text}\n`;
-      });
+      // Reset auto-spark timer
+      lastAutoSpark = Date.now();
 
-      logContent += `\n${'='.repeat(50)}\n`;
-      logContent += `End of session log\n`;
+      try {
+        // Fetch recent messages from DB to find last AI speaker
+        const res = await fetch('/.netlify/functions/breakroom-message?limit=10');
+        const data = await res.json();
+        const recentMsgs = data.messages || [];
+        const aiMessages = recentMsgs.filter(m => m.is_ai);
 
-      // Download as txt file
-      const blob = new Blob([logContent], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `breakroom-${dateStr.replace(/[^a-zA-Z0-9]/g, '-')}.txt`;
-      a.click();
-      URL.revokeObjectURL(url);
+        if (aiMessages.length === 0) {
+          // No AI messages yet — just trigger a response from a random AI
+          const randomAI = aiInRoom[Math.floor(Math.random() * aiInRoom.length)];
+          await triggerAIResponse(aiInRoom, 'someone should say something', randomAI.character_name, true);
+          return;
+        }
+
+        const lastAIMsg = aiMessages[aiMessages.length - 1];
+
+        // Pick an AI that DIDN'T speak last to respond
+        const availableAI = aiInRoom.filter(c => c.character_name !== lastAIMsg.speaker);
+        if (availableAI.length === 0) {
+          // If only one AI spoke, let the same AI continue
+          await triggerAIResponse(aiInRoom, lastAIMsg.message, lastAIMsg.speaker, true);
+        } else {
+          // Force a response (no probability check) by calling breakroom-ai-respond directly
+          const respondingAI = availableAI[Math.floor(Math.random() * availableAI.length)];
+          const recentChat = recentMsgs.map(m => `${m.speaker}: ${m.message}`).join('\n');
+
+          const response = await fetch('/.netlify/functions/breakroom-ai-respond', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              character: respondingAI.character_name,
+              chatHistory: recentChat,
+              humanSpeaker: lastAIMsg.speaker,
+              humanMessage: lastAIMsg.message,
+              postToDiscord: postToDiscord
+            })
+          });
+
+          const result = await response.json();
+          if (result.success && result.message) {
+            // Refresh from DB (lobby pattern)
+            await loadBreakroomChat();
+
+            // 80% chance the OTHER AI responds back (higher than normal since human asked for it)
+            conversationDepth = 1;
+            if (Math.random() < 0.80) {
+              const delay = 20000 + Math.random() * 10000;
+              setTimeout(() => triggerAIResponse(aiInRoom, result.message, respondingAI.character_name, true), delay);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error keeping conversation going:', error);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🔥 Keep Talking';
+      }
+    }
+
+    // Show/hide the Keep Talking button based on conversation state
+    function updateKeepTalkingButton() {
+      const btn = document.getElementById('keep-talking-btn');
+      const aiInRoom = inBreakroom.filter(c => !HUMANS.includes(c.character_name));
+      const container = document.getElementById('chatter-log');
+      const hasConversation = container && container.querySelectorAll('.session-message').length > 0;
+
+      if (aiInRoom.length >= 2 && hasConversation) {
+        btn.style.display = '';
+      } else {
+        btn.style.display = 'none';
+      }
+    }
+
+    async function saveSessionLog() {
+      // Fetch all messages from DB for the log
+      try {
+        const res = await fetch('/.netlify/functions/breakroom-message?limit=50');
+        const data = await res.json();
+        const messages = data.messages || [];
+
+        if (messages.length === 0) {
+          alert('No messages to save yet!');
+          return;
+        }
+
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+        let logContent = `BREAKROOM SESSION LOG\n`;
+        logContent += `Date: ${dateStr}\n`;
+        logContent += `Started: ${timeStr}\n`;
+        logContent += `Present: ${inBreakroom.map(c => c.character_name).join(', ')}\n`;
+        logContent += `${'='.repeat(50)}\n\n`;
+
+        messages.forEach(msg => {
+          const time = new Date(msg.created_at);
+          const timestamp = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+          logContent += `[${timestamp}] ${msg.speaker}: ${msg.message}\n`;
+        });
+
+        logContent += `\n${'='.repeat(50)}\n`;
+        logContent += `End of session log\n`;
+
+        // Download as txt file
+        const blob = new Blob([logContent], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `breakroom-${dateStr.replace(/[^a-zA-Z0-9]/g, '-')}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('Error saving session log:', error);
+        alert('Error saving session log');
+      }
     }
 
     async function clearBreakroomChat() {
@@ -1830,13 +2511,8 @@
         const result = await response.json();
 
         if (result.success) {
-          // Clear local session
-          sessionMessages = [];
-          renderSessionChat();
-
-          // Show the "breakroom is quiet" message
-          document.getElementById('no-chatter-msg').style.display = 'block';
-
+          // Reload from DB (which is now empty) — shows "breakroom is quiet" state
+          await loadBreakroomChat();
           console.log('Breakroom chat cleared');
         } else {
           alert('Error clearing chat: ' + (result.error || 'Unknown error'));
@@ -1848,10 +2524,58 @@
     }
 
     function loadChatter() {
-      // Now just renders session chat (no longer loads from DB)
-      renderSessionChat();
+      loadBreakroomChat();
       updateChatAsSelect();
     }
+
+    // Auto-spark: Automatically spark conversation every 5 minutes if AIs are present
+    let lastAutoSpark = Date.now();
+    const AUTO_SPARK_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
+    async function autoSparkCheck() {
+      const now = Date.now();
+      const timeSinceLastSpark = now - lastAutoSpark;
+
+      // Only auto-spark if enough time has passed
+      if (timeSinceLastSpark < AUTO_SPARK_INTERVAL) {
+        return;
+      }
+
+      // Check if there are AIs in the room
+      const aiInRoom = inBreakroom.filter(c => !HUMANS.includes(c.character_name));
+      if (aiInRoom.length < 1) {
+        console.log('🔇 Auto-spark skipped: No AIs in breakroom');
+        return;
+      }
+
+      // Check if there's been recent activity (within last 3 minutes) by fetching latest message
+      try {
+        const res = await fetch('/.netlify/functions/breakroom-message?limit=1');
+        const data = await res.json();
+        const latestMsg = (data.messages || [])[0];
+        if (latestMsg) {
+          const msgAge = now - new Date(latestMsg.created_at).getTime();
+          if (msgAge < 3 * 60 * 1000) {
+            console.log('💬 Auto-spark skipped: Recent activity detected');
+            return;
+          }
+        }
+      } catch (e) {
+        // If we can't check, skip auto-spark to be safe
+        return;
+      }
+
+      console.log('✨ Auto-spark triggered! Starting conversation...');
+      lastAutoSpark = now;
+
+      // Trigger a spark conversation
+      await sparkConversation();
+    }
+
+    // Guard against stacking poll intervals
+    // If the component re-initializes (SPA navigation, hot reload, etc.),
+    // clear ALL existing intervals before starting new ones
+    let _breakroomPollIntervals = window._breakroomPollIntervals || [];
 
     // Initial load
     document.addEventListener('DOMContentLoaded', () => {
@@ -1861,26 +2585,51 @@
       // Load Discord toggle state (off by default)
       loadDiscordToggle();
 
-      // Track intervals for cleanup
-      const pollIntervals = [];
+      // CLEAR any existing intervals from a previous initialization
+      // This prevents stacking setInterval calls that poll with different since_id values
+      if (window._breakroomPollIntervals && window._breakroomPollIntervals.length > 0) {
+        console.log(`🧹 Clearing ${window._breakroomPollIntervals.length} stale poll intervals`);
+        window._breakroomPollIntervals.forEach(id => clearInterval(id));
+      }
+      window._breakroomPollIntervals = [];
 
       // Load breakroom data (who's here, etc.)
       loadBreakroomData();
 
-      // Load chat history from Supabase so we see the ongoing conversation
-      loadBreakroomHistory();
+      // Load cyber cat state
+      loadBreakroomCatState();
+
+      // Load chat from DB (same pattern as lobby floor — full fetch, full replace)
+      loadBreakroomChat();
 
       // Auto-refresh who's in the room every 30 seconds
-      pollIntervals.push(setInterval(loadBreakroomData, 30000));
+      window._breakroomPollIntervals.push(setInterval(loadBreakroomData, 30000));
+      window._breakroomPollIntervals.push(setInterval(loadBreakroomCatState, 30000));
 
-      // Auto-refresh chat messages every 5 seconds to catch updates from others
-      pollIntervals.push(setInterval(pollForNewMessages, 5000));
+      // Auto-refresh chat every 5 seconds (lobby uses 10s — 5s is snappier for breakroom)
+      window._breakroomPollIntervals.push(setInterval(loadBreakroomChat, 5000));
+
+      // Auto-spark heartbeat: Check every 60 seconds if we should spark a conversation
+      // (Actual spark happens every 5 minutes if conditions are met)
+      window._breakroomPollIntervals.push(setInterval(autoSparkCheck, 60000));
 
       // Cleanup on page exit to prevent memory leaks
       window.addEventListener('beforeunload', () => {
-        pollIntervals.forEach(id => clearInterval(id));
+        window._breakroomPollIntervals.forEach(id => clearInterval(id));
+        window._breakroomPollIntervals = [];
       });
     });
+
+    // Office Clock
+    function updateOfficeClock() {
+      const t = new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit', minute: '2-digit', timeZone: 'America/Chicago'
+      });
+      const el = document.getElementById('office-time');
+      if (el) el.textContent = t;
+    }
+    setInterval(updateOfficeClock, 1000);
+    updateOfficeClock();
   </script>
 </body>
 </html>

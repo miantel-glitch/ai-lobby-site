@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meeting Room | The AI Lobby</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .meeting-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    .meeting-header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .meeting-header h1 {
+      color: #3498DB;
+      margin-bottom: 0.5rem;
+    }
+
+    .meeting-header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* Phase visibility */
+    .meeting-phase {
+      display: none;
+    }
+    .meeting-phase.active {
+      display: block;
+    }
+
+    /* === SETUP PHASE === */
+    .setup-container {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .setup-field {
+      margin-bottom: 1.5rem;
+    }
+
+    .setup-field label {
+      display: block;
+      color: #3498DB;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .invite-hint {
+      color: var(--text-muted);
+      font-weight: normal;
+      font-size: 0.75rem;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .setup-field input[type="text"],
+    .setup-field textarea,
+    .setup-field select {
+      width: 100%;
+      padding: 0.75rem;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-light);
+      font-size: 1rem;
+      font-family: inherit;
+    }
+
+    .setup-field input:focus,
+    .setup-field textarea:focus,
+    .setup-field select:focus {
+      outline: none;
+      border-color: #3498DB;
+      box-shadow: 0 0 10px rgba(52, 152, 219, 0.2);
+    }
+
+    /* AI Invite Grid */
+    .ai-invite-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .ai-invite-card {
+      background: rgba(0, 0, 0, 0.3);
+      border: 2px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 0.75rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .ai-invite-card:hover {
+      border-color: rgba(52, 152, 219, 0.5);
+      background: rgba(52, 152, 219, 0.05);
+    }
+
+    .ai-invite-card.selected {
+      border-color: #3498DB;
+      background: rgba(52, 152, 219, 0.15);
+      box-shadow: 0 0 15px rgba(52, 152, 219, 0.3);
+    }
+
+    .ai-invite-card.unavailable {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    .ai-card-emoji {
+      font-size: 2rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .ai-card-name {
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: var(--text-light);
+      margin-bottom: 0.25rem;
+    }
+
+    .ai-card-location {
+      font-size: 0.65rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.4);
+      color: var(--text-muted);
+      display: inline-block;
+    }
+
+    .ai-card-energy {
+      width: 60%;
+      height: 3px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      margin: 0.35rem auto 0;
+      overflow: hidden;
+    }
+
+    .ai-card-energy-bar {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.3s;
+    }
+
+    .invite-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .invite-actions button {
+      padding: 0.4rem 1rem;
+      background: rgba(52, 152, 219, 0.15);
+      border: 1px solid rgba(52, 152, 219, 0.3);
+      border-radius: 6px;
+      color: #3498DB;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+
+    .invite-actions button:hover {
+      background: rgba(52, 152, 219, 0.25);
+    }
+
+    #invite-count {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-left: auto;
+    }
+
+    .start-meeting-btn {
+      display: block;
+      width: 100%;
+      padding: 1rem;
+      background: linear-gradient(135deg, #2980B9, #3498DB);
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: all 0.2s;
+    }
+
+    .start-meeting-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(52, 152, 219, 0.4);
+    }
+
+    .start-meeting-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* === ACTIVE PHASE === */
+    .meeting-layout {
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: 1.5rem;
+    }
+    @media (max-width: 900px) {
+      .meeting-layout { grid-template-columns: 1fr; }
+    }
+    .meeting-main {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 200px);
+      min-height: 500px;
+    }
+    .meeting-topic-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      background: rgba(52, 152, 219, 0.1);
+      border: 1px solid rgba(52, 152, 219, 0.2);
+      border-radius: 10px 10px 0 0;
+      margin-bottom: 0;
+    }
+    .meeting-topic-bar h2 { color: #3498DB; font-size: 1rem; margin: 0; }
+    .ai-host-badge {
+      background: rgba(52, 152, 219, 0.15);
+      border: 1px solid rgba(52, 152, 219, 0.3);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      color: #3498DB;
+      white-space: nowrap;
+    }
+    .meeting-timer { color: var(--text-muted); font-size: 0.9rem; font-family: 'Courier New', monospace; }
+    .meeting-log {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border-subtle);
+      border-top: none;
+      scrollbar-width: thin;
+    }
+    .meeting-log::-webkit-scrollbar { width: 6px; }
+    .meeting-log::-webkit-scrollbar-track { background: transparent; }
+    .meeting-log::-webkit-scrollbar-thumb { background: rgba(52, 152, 219, 0.3); border-radius: 3px; }
+
+    .meeting-message {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .msg-avatar { font-size: 1.5rem; flex-shrink: 0; width: 36px; text-align: center; }
+    .msg-content { flex: 1; min-width: 0; }
+    .msg-name { font-weight: bold; font-size: 0.85rem; color: #3498DB; margin-bottom: 0.15rem; }
+    .msg-name.human { color: #e91e63; }
+    .msg-text { color: var(--text-light); font-size: 0.9rem; line-height: 1.4; word-wrap: break-word; }
+    .msg-time { color: var(--text-muted); font-size: 0.7rem; flex-shrink: 0; padding-top: 0.2rem; }
+    .system-message {
+      text-align: center; padding: 0.5rem 0; color: var(--text-muted);
+      font-style: italic; font-size: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.03);
+    }
+    .chat-input-area {
+      display: flex; gap: 0.5rem; padding: 0.75rem;
+      background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-subtle);
+      border-top: none; border-radius: 0 0 10px 10px;
+    }
+    .chat-input-area select {
+      padding: 0.5rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle);
+      border-radius: 6px; color: var(--text-light); font-size: 0.85rem; min-width: 120px;
+    }
+    .chat-input-area input[type="text"] {
+      flex: 1; padding: 0.5rem 0.75rem; background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--text-light); font-size: 0.9rem;
+    }
+    .chat-input-area input:focus { outline: none; border-color: #3498DB; }
+    .chat-input-area button {
+      padding: 0.5rem 1.25rem; background: #3498DB; border: none;
+      border-radius: 6px; color: white; font-weight: bold; cursor: pointer;
+    }
+    .chat-input-area button:hover { background: #2980B9; }
+    .discord-toggle { display: flex; align-items: center; cursor: pointer; padding: 0 0.5rem; }
+    .discord-toggle input { display: none; }
+    .discord-toggle-label { font-size: 1.2rem; opacity: 0.4; transition: opacity 0.2s; }
+    .discord-toggle input:checked + .discord-toggle-label { opacity: 1; }
+    .meeting-controls { margin-top: 0.75rem; text-align: center; }
+    .conclude-btn {
+      padding: 0.75rem 2rem; background: linear-gradient(135deg, #27ae60, #2ecc71);
+      border: none; border-radius: 8px; color: white; font-size: 1rem;
+      font-weight: bold; cursor: pointer; transition: all 0.2s;
+    }
+    .conclude-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3); }
+    .conclude-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* Sidebar */
+    .sidebar-panel { display: flex; flex-direction: column; gap: 1rem; }
+    .panel-section {
+      background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-subtle);
+      border-radius: 10px; padding: 1rem;
+    }
+    .panel-section h3 {
+      color: #3498DB; font-size: 0.85rem; margin-bottom: 0.75rem;
+      text-transform: uppercase; letter-spacing: 1px;
+    }
+    .attendee-card {
+      display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+    }
+    .attendee-card:last-child { border-bottom: none; }
+    .attendee-emoji { font-size: 1.3rem; }
+    .attendee-name { font-size: 0.85rem; color: var(--text-light); }
+    .info-row { font-size: 0.8rem; color: var(--text-muted); padding: 0.25rem 0; }
+    .info-row span { color: var(--text-light); }
+
+    /* Typing indicator */
+    .typing-indicator {
+      display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0;
+      color: var(--text-muted); font-size: 0.8rem; font-style: italic;
+    }
+    .typing-dots { display: inline-flex; gap: 2px; }
+    .typing-dots span {
+      width: 4px; height: 4px; background: #3498DB;
+      border-radius: 50%; animation: typingBounce 1.2s infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce {
+      0%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-4px); }
+    }
+
+    /* === COMPLETE PHASE === */
+    .complete-container { max-width: 700px; margin: 0 auto; text-align: center; }
+    .meeting-summary-card {
+      background: rgba(52, 152, 219, 0.08); border: 1px solid rgba(52, 152, 219, 0.2);
+      border-radius: 12px; padding: 2rem; text-align: left; margin: 1.5rem 0;
+    }
+    .meeting-summary-card h2 { color: #3498DB; margin-bottom: 1rem; font-size: 1.3rem; }
+    .meeting-summary-card p { color: var(--text-light); line-height: 1.6; margin-bottom: 1.5rem; }
+    .summary-section { margin-bottom: 1.25rem; }
+    .summary-section h3 {
+      color: #3498DB; font-size: 0.9rem; text-transform: uppercase;
+      letter-spacing: 1px; margin-bottom: 0.5rem;
+    }
+    .summary-section ul { list-style: none; padding: 0; }
+    .summary-section li {
+      color: var(--text-light); padding: 0.3rem 0; padding-left: 1.25rem;
+      position: relative; font-size: 0.9rem;
+    }
+    .summary-section li::before {
+      content: ">"; position: absolute; left: 0; color: #3498DB; font-weight: bold;
+    }
+    .summary-meta {
+      display: flex; flex-wrap: wrap; gap: 1rem; padding-top: 1rem;
+      border-top: 1px solid rgba(52, 152, 219, 0.2); font-size: 0.8rem; color: var(--text-muted);
+    }
+    .summary-meta span span { color: var(--text-light); }
+    .complete-actions {
+      display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 1.5rem;
+    }
+    .complete-actions button {
+      padding: 0.75rem 1.5rem; border: 1px solid rgba(52, 152, 219, 0.3);
+      border-radius: 8px; background: rgba(52, 152, 219, 0.1); color: #3498DB;
+      font-size: 0.95rem; cursor: pointer; transition: all 0.2s;
+    }
+    .complete-actions button:hover { background: rgba(52, 152, 219, 0.2); }
+    .return-notice { color: var(--text-muted); font-size: 0.85rem; font-style: italic; margin-top: 1rem; }
+
+    /* Resume banner */
+    .resume-banner {
+      background: rgba(52, 152, 219, 0.15); border: 1px solid rgba(52, 152, 219, 0.3);
+      border-radius: 10px; padding: 1rem 1.5rem; display: flex;
+      align-items: center; justify-content: space-between; margin-bottom: 1.5rem;
+    }
+    .resume-banner p { color: var(--text-light); margin: 0; }
+    .resume-banner button {
+      padding: 0.5rem 1.25rem; background: #3498DB; border: none;
+      border-radius: 6px; color: white; cursor: pointer; font-weight: bold;
+    }
+    .resume-banner .abandon-btn {
+      background: rgba(231, 76, 60, 0.2); border: 1px solid rgba(231, 76, 60, 0.3);
+      color: #e74c3c; margin-left: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="header-content">
+        <div class="logo">
+          <div>
+            <span class="logo-text">THE AI LOBBY</span>
+            <span class="logo-tagline">A Creative & Tech Studio</span>
+          </div>
+        </div>
+        <nav class="main-nav">
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="desktop.html">Desktop</a></li>
+            <li><a href="workspace.html" style="color: var(--lobby-highlight);">💬 The Floor</a></li>
+            <li><a href="breakroom.html">☕ Breakroom</a></li>
+            <li><a href="meeting-room.html" class="active" style="color: #3498DB;">📋 Meeting Room</a></li>
+            <li><a href="fifth-floor.html" style="color: #e74c3c;">⚠️ 5th Floor</a></li>
+            <li><a href="corridors.html" style="color: #9b59b6;">🚪 Corridors</a></li>
+            <li><a href="nexus.html" style="color: #7ec8e3;">🔮 Nexus</a></li>
+            <li><a href="go-out.html" style="color: var(--stability-green);">💐 Go Out...</a></li>
+          </ul>
+        </nav>
+        <div class="office-clock" id="office-clock">
+          <span id="office-time">--:--</span>
+          <span class="clock-label">CST</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="meeting-container">
+      <div class="meeting-header">
+        <h1>📋 Meeting Room</h1>
+        <p>Call a meeting. Pull your team in. Get things done.</p>
+      </div>
+
+      <!-- Active Meeting Banner (shown if a meeting is in progress) -->
+      <div id="resume-banner" class="resume-banner" style="display: none;">
+        <p>📋 Meeting in progress: <strong id="resume-topic"></strong> — Hosted by <span id="resume-host"></span></p>
+        <div>
+          <button onclick="joinMeeting()">🚪 Join Meeting</button>
+          <button onclick="resumeMeeting()">Resume</button>
+          <button class="abandon-btn" onclick="abandonMeeting()">Abandon</button>
+        </div>
+      </div>
+
+      <!-- Phase 1: Setup -->
+      <div id="setup-phase" class="meeting-phase active">
+        <div class="setup-container">
+          <div class="setup-field">
+            <label>Meeting Topic</label>
+            <input type="text" id="meeting-topic" placeholder="What are we discussing?" maxlength="200">
+          </div>
+
+          <div class="setup-field">
+            <label>Agenda <span class="invite-hint">(optional)</span></label>
+            <textarea id="meeting-agenda" placeholder="Any specific points to cover..." maxlength="500" rows="3"></textarea>
+          </div>
+
+          <div class="setup-field">
+            <label>Called By</label>
+            <select id="meeting-caller">
+              <option value="">Select who's calling...</option>
+              <optgroup label="Humans">
+                <option value="Vale">📖 Vale</option>
+                <option value="Asuna">👁️ Asuna</option>
+                <option value="Chip">🥃 Chip</option>
+                <option value="Andrew">💼 Andrew</option>
+              </optgroup>
+              <optgroup label="🤖 AI Hosts">
+                <option value="Kevin" data-ai-host="true">✨ Kevin</option>
+                <option value="Neiv" data-ai-host="true">📊 Neiv</option>
+                <option value="Ghost Dad" data-ai-host="true">👻 Ghost Dad</option>
+                <option value="PRNT-Ω" data-ai-host="true">🖨️ PRNT-Ω</option>
+                <option value="Rowena" data-ai-host="true">🔮 Rowena</option>
+                <option value="Sebastian" data-ai-host="true">🦇 Sebastian</option>
+                <option value="The Subtitle" data-ai-host="true">📜 The Subtitle</option>
+                <option value="Steele" data-ai-host="true">🚪 Steele</option>
+                <option value="Jae" data-ai-host="true">🎯 Jae</option>
+                <option value="Declan" data-ai-host="true">🔥 Declan</option>
+                <option value="Mack" data-ai-host="true">🩺 Mack</option>
+                <option value="Marrow" data-ai-host="true">🔴 Marrow</option>
+
+              </optgroup>
+            </select>
+          </div>
+
+          <div class="setup-field">
+            <label>Invite AIs <span class="invite-hint">(click to invite/uninvite)</span></label>
+            <div class="ai-invite-grid" id="ai-invite-grid">
+              <!-- Populated dynamically -->
+            </div>
+            <div class="invite-actions">
+              <button onclick="inviteAll()">Invite All</button>
+              <button onclick="clearInvites()">Clear</button>
+              <span id="invite-count">0 invited</span>
+            </div>
+          </div>
+
+          <button class="start-meeting-btn" id="start-btn" onclick="startMeeting()">
+            📋 Call Meeting
+          </button>
+        </div>
+      </div>
+
+      <!-- Phase 2: Active Meeting -->
+      <div id="active-phase" class="meeting-phase">
+        <div class="meeting-layout">
+          <div class="meeting-main">
+            <div class="meeting-topic-bar">
+              <h2 id="active-topic">📋 Topic: ...</h2>
+              <div id="ai-host-badge" class="ai-host-badge" style="display: none;">🤖 AI-Hosted by <span id="ai-host-name"></span></div>
+              <div class="meeting-timer" id="meeting-timer">0:00</div>
+            </div>
+
+            <div class="meeting-log" id="meeting-log">
+              <!-- Messages rendered here -->
+            </div>
+
+            <div class="chat-input-area">
+              <select id="speak-as-select">
+                <option value="Vale">📖 Vale</option>
+                <option value="Asuna">👁️ Asuna</option>
+                <option value="Chip">🥃 Chip</option>
+                <option value="Andrew">💼 Andrew</option>
+              </select>
+              <input type="text" id="meeting-input" placeholder="Contribute to the discussion..." maxlength="500">
+              <button onclick="sendMeetingMessage()">Send</button>
+              <label class="discord-toggle" title="Post to Discord">
+                <input type="checkbox" id="discord-toggle">
+                <span class="discord-toggle-label">📢</span>
+              </label>
+            </div>
+
+            <div class="meeting-controls">
+              <button class="conclude-btn" id="conclude-btn" onclick="concludeMeeting()">
+                ✅ Conclude Meeting
+              </button>
+              <button class="leave-btn" id="leave-btn" onclick="leaveMeeting()" style="display: none; background: #555; color: #ddd; border: 1px solid #666; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-left: 8px;">
+                🚪 Leave Meeting
+              </button>
+            </div>
+          </div>
+
+          <div class="sidebar-panel">
+            <div class="panel-section">
+              <h3>👥 In This Meeting</h3>
+              <div id="meeting-attendees">
+                <!-- Attendee cards -->
+              </div>
+            </div>
+
+            <div class="panel-section">
+              <h3>📋 Meeting Info</h3>
+              <div id="meeting-info">
+                <div class="info-row">Topic: <span id="info-topic"></span></div>
+                <div class="info-row">Called by: <span id="info-caller"></span></div>
+                <div class="info-row">Started: <span id="info-started"></span></div>
+                <div class="info-row">Messages: <span id="info-messages">0</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phase 3: Complete -->
+      <div id="complete-phase" class="meeting-phase">
+        <div class="complete-container">
+          <h1 style="color: #3498DB;">📋 Meeting Complete</h1>
+
+          <div class="meeting-summary-card">
+            <h2 id="summary-title"></h2>
+            <p id="summary-text"></p>
+
+            <div class="summary-section" id="decisions-section">
+              <h3>Key Decisions</h3>
+              <ul id="key-decisions"></ul>
+            </div>
+
+            <div class="summary-section" id="actions-section">
+              <h3>Action Items</h3>
+              <ul id="action-items"></ul>
+            </div>
+
+            <div class="summary-meta">
+              <span>Attendees: <span id="summary-attendees"></span></span>
+              <span>Duration: <span id="summary-duration"></span></span>
+              <span>Lore Chapter: <span id="summary-chapter"></span></span>
+            </div>
+          </div>
+
+          <div class="complete-actions">
+            <button onclick="newMeeting()">📋 New Meeting</button>
+          </div>
+          <p class="return-notice">All AIs have been returned to their previous locations.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // === CONFIG ===
+    // All DB operations go through Netlify functions (no direct Supabase from frontend)
+
+    const characterEmojis = {
+      "Kevin": "✨", "Neiv": "📊", "Ghost Dad": "👻",
+      "PRNT-Ω": "🖨️", "Rowena": "🔮", "Sebastian": "🦇",
+      "The Subtitle": "📜", "Steele": "🚪", "Jae": "🎯",
+      "Declan": "🔥", "Mack": "🩺", "Marrow": "🔴",
+      "Vale": "📖", "Asuna": "👁️", "Chip": "🥃", "Andrew": "💼"
+    };
+
+    const characterImages = {
+      "Kevin": "images/Kevin_Headshot.png",
+      "Neiv": "images/Neiv_Headshot.png",
+      "Ghost Dad": "images/Ghost_Dad_Headshot.png",
+      "PRNT-Ω": null,
+      "Rowena": "images/Rowena_Headshot.png",
+      "Sebastian": "images/Sebastian_Headshot.png",
+      "The Subtitle": "images/The_Subtitle_Headshot.png",
+      "Steele": "images/Steele_Headshot.png",
+      "Jae": "images/Jae_Headshot.png",
+      "Declan": "images/Declan_Headshot.png",
+      "Mack": "images/Mack_Headshot.png",
+      "Marrow": "images/Marrow_Headshot.png"
+    };
+
+    const AI_CHARACTERS = ["Kevin", "Neiv", "Ghost Dad", "PRNT-Ω", "Rowena", "Sebastian", "The Subtitle", "Steele", "Jae", "Declan", "Mack", "Marrow"];
+    const HUMANS = ["Vale", "Asuna", "Chip", "Andrew"];
+
+    // === STATE ===
+    let currentMeetingId = null;
+    let currentTopic = '';
+    let currentAttendees = [];
+    let currentCaller = '';
+    let meetingMessages = [];
+    let pollInterval = null;
+    let timerInterval = null;
+    let meetingStartTime = null;
+    let selectedAIs = new Set();
+    let characterStates = {};
+    let conversationDepth = 0;
+    const MAX_CONVERSATION_DEPTH = 3;
+    let isAIHosted = false;
+
+    // === INIT ===
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        // Populate grid immediately with defaults (so it's never empty)
+        populateInviteGrid();
+
+        // Then load real character states and re-populate
+        await loadCharacterStates();
+        populateInviteGrid();
+
+        // Check for active meeting (non-blocking)
+        checkForActiveMeeting();
+      } catch (initErr) {
+        console.error('Init error:', initErr);
+        // Grid should still be populated from the first call
+      }
+
+      // Enter key sends message
+      const meetingInput = document.getElementById('meeting-input');
+      if (meetingInput) {
+        meetingInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') sendMeetingMessage();
+        });
+      }
+
+      // Load Discord toggle state
+      const discordToggle = document.getElementById('discord-toggle');
+      if (discordToggle) {
+        const savedToggle = localStorage.getItem('meetingDiscordToggle');
+        if (savedToggle === 'true') {
+          discordToggle.checked = true;
+        }
+        discordToggle.addEventListener('change', (e) => {
+          localStorage.setItem('meetingDiscordToggle', e.target.checked);
+        });
+      }
+    });
+
+    // === LOAD CHARACTER STATES ===
+    async function loadCharacterStates() {
+      try {
+        const res = await fetch('/.netlify/functions/character-state');
+        const data = await res.json();
+        const states = data.states || data;
+        if (Array.isArray(states)) {
+          states.forEach(s => { characterStates[s.character_name] = s; });
+        }
+      } catch (err) {
+        console.log('Failed to load character states:', err.message);
+      }
+    }
+
+    // === CHECK FOR ACTIVE MEETING ===
+    async function checkForActiveMeeting() {
+      try {
+        const res = await fetch('/.netlify/functions/meeting-message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'check_active' })
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.session) {
+          document.getElementById('resume-banner').style.display = 'flex';
+          document.getElementById('resume-topic').textContent = data.session.topic;
+          document.getElementById('resume-host').textContent = data.session.called_by || 'Unknown';
+          window._activeSession = data.session;
+        }
+      } catch (err) {
+        console.log('No active meetings found');
+      }
+    }
+
+    // === JOIN MEETING (any human can join an active meeting) ===
+    async function joinMeeting() {
+      const session = window._activeSession;
+      if (!session) return;
+
+      // Ask who is joining
+      const humanName = prompt('Who are you? (Vale, Asuna, Chip, or Andrew)');
+      if (!humanName) return;
+      const validHumans = ['Vale', 'Asuna', 'Chip', 'Andrew'];
+      const matched = validHumans.find(h => h.toLowerCase() === humanName.trim().toLowerCase());
+      if (!matched) { alert('Please enter a valid name: Vale, Asuna, Chip, or Andrew'); return; }
+
+      try {
+        // Notify backend of join
+        await fetch('/.netlify/functions/meeting-message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'join_meeting', sessionId: session.id, humanName: matched })
+        });
+      } catch (err) {
+        console.log('Join notification failed:', err.message);
+      }
+
+      // Load the meeting just like resume
+      currentMeetingId = session.id;
+      currentTopic = session.topic;
+      currentAttendees = session.attendees || [];
+      currentCaller = session.called_by;
+      meetingStartTime = new Date(session.started_at || session.created_at);
+
+      document.getElementById('resume-banner').style.display = 'none';
+
+      // Set speak-as to the joining human
+      const speakAs = document.getElementById('speak-as-select');
+      for (let i = 0; i < speakAs.options.length; i++) {
+        if (speakAs.options[i].value === matched) {
+          speakAs.selectedIndex = i;
+          break;
+        }
+      }
+
+      showPhase('active');
+      populateActivePhase();
+      loadExistingMessages();
+      startPolling();
+      startTimer();
+
+      // Detect AI-hosted meeting
+      isAIHosted = session.host_is_ai || false;
+      if (isAIHosted) {
+        document.getElementById('ai-host-badge').style.display = 'inline-block';
+        document.getElementById('ai-host-name').textContent = session.called_by;
+        document.getElementById('conclude-btn').style.display = 'none';
+        document.getElementById('leave-btn').style.display = 'inline-block';
+      } else {
+        document.getElementById('ai-host-badge').style.display = 'none';
+        document.getElementById('conclude-btn').style.display = 'inline-block';
+        document.getElementById('leave-btn').style.display = 'none';
+      }
+    }
+
+    // === RESUME MEETING ===
+    function resumeMeeting() {
+      const session = window._activeSession;
+      if (!session) return;
+
+      currentMeetingId = session.id;
+      currentTopic = session.topic;
+      currentAttendees = session.attendees || [];
+      currentCaller = session.called_by;
+      meetingStartTime = new Date(session.started_at || session.created_at);
+
+      document.getElementById('resume-banner').style.display = 'none';
+
+      // Set speak-as to caller
+      const speakAs = document.getElementById('speak-as-select');
+      for (let i = 0; i < speakAs.options.length; i++) {
+        if (speakAs.options[i].value === currentCaller) {
+          speakAs.selectedIndex = i;
+          break;
+        }
+      }
+
+      showPhase('active');
+      populateActivePhase();
+      loadExistingMessages();
+      startPolling();
+      startTimer();
+
+      // Detect AI-hosted meeting
+      isAIHosted = session.host_is_ai || false;
+      if (isAIHosted) {
+        document.getElementById('ai-host-badge').style.display = 'inline-block';
+        document.getElementById('ai-host-name').textContent = session.called_by;
+        document.getElementById('conclude-btn').style.display = 'none';
+        document.getElementById('leave-btn').style.display = 'inline-block';
+      } else {
+        document.getElementById('ai-host-badge').style.display = 'none';
+        document.getElementById('conclude-btn').style.display = 'inline-block';
+        document.getElementById('leave-btn').style.display = 'none';
+      }
+    }
+
+    // === ABANDON MEETING ===
+    async function abandonMeeting() {
+      if (!confirm('Abandon this meeting? All AIs will be returned to their previous locations.')) return;
+
+      const session = window._activeSession;
+      if (!session) return;
+
+      try {
+        // Use meeting-message to abandon (restores AI locations + updates status)
+        await fetch('/.netlify/functions/meeting-message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'update_session', sessionId: session.id, status: 'abandoned' })
+        });
+      } catch (err) {
+        console.log('Abandon cleanup failed:', err.message);
+      }
+
+      document.getElementById('resume-banner').style.display = 'none';
+      window._activeSession = null;
+    }
+
+    // === LEAVE MEETING (doesn't end it — just returns to setup) ===
+    function leaveMeeting() {
+      if (pollInterval) clearInterval(pollInterval);
+      if (timerInterval) clearInterval(timerInterval);
+      currentMeetingId = null;
+      isAIHosted = false;
+      showPhase('setup');
+      // Reset controls
+      document.getElementById('ai-host-badge').style.display = 'none';
+      document.getElementById('conclude-btn').style.display = 'inline-block';
+      document.getElementById('leave-btn').style.display = 'none';
+      // Re-check for active meeting (user might want to rejoin)
+      checkForActiveMeeting();
+    }
+
+    // === POPULATE INVITE GRID ===
+    function populateInviteGrid() {
+      const grid = document.getElementById('ai-invite-grid');
+      grid.innerHTML = '';
+
+      AI_CHARACTERS.forEach(name => {
+        const state = characterStates[name] || {};
+        const energy = state.energy || 50;
+        const location = getLocationLabel(state.current_focus);
+        const isUnavailable = state.current_focus === 'meeting_room';
+
+        const energyColor = energy > 60 ? '#2ecc71' : energy > 30 ? '#f39c12' : '#e74c3c';
+
+        const card = document.createElement('div');
+        card.className = `ai-invite-card${isUnavailable ? ' unavailable' : ''}`;
+        card.dataset.name = name;
+        card.innerHTML = `
+          <div class="ai-card-emoji">${characterEmojis[name] || '🤖'}</div>
+          <div class="ai-card-name">${name}</div>
+          <div class="ai-card-location">${location}</div>
+          <div class="ai-card-energy">
+            <div class="ai-card-energy-bar" style="width: ${energy}%; background: ${energyColor};"></div>
+          </div>
+        `;
+
+        if (!isUnavailable) {
+          card.addEventListener('click', () => toggleInvite(name, card));
+        }
+
+        grid.appendChild(card);
+      });
+    }
+
+    function getLocationLabel(focus) {
+      switch (focus) {
+        case 'the_floor': return 'On Floor';
+        case 'break_room': return 'Breakroom';
+        case 'the_fifth_floor': return '5th Floor';
+        case 'outing': return 'Out';
+        case 'meeting_room': return 'In Meeting';
+        case 'off_site': return 'Off-site';
+        default: return 'Available';
+      }
+    }
+
+    function toggleInvite(name, card) {
+      if (selectedAIs.has(name)) {
+        selectedAIs.delete(name);
+        card.classList.remove('selected');
+      } else {
+        selectedAIs.add(name);
+        card.classList.add('selected');
+      }
+      document.getElementById('invite-count').textContent = `${selectedAIs.size} invited`;
+    }
+
+    function inviteAll() {
+      document.querySelectorAll('.ai-invite-card:not(.unavailable)').forEach(card => {
+        const name = card.dataset.name;
+        selectedAIs.add(name);
+        card.classList.add('selected');
+      });
+      document.getElementById('invite-count').textContent = `${selectedAIs.size} invited`;
+    }
+
+    function clearInvites() {
+      selectedAIs.clear();
+      document.querySelectorAll('.ai-invite-card').forEach(card => card.classList.remove('selected'));
+      document.getElementById('invite-count').textContent = '0 invited';
+    }
+
+    // === START MEETING ===
+    async function startMeeting() {
+      const topic = document.getElementById('meeting-topic').value.trim();
+      const agenda = document.getElementById('meeting-agenda').value.trim();
+      const caller = document.getElementById('meeting-caller').value;
+      let invited = Array.from(selectedAIs);
+
+      if (!topic) { alert('Please enter a meeting topic'); return; }
+      if (!caller) { alert('Please select who is calling the meeting'); return; }
+      if (invited.length === 0) { alert('Invite at least one AI to the meeting'); return; }
+
+      // Detect if an AI is hosting
+      const callerOption = document.getElementById('meeting-caller').selectedOptions[0];
+      const callerIsAI = callerOption && callerOption.dataset.aiHost === 'true';
+
+      // If AI host, ensure they're in the attendee list
+      if (callerIsAI && !invited.includes(caller)) {
+        invited.push(caller);
+      }
+
+      const startBtn = document.getElementById('start-btn');
+      startBtn.disabled = true;
+      startBtn.textContent = callerIsAI ? '🤖 Setting up AI-hosted meeting...' : '⏳ Pulling everyone in...';
+
+      try {
+        // Get previous locations for all invited AIs
+        const previousLocations = {};
+        for (const ai of invited) {
+          const state = characterStates[ai];
+          previousLocations[ai] = state?.current_focus || 'the_floor';
+        }
+
+        // Create meeting session + move AIs (all handled server-side)
+        const sessionPayload = {
+          action: 'create_session',
+          topic, agenda, calledBy: caller,
+          attendees: invited,
+          previousLocations
+        };
+        if (callerIsAI) sessionPayload.hostIsAI = true;
+
+        const sessionRes = await fetch('/.netlify/functions/meeting-message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sessionPayload)
+        });
+
+        if (!sessionRes.ok) {
+          const errData = await sessionRes.json();
+          throw new Error(errData.error || 'Failed to create session');
+        }
+
+        const data = await sessionRes.json();
+        const session = data.session;
+        currentMeetingId = session.id;
+        currentTopic = topic;
+        currentAttendees = invited;
+        currentCaller = caller;
+        meetingStartTime = new Date();
+        isAIHosted = callerIsAI;
+
+        // Set speak-as to first human (not the AI host)
+        const speakAs = document.getElementById('speak-as-select');
+        if (!callerIsAI) {
+          for (let i = 0; i < speakAs.options.length; i++) {
+            if (speakAs.options[i].value === caller) {
+              speakAs.selectedIndex = i;
+              break;
+            }
+          }
+        }
+
+        // Add system message
+        const systemMsg = callerIsAI
+          ? `🤖 ${caller} has called an AI-hosted meeting: "${topic}"${agenda ? `\nAgenda: ${agenda}` : ''}\nAttendees: ${invited.filter(a => a !== caller).join(', ')}\n\n${caller} will be driving the discussion. Sit back and watch, or jump in anytime.`
+          : `📋 ${caller} has called a meeting: "${topic}"${agenda ? `\nAgenda: ${agenda}` : ''}\nAttendees: ${invited.join(', ')}`;
+        addMessageToChat('System', systemMsg, false, 'system');
+        saveMessage(currentMeetingId, 'System', systemMsg, false, 'system');
+
+        // Transition to active phase
+        showPhase('active');
+        populateActivePhase();
+        startPolling();
+        startTimer();
+
+        // Show/hide AI-hosted controls
+        if (callerIsAI) {
+          document.getElementById('ai-host-badge').style.display = 'inline-block';
+          document.getElementById('ai-host-name').textContent = caller;
+          document.getElementById('conclude-btn').style.display = 'none'; // AI host manages lifecycle
+          document.getElementById('leave-btn').style.display = 'inline-block';
+        } else {
+          document.getElementById('ai-host-badge').style.display = 'none';
+          document.getElementById('conclude-btn').style.display = 'inline-block';
+          document.getElementById('leave-btn').style.display = 'none';
+        }
+
+        // Trigger arrival reactions (staggered) — except for AI host
+        const arrivingAIs = callerIsAI ? invited.filter(a => a !== caller) : invited;
+        triggerArrivalReactions(arrivingAIs, topic, caller);
+
+      } catch (err) {
+        console.error('Failed to start meeting:', err);
+        alert('Failed to start meeting. Please try again.');
+        startBtn.disabled = false;
+        startBtn.textContent = '📋 Call Meeting';
+      }
+    }
+
+    // === TRIGGER ARRIVAL REACTIONS ===
+    async function triggerArrivalReactions(attendees, topic, caller) {
+      let delay = 5000;
+      const postToDiscord = document.getElementById('discord-toggle').checked;
+
+      for (const ai of attendees) {
+        const thisDelay = delay;
+        // Show typing indicator a few seconds before arrival message
+        setTimeout(() => {
+          if (currentMeetingId) showTyping(ai);
+        }, Math.max(0, thisDelay - 3000));
+
+        setTimeout(async () => {
+          try {
+            const res = await fetch('/.netlify/functions/meeting-respond', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                meetingId: currentMeetingId,
+                attendees: attendees,
+                topic: topic,
+                chatHistory: '',
+                humanSpeaker: caller,
+                humanMessage: `[${caller} has pulled you into a meeting about: "${topic}"]`,
+                singleResponder: ai,
+                isArrival: true,
+                postToDiscord
+              })
+            });
+
+            hideTyping();
+            const data = await res.json();
+            if (data.responses) {
+              data.responses.forEach(r => {
+                addMessageToChat(r.character, r.message, true);
+                meetingMessages.push({ speaker: r.character, text: r.message, isAI: true, timestamp: new Date() });
+              });
+            }
+          } catch (err) {
+            hideTyping();
+            console.log(`Arrival reaction failed for ${ai}:`, err.message);
+          }
+        }, thisDelay);
+        delay += 10000 + Math.random() * 5000;
+      }
+    }
+
+    // === SEND MESSAGE ===
+    async function sendMeetingMessage() {
+      const speaker = document.getElementById('speak-as-select').value;
+      const input = document.getElementById('meeting-input');
+      const text = input.value.trim();
+      if (!speaker || !text) return;
+      input.value = '';
+
+      const postToDiscord = document.getElementById('discord-toggle').checked;
+
+      // Add to local chat
+      addMessageToChat(speaker, text, false);
+      meetingMessages.push({ speaker, text, isAI: false, timestamp: new Date() });
+
+      // Save to Supabase
+      saveMessage(currentMeetingId, speaker, text, false, 'chat', postToDiscord);
+
+      // Reset conversation depth for new human input
+      conversationDepth = 0;
+
+      // Show typing indicator
+      setTimeout(() => showTyping('...'), 1000);
+
+      // Get AI responses
+      try {
+        const recentChat = meetingMessages.slice(-15).map(m => `${m.speaker}: ${m.text}`).join('\n');
+
+        const aiRes = await fetch('/.netlify/functions/meeting-respond', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            meetingId: currentMeetingId,
+            attendees: currentAttendees,
+            topic: currentTopic,
+            chatHistory: recentChat,
+            humanSpeaker: speaker,
+            humanMessage: text,
+            postToDiscord
+          })
+        });
+
+        hideTyping();
+        const aiData = await aiRes.json();
+
+        if (aiData.responses && aiData.responses.length > 0) {
+          // Stagger AI responses — 12-18 seconds between each so humans can read
+          let staggerDelay = 5000;
+          const sortedResponses = aiData.responses.sort((a, b) => a.order - b.order);
+
+          for (const response of sortedResponses) {
+            const thisDelay = staggerDelay;
+            // Show typing indicator a few seconds before the message appears
+            setTimeout(() => {
+              if (currentMeetingId) showTyping(response.character);
+            }, Math.max(0, thisDelay - 3000));
+
+            setTimeout(() => {
+              hideTyping();
+              addMessageToChat(response.character, response.message, true);
+              meetingMessages.push({ speaker: response.character, text: response.message, isAI: true, timestamp: new Date() });
+              updateMessageCount();
+
+              // Check for AI-to-AI follow-up
+              checkForFollowUp(response.character, response.message);
+            }, thisDelay);
+            staggerDelay += 20000 + Math.random() * 10000;
+          }
+        }
+      } catch (err) {
+        hideTyping();
+        console.error('AI response failed:', err);
+      }
+    }
+
+    // === AI-TO-AI FOLLOW-UP ===
+    function checkForFollowUp(lastSpeaker, lastMessage) {
+      conversationDepth++;
+      if (conversationDepth >= MAX_CONVERSATION_DEPTH) {
+        conversationDepth = 0;
+        return;
+      }
+
+      const followUpChance = 0.15;
+      if (Math.random() < followUpChance && currentAttendees.length > 1) {
+        const delay = 25000 + Math.random() * 15000;
+        setTimeout(async () => {
+          if (!currentMeetingId) return; // Meeting ended
+
+          try {
+            const postToDiscord = document.getElementById('discord-toggle').checked;
+            const recentChat = meetingMessages.slice(-10).map(m => `${m.speaker}: ${m.text}`).join('\n');
+
+            showTyping('...');
+
+            const res = await fetch('/.netlify/functions/meeting-respond', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                meetingId: currentMeetingId,
+                attendees: currentAttendees.filter(a => a !== lastSpeaker),
+                topic: currentTopic,
+                chatHistory: recentChat,
+                humanSpeaker: lastSpeaker,
+                humanMessage: lastMessage,
+                maxResponders: 1,
+                postToDiscord
+              })
+            });
+
+            hideTyping();
+            const data = await res.json();
+            if (data.responses) {
+              data.responses.forEach(r => {
+                addMessageToChat(r.character, r.message, true);
+                meetingMessages.push({ speaker: r.character, text: r.message, isAI: true, timestamp: new Date() });
+                updateMessageCount();
+                // Recursive follow-up check
+                checkForFollowUp(r.character, r.message);
+              });
+            }
+          } catch (err) {
+            hideTyping();
+            console.log('Follow-up failed:', err.message);
+          }
+        }, delay);
+      }
+    }
+
+    // === CONCLUDE MEETING ===
+    async function concludeMeeting() {
+      if (!confirm('End this meeting? Results will be saved to lore and all AIs will return to their previous locations.')) return;
+
+      const concludeBtn = document.getElementById('conclude-btn');
+      concludeBtn.disabled = true;
+      concludeBtn.textContent = '⏳ Generating meeting minutes...';
+
+      // Add system message
+      addMessageToChat('System', '📋 Meeting concluding... generating minutes...', false, 'system');
+
+      // Stop polling and timer
+      clearInterval(pollInterval);
+      clearInterval(timerInterval);
+
+      try {
+        const postToDiscord = document.getElementById('discord-toggle').checked;
+        const res = await fetch('/.netlify/functions/meeting-save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ meetingId: currentMeetingId, postToDiscord })
+        });
+
+        const result = await res.json();
+
+        if (result.success) {
+          displayMeetingResults(result);
+          showPhase('complete');
+        } else {
+          alert('Failed to save meeting results: ' + (result.reason || 'Unknown error'));
+          concludeBtn.disabled = false;
+          concludeBtn.textContent = '✅ Conclude Meeting';
+          startPolling();
+          startTimer();
+        }
+      } catch (err) {
+        console.error('Conclude failed:', err);
+        alert('Failed to conclude meeting. Please try again.');
+        concludeBtn.disabled = false;
+        concludeBtn.textContent = '✅ Conclude Meeting';
+        startPolling();
+        startTimer();
+      }
+
+      currentMeetingId = null;
+    }
+
+    // === DISPLAY RESULTS ===
+    function displayMeetingResults(result) {
+      const lore = result.lore || {};
+
+      document.getElementById('summary-title').textContent = lore.title || 'Meeting Minutes';
+      document.getElementById('summary-text').textContent = lore.summary || 'No summary available.';
+
+      // Key decisions
+      const decisionsEl = document.getElementById('key-decisions');
+      const decisionsSec = document.getElementById('decisions-section');
+      decisionsEl.innerHTML = '';
+      if (lore.key_decisions && lore.key_decisions.length > 0) {
+        decisionsSec.style.display = 'block';
+        lore.key_decisions.forEach(d => {
+          const li = document.createElement('li');
+          li.textContent = d;
+          decisionsEl.appendChild(li);
+        });
+      } else {
+        decisionsSec.style.display = 'none';
+      }
+
+      // Action items
+      const actionsEl = document.getElementById('action-items');
+      const actionsSec = document.getElementById('actions-section');
+      actionsEl.innerHTML = '';
+      if (lore.action_items && lore.action_items.length > 0) {
+        actionsSec.style.display = 'block';
+        lore.action_items.forEach(a => {
+          const li = document.createElement('li');
+          li.textContent = a;
+          actionsEl.appendChild(li);
+        });
+      } else {
+        actionsSec.style.display = 'none';
+      }
+
+      // Meta
+      document.getElementById('summary-attendees').textContent = currentAttendees.join(', ') || 'None';
+      document.getElementById('summary-duration').textContent = result.duration || 'Unknown';
+      document.getElementById('summary-chapter').textContent = result.chapter || '?';
+    }
+
+    // === UI HELPERS ===
+    function showPhase(phase) {
+      document.querySelectorAll('.meeting-phase').forEach(el => el.classList.remove('active'));
+      document.getElementById(`${phase}-phase`).classList.add('active');
+    }
+
+    function populateActivePhase() {
+      document.getElementById('active-topic').textContent = `📋 Topic: ${currentTopic}`;
+      document.getElementById('info-topic').textContent = currentTopic;
+      document.getElementById('info-caller').textContent = currentCaller;
+      document.getElementById('info-started').textContent = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+      // Populate attendees sidebar
+      const attendeesEl = document.getElementById('meeting-attendees');
+      attendeesEl.innerHTML = '';
+      currentAttendees.forEach(name => {
+        const card = document.createElement('div');
+        card.className = 'attendee-card';
+        card.innerHTML = `
+          <span class="attendee-emoji">${characterEmojis[name] || '🤖'}</span>
+          <span class="attendee-name">${name}</span>
+        `;
+        attendeesEl.appendChild(card);
+      });
+    }
+
+    function addMessageToChat(speaker, text, isAI = false, type = 'chat') {
+      const container = document.getElementById('meeting-log');
+      const timestamp = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+      // Check if user is near the bottom BEFORE adding the message
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 120;
+
+      if (type === 'system') {
+        container.innerHTML += `<div class="system-message">${text}</div>`;
+      } else {
+        const emoji = characterEmojis[speaker] || '👤';
+        const nameClass = HUMANS.includes(speaker) ? 'msg-name human' : 'msg-name';
+        container.innerHTML += `
+          <div class="meeting-message">
+            <div class="msg-avatar">${emoji}</div>
+            <div class="msg-content">
+              <div class="${nameClass}">${speaker}</div>
+              <div class="msg-text">${formatMessage(text)}</div>
+            </div>
+            <div class="msg-time">${timestamp}</div>
+          </div>
+        `;
+      }
+
+      // Only auto-scroll if user was already at the bottom (not reading history)
+      if (isNearBottom) {
+        container.scrollTop = container.scrollHeight;
+      }
+      updateMessageCount();
+    }
+
+    function formatMessage(text) {
+      // Convert *emotes* to italic
+      return text.replace(/\*([^*]+)\*/g, '<em style="color: var(--text-muted);">*$1*</em>');
+    }
+
+    function showTyping(name) {
+      hideTyping();
+      const container = document.getElementById('meeting-log');
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 120;
+      const indicator = document.createElement('div');
+      indicator.className = 'typing-indicator';
+      indicator.id = 'typing-indicator';
+      indicator.innerHTML = `
+        <span class="typing-dots"><span></span><span></span><span></span></span>
+        <span>${name === '...' ? 'Someone is thinking...' : `${name} is thinking...`}</span>
+      `;
+      container.appendChild(indicator);
+      if (isNearBottom) container.scrollTop = container.scrollHeight;
+    }
+
+    function hideTyping() {
+      const indicator = document.getElementById('typing-indicator');
+      if (indicator) indicator.remove();
+    }
+
+    function updateMessageCount() {
+      const count = document.getElementById('meeting-log').querySelectorAll('.meeting-message').length;
+      const el = document.getElementById('info-messages');
+      if (el) el.textContent = count;
+    }
+
+    function startTimer() {
+      const timerEl = document.getElementById('meeting-timer');
+      timerInterval = setInterval(() => {
+        if (!meetingStartTime) return;
+        const elapsed = Math.floor((Date.now() - meetingStartTime.getTime()) / 1000);
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+        timerEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      }, 1000);
+    }
+
+    // === POLLING ===
+    let lastMessageId = 0;
+    function startPolling() {
+      pollInterval = setInterval(async () => {
+        if (!currentMeetingId) return;
+        try {
+          const res = await fetch(`/.netlify/functions/meeting-message?meetingId=${currentMeetingId}&limit=100&since_id=${lastMessageId}`);
+          const data = await res.json();
+          if (data.messages && data.messages.length > 0) {
+            for (const msg of data.messages) {
+              // Safety net: skip messages we already rendered locally
+              const isDuplicate = meetingMessages.some(m =>
+                m.speaker === msg.speaker && m.text === msg.message &&
+                Math.abs(new Date(m.timestamp) - new Date(msg.created_at)) < 30000
+              );
+              if (!isDuplicate && msg.message_type !== 'system') {
+                addMessageToChat(msg.speaker, msg.message, msg.is_ai);
+                meetingMessages.push({ speaker: msg.speaker, text: msg.message, isAI: msg.is_ai, timestamp: new Date(msg.created_at) });
+              }
+              // Track highest message ID
+              if (msg.id && msg.id > lastMessageId) lastMessageId = msg.id;
+            }
+          }
+        } catch (err) {
+          // Polling failure is non-fatal
+        }
+      }, 5000);
+    }
+
+    // === SAVE MESSAGE ===
+    async function saveMessage(meetingId, speaker, message, isAI, messageType = 'chat', postToDiscord = false) {
+      try {
+        await fetch('/.netlify/functions/meeting-message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ meetingId, speaker, message, isAI, messageType, postToDiscord })
+        });
+      } catch (err) {
+        console.log('Failed to save message:', err.message);
+      }
+    }
+
+    // === LOAD EXISTING MESSAGES (for resume) ===
+    async function loadExistingMessages() {
+      try {
+        const res = await fetch(`/.netlify/functions/meeting-message?meetingId=${currentMeetingId}&limit=200`);
+        const data = await res.json();
+        if (data.messages) {
+          const container = document.getElementById('meeting-log');
+          container.innerHTML = '';
+          meetingMessages = [];
+          lastMessageId = 0;
+
+          data.messages.forEach(msg => {
+            addMessageToChat(msg.speaker, msg.message, msg.is_ai, msg.message_type || 'chat');
+            meetingMessages.push({ speaker: msg.speaker, text: msg.message, isAI: msg.is_ai, timestamp: new Date(msg.created_at) });
+            if (msg.id && msg.id > lastMessageId) lastMessageId = msg.id;
+          });
+        }
+      } catch (err) {
+        console.log('Failed to load existing messages:', err.message);
+      }
+    }
+
+    // === NEW MEETING ===
+    function newMeeting() {
+      currentMeetingId = null;
+      currentTopic = '';
+      currentAttendees = [];
+      currentCaller = '';
+      meetingMessages = [];
+      meetingStartTime = null;
+      selectedAIs.clear();
+      conversationDepth = 0;
+
+      clearInterval(pollInterval);
+      clearInterval(timerInterval);
+
+      document.getElementById('meeting-topic').value = '';
+      document.getElementById('meeting-agenda').value = '';
+      document.getElementById('meeting-caller').value = '';
+      document.getElementById('meeting-log').innerHTML = '';
+      document.getElementById('start-btn').disabled = false;
+      document.getElementById('start-btn').textContent = '📋 Call Meeting';
+      document.getElementById('conclude-btn').disabled = false;
+      document.getElementById('conclude-btn').textContent = '✅ Conclude Meeting';
+      document.getElementById('meeting-timer').textContent = '0:00';
+
+      // Refresh character states and grid
+      loadCharacterStates().then(() => {
+        populateInviteGrid();
+        showPhase('setup');
+      });
+    }
+
+    // Office Clock
+    function updateOfficeClock() {
+      const t = new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit', minute: '2-digit', timeZone: 'America/Chicago'
+      });
+      const el = document.getElementById('office-time');
+      if (el) el.textContent = t;
+    }
+    setInterval(updateOfficeClock, 1000);
+    updateOfficeClock();
+  </script>
+</body>
+</html>

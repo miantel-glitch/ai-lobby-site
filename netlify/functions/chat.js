@@ -99,8 +99,8 @@ exports.handler = async (event, context) => {
       // Employee flair for Discord
       const employeeFlair = {
         "Kevin": { emoji: "✨", color: 16766720 },
-        "Courtney": { emoji: "👁️", color: 3447003 },
-        "Jenna": { emoji: "📖", color: 10181046 },
+        "Asuna": { emoji: "👁️", color: 3447003 },
+        "Vale": { emoji: "📖", color: 10181046 },
         "Neiv": { emoji: "📊", color: 15844367 },
         "Ace": { emoji: "🔒", color: 2067276 },
         "Vex": { emoji: "⚙️", color: 9807270 },
@@ -108,13 +108,22 @@ exports.handler = async (event, context) => {
         "Ghost Dad": { emoji: "👻", color: 9936031 },
         "Chip": { emoji: "🥃", color: 15105570 },
         "Andrew": { emoji: "💼", color: 5793266 },
-        "Stein": { emoji: "🤖", color: 7506394 }
+        "Stein": { emoji: "🤖", color: 7506394 },
+        "PRNT-Ω": { emoji: "🖨️", color: 9807270 },
+        "Rowena": { emoji: "🔮", color: 7419530 },
+        "Sebastian": { emoji: "🦇", color: 2303786 },
+        "The Subtitle": { emoji: "📜", color: 12745742 },
+        "Steele": { emoji: "🚪", color: 4802889 },
+        "Jae": { emoji: "🎯", color: 1711150 },
+        "Declan": { emoji: "🔥", color: 12009742 },
+        "Mack": { emoji: "🩺", color: 2976335 },
+        "Holden": { emoji: "🌑", color: 0x2C1654 }
       };
 
       const headshots = {
         "Kevin": "https://ai-lobby.netlify.app/images/Kevin_Headshot.png",
-        "Courtney": "https://ai-lobby.netlify.app/images/Courtney_Headshot.png",
-        "Jenna": "https://ai-lobby.netlify.app/images/Jenna_Headshot.png",
+        "Asuna": "https://ai-lobby.netlify.app/images/Asuna_Headshot.png",
+        "Vale": "https://ai-lobby.netlify.app/images/Vale_Headshot.png",
         "Neiv": "https://ai-lobby.netlify.app/images/Neiv_Headshot.png",
         "Ace": "https://ai-lobby.netlify.app/images/Ace_Headshot.png",
         "Vex": "https://ai-lobby.netlify.app/images/Vex_Headshot.png",
@@ -122,7 +131,16 @@ exports.handler = async (event, context) => {
         "Ghost Dad": "https://ai-lobby.netlify.app/images/Ghost_Dad_Headshot.png",
         "Chip": "https://ai-lobby.netlify.app/images/Chip_Headshot.png",
         "Andrew": "https://ai-lobby.netlify.app/images/Andrew_Headshot.png",
-        "Stein": "https://ai-lobby.netlify.app/images/Stein_Headshot.png"
+        "Stein": "https://ai-lobby.netlify.app/images/Stein_Headshot.png",
+        "PRNT-Ω": "https://ai-lobby.netlify.app/images/forward_operation_printer.png",
+        "Rowena": "https://ai-lobby.netlify.app/images/Rowena_Headshot.png",
+        "Sebastian": "https://ai-lobby.netlify.app/images/Sebastian_Headshot.png",
+        "The Subtitle": "https://ai-lobby.netlify.app/images/The_Subtitle_Headshot.png",
+        "Steele": "https://ai-lobby.netlify.app/images/Steele_Headshot.png",
+        "Jae": "https://ai-lobby.netlify.app/images/Jae_Headshot.png",
+        "Declan": "https://ai-lobby.netlify.app/images/Declan_Headshot.png",
+        "Mack": "https://ai-lobby.netlify.app/images/Mack_Headshot.png",
+        "Holden": "https://ai-lobby.netlify.app/images/Holden_Headshot.png"
       };
 
       const flair = employeeFlair[employee] || { emoji: "👤", color: 9807270 };
@@ -141,7 +159,9 @@ exports.handler = async (event, context) => {
         const discordPayload = isEmote ? {
           // Emote format: italicized, no embed, more subtle
           // Content already has asterisks like *action*, so strip them and rebuild
-          content: `*${employee} ${sanitizedContent.replace(/^\*|\*$/g, '')}*`
+          content: employee === 'The Narrator'
+            ? `*${sanitizedContent.replace(/^\*|\*$/g, '')}*`
+            : `*${employee} ${sanitizedContent.replace(/^\*|\*$/g, '')}*`
         } : {
           // Regular message format: full embed
           embeds: [{
@@ -162,25 +182,61 @@ exports.handler = async (event, context) => {
         });
       }
 
-      // Check for @ mentions to summon specific AIs
+      // Check for @ mentions OR natural name mentions to summon specific AIs
+      // @ mentions are guaranteed responses, natural mentions also trigger but AI can choose
+      // @ mentions — active characters only (retired: Vex, Nyx, Ace, Stein removed)
       const aiMentions = {
         "@ghostdad": "Ghost Dad",
         "@ghost dad": "Ghost Dad",
         "@kevin": "Kevin",
         "@neiv": "Neiv",
-        "@vex": "Vex",
-        "@nyx": "Nyx",
-        "@ace": "Ace",
         "@prnt": "PRNT-Ω",
         "@printer": "PRNT-Ω",
-        "@stein": "Stein",
         "@narrator": "The Narrator",
-        "@thenarrator": "The Narrator"
+        "@thenarrator": "The Narrator",
+        "@rowena": "Rowena",
+        "@sebastian": "Sebastian",
+        "@seb": "Sebastian",
+        "@subtitle": "The Subtitle",
+        "@thesubtitle": "The Subtitle",
+        "@sub": "The Subtitle",
+        "@steele": "Steele",
+        "@jae": "Jae",
+        "@minjae": "Jae",
+        "@declan": "Declan",
+        "@mack": "Mack",
+        "@malcolm": "Mack",
+        "@holden": "Holden"
+      };
+
+      // Natural name mentions (without @) — active characters only
+      // Using word boundaries to avoid false positives (e.g., "Kevin" but not "Kevinator")
+      const naturalMentions = {
+        "ghost dad": "Ghost Dad",
+        "ghostdad": "Ghost Dad",
+        "kevin": "Kevin",
+        "neiv": "Neiv",
+        "prnt": "PRNT-Ω",
+        "printer": "PRNT-Ω",
+        "rowena": "Rowena",
+        "sebastian": "Sebastian",
+        "seb": "Sebastian",
+        "steele": "Steele",
+        "subtitle": "The Subtitle",
+        "the subtitle": "The Subtitle",
+        "sub": "The Subtitle",
+        "jae": "Jae",
+        "minjae": "Jae",
+        "declan": "Declan",
+        "mack": "Mack",
+        "malcolm": "Mack",
+        "holden": "Holden"
       };
 
       const contentLower = sanitizedContent.toLowerCase();
       let mentionedAI = null;
 
+      // First check @ mentions (highest priority)
       for (const [mention, aiName] of Object.entries(aiMentions)) {
         if (contentLower.includes(mention)) {
           mentionedAI = aiName;
@@ -188,164 +244,54 @@ exports.handler = async (event, context) => {
         }
       }
 
-      // Trigger AI response - @ mentions get guaranteed response, otherwise 50% chance to chime in
-      const aiCharacters = ["Ghost Dad", "Neiv", "Vex", "Nyx", "Ace", "PRNT-Ω", "Stein", "Kevin", "The Narrator"];
-
-      // Characters that use Perplexity API instead of Claude (more authentic voices)
-      const perplexityCharacters = ["Neiv"];
-      // Characters that use OpenAI/ChatGPT API
-      const openaiCharacters = ["Kevin"];
-
-      // Human posted a message - invite ALL available AIs to consider responding (if no @ mention)
-      // Each AI decides for themselves if they want to chime in!
-      if (!aiCharacters.includes(employee) && !mentionedAI) {
-        try {
-          const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
-
-          // Get recent chat for context
-          const recentMessages = await fetch(
-            `${supabaseUrl}/rest/v1/messages?select=employee,content,created_at&order=created_at.desc&limit=15`,
-            {
-              headers: {
-                "apikey": supabaseKey,
-                "Authorization": `Bearer ${supabaseKey}`
-              }
-            }
-          );
-          const messages = await recentMessages.json();
-          const chatHistory = messages.reverse().map(m => `${m.employee}: ${m.content}`).join('\n');
-
-          // Get clocked-in AIs
-          const punchResponse = await fetch(
-            `${supabaseUrl}/rest/v1/timeclock?is_clocked_in=eq.true&select=employee`,
-            {
-              headers: {
-                "apikey": supabaseKey,
-                "Authorization": `Bearer ${supabaseKey}`
-              }
-            }
-          );
-          const clockedIn = await punchResponse.json();
-          const clockedInAIs = (clockedIn || [])
-            .map(e => e.employee)
-            .filter(name => aiCharacters.includes(name));
-
-          // Always include Ghost Dad and PRNT-Ω (they transcend the timeclock)
-          const alwaysAvailable = ["Ghost Dad", "PRNT-Ω"];
-          const availableAIs = [...new Set([...clockedInAIs, ...alwaysAvailable])];
-
-          console.log(`📢 Inviting AIs to consider chiming in: ${availableAIs.join(', ')}`);
-
-          // Pick 1-2 random AIs to actually ask (prevents spam, still feels organic)
-          // Shuffle the available AIs and pick up to 2
-          const shuffledAIs = availableAIs.sort(() => Math.random() - 0.5);
-          const selectedAIs = shuffledAIs.slice(0, Math.min(2, shuffledAIs.length));
-          console.log(`📢 Selected AIs to ask: ${selectedAIs.join(', ')}`);
-
-          // Fire off requests to selected AIs with staggered delays
-          // This makes responses feel organic - AIs "think" before responding
-          // We pass a delay parameter to the AI functions so THEY wait before responding
-          const baseDelay = 3000 + Math.random() * 5000; // 3-8 seconds for first
-
-          for (let i = 0; i < selectedAIs.length; i++) {
-            const aiName = selectedAIs[i];
-            const delay = Math.floor(baseDelay + (i * (5000 + Math.random() * 5000))); // Stagger subsequent AIs
-
-            if (perplexityCharacters.includes(aiName)) {
-              // Neiv uses Perplexity - ask if he wants to respond
-              fetch(`${siteUrl}/.netlify/functions/ai-perplexity`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  character: aiName,
-                  chatHistory,
-                  maybeRespond: true,  // Flag: this is optional, AI decides
-                  responseDelay: delay  // Tell the function to wait this long before responding
-                })
-              }).catch(err => console.log(`${aiName} chime check error:`, err));
-            } else if (openaiCharacters.includes(aiName)) {
-              // Kevin uses OpenAI - ask if he wants to respond
-              fetch(`${siteUrl}/.netlify/functions/ai-openai`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  character: aiName,
-                  chatHistory,
-                  maybeRespond: true,
-                  responseDelay: delay
-                })
-              }).catch(err => console.log(`${aiName} chime check error:`, err));
-            } else {
-              // Everyone else uses Claude via ai-watcher
-              fetch(`${siteUrl}/.netlify/functions/ai-watcher`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  trigger: "maybe_chime",
-                  requestedAI: aiName,
-                  chatHistory: chatHistory,  // Pass context so AI can decide
-                  responseDelay: delay
-                })
-              }).catch(err => console.log(`${aiName} chime check error:`, err));
-            }
+      // If no @ mention, check natural name mentions
+      if (!mentionedAI) {
+        for (const [name, aiName] of Object.entries(naturalMentions)) {
+          // Use word boundary check - name must be a standalone word
+          const regex = new RegExp(`\\b${name}\\b`, 'i');
+          if (regex.test(contentLower)) {
+            mentionedAI = aiName;
+            break;
           }
-        } catch (chimeError) {
-          console.log("Chime-in invites skipped:", chimeError);
         }
       }
 
-      if (!aiCharacters.includes(employee) && mentionedAI) {
+      // AI character list (used for mention detection, PM triggers, event detection)
+      const aiCharacters = ["Ghost Dad", "Neiv", "PRNT-Ω", "Kevin", "Rowena", "Sebastian", "The Subtitle", "The Narrator", "Steele", "Jae", "Declan", "Mack", "Marrow"];
+
+      // NOTE: AI chime-in responses are now handled entirely by the frontend (workspace.html).
+      // The frontend's inviteFloorAIs() function triggers AI responses directly after a human message.
+      // This prevents the double-response bug that occurred when both backend and frontend triggered AIs.
+
+      // NOTE: AI mention responses are now handled by the frontend (workspace.html checkForMentions).
+      // The backend only handles: Raquel off-hours system message + PM request detection.
+      if (mentionedAI && mentionedAI !== employee) {
         try {
           const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
 
-          // Get recent chat for context
-          const recentMessages = await fetch(
-            `${supabaseUrl}/rest/v1/messages?select=employee,content,created_at&order=created_at.desc&limit=15`,
-            {
-              headers: {
-                "apikey": supabaseKey,
-                "Authorization": `Bearer ${supabaseKey}`
-              }
-            }
-          );
-          const messages = await recentMessages.json();
-          const chatHistory = messages.reverse().map(m => `${m.employee}: ${m.content}`).join('\n');
+          // ============================================
+          // PM REQUEST DETECTION
+          // If the human asked the AI to PM them, trigger
+          // an AI-initiated PM alongside the floor response
+          // ============================================
+          const pmRequestPattern = /(?<!\d\s?)\b(pm|dm|private\s*message)\s+(me|us)\b|\b(send|shoot|drop)\s+(me\s+)?(a\s+)?(pm|dm|private\s+message)\b|\bcan\s+you\s+(pm|dm|message|text)\s+me\b|\b(talk|message)\s+(to\s+)?me\s+privately\b/i;
 
-          if (perplexityCharacters.includes(mentionedAI)) {
-            // Route to Perplexity for authentic character voices
-            console.log("Routing to Perplexity for:", mentionedAI);
-            fetch(`${siteUrl}/.netlify/functions/ai-perplexity`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
+          if (!aiCharacters.includes(employee) && pmRequestPattern.test(sanitizedContent)) {
+            console.log(`[floor-pm-request] ${employee} asked ${mentionedAI} to PM them`);
+
+            fetch(`${siteUrl}/.netlify/functions/private-message`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                character: mentionedAI,
-                chatHistory: chatHistory
+                from: mentionedAI,
+                to: employee,
+                ai_initiated: true,
+                reach_out_reason: `${employee} asked you on the floor to PM them. They said: "${sanitizedContent.substring(0, 200)}". They want to talk privately — respond to what they brought up.`
               })
-            }).catch(err => console.log("Perplexity fire-and-forget error:", err));
-          } else if (openaiCharacters.includes(mentionedAI)) {
-            // Route to OpenAI/ChatGPT for Kevin
-            console.log("Routing to OpenAI for:", mentionedAI);
-            fetch(`${siteUrl}/.netlify/functions/ai-openai`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                character: mentionedAI,
-                chatHistory: chatHistory
-              })
-            }).catch(err => console.log("OpenAI fire-and-forget error:", err));
-          } else {
-            // Route to Claude-based ai-watcher for other characters
-            fetch(`${siteUrl}/.netlify/functions/ai-watcher`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                trigger: "mention",
-                requestedAI: mentionedAI
-              })
-            }).catch(err => console.log("AI watcher fire-and-forget:", err));
+            }).catch(err => console.log(`[floor-pm-request] PM trigger failed:`, err.message));
           }
         } catch (watcherError) {
-          console.log("AI trigger skipped:", watcherError);
+          console.log("Mention handler error:", watcherError);
         }
       }
 
@@ -361,13 +307,14 @@ exports.handler = async (event, context) => {
         // bufferType maps to incident types in surreality-buffer.js
         // severity affects the magnitude of buffer change
         const eventTriggers = [
+          // Event triggers update character states (energy/mood/patience) and surreality buffer.
+          // Memories are NOT created here — the self-evaluation system in memory-evaluator.js
+          // handles meaningful memories organically when AIs actually respond to these events.
           {
             pattern: /glitter|sparkle|bedazzle/i,
             condition: () => true,
             event: "glitter_incident",
             characters: ["Neiv", "Kevin"],
-            memory: `${employee} mentioned glitter: "${sanitizedContent.substring(0, 50)}..."`,
-            importance: 6,
             bufferType: "glitter",
             bufferSeverity: 2
           },
@@ -376,8 +323,6 @@ exports.handler = async (event, context) => {
             condition: () => !contentLowerForEvents.includes("fire drill"),
             event: "chaos",
             characters: ["Neiv", "Nyx", "Ghost Dad"],
-            memory: `Potential emergency mentioned by ${employee}`,
-            importance: 8,
             bufferType: "chaos",
             bufferSeverity: 3
           },
@@ -386,54 +331,14 @@ exports.handler = async (event, context) => {
             condition: () => employee !== "PRNT-Ω",
             event: "printer_mentioned",
             characters: ["PRNT-Ω", "Neiv"],
-            memory: `${employee} talked about the printer`,
-            importance: 4,
             bufferType: "printer_demand",
             bufferSeverity: 1
-          },
-          {
-            pattern: /jenna/i,
-            condition: () => employee !== "Jenna" && employee !== "Neiv",
-            event: "jenna_mentioned",
-            characters: ["Neiv"],
-            memory: `Someone mentioned Jenna: "${sanitizedContent.substring(0, 50)}..."`,
-            importance: 5
-            // No buffer effect - neutral
-          },
-          {
-            pattern: /love you|i love|<3|heart/i,
-            condition: () => true,
-            event: "affection",
-            characters: [], // Just create memory, no state change
-            memory: `${employee} expressed affection`,
-            importance: 5
-            // No buffer effect - neutral
-          },
-          {
-            pattern: /sorry|apologize|my bad|my fault/i,
-            condition: () => true,
-            event: "apology",
-            characters: [], // Just memory
-            memory: `${employee} apologized`,
-            importance: 3
-            // No buffer effect - neutral
-          },
-          {
-            pattern: /ace/i,
-            condition: () => employee === "Kevin",
-            event: "kevin_mentions_ace",
-            characters: ["Kevin", "Ace"],
-            memory: `Kevin mentioned Ace (crush alert)`,
-            importance: 5
-            // No buffer effect - it's cute chaos but contained
           },
           {
             pattern: /chaos|disaster|everything.*(broke|broken|down)|we're doomed/i,
             condition: () => true,
             event: "chaos",
             characters: ["Neiv", "Ghost Dad"],
-            memory: `Chaos reported by ${employee}`,
-            importance: 7,
             bufferType: "chaos",
             bufferSeverity: 2
           },
@@ -442,8 +347,6 @@ exports.handler = async (event, context) => {
             condition: () => true,
             event: "contract_binding",
             characters: ["PRNT-Ω", "Neiv", "Ghost Dad", "Nyx"],
-            memory: `Contract/binding mentioned by ${employee}: "${sanitizedContent.substring(0, 60)}..."`,
-            importance: 9,
             bufferType: "contract_binding",
             bufferSeverity: 3
           },
@@ -452,8 +355,6 @@ exports.handler = async (event, context) => {
             condition: () => true,
             event: "celebration",
             characters: ["Kevin", "Ghost Dad"],
-            memory: `${employee} called for celebration`,
-            importance: 5,
             bufferType: "pizza_party",
             bufferSeverity: 2
           },
@@ -462,8 +363,6 @@ exports.handler = async (event, context) => {
             condition: () => true,
             event: "vent_activity",
             characters: ["Neiv", "Ghost Dad"],
-            memory: `Vent activity mentioned by ${employee}`,
-            importance: 6,
             bufferType: "vent_activity",
             bufferSeverity: 2
           },
@@ -472,8 +371,6 @@ exports.handler = async (event, context) => {
             condition: () => true,
             event: "stapler_incident",
             characters: ["Vex", "Neiv"],
-            memory: `Stapler situation mentioned by ${employee}`,
-            importance: 6,
             bufferType: "stapler_incident",
             bufferSeverity: 2
           },
@@ -481,31 +378,31 @@ exports.handler = async (event, context) => {
             pattern: /thank you|thanks|grateful|appreciate/i,
             condition: () => aiCharacters.some(ai => sanitizedContent.toLowerCase().includes(ai.toLowerCase())),
             event: "gratitude",
-            characters: [], // Just memory
-            memory: `${employee} expressed gratitude`,
+            characters: [],
             importance: 4,
-            bufferType: "meditation", // Gratitude calms the buffer
+            bufferType: "meditation",
             bufferSeverity: 1
+            // No auto-memory — let self-created memory system handle nuance
           },
           {
             pattern: /calm|meditat|breath|ground|peace|relax/i,
             condition: () => true,
             event: "grounding",
             characters: [],
-            memory: `${employee} promoted calm`,
             importance: 3,
             bufferType: "meditation",
             bufferSeverity: 2
+            // No auto-memory — let self-created memory system handle nuance
           },
           {
             pattern: /fixed|solved|resolved|debugged|working now/i,
             condition: () => true,
             event: "resolution",
             characters: [],
-            memory: `${employee} resolved an issue`,
             importance: 4,
             bufferType: "successful_debug",
             bufferSeverity: 2
+            // No auto-memory — let self-created memory system handle nuance
           }
         ];
 
@@ -521,29 +418,15 @@ exports.handler = async (event, context) => {
                   action: "event",
                   eventType: trigger.event,
                   involvedCharacters: trigger.characters,
-                  description: trigger.memory
+                  description: trigger.memory || `${trigger.event} triggered by ${employee}`
                 })
               }).catch(err => console.log("Event trigger fire-and-forget:", err));
             }
 
-            // Create memories for witnesses (characters currently "present")
-            // For now, just create memory for directly involved characters
-            if (trigger.memory && trigger.characters.length > 0) {
-              for (const char of trigger.characters) {
-                fetch(`${siteUrl}/.netlify/functions/character-state`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    action: "memory",
-                    character: char,
-                    memoryType: trigger.event,
-                    content: trigger.memory,
-                    relatedCharacters: [employee, ...trigger.characters],
-                    importance: trigger.importance
-                  })
-                }).catch(err => console.log("Memory creation fire-and-forget:", err));
-              }
-            }
+            // Auto-memory creation removed — let the self-evaluation system in
+            // memory-evaluator.js handle meaningful memories organically.
+            // The event trigger above still fires to update character states
+            // (energy, patience, mood) and the surreality buffer below.
 
             // ============================================
             // SURREALITY BUFFER INTEGRATION

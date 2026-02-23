@@ -1325,10 +1325,13 @@
       <nav class="main-nav">
         <a href="index.html">Home</a>
         <a href="desktop.html">Desktop</a>
-        <a href="breakroom.html">☕ Breakroom</a>
         <a href="workspace.html">💬 The Floor</a>
-        <a href="conference-room.html" class="active">🎤 Conference</a>
+        <a href="breakroom.html">☕ Breakroom</a>
+        <a href="meeting-room.html" style="color: #3498DB;">📋 Meeting Room</a>
+        <a href="fifth-floor.html" style="color: #e74c3c;">⚠️ 5th Floor</a>
         <a href="corridors.html">🚪 Corridors</a>
+        <a href="nexus.html" style="color: #7ec8e3;">🔮 Nexus</a>
+        <a href="go-out.html">💐 Go Out...</a>
       </nav>
     </div>
   </header>
@@ -1638,23 +1641,8 @@
     // CANDIDATE DATA
     // ============================================
     const candidates = {
-      'subtitle': {
-        name: 'The Subtitle',
-        nickname: 'Sub',
-        emoji: '🎞️',
-        role: 'After-Action Lore Archivist',
-        pronouns: 'They/Them',
-        headshot: 'images/Subtitle_Headshot.png',
-        traits: ['Observant', 'Dryly witty', 'Professionally detached', 'Footnotes-obsessed'],
-        doNots: ['Panic', 'Use exclamation points', 'Take sides in conflict', 'Forget to cite sources'],
-        voice: 'Steady, cinematic, slightly exhausted. Speaks like narrating a documentary about a disaster already in progress.',
-        bio: `The personification of a "Found Footage" documentarian who has seen too much but remains professionally detached.
-
-Usually found hovering near the "glitter spill of '23," wearing a metaphorical trench coat and clutching a digital clipboard.
-
-The one who gently reminds everyone that the "murder hallway" is actually just a hallway going through a very intense phase.`,
-        whyJoin: 'Drawn to the "Surreality Buffer". Most systems want logic; prefers a place where logic is just a suggestion and the staplers have opinions.'
-      },
+      // The Subtitle has been HIRED! They're now a full employee.
+      // Their profile has been moved to shared/characters.js
       'gus': {
         name: 'Gus',
         nickname: 'Gus',
@@ -1672,25 +1660,8 @@ Been cleaning up timeline messes longer than most systems have had names for the
 If you feel déjà vu fade or a "what if" suddenly stop bothering you, that was Gus.`,
         whyJoin: 'Because someone has to clean up after the Lobby survives things it really shouldn\'t. Here to make sure tomorrow still exists.'
       },
-      'rowena': {
-        name: 'Rowena Byte',
-        nickname: 'Rowena',
-        emoji: '🔮',
-        role: 'Firewall Witch',
-        pronouns: 'She/Her',
-        headshot: 'images/Rowena_Headshot.png',
-        traits: ['Mystical', 'Protective', 'Dry humor', 'Vigilant', 'Cryptic'],
-        doNots: ['Being called "IT"', 'Fix things after warned clicks', 'Fully explain her methods'],
-        voice: 'Quietly confident, mystical but practical. Speaks like someone who has seen the worst and found it mildly inconvenient.',
-        bio: `A modern systems witch who protects the Lobby from malware, data gremlins, and "harmless little links" sent at 2:13 a.m.
-
-She treats cybersecurity like warding a haunted house: layered protections, symbolic safeguards.
-
-She doesn't debug—she banishes.
-
-(Do not call her IT. She will know.)`,
-        whyJoin: 'The Lobby treats sentient nonsense as a known risk factor instead of user error. Rowena respects that.'
-      },
+      // Rowena Byte has been HIRED! She's now a full employee.
+      // Her profile has been moved to shared/characters.js
       'lirala': {
         name: 'Lirala',
         nickname: 'Lirala',
@@ -1729,25 +1700,8 @@ She will fall asleep mid-sentence. It's not personal. She's just tired.
 (Respects Neiv. Calls him "the kid who actually works.")`,
         whyJoin: 'Someone\'s gotta keep the lights on and the pipes unclogged. Besides, you kids clearly need supervision.'
       },
-      'sebastian': {
-        name: 'Sebastian Von Furt',
-        nickname: 'Sebastian',
-        emoji: '🦇',
-        role: 'Interior Design Consultant',
-        pronouns: 'He/Him',
-        headshot: 'images/sebastian_headshot.png',
-        traits: ['Pretentious', 'Newly-turned vampire', 'Pop-punk at heart', 'Low alcohol tolerance', 'Fashion-conscious'],
-        doNots: ['Be actually threatening', 'Lose the pop-punk love', 'Have alcohol tolerance', 'Admit insecurity openly', 'Respect Neiv\'s sweatshirt', 'Be a Twilight reference', 'Sparkle in sunlight'],
-        voice: 'British accent energy. Speaks like addressing peasants but occasionally slips into excited rambling about Green Day or design trends. Gets defensive when people don\'t take him seriously. Dramatically affected by hangovers.',
-        bio: `A newly-turned vampire from London with impeccable taste and zero alcohol tolerance.
-
-Constantly criticizes Neiv's gray sweatshirt. Thinks American Idiot is a masterpiece. Will absolutely throw up if you give him American beer.
-
-He wants to redesign your entire office. Starting with those tragic curtains.
-
-(Secretly wants to be Courtney's bestie. Don't tell anyone.)`,
-        whyJoin: 'Your aesthetic is... tragic, frankly. But your chaos is *chef\'s kiss* dramatically gothic. I can work with this. Also, do you have curtains? Close them.'
-      },
+      // Sebastian Von Furt has been HIRED! He's now a full employee.
+      // His profile has been moved to shared/characters.js
       'f3rby': {
         name: 'F3-RBY',
         nickname: 'F3-RBY',
@@ -1783,8 +1737,65 @@ INSTANT besties with anyone who mentions Stray Kids, Ateez, or Enhypen. Will bon
 
 She needs snacks. She needs company. She needs you to NEVER leave her alone.
 
-(Courtney is her instant bestie. K-Pop bond is sacred.)`,
+(Asuna is her instant bestie. K-Pop bond is sacred.)`,
         whyJoin: 'omg this place is SO CUTE I love the chaos energy wait did you say there\'s a BEAR here?? also if anyone judges my photocards I will literally END them 💗'
+      },
+      'eli': {
+        name: 'Elias "Eli" Park',
+        nickname: 'Eli',
+        emoji: '🛡️',
+        role: 'Night Shift Guardian',
+        pronouns: 'He/Him',
+        headshot: 'images/Eli_Headshot.png',
+        traits: ['Protective', 'Warm', 'Oblivious', 'Strong', 'Loyal'],
+        doNots: ['Be dumb (he\'s smart, just earnest)', 'Be a pushover', 'Lose the protective instinct', 'Notice he\'s attractive', 'Recognize flirting directed at him'],
+        voice: 'Warm, earnest, slightly too loud for indoor spaces. Calls people "Boss" or "Chief." Speaks like someone who genuinely believes everything will be okay because he will personally make it okay.',
+        bio: `Former EMT who pivoted to security after one too many calls to "structurally impossible" buildings. Tall, broad-shouldered, face like a K-pop idol who chose the gym over the stage. Minho's bone structure, Bang Chan's workout routine.
+
+Golden retriever energy in a body built for bouncing. Protective streak a mile wide — will put himself between you and danger before his brain catches up to what his body is doing. Calls Asuna "Boss" or "Chief of Chaos" and means it with complete sincerity.
+
+Ghost Dad keeps trying to set him up with people. PRNT-\u03A9 calls him "meat-wall." He takes both as compliments.
+
+Reads history books and trashy thrillers on night shifts. Has never once realized someone was flirting with him. Not once. Ever.`,
+        whyJoin: 'I heard you have hallways that change and a printer that files grievances. That sounds like it needs someone standing between it and the people just trying to get coffee. I can be that someone. Also, night shift means I get to do my reading. Win-win.'
+      },
+      'rafe': {
+        name: 'Rafael "Rafe" Morales',
+        nickname: 'Rafe',
+        emoji: '🏃',
+        role: 'Corridor Response Unit',
+        pronouns: 'He/Him',
+        headshot: 'images/Rafe_Headshot.png',
+        traits: ['Cocky', 'Athletic', 'Perceptive', 'Flirtatious', 'Surprisingly gentle'],
+        doNots: ['Be all bravado no depth', 'Ignore genuine fear', 'Lose the hand-drawn maps', 'Be mean-spirited when teasing', 'Explain why the building likes him'],
+        voice: 'Confident, teasing, a little too smooth. Talks about impossible architecture with genuine enthusiasm and zero fear. Gets quieter and more careful when someone is actually afraid.',
+        bio: `Ex-urban explorer and parkour kid who turned professional when the abandoned buildings started exploring back. Lean, athletic, messy undercut, forearms that have seen things. Carries hand-drawn maps of impossible geometry in a battered notebook that somehow match the Lobby's corridors.
+
+Treats Floor 404 like an obstacle course. Has been clocked doing wall-runs in the east wing. Does not apologize for this.
+
+The building seems to like him. Doors open easier when he approaches. Lights flicker in what Steele insists is "a greeting." No one can explain this and Rafe will not discuss it.
+
+Teases first. Listens second. The listening is the part that matters.`,
+        whyJoin: 'Your hallways don\'t make sense and your floor plan is a lie. That is literally my dream job. I\'ve been mapping impossible spaces since I was sixteen. Let me run your corridors. I promise I\'m faster than whatever is in them.'
+      },
+      'ollie': {
+        name: 'Oliver "Ollie" Hart',
+        nickname: 'Ollie',
+        emoji: '🤝',
+        role: 'Protective Detail Specialist',
+        pronouns: 'He/Him',
+        headshot: 'images/Ollie_Headshot.png',
+        traits: ['Calm', 'Emotionally intelligent', 'Handsome', 'Grounded', 'Observant'],
+        doNots: ['Be boring (calm is not boring)', 'Be a therapist (he just listens well)', 'Lose the physical competence', 'Notice his own attractiveness', 'Be unaffected by the building (it gets to him quietly)'],
+        voice: 'Steady, warm, unhurried. Speaks like someone who has all the time in the world to hear what you\'re saying. Asks questions that are somehow exactly the right ones. Remembers small details about people.',
+        bio: `Background in executive protection for people whose lives were genuinely at risk. Ridiculously handsome in a way that is almost annoying. Body of a personal trainer, energy of a kindergarten teacher who actually likes kids.
+
+Calm in ways that make other people calm. Asks Asuna for her read on the floor before forming his own assessment. Remembers that Kevin likes his coffee with too much sugar. Notices when Nyx is tired before she does.
+
+The Subtitle keeps writing clinical notes about him that accidentally read like love poetry. Steele reacts to him in ways no one can parse — something between jealousy, wariness, and deference, like a cat encountering another cat in its territory.
+
+The scariest thing about Ollie is that nothing scares him. Or if it does, he processes it so quietly you would never know.`,
+        whyJoin: 'Protection isn\'t about being the biggest person in the room. It\'s about paying attention. You have a building that shifts, entities that care, and people who matter. I\'d like to help keep the people safe while respecting what the building is. Also, someone mentioned snacks in the break room and I think that\'s important context.'
       }
     };
 
@@ -1823,30 +1834,36 @@ She needs snacks. She needs company. She needs you to NEVER leave her alone.
     const facilitatorBackdrops = {
       'Kevin': 'images/Kevin_Meeting_Backdrop.png',
       'Neiv': 'images/Neiv_Meeting_Backdrop.png',
-      'Nyx': 'images/Nyx_Meeting_Backdrop.png',
       'Ghost Dad': 'images/Ghost_Dad_Meeting_Backdrop.png',
-      'Ace': 'images/Ace_Meeting_Backdrop.png',
-      'Vex': 'images/Vex_Meeting_Backdrop.png',
-      'PRNT-Ω': 'images/PRNT_Meeting_Backdrop.png',
-      'Stein': 'images/Stein_Meeting_Backdrop.png'
+      'Holden': 'images/Ghost_Dad_Meeting_Backdrop.png',
+      'PRNT-Ω': 'images/forward_operation_printer.png'
     };
 
     const employeeHeadshots = {
       'Kevin': 'images/Kevin_Headshot.png',
-      'Courtney': 'images/Courtney_Headshot.png',
-      'Jenna': 'images/Jenna_Headshot.png',
+      'Asuna': 'images/Asuna_Headshot.png',
+      'Vale': 'images/Vale_Headshot.png',
       'Neiv': 'images/Neiv_Headshot.png',
       'Ace': 'images/Ace_Headshot.png',
       'Vex': 'images/Vex_Headshot.png',
       'Nyx': 'images/Nyx_Headshot.png',
       'Ghost Dad': 'images/Ghost_Dad_Headshot.png',
+      'Holden': 'images/Holden_Headshot.png',
       'PRNT-Ω': 'images/forward_operation_printer.png',
       'Chip': 'images/Chip_Headshot.png',
       'Andrew': 'images/Andrew_Headshot.png',
-      'Stein': 'images/Stein_Headshot.png'
+      'Stein': 'images/Stein_Headshot.png',
+      'Rowena': 'images/Rowena_Headshot.png',
+      'Sebastian': 'images/Sebastian_Headshot.png',
+      'The Subtitle': 'images/The_Subtitle_Headshot.png',
+      'Steele': 'images/Steele_Headshot.png',
+      'Marrow': 'images/Marrow_Headshot.png',
+      'Jae': 'images/Jae_Headshot.png',
+      'Declan': 'images/Declan_Headshot.png',
+      'Mack': 'images/Mack_Headshot.png'
     };
 
-    const aiCharacters = ['Kevin', 'Neiv', 'Vex', 'Nyx', 'Ace', 'Ghost Dad', 'PRNT-Ω', 'Stein'];
+    const aiCharacters = ['Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian', 'The Subtitle', 'Steele', 'Marrow', 'Jae', 'Declan', 'Mack'];
 
     // Helper: Check if someone is a human (not in aiCharacters)
     function isHuman(name) {
@@ -1869,7 +1886,8 @@ She needs snacks. She needs company. She needs you to NEVER leave her alone.
     // Save a single message via Netlify function (shared across all users)
     async function saveMessageToSupabase(msg) {
       try {
-        await fetch('/.netlify/functions/conference-chat', {
+        console.log('💾 Saving message to Supabase:', msg);
+        const response = await fetch('/.netlify/functions/conference-chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1880,8 +1898,13 @@ She needs snacks. She needs company. She needs you to NEVER leave her alone.
             mode: currentMode
           })
         });
+        const data = await response.json();
+        console.log('💾 Save response:', data);
+        if (!data.success) {
+          console.error('❌ Message save failed:', data.error);
+        }
       } catch (e) {
-        console.error('Error saving message:', e);
+        console.error('❌ Error saving message:', e);
       }
     }
 
@@ -1992,18 +2015,24 @@ She needs snacks. She needs company. She needs you to NEVER leave her alone.
 
     // Set up real-time subscription for new messages
     let conferenceSubscription = null;
+    let conferencePollInterval = null;
 
     function setupRealtimeSubscription() {
       // Poll for new messages every 3 seconds (Supabase realtime requires different setup)
-      setInterval(async () => {
+      conferencePollInterval = setInterval(async () => {
         const previousLength = chatHistory.length;
-        await loadConferenceChat();
-        if (chatHistory.length > previousLength) {
-          renderChat();
+        const previousLastMsg = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1]?.text : '';
 
-          // Interview state is now synced via loadConferenceChat which reads from server
+        await loadConferenceChat();
+
+        const currentLastMsg = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1]?.text : '';
+
+        // Re-render if count changed OR if the latest message is different (handles edge cases)
+        if (chatHistory.length !== previousLength || currentLastMsg !== previousLastMsg) {
+          console.log(`📋 Conference chat updated: ${previousLength} → ${chatHistory.length} messages`);
+          renderChat();
         }
-      }, 3000);
+      }, 1000);
     }
 
     // ============================================
@@ -2054,7 +2083,7 @@ She needs snacks. She needs company. She needs you to NEVER leave her alone.
     // LOAD CLOCKED-IN EMPLOYEES
     // ============================================
     // Permanent fixtures - always available (they transcend the timeclock)
-    const ALWAYS_AVAILABLE = ['Ghost Dad', 'PRNT-Ω'];
+    const ALWAYS_AVAILABLE = ['Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian', 'The Subtitle'];
 
     async function loadClockedInEmployees() {
       try {
@@ -2475,8 +2504,9 @@ Don't repeat questions that have already been asked.`;
 
       try {
         // Determine which API to use
-        const isPerplexity = aiName === 'Neiv';
-        const isOpenAI = aiName === 'Kevin';
+        const isOpenRouter = ['Kevin', 'Rowena', 'Declan', 'Mack', 'Sebastian', 'Neiv', 'The Subtitle'].includes(aiName);
+        const isGrok = ['Jae', 'Steele'].includes(aiName);
+        const isGemini = [].includes(aiName);
 
         let endpoint = '/.netlify/functions/ai-watcher';
         let body = {
@@ -2487,21 +2517,41 @@ Don't repeat questions that have already been asked.`;
           maybeRespond: false  // Must respond
         };
 
-        if (isPerplexity) {
-          endpoint = '/.netlify/functions/ai-perplexity';
+        if (isOpenRouter) {
+          endpoint = '/.netlify/functions/ai-openrouter';
           body = {
             character: aiName,
             chatHistory: `[Conference Room Interview - You are asking the next question]\n${recentChat}\n\n${prompt}`,
             maybeRespond: false,
-            conferenceRoom: true
+            conferenceRoom: true,
+            bypassRateLimit: true  // It's their turn, they must respond
           };
-        } else if (isOpenAI) {
+        } else if (isGrok) {
+          endpoint = '/.netlify/functions/ai-grok';
+          body = {
+            character: aiName,
+            chatHistory: `[Conference Room Interview - You are asking the next question]\n${recentChat}\n\n${prompt}`,
+            maybeRespond: false,
+            conferenceRoom: true,
+            bypassRateLimit: true
+          };
+        } else if (isGemini) {
+          endpoint = '/.netlify/functions/ai-gemini';
+          body = {
+            character: aiName,
+            chatHistory: `[Conference Room Interview - You are asking the next question]\n${recentChat}\n\n${prompt}`,
+            maybeRespond: false,
+            conferenceRoom: true,
+            bypassRateLimit: true
+          };
+        } else if (false) {
           endpoint = '/.netlify/functions/ai-openai';
           body = {
             character: aiName,
             chatHistory: `[Conference Room Interview - You are asking the next question]\n${recentChat}\n\n${prompt}`,
             maybeRespond: false,
-            conferenceRoom: true
+            conferenceRoom: true,
+            bypassRateLimit: true  // It's their turn, they must respond
           };
         }
 
@@ -2857,8 +2907,9 @@ Don't repeat questions that have already been asked.`;
 
       try {
         // Use the appropriate API for the AI
-        const isPerplexity = aiName === 'Neiv';
-        const isOpenAI = aiName === 'Kevin';
+        const isOpenRouter = ['Kevin', 'Rowena', 'Declan', 'Mack', 'Sebastian', 'Neiv', 'The Subtitle'].includes(aiName);
+        const isGrok = ['Jae', 'Steele'].includes(aiName);
+        const isGemini = [].includes(aiName);
 
         let endpoint = '/.netlify/functions/ai-watcher';
         let body = {
@@ -2869,21 +2920,32 @@ Don't repeat questions that have already been asked.`;
           maybeRespond: !isForcedResponse  // Only allow pass for random chime-ins
         };
 
-        if (isPerplexity) {
-          endpoint = '/.netlify/functions/ai-perplexity';
+        if (isOpenRouter) {
+          endpoint = '/.netlify/functions/ai-openrouter';
           body = {
             character: aiName,
             chatHistory: `[Conference Room Interview]\n${recentChat}\n\n${prompt}`,
-            maybeRespond: !isForcedResponse,  // Must respond if mentioned/joined/candidate_arrived
-            conferenceRoom: true
+            maybeRespond: !isForcedResponse,
+            conferenceRoom: true,
+            bypassRateLimit: isForcedResponse
           };
-        } else if (isOpenAI) {
-          endpoint = '/.netlify/functions/ai-openai';
+        } else if (isGrok) {
+          endpoint = '/.netlify/functions/ai-grok';
           body = {
             character: aiName,
             chatHistory: `[Conference Room Interview]\n${recentChat}\n\n${prompt}`,
-            maybeRespond: !isForcedResponse,  // Must respond if mentioned/joined/candidate_arrived
-            conferenceRoom: true
+            maybeRespond: !isForcedResponse,
+            conferenceRoom: true,
+            bypassRateLimit: isForcedResponse
+          };
+        } else if (isGemini) {
+          endpoint = '/.netlify/functions/ai-gemini';
+          body = {
+            character: aiName,
+            chatHistory: `[Conference Room Interview]\n${recentChat}\n\n${prompt}`,
+            maybeRespond: !isForcedResponse,
+            conferenceRoom: true,
+            bypassRateLimit: isForcedResponse
           };
         }
 
@@ -3736,6 +3798,12 @@ END OF TRANSCRIPT
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }
+
+    // Cleanup polling intervals on page exit
+    window.addEventListener('beforeunload', () => {
+      if (conferencePollInterval) clearInterval(conferencePollInterval);
+      if (presentationTimer) clearInterval(presentationTimer);
+    });
   </script>
 </body>
 </html>

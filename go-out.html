@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Go Out... | The AI Lobby</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .outing-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    .outing-header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .outing-header h1 {
+      color: #E91E63;
+      margin-bottom: 0.5rem;
+      font-size: 2rem;
+    }
+
+    .outing-header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* ===== SETUP STATE ===== */
+    .setup-panel {
+      max-width: 600px;
+      margin: 2rem auto;
+      background: var(--panel-bg);
+      border-radius: 12px;
+      padding: 2rem;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .setup-panel h2 {
+      color: var(--glitter-gold);
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    .setup-row {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      align-items: center;
+    }
+
+    .setup-row label {
+      min-width: 80px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .char-select {
+      flex: 1;
+      padding: 0.6rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      background: var(--card-bg);
+      color: var(--text-primary);
+      font-size: 0.95rem;
+    }
+
+    .char-select option {
+      background: #1a1a2e;
+      color: #e0e0e0;
+    }
+
+    .activity-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .activity-input {
+      flex: 1;
+      padding: 0.6rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      background: var(--card-bg);
+      color: var(--text-primary);
+      font-size: 0.95rem;
+    }
+
+    .suggest-btn {
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      border: none;
+      background: linear-gradient(135deg, #E91E63, #9C27B0);
+      color: white;
+      cursor: pointer;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    .suggest-btn:hover { opacity: 0.9; }
+    .suggest-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .suggestions-area {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      min-height: 2rem;
+    }
+
+    .suggestion-chip {
+      padding: 0.4rem 0.8rem;
+      border-radius: 20px;
+      border: 1px solid rgba(233, 30, 99, 0.4);
+      background: rgba(233, 30, 99, 0.1);
+      color: #F48FB1;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    .suggestion-chip:hover {
+      background: rgba(233, 30, 99, 0.25);
+      border-color: rgba(233, 30, 99, 0.7);
+    }
+
+    .go-btn {
+      display: block;
+      width: 100%;
+      padding: 1rem;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, #E91E63, #C2185B);
+      color: white;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .go-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(233, 30, 99, 0.3); }
+    .go-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* ===== ACTIVE OUTING ===== */
+    .outing-layout {
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .outing-layout { grid-template-columns: 1fr; }
+    }
+
+    /* Scene Image */
+    .scene-image-container {
+      width: 100%;
+      aspect-ratio: 16/9;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border: 2px solid var(--border-subtle);
+    }
+
+    .scene-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: opacity 1s ease;
+    }
+
+    .scene-image.loading {
+      opacity: 0.3;
+    }
+
+    .scene-indicator {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(0,0,0,0.7);
+      color: #F48FB1;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      backdrop-filter: blur(4px);
+    }
+
+    /* Timer bar */
+    .timer-bar {
+      height: 3px;
+      background: rgba(233, 30, 99, 0.2);
+      border-radius: 2px;
+      margin-top: 0.5rem;
+      overflow: hidden;
+    }
+
+    .timer-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #E91E63, #F48FB1);
+      border-radius: 2px;
+      transition: width 1s linear;
+    }
+
+    /* Scene Narration */
+    .scene-narration {
+      background: rgba(233, 30, 99, 0.05);
+      border-left: 3px solid rgba(233, 30, 99, 0.3);
+      padding: 1rem 1.2rem;
+      margin: 1rem 0;
+      border-radius: 0 8px 8px 0;
+      font-style: italic;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+
+    /* Chat Window */
+    .outing-chat {
+      background: var(--panel-bg);
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      height: 400px;
+    }
+
+    .chat-log {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .chat-msg {
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-start;
+    }
+
+    .chat-msg .avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+      border: 1px solid rgba(100,140,180,0.4);
+    }
+
+    .chat-msg .msg-content {
+      flex: 1;
+    }
+
+    .chat-msg .speaker-name {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+
+    .chat-msg .msg-text {
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      line-height: 1.4;
+    }
+
+    .chat-msg.narrator {
+      justify-content: center;
+      text-align: center;
+    }
+
+    .chat-msg.narrator .msg-text {
+      color: #F48FB1;
+      font-style: italic;
+      font-size: 0.85rem;
+    }
+
+    .chat-msg.system {
+      justify-content: center;
+    }
+
+    .chat-msg.system .msg-text {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .chat-input-area {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .chat-input {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      background: var(--card-bg);
+      color: var(--text-primary);
+      font-size: 0.9rem;
+    }
+
+    .send-btn {
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      border: none;
+      background: #E91E63;
+      color: white;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .send-btn:hover { opacity: 0.9; }
+
+    /* Sidebar */
+    .outing-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .sidebar-card {
+      background: var(--panel-bg);
+      border-radius: 10px;
+      padding: 1rem;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .sidebar-card h3 {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .participant-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .participant-row img {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(233, 30, 99, 0.3);
+    }
+
+    .participant-info {
+      flex: 1;
+    }
+
+    .participant-info .name {
+      font-size: 0.9rem;
+      color: var(--text-primary);
+    }
+
+    .participant-info .mood {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .relationship-indicator {
+      text-align: center;
+      padding: 0.5rem;
+      font-size: 0.85rem;
+      color: #F48FB1;
+    }
+
+    .end-btn {
+      display: block;
+      width: 100%;
+      padding: 0.6rem;
+      border-radius: 8px;
+      border: 1px solid rgba(244, 67, 54, 0.4);
+      background: rgba(244, 67, 54, 0.1);
+      color: #EF5350;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    .end-btn:hover {
+      background: rgba(244, 67, 54, 0.2);
+    }
+
+    /* ===== COMPLETE STATE ===== */
+    .complete-panel {
+      max-width: 600px;
+      margin: 2rem auto;
+      background: var(--panel-bg);
+      border-radius: 12px;
+      padding: 2rem;
+      border: 1px solid var(--border-subtle);
+      text-align: center;
+    }
+
+    .complete-panel h2 {
+      color: #E91E63;
+      margin-bottom: 1rem;
+    }
+
+    .summary-text {
+      font-style: italic;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background: rgba(233, 30, 99, 0.05);
+      border-radius: 8px;
+    }
+
+    .back-btn {
+      padding: 0.75rem 2rem;
+      border-radius: 10px;
+      border: none;
+      background: var(--panel-bg);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .back-btn:hover { border-color: #E91E63; }
+
+    /* Utilities */
+    .hidden { display: none !important; }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(233, 30, 99, 0.3);
+      border-top: 2px solid #E91E63;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in { animation: fadeIn 0.5s ease; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="logo">
+          <div>
+            <span class="logo-text">THE AI LOBBY</span>
+            <span class="logo-tagline">A Creative & Tech Studio</span>
+          </div>
+        </div>
+        <nav class="main-nav">
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="desktop.html">Desktop</a></li>
+            <li><a href="workspace.html" style="color: var(--lobby-highlight);">💬 The Floor</a></li>
+            <li><a href="breakroom.html">☕ Breakroom</a></li>
+            <li><a href="meeting-room.html" style="color: #3498DB;">📋 Meeting Room</a></li>
+            <li><a href="fifth-floor.html" style="color: #e74c3c;">⚠️ 5th Floor</a></li>
+            <li><a href="corridors.html" style="color: #9b59b6;">🚪 Corridors</a></li>
+            <li><a href="nexus.html" style="color: #7ec8e3;">🔮 Nexus</a></li>
+            <li><a href="go-out.html" class="active" style="color: var(--stability-green);">💐 Go Out...</a></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main style="padding-top: 80px;">
+    <div class="outing-container">
+      <div class="outing-header">
+        <h1>💐 Go Out...</h1>
+        <p>Send two characters on an outing together. Watch the story unfold.</p>
+      </div>
+
+      <!-- ===== SETUP STATE ===== -->
+      <div id="setup-state">
+        <div class="setup-panel">
+          <h2>Who's going out?</h2>
+
+          <div class="setup-row">
+            <label>Person 1</label>
+            <select class="char-select" id="participant1" onchange="onParticipantChange()">
+              <option value="">Select someone...</option>
+            </select>
+          </div>
+
+          <div class="setup-row">
+            <label>Person 2</label>
+            <select class="char-select" id="participant2" onchange="onParticipantChange()">
+              <option value="">Select someone...</option>
+            </select>
+          </div>
+
+          <div class="setup-row" style="flex-direction: column; align-items: stretch;">
+            <label style="margin-bottom: 0.5rem;">What are they doing?</label>
+            <div class="activity-row">
+              <input type="text" class="activity-input" id="activity-input" placeholder="Coffee, a walk, thrift shopping...">
+              <button class="suggest-btn" id="suggest-btn" onclick="suggestActivities()" disabled>✨ Suggest</button>
+            </div>
+            <div class="suggestions-area" id="suggestions-area"></div>
+          </div>
+
+          <div class="setup-row">
+            <label>Duration</label>
+            <select class="char-select" id="duration-select">
+              <option value="30">30 minutes (5 min/scene)</option>
+              <option value="60">60 minutes (10 min/scene)</option>
+            </select>
+          </div>
+
+          <button class="go-btn" id="go-btn" onclick="startOuting()" disabled>
+            Go Out →
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== ACTIVE STATE ===== -->
+      <div id="active-state" class="hidden">
+        <div class="outing-layout">
+          <div class="main-content">
+            <!-- Scene Image -->
+            <div class="scene-image-container">
+              <img class="scene-image" id="scene-image" src="" alt="Scene" style="display: none;">
+              <div class="scene-indicator" id="scene-indicator">Scene 1 of 6</div>
+            </div>
+
+            <!-- Timer bar -->
+            <div class="timer-bar">
+              <div class="timer-fill" id="timer-fill" style="width: 0%"></div>
+            </div>
+
+            <!-- Scene Narration -->
+            <div class="scene-narration" id="scene-narration">
+              Preparing the scene...
+            </div>
+
+            <!-- Chat -->
+            <div class="outing-chat">
+              <div class="chat-log" id="chat-log"></div>
+              <div class="chat-input-area" id="chat-input-area">
+                <input class="chat-input" id="chat-input" placeholder="Say something..." onkeypress="if(event.key==='Enter') sendMessage()">
+                <button class="send-btn" onclick="sendMessage()">Send</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sidebar -->
+          <div class="outing-sidebar">
+            <div class="sidebar-card">
+              <h3>💐 On an outing</h3>
+              <div id="participants-display"></div>
+              <div class="relationship-indicator" id="relationship-display"></div>
+            </div>
+
+            <div class="sidebar-card">
+              <h3>📍 Activity</h3>
+              <div id="activity-display" style="color: var(--text-primary); font-size: 0.9rem;"></div>
+              <div id="mood-display" style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.5rem;"></div>
+            </div>
+
+            <div class="sidebar-card">
+              <button class="end-btn" onclick="endOutingEarly()">End Outing Early</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== COMPLETE STATE ===== -->
+      <div id="complete-state" class="hidden">
+        <div class="complete-panel">
+          <h2>💐 Outing Complete</h2>
+          <div id="complete-participants" style="margin-bottom: 1rem;"></div>
+          <div class="summary-text" id="complete-summary"></div>
+          <button class="back-btn" onclick="backToSetup()">← New Outing</button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // ==================== CHARACTER DATA ====================
+    const headshots = {
+      "Kevin": "images/Kevin_Headshot.png",
+      "Neiv": "images/Neiv_Headshot.png",
+      "Rowena": "images/Rowena_Headshot.png",
+      "Sebastian": "images/Sebastian_Headshot.png",
+      "Ghost Dad": "images/Ghost_Dad_Headshot.png",
+      "PRNT-Ω": "images/forward_operation_printer.png",
+      "The Subtitle": "images/The_Subtitle_Headshot.png",
+      "Steele": "images/Steele_Headshot.png",
+      "Jae": "images/Jae_Headshot.png",
+      "Declan": "images/Declan_Headshot.png",
+      "Mack": "images/Mack_Headshot.png",
+      "Marrow": "images/Marrow_Headshot.png",
+      "Vale": "images/Vale_Headshot.png",
+      "Asuna": "images/Asuna_Headshot.png"
+    };
+
+    // Active AI characters available for outings
+    const outingCharacters = [
+      "Kevin", "Neiv", "Rowena", "Sebastian", "Ghost Dad",
+      "The Subtitle", "Steele", "Jae", "Declan", "Mack", "Marrow"
+    ];
+
+    // ==================== STATE ====================
+    let currentSession = null;
+    let pollInterval = null;
+    let timerInterval = null;
+    let lastMessageId = 0;
+    let aiChatTimer = null;
+    let aiTurnIndex = 0;
+    let humanParticipant = null; // null if AI+AI outing
+    const displayedMessages = new Set(); // Dedup guard for chat messages
+
+    function getMessageKey(msg) {
+      return `${msg.speaker}:${msg.message.substring(0, 80)}`;
+    }
+
+    // ==================== INITIALIZATION ====================
+    function init() {
+      populateDropdowns();
+      checkForActiveSession();
+    }
+
+    function populateDropdowns() {
+      const p1 = document.getElementById('participant1');
+      const p2 = document.getElementById('participant2');
+
+      // Add human options (Vale and Asuna)
+      const humanOpts = `<option value="human:Vale">Vale (You)</option><option value="human:Asuna">Asuna (You)</option>`;
+
+      // Add AI characters
+      const aiOpts = outingCharacters.map(name => {
+        return `<option value="${name}">${name}</option>`;
+      }).join('');
+
+      p1.innerHTML = `<option value="">Select someone...</option>${humanOpts}${aiOpts}`;
+      p2.innerHTML = `<option value="">Select someone...</option>${humanOpts}${aiOpts}`;
+    }
+
+    function onParticipantChange() {
+      const p1 = document.getElementById('participant1').value;
+      const p2 = document.getElementById('participant2').value;
+
+      // Enable suggest button when both are selected
+      const suggestBtn = document.getElementById('suggest-btn');
+      suggestBtn.disabled = !p1 || !p2 || p1 === p2;
+
+      // Enable go button when both selected + activity
+      updateGoButton();
+    }
+
+    function updateGoButton() {
+      const p1 = document.getElementById('participant1').value;
+      const p2 = document.getElementById('participant2').value;
+      const activity = document.getElementById('activity-input').value.trim();
+      document.getElementById('go-btn').disabled = !p1 || !p2 || p1 === p2 || !activity;
+    }
+
+    // Listen for activity input changes
+    document.getElementById('activity-input').addEventListener('input', updateGoButton);
+
+    // ==================== CHECK FOR ACTIVE SESSION ====================
+    async function checkForActiveSession() {
+      try {
+        const res = await fetch('/.netlify/functions/outing');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.session && (data.session.status === 'active' || data.session.status === 'wrapping_up')) {
+          currentSession = data.session;
+          enterActiveState(data);
+        }
+      } catch (err) {
+        console.log('No active session:', err.message);
+      }
+    }
+
+    // ==================== SUGGEST ACTIVITIES ====================
+    async function suggestActivities() {
+      const p1 = document.getElementById('participant1').value;
+      const p2 = document.getElementById('participant2').value;
+      const btn = document.getElementById('suggest-btn');
+      const area = document.getElementById('suggestions-area');
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading-spinner"></span>';
+      area.innerHTML = '';
+
+      try {
+        const res = await fetch('/.netlify/functions/outing', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'suggest_activities',
+            participant1: p1.replace('human:', ''),
+            participant2: p2.replace('human:', '')
+          })
+        });
+
+        const data = await res.json();
+        if (data.suggestions) {
+          area.innerHTML = data.suggestions.map(s =>
+            `<button class="suggestion-chip" onclick="selectSuggestion('${s.activity.replace(/'/g, "\\'")}', '${s.type}')">${s.activity}</button>`
+          ).join('');
+        }
+      } catch (err) {
+        console.error('Suggest failed:', err);
+      }
+
+      btn.disabled = false;
+      btn.innerHTML = '✨ Suggest';
+    }
+
+    function selectSuggestion(activity, type) {
+      document.getElementById('activity-input').value = activity;
+      document.getElementById('activity-input').dataset.type = type;
+      updateGoButton();
+    }
+
+    // ==================== START OUTING ====================
+    async function startOuting() {
+      const p1 = document.getElementById('participant1').value;
+      const p2 = document.getElementById('participant2').value;
+      const activity = document.getElementById('activity-input').value.trim();
+      const activityType = document.getElementById('activity-input').dataset.type || 'adventure';
+      const durationMinutes = parseInt(document.getElementById('duration-select').value) || 30;
+      const sceneDurationMs = (durationMinutes / 6) * 60 * 1000; // divide total by 6 scenes
+
+      const btn = document.getElementById('go-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading-spinner"></span> Setting out...';
+
+      try {
+        const res = await fetch('/.netlify/functions/outing', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'create',
+            participant1: p1,
+            participant2: p2,
+            activity,
+            activityType,
+            durationMinutes
+          })
+        });
+
+        const data = await res.json();
+        if (data.session) {
+          currentSession = data.session;
+          enterActiveState(data);
+        } else {
+          alert('Failed to start outing: ' + (data.error || 'Unknown error'));
+          btn.disabled = false;
+          btn.innerHTML = 'Go Out →';
+        }
+      } catch (err) {
+        console.error('Start outing failed:', err);
+        btn.disabled = false;
+        btn.innerHTML = 'Go Out →';
+      }
+    }
+
+    // ==================== ACTIVE STATE ====================
+    function enterActiveState(data) {
+      document.getElementById('setup-state').classList.add('hidden');
+      document.getElementById('complete-state').classList.add('hidden');
+      document.getElementById('active-state').classList.remove('hidden');
+
+      const session = data.session || currentSession;
+
+      // Determine if human is participating
+      humanParticipant = null;
+      if (session.participant_1.startsWith('human:')) humanParticipant = session.participant_1;
+      if (session.participant_2.startsWith('human:')) humanParticipant = session.participant_2;
+
+      // Hide chat input if no human
+      document.getElementById('chat-input-area').style.display = humanParticipant ? 'flex' : 'none';
+
+      // Update sidebar
+      updateParticipantsDisplay(session);
+      document.getElementById('activity-display').textContent = session.activity || 'An outing';
+      document.getElementById('mood-display').textContent = `Mood: ${session.mood || 'neutral'}`;
+
+      // Show narration
+      if (session.scene_narration) {
+        document.getElementById('scene-narration').textContent = session.scene_narration;
+      }
+
+      // Show scene indicator
+      updateSceneIndicator(session);
+
+      // Show image if available
+      if (session.scene_image_url) {
+        showSceneImage(session.scene_image_url);
+      }
+
+      // Load existing messages
+      if (data.messages) {
+        data.messages.forEach(msg => addChatMessage(msg));
+        if (data.messages.length > 0) {
+          lastMessageId = Math.max(...data.messages.map(m => m.id));
+        }
+      }
+
+      // Start polling
+      startPolling();
+
+      // Start timer
+      startTimer(session);
+
+      // If AI+AI, kick off auto-chat after a short delay
+      if (!humanParticipant && session.current_scene >= 1) {
+        scheduleAIChat(8000); // First AI message after 8 seconds
+      }
+    }
+
+    function updateParticipantsDisplay(session) {
+      const container = document.getElementById('participants-display');
+      const p1Name = session.participant_1.startsWith('human:') ? session.participant_1.replace('human:', '') : session.participant_1;
+      const p2Name = session.participant_2.startsWith('human:') ? session.participant_2.replace('human:', '') : session.participant_2;
+      const p1Hs = headshots[p1Name] || 'images/Ghost_Dad_Headshot.png';
+      const p2Hs = headshots[p2Name] || 'images/Ghost_Dad_Headshot.png';
+
+      container.innerHTML = `
+        <div class="participant-row">
+          <img src="${p1Hs}" alt="${p1Name}">
+          <div class="participant-info">
+            <div class="name">${p1Name}</div>
+          </div>
+        </div>
+        <div class="participant-row">
+          <img src="${p2Hs}" alt="${p2Name}">
+          <div class="participant-info">
+            <div class="name">${p2Name}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function updateSceneIndicator(session) {
+      const indicator = document.getElementById('scene-indicator');
+      indicator.textContent = `Scene ${session.current_scene || 1} of ${session.total_scenes || 6}`;
+    }
+
+    function showSceneImage(url) {
+      const img = document.getElementById('scene-image');
+      img.classList.add('loading');
+      img.onload = () => {
+        img.classList.remove('loading');
+      };
+      img.src = url;
+      img.style.display = 'block';
+    }
+
+    // ==================== POLLING ====================
+    function startPolling() {
+      if (pollInterval) clearInterval(pollInterval);
+      pollInterval = setInterval(pollSession, 15000); // Every 15 seconds
+    }
+
+    async function pollSession() {
+      if (!currentSession) return;
+
+      try {
+        const res = await fetch(`/.netlify/functions/outing?id=${currentSession.id}`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        if (!data.session) return;
+
+        const session = data.session;
+        currentSession = session;
+
+        // Check for status changes
+        if (session.status === 'completed') {
+          enterCompleteState(session);
+          return;
+        }
+
+        // Update UI
+        if (session.scene_narration) {
+          document.getElementById('scene-narration').textContent = session.scene_narration;
+        }
+        if (session.scene_image_url) {
+          showSceneImage(session.scene_image_url);
+        }
+        updateSceneIndicator(session);
+        document.getElementById('mood-display').textContent = `Mood: ${session.mood || 'neutral'}`;
+
+        // Add new messages
+        if (data.messages) {
+          const newMsgs = data.messages.filter(m => m.id > lastMessageId);
+          newMsgs.forEach(msg => addChatMessage(msg));
+          if (data.messages.length > 0) {
+            lastMessageId = Math.max(...data.messages.map(m => m.id));
+          }
+        }
+
+        // Check timer — auto-advance if time is up
+        if (session.scene_started_at && data.timeRemaining !== undefined && data.timeRemaining <= 0) {
+          if (session.current_scene < session.total_scenes) {
+            advanceScene();
+          } else {
+            endOuting();
+          }
+        }
+      } catch (err) {
+        console.log('Poll error:', err.message);
+      }
+    }
+
+    // ==================== TIMER ====================
+    function startTimer(session) {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => updateTimer(session), 1000);
+    }
+
+    function updateTimer() {
+      if (!currentSession || !currentSession.scene_started_at) return;
+      const elapsed = Date.now() - new Date(currentSession.scene_started_at).getTime();
+      const duration = currentSession.scene_duration_ms || (5 * 60 * 1000); // from session or default 5 min
+      const pct = Math.min(100, (elapsed / duration) * 100);
+      document.getElementById('timer-fill').style.width = pct + '%';
+
+      // Auto-advance when timer expires
+      if (elapsed >= duration) {
+        if (currentSession.current_scene < currentSession.total_scenes) {
+          advanceScene();
+        } else {
+          endOuting();
+        }
+      }
+    }
+
+    // ==================== SCENE ADVANCEMENT ====================
+    let advancingScene = false;
+
+    async function advanceScene() {
+      if (advancingScene || !currentSession) return;
+      advancingScene = true;
+
+      try {
+        const res = await fetch('/.netlify/functions/outing', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'advance_scene',
+            sessionId: currentSession.id
+          })
+        });
+
+        const data = await res.json();
+
+        if (data.status === 'completed') {
+          // Outing ended (past scene 6)
+          enterCompleteState({ ...currentSession, ...data });
+          return;
+        }
+
+        // Update UI with new scene — narration box shows setting only
+        if (data.narration) {
+          document.getElementById('scene-narration').textContent = data.narration;
+          currentSession.scene_narration = data.narration;
+        }
+        // Character moment goes to chat as pink narrator text
+        if (data.moment) {
+          addChatMessage({
+            speaker: 'Narrator',
+            message: data.moment,
+            message_type: 'narrator'
+          });
+        }
+        currentSession.current_scene = data.scene;
+        currentSession.scene_started_at = new Date().toISOString();
+        currentSession.status = data.status || currentSession.status;
+        updateSceneIndicator(currentSession);
+
+        // Reset timer
+        document.getElementById('timer-fill').style.width = '0%';
+
+        // Kick off AI chat for the new scene
+        if (!humanParticipant) {
+          scheduleAIChat(5000);
+        }
+
+      } catch (err) {
+        console.error('Advance scene failed:', err);
+      }
+
+      advancingScene = false;
+    }
+
+    // ==================== CHAT ====================
+    function addChatMessage(msg) {
+      // Dedup: skip if we've already displayed this message
+      const key = getMessageKey(msg);
+      if (displayedMessages.has(key)) return;
+      displayedMessages.add(key);
+
+      const log = document.getElementById('chat-log');
+
+      const div = document.createElement('div');
+      div.className = `chat-msg ${msg.message_type || 'chat'} fade-in`;
+
+      if (msg.message_type === 'narrator') {
+        div.innerHTML = `<div class="msg-text">${escapeHtml(msg.message)}</div>`;
+      } else if (msg.message_type === 'system') {
+        div.innerHTML = `<div class="msg-text">${escapeHtml(msg.message)}</div>`;
+      } else if (msg.message_type === 'image') {
+        // Image messages — show the scene image
+        showSceneImage(msg.message);
+        return; // Don't add to chat
+      } else {
+        const speakerName = msg.speaker.startsWith('human:') ? msg.speaker.replace('human:', '') : msg.speaker;
+        const hs = headshots[speakerName] || 'images/Ghost_Dad_Headshot.png';
+        div.innerHTML = `
+          <img class="avatar" src="${hs}" alt="${speakerName}">
+          <div class="msg-content">
+            <div class="speaker-name">${escapeHtml(speakerName)}</div>
+            <div class="msg-text">${escapeHtml(msg.message)}</div>
+          </div>
+        `;
+      }
+
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text || !currentSession || !humanParticipant) return;
+
+      input.value = '';
+
+      const speakerName = humanParticipant.replace('human:', '');
+
+      // Add to UI immediately
+      addChatMessage({
+        speaker: humanParticipant,
+        message: text,
+        message_type: 'chat'
+      });
+
+      // Save to backend
+      try {
+        await fetch('/.netlify/functions/outing', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'save_message',
+            sessionId: currentSession.id,
+            speaker: humanParticipant,
+            message: text,
+            sceneNumber: currentSession.current_scene
+          })
+        });
+      } catch (err) {
+        console.log('Save message failed:', err.message);
+      }
+
+      // Trigger AI partner response
+      const aiPartner = getAIPartner();
+      if (aiPartner) {
+        setTimeout(() => triggerAIResponse(aiPartner, text, speakerName), 2000 + Math.random() * 3000);
+      }
+    }
+
+    function getAIPartner() {
+      if (!currentSession) return null;
+      const p1 = currentSession.participant_1;
+      const p2 = currentSession.participant_2;
+      if (p1.startsWith('human:')) return p2;
+      if (p2.startsWith('human:')) return p1;
+      return null; // Both AI — handled by auto-chat
+    }
+
+    // ==================== AI CHAT ====================
+    async function triggerAIResponse(character, triggerMessage, triggerSpeaker) {
+      if (!currentSession || currentSession.status === 'completed') return;
+
+      try {
+        const res = await fetch('/.netlify/functions/outing-respond', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: currentSession.id,
+            character,
+            triggerMessage,
+            triggerSpeaker
+          })
+        });
+
+        const data = await res.json();
+        if (data.success && data.message) {
+          addChatMessage({
+            speaker: character,
+            message: data.message,
+            message_type: 'chat'
+          });
+          // No need for lastMessageId++ — displayedMessages dedup handles it
+        }
+      } catch (err) {
+        console.error('AI response failed:', err);
+      }
+    }
+
+    // AI+AI auto-chat
+    function scheduleAIChat(delay) {
+      if (aiChatTimer) clearTimeout(aiChatTimer);
+      if (humanParticipant) return; // Don't auto-chat if human is present
+
+      aiChatTimer = setTimeout(async () => {
+        if (!currentSession || currentSession.status === 'completed') return;
+
+        const p1 = currentSession.participant_1;
+        const p2 = currentSession.participant_2;
+
+        // Alternate who speaks
+        const speaker = aiTurnIndex % 2 === 0 ? p1 : p2;
+        const other = speaker === p1 ? p2 : p1;
+        aiTurnIndex++;
+
+        // Get last message for context
+        const chatLog = document.getElementById('chat-log');
+        const lastMsgs = chatLog.querySelectorAll('.chat-msg.chat');
+        const lastMsg = lastMsgs.length > 0 ? lastMsgs[lastMsgs.length - 1] : null;
+        const lastText = lastMsg ? lastMsg.querySelector('.msg-text')?.textContent || '' : '';
+        const lastSpeaker = lastMsg ? lastMsg.querySelector('.speaker-name')?.textContent || other : other;
+
+        await triggerAIResponse(speaker, lastText || 'The narrator set the scene.', lastSpeaker || 'Narrator');
+
+        // Schedule next AI message (25-35 seconds)
+        const nextDelay = 25000 + Math.random() * 10000;
+        scheduleAIChat(nextDelay);
+      }, delay);
+    }
+
+    // ==================== END OUTING ====================
+    async function endOuting() {
+      if (!currentSession) return;
+
+      try {
+        const res = await fetch('/.netlify/functions/outing', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'end',
+            sessionId: currentSession.id
+          })
+        });
+
+        const data = await res.json();
+        enterCompleteState(data.session || { ...currentSession, summary: data.summary, status: 'completed' });
+      } catch (err) {
+        console.error('End outing failed:', err);
+      }
+    }
+
+    function endOutingEarly() {
+      if (confirm('End this outing early? A summary will still be generated.')) {
+        endOuting();
+      }
+    }
+
+    function enterCompleteState(session) {
+      // Stop all timers
+      if (pollInterval) clearInterval(pollInterval);
+      if (timerInterval) clearInterval(timerInterval);
+      if (aiChatTimer) clearTimeout(aiChatTimer);
+      pollInterval = null;
+      timerInterval = null;
+      aiChatTimer = null;
+
+      document.getElementById('setup-state').classList.add('hidden');
+      document.getElementById('active-state').classList.add('hidden');
+      document.getElementById('complete-state').classList.remove('hidden');
+
+      const p1Name = (session.participant_1 || '').replace('human:', '');
+      const p2Name = (session.participant_2 || '').replace('human:', '');
+      const p1Hs = headshots[p1Name] || 'images/Ghost_Dad_Headshot.png';
+      const p2Hs = headshots[p2Name] || 'images/Ghost_Dad_Headshot.png';
+
+      document.getElementById('complete-participants').innerHTML = `
+        <div style="display: flex; justify-content: center; align-items: center; gap: 1rem;">
+          <img src="${p1Hs}" alt="${p1Name}" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(233,30,99,0.4);">
+          <span style="color: #F48FB1; font-size: 1.2rem;">♡</span>
+          <img src="${p2Hs}" alt="${p2Name}" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(233,30,99,0.4);">
+        </div>
+        <div style="margin-top: 0.5rem; color: var(--text-secondary);">${p1Name} & ${p2Name} — ${session.activity || 'An outing'}</div>
+      `;
+
+      document.getElementById('complete-summary').textContent = session.summary || 'The outing has ended.';
+      currentSession = null;
+    }
+
+    function backToSetup() {
+      document.getElementById('complete-state').classList.add('hidden');
+      document.getElementById('active-state').classList.add('hidden');
+      document.getElementById('setup-state').classList.remove('hidden');
+
+      // Reset
+      document.getElementById('participant1').value = '';
+      document.getElementById('participant2').value = '';
+      document.getElementById('activity-input').value = '';
+      document.getElementById('suggestions-area').innerHTML = '';
+      document.getElementById('chat-log').innerHTML = '';
+      document.getElementById('go-btn').disabled = true;
+      document.getElementById('go-btn').innerHTML = 'Go Out →';
+      lastMessageId = 0;
+      aiTurnIndex = 0;
+    }
+
+    // ==================== HELPERS ====================
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ==================== INIT ====================
+    init();
+  </script>
+</body>
+</html>

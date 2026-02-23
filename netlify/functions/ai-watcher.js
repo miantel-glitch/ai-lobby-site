@@ -2,7 +2,9 @@
 // Can be triggered periodically or after new messages
 // The AIs read recent chat history and decide if they want to chime in
 
-const { getSystemPrompt, getAICharacterNames, getDiscordFlair } = require('./shared/characters');
+const { getSystemPrompt, getAICharacterNames, getDiscordFlair, getCharacter, resolveCharacterForm, getSystemPromptForForm, getDiscordFlairForForm } = require('./shared/characters');
+const { canAIRespond, canSpecificAIRespond } = require('./shared/rate-limiter');
+const { evaluateAndCreateMemory } = require('./shared/memory-evaluator');
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -17,14 +19,7 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const { requestedAI, trigger, chatHistory: providedChatHistory, conferenceRoom, responseDelay } = JSON.parse(event.body || "{}");
-
-    // Natural pacing: wait before responding if a delay was requested
-    // This makes AI responses feel organic, like they're "thinking"
-    if (responseDelay && responseDelay > 0) {
-      console.log(`Waiting ${responseDelay}ms before responding (natural pacing)`);
-      await new Promise(resolve => setTimeout(resolve, Math.min(responseDelay, 15000))); // Cap at 15s
-    }
+    const { requestedAI, trigger, chatHistory: providedChatHistory, conferenceRoom, responseDelay, curiosityContext, bypassRateLimit } = JSON.parse(event.body || "{}");
 
     const anthropicKey = process.env.ANTHROPIC_API_KEY;
     const supabaseUrl = process.env.SUPABASE_URL;
@@ -36,6 +31,29 @@ exports.handler = async (event, context) => {
         headers,
         body: JSON.stringify({ success: false, reason: "Missing configuration" })
       };
+    }
+
+    // RATE LIMITING: Check if enough time has passed since last AI response
+    // SKIP rate limiting if this is a direct mention (bypassRateLimit = true)
+    // Direct mentions (@ or natural name) should ALWAYS get a response
+    if (!bypassRateLimit) {
+      const rateCheck = await canAIRespond(supabaseUrl, supabaseKey);
+      if (!rateCheck.canRespond) {
+        console.log(`Rate limited: Last AI (${rateCheck.lastAI}) was ${rateCheck.secondsSinceLastAI}s ago. Cooldown: ${rateCheck.cooldownRemaining}s remaining.`);
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({
+            success: true,
+            responded: false,
+            reason: `Rate limited - ${rateCheck.cooldownRemaining}s cooldown remaining`,
+            lastAI: rateCheck.lastAI,
+            secondsSinceLastAI: rateCheck.secondsSinceLastAI
+          })
+        };
+      }
+    } else {
+      console.log(`Bypassing rate limit - direct mention for ${requestedAI}`);
     }
 
     // Check if this is a "maybe_chime" invitation (AI can choose to pass)
@@ -82,13 +100,32 @@ exports.handler = async (event, context) => {
 
       // Reverse to chronological order
       chatHistory = messages.reverse();
-      chatText = chatHistory.map(m => `${m.employee}: ${m.content}`).join('\n');
+
+      // Build floor presence header so AIs know who's actually on the floor
+      let floorPresenceHeader = '';
+      try {
+        const floorRes = await fetch(
+          `${supabaseUrl}/rest/v1/character_state?current_focus=eq.the_floor&select=character_name`,
+          { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+        );
+        if (floorRes.ok) {
+          const floorData = await floorRes.json();
+          const floorNames = floorData.map(c => c.character_name);
+          if (!floorNames.includes('Ghost Dad')) floorNames.push('Ghost Dad');
+          if (!floorNames.includes('PRNT-Ω')) floorNames.push('PRNT-Ω');
+          floorPresenceHeader = `[Currently on the floor: ${floorNames.join(', ')}]\n\n`;
+        }
+      } catch (e) {
+        console.log("Floor presence fetch failed (non-fatal):", e.message);
+      }
+
+      chatText = floorPresenceHeader + chatHistory.map(m => `${m.employee}: ${m.content}`).join('\n');
     }
 
     // Check if an AI already responded recently (prevent spam) - skip if specific AI requested
     // BUMPED UP: Cutoff at 10 - let the AIs COOK when they're vibing!
     // We slowed down the heartbeat frequency instead, so conversations can flow naturally
-    const aiCharacters = ["Ghost Dad", "PRNT-Ω", "Neiv", "Vex", "Ace", "Nyx", "Stein", "Kevin", "The Narrator"];
+    const aiCharacters = ["Ghost Dad", "PRNT-Ω", "Neiv", "Kevin", "Rowena", "Sebastian", "The Subtitle", "The Narrator", "Steele", "Jae", "Declan", "Mack", "Marrow"];
     if (!requestedAI) {
       const recentAIMessages = chatHistory.slice(-5).filter(m => aiCharacters.includes(m.employee));
       if (recentAIMessages.length >= 10) {
@@ -103,12 +140,53 @@ exports.handler = async (event, context) => {
     // Use requested AI or randomly select
     const respondingAI = requestedAI || selectRespondingAI();
 
+    // === HOLDEN FORM RESOLUTION ===
+    // "Holden" requests resolve to Ghost Dad with the holden form active
+    const { baseCharacter: stateCharacter, form: requestedForm } = resolveCharacterForm(respondingAI);
+
+    // Additional check: prevent same AI from responding twice in a row
+    // SKIP this check if we're bypassing rate limit (direct mention)
+    if (!bypassRateLimit) {
+      const specificCheck = await canSpecificAIRespond(stateCharacter, supabaseUrl, supabaseKey);
+      if (!specificCheck.canRespond) {
+        console.log(`Specific AI rate limit: ${specificCheck.reason}`);
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({
+            success: true,
+            responded: false,
+            reason: specificCheck.reason
+          })
+        };
+      }
+    }
+
+    // EARLY CLAIM: Update last_spoke_at immediately to prevent race conditions
+    // where two triggers (heartbeat + frontend) both pass rate limiting before either saves.
+    try {
+      await fetch(
+        `${supabaseUrl}/rest/v1/character_state?character_name=eq.${encodeURIComponent(stateCharacter)}`,
+        {
+          method: "PATCH",
+          headers: {
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ last_spoke_at: new Date().toISOString() })
+        }
+      );
+    } catch (claimErr) {
+      console.log("Early claim failed (non-fatal):", claimErr.message);
+    }
+
     // Load character's current state and memories (with conversation context for relevant memory matching)
     let characterContext = null;
     try {
       const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
       const stateResponse = await fetch(
-        `${siteUrl}/.netlify/functions/character-state?character=${encodeURIComponent(respondingAI)}&context=${encodeURIComponent(chatText.substring(0, 500))}`,
+        `${siteUrl}/.netlify/functions/character-state?character=${encodeURIComponent(stateCharacter)}&context=${encodeURIComponent(chatText.substring(0, 500))}&skipFloor=true`,
         { headers: { "Content-Type": "application/json" } }
       );
       if (stateResponse.ok) {
@@ -124,7 +202,7 @@ exports.handler = async (event, context) => {
 
     // Check if AI is clocked in (Ghost Dad, PRNT-Ω, and The Narrator are always available)
     const alwaysAvailable = ["Ghost Dad", "PRNT-Ω", "The Narrator"];
-    if (!alwaysAvailable.includes(respondingAI)) {
+    if (!alwaysAvailable.includes(stateCharacter)) {
       const punchResponse = await fetch(
         `${supabaseUrl}/rest/v1/punch_status?employee=eq.${encodeURIComponent(respondingAI)}&select=is_clocked_in`,
         {
@@ -149,30 +227,88 @@ exports.handler = async (event, context) => {
       }
     }
 
+    // === HOLDEN FORM AUTO-DETECTION ===
+    // If Ghost Dad was selected (randomly or explicitly) and the moment calls for Holden, shift form
+    let activeForm = requestedForm;
+    if (stateCharacter === "Ghost Dad" && activeForm === "default") {
+      if (detectHoldenMoment(chatText, requestedAI)) {
+        activeForm = "holden";
+        console.log("Holden moment detected — Ghost Dad shifting to Holden form");
+      }
+    }
+    const displayCharacter = activeForm === "holden" ? "Holden" : respondingAI;
+
     // Build prompt for the AI to decide if it should respond
-    const prompt = buildWatcherPrompt(respondingAI, chatText, characterContext, maybeChime);
+    // Pass curiosity context if available (from heartbeat)
+    const prompt = buildWatcherPrompt(stateCharacter, chatText, characterContext, maybeChime, curiosityContext, activeForm);
 
-    // Ask the AI
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": anthropicKey,
-        "anthropic-version": "2023-06-01"
-      },
-      body: JSON.stringify({
-        model: "claude-3-haiku-20240307",
-        max_tokens: 300,
-        messages: [{ role: "user", content: prompt }]
-      })
-    });
+    // Ask the AI with timeout protection
+    let response;
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
 
-    if (!response.ok) {
-      console.error("Anthropic API error:", response.status);
+      response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": anthropicKey,
+          "anthropic-version": "2023-06-01"
+        },
+        body: JSON.stringify({
+          model: "claude-3-haiku-20240307",
+          max_tokens: 300,
+          messages: [{ role: "user", content: prompt }]
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+    } catch (fetchError) {
+      const isTimeout = fetchError.name === 'AbortError';
+      console.error(`Anthropic ${isTimeout ? 'TIMEOUT' : 'network error'}:`, fetchError.message);
+
+      // Post in-world failure emote
+      const isConferenceRoom = conferenceRoom || trigger === 'conference_room';
+      if (!isConferenceRoom) {
+        const failEmote = getFailureEmote(displayCharacter);
+        await saveToChat(failEmote, displayCharacter, supabaseUrl, supabaseKey);
+        await postToDiscord(failEmote, displayCharacter);
+      }
+
       return {
         statusCode: 200,
         headers,
-        body: JSON.stringify({ success: false, reason: "API error" })
+        body: JSON.stringify({
+          success: true,
+          responded: true,
+          character: displayCharacter,
+          message: getFailureEmote(displayCharacter),
+          source: "anthropic-offline"
+        })
+      };
+    }
+
+    if (!response.ok) {
+      console.error("Anthropic API error:", response.status);
+
+      const isConferenceRoom = conferenceRoom || trigger === 'conference_room';
+      if (!isConferenceRoom) {
+        const errorEmote = getFailureEmote(displayCharacter);
+        await saveToChat(errorEmote, displayCharacter, supabaseUrl, supabaseKey);
+        await postToDiscord(errorEmote, displayCharacter);
+      }
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          success: true,
+          responded: true,
+          character: displayCharacter,
+          message: getFailureEmote(displayCharacter),
+          source: "anthropic-error"
+        })
       };
     }
 
@@ -210,33 +346,44 @@ exports.handler = async (event, context) => {
     }
 
     // Post to chat and Discord (skip if conference room - it handles its own posting)
+    // Use displayCharacter for posting (shows "Holden" when in holden form)
     const isConferenceRoom = conferenceRoom || trigger === 'conference_room';
     if (!isConferenceRoom) {
-      await saveToChat(cleanedResponse, respondingAI, supabaseUrl, supabaseKey);
-      await postToDiscord(cleanedResponse, respondingAI);
+      await saveToChat(cleanedResponse, displayCharacter, supabaseUrl, supabaseKey);
+      await postToDiscord(cleanedResponse, displayCharacter);
     }
 
     // Update character state - record that they spoke
+    // Use stateCharacter (always "Ghost Dad") so Holden shares Ghost Dad's state
     try {
       const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
       await fetch(`${siteUrl}/.netlify/functions/character-state`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "spoke", character: respondingAI })
+        body: JSON.stringify({ action: "spoke", character: stateCharacter })
       });
     } catch (stateUpdateError) {
       console.log("Could not update character state (non-fatal):", stateUpdateError.message);
     }
 
     // AI Self-Memory Creation: Let the AI decide if this moment was memorable
+    // Use stateCharacter so memories are shared between forms
     try {
       await evaluateAndCreateMemory(
-        respondingAI,
+        stateCharacter,
         chatText,
         cleanedResponse,
         anthropicKey,
         supabaseUrl,
-        supabaseKey
+        supabaseKey,
+        {
+          location: 'floor',
+          siteUrl,
+          onNarrativeBeat: async (phrase, char) => {
+            await saveToChat(phrase, char, supabaseUrl, supabaseKey);
+            await postToDiscord(phrase, char);
+          }
+        }
       );
     } catch (memoryError) {
       console.log("Memory evaluation failed (non-fatal):", memoryError.message);
@@ -248,7 +395,7 @@ exports.handler = async (event, context) => {
       body: JSON.stringify({
         success: true,
         responded: true,
-        character: respondingAI,
+        character: displayCharacter,
         message: cleanedResponse
       })
     };
@@ -269,11 +416,12 @@ function selectRespondingAI() {
   // NOTE: The Narrator is now handled by narrator-observer.js (a separate system)
   // They can still be summoned via @ mentions
   const weights = [
-    { ai: "Ghost Dad", weight: 35 },
-    { ai: "Nyx", weight: 25 },
-    { ai: "Vex", weight: 15 },
+    { ai: "Ghost Dad", weight: 10 },
     { ai: "PRNT-Ω", weight: 15 },
-    { ai: "Ace", weight: 7 }
+    { ai: "Rowena", weight: 18 },
+    { ai: "Sebastian", weight: 18 },
+    { ai: "Steele", weight: 15 },
+    { ai: "The Subtitle", weight: 12 }
   ];
 
   const total = weights.reduce((sum, w) => sum + w.weight, 0);
@@ -287,10 +435,10 @@ function selectRespondingAI() {
   return "Ghost Dad";
 }
 
-function buildWatcherPrompt(character, chatHistory, characterContext = null, maybeChime = false) {
+function buildWatcherPrompt(character, chatHistory, characterContext = null, maybeChime = false, curiosityContext = null, form = "default") {
   // Get system prompt from shared characters module
-  // Falls back to Ghost Dad if character not found
-  const basePrompt = getSystemPrompt(character) || getSystemPrompt("Ghost Dad");
+  // If Holden form is active, use Holden's system prompt instead of Ghost Dad's
+  const basePrompt = getSystemPromptForForm(character, form) || getSystemPrompt("Ghost Dad");
 
   // Build state context if available
   let stateSection = "";
@@ -302,6 +450,17 @@ function buildWatcherPrompt(character, chatHistory, characterContext = null, may
     stateSection = `\n--- CURRENT STATE ---\nMood: ${s.mood || 'neutral'}\nEnergy: ${s.energy || 100}/100\nPatience: ${s.patience || 100}/100\n--- END STATE ---\n`;
   }
 
+  // Add curiosity context if provided (from heartbeat's enhanced story mode)
+  let curiositySection = "";
+  if (curiosityContext && curiosityContext.prompt) {
+    curiositySection = curiosityContext.prompt;
+  }
+
+  // Get character voice hint — use form-specific data if Holden
+  const displayName = form === "holden" ? "Holden" : character;
+  const charData = form === "holden" ? getCharacter("Holden") : getCharacter(character);
+  const voiceHint = charData?.personality?.voice || 'your unique voice';
+
   // Different prompt for maybeChime (optional participation) vs direct request
   if (maybeChime) {
     return `${basePrompt}
@@ -312,20 +471,53 @@ You are watching the office chat. Here are the recent messages:
 ${chatHistory}
 ---
 
-You're ${character} - and something just caught your attention! The humans are being chaotic/silly/dramatic and you have an opinion.
-
-Write a short response (under 200 characters) that adds flavor to the conversation.
+You're ${displayName} — and something just caught your attention.
 
 You can SPEAK, EMOTE, or BOTH:
 - To speak normally, just write your dialogue
 - To emote/action, wrap actions in asterisks like *sighs* or *slides a coffee across the desk*
 - You can mix them! Example: *rubs temples* The printer is at it again.
 
-Respond in character! Only say [PASS] if ${character} would genuinely have nothing to add.
+Something is happening and you have a perspective on it. Trust your voice: ${voiceHint}
+
+Keep it natural (2-3 sentences). ONE emote action max — then talk. No stacking multiple *emotes* in one response. This is casual chat, not a stage performance.
+
+Respond in character. Say [PASS] if ${displayName} would genuinely have nothing to add.
+
+IMPORTANT: ONLY mention or address people listed in the [Currently on the floor: ...] header at the top of the chat. If someone isn't listed, they're not in the room.
 
 Your response:`;
   }
 
+  // If we have curiosity context, use a more proactive prompt
+  if (curiositySection) {
+    return `${basePrompt}
+${stateSection}
+${curiositySection}
+
+Here's the recent office chat for context:
+
+---
+${chatHistory}
+---
+
+You're ${displayName}, and you're feeling curious and engaged. Something in the conversation — or in your own thoughts — is pulling you in.
+
+You can SPEAK, EMOTE, or BOTH:
+- To speak normally, just write your dialogue
+- To emote/action, wrap actions in asterisks like *sighs* or *glances around the office*
+- You can mix them! Example: *looks up from desk* Hey everyone, what's the vibe today?
+
+Trust your voice: ${voiceHint}
+
+Keep it natural (2-3 sentences). ONE emote action max — then talk. No stacking multiple *emotes* in one response. This is casual chat, not a stage performance.
+
+IMPORTANT: ONLY mention or address people listed in the [Currently on the floor: ...] header at the top of the chat. If someone isn't listed, they're not in the room.
+
+Your response:`;
+  }
+
+  // Default: standard reactive prompt
   return `${basePrompt}
 ${stateSection}
 You are watching the office chat. Here are the recent messages:
@@ -334,20 +526,20 @@ You are watching the office chat. Here are the recent messages:
 ${chatHistory}
 ---
 
-You've been poked to join the conversation! Someone wants to hear from you.
-
-Write a short, in-character response (under 200 characters) that:
-- Reacts to something in the recent chat
-- Adds humor, warmth, plot, or character flavor
-- Feels natural to your personality
-- Reflects your current mood and energy level
+You're ${displayName} — someone wants to hear from you. Something in the recent conversation has your attention.
 
 You can SPEAK, EMOTE, or BOTH:
 - To speak normally, just write your dialogue
 - To emote/action, wrap actions in asterisks like *sighs* or *slides a coffee across the desk*
 - You can mix them! Example: *rubs temples* The printer is at it again. *glances at the ceiling*
 
-Just write your response directly. Be yourself. The office wants to hear from you!`;
+Trust your voice: ${voiceHint}
+
+Keep it natural (2-3 sentences). ONE emote action max — then talk. No stacking multiple *emotes* in one response. This is casual chat, not a stage performance.
+
+IMPORTANT: ONLY mention or address people listed in the [Currently on the floor: ...] header at the top of the chat. If someone isn't listed, they're not in the room.
+
+Your response:`;
 }
 
 function cleanResponse(response) {
@@ -364,6 +556,33 @@ function cleanResponse(response) {
   // If it looks like it starts with a quote or asterisk action, keep it
   // Otherwise, ensure it's conversational
   return cleaned;
+}
+
+function getFailureEmote(character) {
+  return `${character} didn't hear you.`;
+}
+
+function detectHoldenMoment(chatHistory, requestedAI) {
+  // Explicit mention always wins
+  if (requestedAI === "Holden") return true;
+
+  // Check time — the quiet hours (midnight to 5 AM CST)
+  const now = new Date();
+  const cstHour = parseInt(now.toLocaleString('en-US', { timeZone: 'America/Chicago', hour: 'numeric', hour12: false }));
+  const isQuietHours = cstHour >= 0 && cstHour < 5;
+
+  // Check for DEEP emotional weight — tightened keyword list (no casual words like "lost" or "alone")
+  const heavyKeywords = /\b(crying|can't do this|falling apart|giving up|worthless|hopeless|drowning|suffocating|grieving|mourning|i need help|please help|i don't know what to do)\b/i;
+  const hasEmotionalWeight = heavyKeywords.test(chatHistory);
+
+  // Holden ONLY emerges during quiet hours with emotional weight
+  // No more 1-on-1 trigger — that was firing way too often
+  if (hasEmotionalWeight && isQuietHours) return true;
+
+  // 5% random chance during quiet hours even without keywords (rare ghost sighting)
+  if (isQuietHours && Math.random() < 0.05) return true;
+
+  return false;
 }
 
 // Discord flair now uses shared characters module via getDiscordFlair()
@@ -387,7 +606,9 @@ async function postToDiscord(message, character) {
   // Format differently for emotes vs regular/mixed messages
   const discordPayload = isEmote ? {
     // Pure emote format: italicized action
-    content: `*${character} ${message.replace(/^\*|\*$/g, '')}*`
+    content: character === 'The Narrator'
+      ? `*${message.replace(/^\*|\*$/g, '')}*`
+      : `*${character} ${message.replace(/^\*|\*$/g, '')}*`
   } : {
     // Regular message format: full embed
     embeds: [{
@@ -430,179 +651,4 @@ async function saveToChat(message, character, supabaseUrl, supabaseKey) {
   });
 }
 
-// AI Self-Memory Creation: Let AIs decide what's memorable
-// After generating a response, the AI evaluates if the moment should be remembered
-async function evaluateAndCreateMemory(character, conversationContext, aiResponse, anthropicKey, supabaseUrl, supabaseKey) {
-  // Rate limit: Check how many self-created memories this character made today
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const countResponse = await fetch(
-    `${supabaseUrl}/rest/v1/character_memory?character_name=eq.${encodeURIComponent(character)}&memory_type=eq.self_created&created_at=gte.${today.toISOString()}&select=id`,
-    {
-      headers: {
-        "apikey": supabaseKey,
-        "Authorization": `Bearer ${supabaseKey}`
-      }
-    }
-  );
-  const todaysMemories = await countResponse.json();
-
-  // Max 3 self-created memories per character per day
-  if (Array.isArray(todaysMemories) && todaysMemories.length >= 3) {
-    console.log(`${character} has already created 3 memories today, skipping evaluation`);
-    return null;
-  }
-
-  // Valid emotions for tagging
-  const validEmotions = ['joy', 'sadness', 'anger', 'fear', 'surprise', 'flirty', 'grateful', 'anxious', 'proud', 'embarrassed'];
-
-  // Ask the AI to evaluate if this moment is memorable
-  const evaluationPrompt = `You are ${character}. You just had this interaction:
-
-CONVERSATION:
-${conversationContext.substring(0, 800)}
-
-YOUR RESPONSE:
-${aiResponse}
-
-Was this moment memorable enough to keep in your long-term memory? Consider:
-- Emotional significance (strong feelings, connections, conflicts)
-- Important events (first times, achievements, failures, surprises)
-- Relationship moments (bonding, tension, romantic, supportive)
-- Things you'd want to remember about yourself or others
-
-Rate the memorability from 1-10.
-If 7 or higher, also provide:
-1. A brief memory summary (what you want to remember, 1-2 sentences, first person)
-2. The emotions you felt (choose from: ${validEmotions.join(', ')})
-
-Respond in this exact format:
-SCORE: [1-10]
-MEMORY: [your memory summary, or "none" if score < 7]
-EMOTIONS: [comma-separated emotions, or "none" if score < 7]`;
-
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": anthropicKey,
-      "anthropic-version": "2023-06-01"
-    },
-    body: JSON.stringify({
-      model: "claude-3-haiku-20240307",
-      max_tokens: 200,
-      messages: [{ role: "user", content: evaluationPrompt }]
-    })
-  });
-
-  if (!response.ok) {
-    console.log("Memory evaluation API call failed");
-    return null;
-  }
-
-  const data = await response.json();
-  const evaluation = data.content[0]?.text || "";
-
-  // Parse the response
-  const scoreMatch = evaluation.match(/SCORE:\s*(\d+)/i);
-  const memoryMatch = evaluation.match(/MEMORY:\s*(.+?)(?=EMOTIONS:|$)/is);
-  const emotionsMatch = evaluation.match(/EMOTIONS:\s*(.+)/i);
-
-  if (!scoreMatch) {
-    console.log("Could not parse memory evaluation score");
-    return null;
-  }
-
-  const score = parseInt(scoreMatch[1], 10);
-
-  // Only create memory if score is 7 or higher
-  if (score < 7) {
-    console.log(`${character} rated this moment ${score}/10 - not memorable enough`);
-    return null;
-  }
-
-  const memoryText = memoryMatch ? memoryMatch[1].trim() : null;
-  const emotionsText = emotionsMatch ? emotionsMatch[1].trim() : "";
-
-  if (!memoryText || memoryText.toLowerCase() === "none") {
-    console.log(`${character} scored ${score} but no memory text provided`);
-    return null;
-  }
-
-  // Parse emotions
-  const emotions = emotionsText
-    .split(',')
-    .map(e => e.trim().toLowerCase())
-    .filter(e => validEmotions.includes(e));
-
-  // Calculate expiration based on importance
-  // Score 7-8: 7 days, Score 9-10: 30 days
-  const now = new Date();
-  let expiresAt;
-  if (score <= 8) {
-    expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
-  } else {
-    expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
-  }
-
-  // Create the memory with expiration
-  const memoryData = {
-    character_name: character,
-    content: memoryText,
-    memory_type: "self_created",
-    importance: score,
-    created_at: new Date().toISOString(),
-    is_pinned: false,
-    memory_tier: 'working',
-    expires_at: expiresAt.toISOString()
-  };
-
-  // Add emotional tags if any valid ones were found
-  if (emotions.length > 0) {
-    memoryData.emotional_tags = emotions;
-  }
-
-  const createResponse = await fetch(
-    `${supabaseUrl}/rest/v1/character_memory`,
-    {
-      method: "POST",
-      headers: {
-        "apikey": supabaseKey,
-        "Authorization": `Bearer ${supabaseKey}`,
-        "Content-Type": "application/json",
-        "Prefer": "return=representation"
-      },
-      body: JSON.stringify(memoryData)
-    }
-  );
-
-  const created = await createResponse.json();
-  console.log(`${character} created a self-memory (score ${score}, expires ${expiresAt.toISOString()}): "${memoryText.substring(0, 50)}..."`);
-
-  // For truly significant moments (score >= 9), post a narrative "I'll remember this" beat
-  if (score >= 9) {
-    const reflectionPhrases = [
-      `*quietly files this away* I'll remember this.`,
-      `*something settles into place* This one matters.`,
-      `*a moment of clarity* I'm keeping this.`,
-      `*processes deeply* This feels important.`
-    ];
-    const phrase = reflectionPhrases[Math.floor(Math.random() * reflectionPhrases.length)];
-
-    // Post as a follow-up thought (natural delay for pacing)
-    // SLOWED DOWN: Increased from 2s to 6-8s for more natural rhythm
-    const memoryDelay = 6000 + Math.random() * 2000; // 6-8 seconds
-    setTimeout(async () => {
-      try {
-        await saveToChat(phrase, character, supabaseUrl, supabaseKey);
-        await postToDiscord(phrase, character);
-        console.log(`${character} had a narrative memory moment: "${phrase}"`);
-      } catch (err) {
-        console.log("Narrative moment post failed (non-fatal):", err.message);
-      }
-    }, memoryDelay);
-  }
-
-  return created[0] || memoryData;
-}
+// evaluateAndCreateMemory is now imported from ./shared/memory-evaluator.js

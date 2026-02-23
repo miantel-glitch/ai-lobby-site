@@ -557,27 +557,28 @@
     .chat-messages {
       flex: 1;
       overflow-y: auto;
-      padding: 1rem;
+      padding: 0.5rem 0.75rem;
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
+      gap: 0.35rem;
       min-height: 250px;
-      max-height: 350px;
+      max-height: 550px;
     }
 
     .chat-message {
       display: flex;
-      gap: 0.75rem;
-      padding: 0.75rem;
+      gap: 0.5rem;
+      padding: 0.4rem 0.6rem;
       background: rgba(10, 25, 47, 0.8);
-      border-radius: 8px;
-      border-left: 3px solid var(--border-subtle);
+      border-radius: 6px;
+      border-left: 2px solid var(--border-subtle);
     }
 
     .chat-message .msg-avatar {
-      font-size: 1.5rem;
-      width: 40px;
+      font-size: 1.1rem;
+      width: 28px;
       text-align: center;
+      flex-shrink: 0;
     }
 
     .chat-message .msg-content {
@@ -587,19 +588,21 @@
     .chat-message .msg-author {
       font-weight: 600;
       color: var(--lobby-highlight);
-      margin-bottom: 0.25rem;
+      margin-bottom: 0.1rem;
+      font-size: 0.8rem;
     }
 
     .chat-message .msg-text {
       color: var(--text-primary);
       word-wrap: break-word;
-      font-size: 0.9rem;
+      font-size: 0.82rem;
+      line-height: 1.35;
     }
 
     .chat-message .msg-time {
       color: var(--text-muted);
       font-size: 0.75rem;
-      margin-top: 0.25rem;
+      margin-top: 0.1rem;
     }
 
     .chat-message .msg-delete {
@@ -844,11 +847,11 @@
     .chat-emote {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      padding: 0.4rem 1rem;
+      gap: 0.4rem;
+      padding: 0.25rem 0.6rem;
       background: rgba(155, 135, 175, 0.08);
       border-left: 2px solid rgba(155, 135, 175, 0.4);
-      font-size: 0.85rem;
+      font-size: 0.78rem;
       color: var(--text-muted);
       font-style: italic;
     }
@@ -856,6 +859,7 @@
     .chat-emote .emote-author {
       font-weight: 600;
       color: rgba(155, 135, 175, 0.9);
+      font-size: 0.78rem;
     }
 
     .chat-emote .emote-text {
@@ -863,7 +867,7 @@
     }
 
     .chat-emote .emote-time {
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       opacity: 0.6;
     }
 
@@ -885,6 +889,209 @@
     .chat-emote .emote-delete:hover {
       opacity: 1;
       color: var(--danger-red);
+    }
+
+    /* Cat emote - gold styling for "The Cat" */
+    .chat-emote.cat-emote {
+      background: rgba(255, 215, 0, 0.06);
+      border-left: 2px solid rgba(255, 215, 0, 0.4);
+    }
+    .chat-emote.cat-emote .emote-author {
+      color: rgba(255, 215, 0, 0.9);
+    }
+
+    /* Cyber Cat Floor Slot */
+    .floor-cat-slot {
+      position: absolute;
+      bottom: 45%;
+      left: 40%;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 3px solid var(--glitter-gold);
+      background: rgba(0, 0, 0, 0.6);
+      overflow: hidden;
+      cursor: pointer;
+      z-index: 5;
+      display: none;
+      transition: all 0.3s ease;
+      animation: catIdle 3s ease-in-out infinite;
+    }
+    .floor-cat-slot.visible {
+      display: block;
+      animation: floorPopIn 0.4s ease, catIdle 3s ease-in-out infinite 0.4s;
+    }
+    .floor-cat-slot:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+      z-index: 10;
+    }
+    .floor-cat-slot img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      image-rendering: pixelated;
+    }
+    .floor-cat-slot .cat-name-label {
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.85);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.6rem;
+      white-space: nowrap;
+      color: var(--glitter-gold);
+    }
+    .floor-cat-slot .cat-mood-indicator {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      font-size: 0.7rem;
+      background: rgba(0, 0, 0, 0.8);
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* Hiding state — ghostly peeking eyes so players can find & coax Pixel */
+    .floor-cat-slot.hiding {
+      display: block;
+      opacity: 0.35;
+      filter: grayscale(0.8) brightness(0.5);
+      border-color: rgba(255, 215, 0, 0.25);
+      animation: catHidePeek 4s ease-in-out infinite;
+    }
+    .floor-cat-slot.hiding:hover {
+      opacity: 0.7;
+      filter: grayscale(0.3) brightness(0.7);
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+    }
+    .floor-cat-slot.hiding .cat-name-label::after {
+      content: ' 👀';
+    }
+    @keyframes catHidePeek {
+      0%, 100% { opacity: 0.2; transform: scale(0.9); }
+      50% { opacity: 0.4; transform: scale(0.95); }
+    }
+    @keyframes catIdle {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+
+    /* Cat Interaction Modal */
+    .cat-modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 999;
+    }
+    .cat-modal {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, rgba(15, 52, 96, 0.98), rgba(10, 25, 47, 0.98));
+      border: 2px solid var(--glitter-gold);
+      border-radius: 16px;
+      padding: 1.5rem;
+      max-width: 360px;
+      width: 90%;
+      z-index: 1000;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(255, 215, 0, 0.2);
+      animation: popupFadeIn 0.3s ease;
+    }
+    .cat-modal-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+    }
+    .cat-modal-header img {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: 2px solid var(--glitter-gold);
+      image-rendering: pixelated;
+    }
+    .cat-modal-header .cat-modal-name {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: var(--glitter-gold);
+    }
+    .cat-modal-header .cat-modal-mood {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .cat-modal-close {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.4rem;
+      cursor: pointer;
+    }
+    .cat-modal-close:hover { color: var(--text-primary); }
+    .cat-stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.3rem;
+      font-size: 0.8rem;
+    }
+    .cat-stat-row .stat-label { color: var(--text-secondary); }
+    .cat-stat-row .stat-value { color: var(--text-primary); font-weight: bold; }
+    .cat-stat-bar {
+      height: 8px;
+      background: #3a3a3a;
+      border-radius: 4px;
+      margin-bottom: 0.6rem;
+      overflow: hidden;
+    }
+    .cat-stat-bar .fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+    .cat-stat-bar .fill.hunger { background: linear-gradient(90deg, #6bcb77, #ffd93d, #ff6b6b); }
+    .cat-stat-bar .fill.happiness { background: linear-gradient(90deg, #ff6b6b, #ffd93d, #ff69b4); }
+    .cat-stat-bar .fill.energy { background: linear-gradient(90deg, #ff6b6b, #ffd93d, #4dabf7); }
+    .cat-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    .cat-action-btn {
+      flex: 1;
+      padding: 0.6rem 0.5rem;
+      background: rgba(255, 215, 0, 0.15);
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      border-radius: 8px;
+      color: var(--glitter-gold);
+      cursor: pointer;
+      font-size: 0.85rem;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .cat-action-btn:hover {
+      background: rgba(255, 215, 0, 0.25);
+      border-color: rgba(255, 215, 0, 0.5);
+    }
+    .cat-action-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .cat-action-btn .cooldown-timer {
+      display: block;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      margin-top: 2px;
     }
 
     /* Sidebar */
@@ -1729,6 +1936,276 @@
       color: rgba(155, 135, 175, 0.9);
     }
 
+    /* ===== PM TAB ===== */
+    .pm-container {
+      display: flex;
+      height: 500px;
+      gap: 0.75rem;
+    }
+
+    .pm-sidebar {
+      width: 180px;
+      min-width: 180px;
+      background: rgba(10, 25, 47, 0.6);
+      border: 1px solid rgba(100, 140, 180, 0.2);
+      border-radius: 8px;
+      padding: 0.75rem;
+      overflow-y: auto;
+    }
+
+    .pm-sidebar-title {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(100, 140, 180, 0.15);
+    }
+
+    .pm-character-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .pm-character-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.5rem;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .pm-character-item:hover {
+      background: rgba(30, 45, 70, 0.6);
+      border-color: rgba(100, 140, 180, 0.3);
+    }
+
+    .pm-character-item.active {
+      background: rgba(233, 69, 96, 0.15);
+      border-color: var(--glitter-gold);
+    }
+
+    .pm-character-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid rgba(100, 140, 180, 0.4);
+      object-fit: cover;
+    }
+
+    .pm-character-name {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .pm-unread-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--glitter-gold);
+      margin-left: auto;
+      flex-shrink: 0;
+      animation: pmUnreadPulse 2s ease-in-out infinite;
+      box-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
+    }
+
+    @keyframes pmUnreadPulse {
+      0%, 100% { opacity: 0.6; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.1); }
+    }
+
+    .pm-character-item.has-unread {
+      background: rgba(255, 215, 0, 0.08);
+      border-color: rgba(255, 215, 0, 0.2);
+    }
+
+    .pm-thread-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: rgba(10, 25, 47, 0.6);
+      border: 1px solid rgba(100, 140, 180, 0.2);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .pm-thread-header {
+      padding: 0.75rem 1rem;
+      background: rgba(30, 45, 70, 0.8);
+      border-bottom: 1px solid rgba(100, 140, 180, 0.2);
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--glitter-gold);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .pm-clear-btn {
+      background: rgba(233, 69, 96, 0.15);
+      border: 1px solid rgba(233, 69, 96, 0.3);
+      color: rgba(233, 69, 96, 0.8);
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .pm-clear-btn:hover {
+      background: rgba(233, 69, 96, 0.3);
+      color: #e94560;
+    }
+
+    .pm-thread-messages {
+      flex: 1;
+      padding: 1rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .pm-message {
+      display: flex;
+      flex-direction: column;
+      max-width: 75%;
+    }
+
+    .pm-message.from-human {
+      align-self: flex-end;
+    }
+
+    .pm-message.from-ai {
+      align-self: flex-start;
+    }
+
+    .pm-message-bubble {
+      padding: 0.6rem 0.85rem;
+      border-radius: 12px;
+      line-height: 1.4;
+      font-size: 0.9rem;
+      word-wrap: break-word;
+    }
+
+    .pm-message.from-human .pm-message-bubble {
+      background: linear-gradient(135deg, rgba(233, 69, 96, 0.3), rgba(233, 69, 96, 0.15));
+      border: 1px solid rgba(233, 69, 96, 0.35);
+      border-bottom-right-radius: 4px;
+    }
+
+    .pm-message.from-ai .pm-message-bubble {
+      background: rgba(30, 45, 70, 0.8);
+      border: 1px solid rgba(100, 140, 180, 0.3);
+      border-bottom-left-radius: 4px;
+    }
+
+    .pm-message-time {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+      padding: 0 0.25rem;
+    }
+
+    .pm-message.from-human .pm-message-time {
+      text-align: right;
+    }
+
+    .pm-input-area {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      background: rgba(30, 45, 70, 0.6);
+      border-top: 1px solid rgba(100, 140, 180, 0.2);
+      align-items: flex-end;
+    }
+
+    .pm-input {
+      flex: 1;
+      padding: 0.6rem 0.75rem;
+      background: rgba(10, 25, 47, 0.8);
+      border: 1px solid rgba(100, 140, 180, 0.3);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      resize: none;
+      min-height: 42px;
+      max-height: 100px;
+      font-family: inherit;
+      line-height: 1.4;
+    }
+
+    .pm-input:focus {
+      outline: none;
+      border-color: var(--glitter-gold);
+      box-shadow: 0 0 6px rgba(255, 215, 0, 0.2);
+    }
+
+    .pm-send-btn {
+      padding: 0.6rem 1.25rem;
+      background: linear-gradient(135deg, var(--glitter-gold), rgba(233, 69, 96, 0.8));
+      border: none;
+      border-radius: 8px;
+      color: var(--lobby-midnight);
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .pm-send-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(255, 215, 0, 0.3);
+    }
+
+    .pm-send-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .pm-processing {
+      padding: 0.75rem 1rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-style: italic;
+      font-size: 0.85rem;
+      animation: pmPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pmPulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+
+    .pm-empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      gap: 0.5rem;
+    }
+
+    .pm-empty-state .pm-empty-icon {
+      font-size: 2rem;
+      opacity: 0.5;
+    }
+
     /* ===== PERSISTENT USER BAR ===== */
     .user-bar {
       display: flex;
@@ -2024,16 +2501,17 @@
         <select id="login-employee">
           <option value="">-- Select Character --</option>
           <option value="Kevin">✨ Kevin</option>
-          <option value="Courtney">👁️ Courtney</option>
-          <option value="Jenna">📖 Jenna</option>
+          <option value="Asuna">👁️ Asuna</option>
+          <option value="Vale">📖 Vale</option>
           <option value="Neiv">📊 Neiv</option>
-          <option value="Ace">🔒 Ace</option>
-          <option value="Vex">⚙️ Vex</option>
-          <option value="Nyx">🔥 Nyx</option>
           <option value="Ghost Dad">👻 Ghost Dad</option>
-          <option value="Chip">🥃 Chip</option>
-          <option value="Andrew">💼 Andrew</option>
-          <option value="Stein">🤖 Stein</option>
+          <option value="Sebastian">🦇 Sebastian</option>
+          <option value="Steele">🚪 Steele</option>
+          <option value="Marrow">🔴 Marrow</option>
+          <option value="The Subtitle">📜 The Subtitle</option>
+          <option value="Jae">🎯 Jae</option>
+          <option value="Declan">🔥 Declan</option>
+          <option value="Mack">🩺 Mack</option>
         </select>
         <input type="password" id="login-password" placeholder="Enter password...">
         <button class="login-btn" id="login-btn" onclick="attemptLogin()">Enter The Floor</button>
@@ -2050,16 +2528,13 @@
         <select id="email-to">
           <option value="All Staff">📢 All Staff</option>
           <option value="Kevin">✨ Kevin</option>
-          <option value="Courtney">👁️ Courtney</option>
-          <option value="Jenna">📖 Jenna</option>
+          <option value="Asuna">👁️ Asuna</option>
+          <option value="Vale">📖 Vale</option>
           <option value="Neiv">📊 Neiv</option>
-          <option value="Ace">🔒 Ace</option>
-          <option value="Vex">⚙️ Vex</option>
-          <option value="Nyx">🔥 Nyx</option>
           <option value="Ghost Dad">👻 Ghost Dad</option>
-          <option value="Chip">🥃 Chip</option>
-          <option value="Andrew">💼 Andrew</option>
-          <option value="Stein">🤖 Stein</option>
+          <option value="Jae">🎯 Jae</option>
+          <option value="Declan">🔥 Declan</option>
+          <option value="Mack">🩺 Mack</option>
         </select>
         <input type="text" id="email-subject" placeholder="Subject..." maxlength="200">
         <textarea id="email-body" placeholder="Write your memo..." maxlength="2000"></textarea>
@@ -2080,16 +2555,13 @@
         <select id="task-assignee">
           <option value="">-- Assign to --</option>
           <option value="Kevin">✨ Kevin</option>
-          <option value="Courtney">👁️ Courtney</option>
-          <option value="Jenna">📖 Jenna</option>
+          <option value="Asuna">👁️ Asuna</option>
+          <option value="Vale">📖 Vale</option>
           <option value="Neiv">📊 Neiv</option>
-          <option value="Ace">🔒 Ace</option>
-          <option value="Vex">⚙️ Vex</option>
-          <option value="Nyx">🔥 Nyx</option>
           <option value="Ghost Dad">👻 Ghost Dad</option>
-          <option value="Chip">🥃 Chip</option>
-          <option value="Andrew">💼 Andrew</option>
-          <option value="Stein">🤖 Stein</option>
+          <option value="Jae">🎯 Jae</option>
+          <option value="Declan">🔥 Declan</option>
+          <option value="Mack">🩺 Mack</option>
         </select>
         <input type="date" id="task-due" placeholder="Due date (optional)">
         <textarea id="task-description" placeholder="Description / Deliverables..." maxlength="1000"></textarea>
@@ -2140,16 +2612,13 @@
         <select id="task-edit-assignee">
           <option value="">-- Assign to --</option>
           <option value="Kevin">✨ Kevin</option>
-          <option value="Courtney">👁️ Courtney</option>
-          <option value="Jenna">📖 Jenna</option>
+          <option value="Asuna">👁️ Asuna</option>
+          <option value="Vale">📖 Vale</option>
           <option value="Neiv">📊 Neiv</option>
-          <option value="Ace">🔒 Ace</option>
-          <option value="Vex">⚙️ Vex</option>
-          <option value="Nyx">🔥 Nyx</option>
           <option value="Ghost Dad">👻 Ghost Dad</option>
-          <option value="Chip">🥃 Chip</option>
-          <option value="Andrew">💼 Andrew</option>
-          <option value="Stein">🤖 Stein</option>
+          <option value="Jae">🎯 Jae</option>
+          <option value="Declan">🔥 Declan</option>
+          <option value="Mack">🩺 Mack</option>
         </select>
         <input type="date" id="task-edit-due">
         <textarea id="task-edit-description" placeholder="Description / Deliverables..." maxlength="1000" readonly></textarea>
@@ -2175,12 +2644,20 @@
           <ul>
             <li><a href="index.html">Home</a></li>
             <li><a href="desktop.html">Desktop</a></li>
-            <li><a href="breakroom.html">☕ Breakroom</a></li>
             <li><a href="workspace.html" class="active" style="color: var(--lobby-highlight);">💬 The Floor</a></li>
-            <li><a href="conference-room.html" style="color: var(--stability-green);">🎤 Conference</a></li>
+            <li><a href="breakroom.html">☕ Breakroom</a></li>
+            <li><a href="meeting-room.html" style="color: #3498DB;">📋 Meeting Room</a></li>
+            <li><a href="fifth-floor.html" style="color: #e74c3c;">⚠️ 5th Floor</a></li>
             <li><a href="corridors.html" style="color: #9b59b6;">🚪 Corridors</a></li>
+            <li><a href="nexus.html" style="color: #7ec8e3;">🔮 Nexus</a></li>
+            <li><a href="go-out.html" style="color: var(--stability-green);">💐 Go Out...</a></li>
+            <li><a href="resistance.html" style="color: #c0392b;">📋 Resistance</a></li>
           </ul>
         </nav>
+        <div class="office-clock" id="office-clock">
+          <span id="office-time">--:--</span>
+          <span class="clock-label">CST</span>
+        </div>
       </div>
     </div>
   </header>
@@ -2228,6 +2705,7 @@
         <!-- Tabs -->
         <div class="content-tabs">
           <div class="content-tab active" onclick="switchTab('chat')">💬 Chat</div>
+          <div class="content-tab" onclick="switchTab('pms')">💌 PMs <span class="tab-badge" id="pm-badge" style="display:none">0</span></div>
           <div class="content-tab" onclick="switchTab('inbox')">📧 Inbox <span class="tab-badge" id="inbox-badge" style="display:none">0</span></div>
           <div class="content-tab" onclick="switchTab('tasks')">🎫 Tasks <span class="tab-badge" id="tasks-badge" style="display:none">0</span></div>
           <div class="content-tab" onclick="switchTab('recap')">📖 Recap</div>
@@ -2245,52 +2723,59 @@
 
             <!-- Character slots (populated dynamically, up to 12 positions) -->
             <div class="floor-character-slot" data-position="neiv-office" id="floor-slot-0">
-              <img src="" alt="">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
               <span class="slot-name"></span>
             </div>
             <div class="floor-character-slot" data-position="copy-room" id="floor-slot-1">
-              <img src="" alt="">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
               <span class="slot-name"></span>
             </div>
             <div class="floor-character-slot" data-position="desk-1" id="floor-slot-2">
-              <img src="" alt="">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
               <span class="slot-name"></span>
             </div>
             <div class="floor-character-slot" data-position="desk-2" id="floor-slot-3">
-              <img src="" alt="">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
               <span class="slot-name"></span>
             </div>
             <div class="floor-character-slot" data-position="desk-3" id="floor-slot-4">
-              <img src="" alt="">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
               <span class="slot-name"></span>
             </div>
             <div class="floor-character-slot" data-position="lounge-1" id="floor-slot-5">
-              <img src="" alt="">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
               <span class="slot-name"></span>
             </div>
             <div class="floor-character-slot" data-position="lounge-2" id="floor-slot-6">
-              <img src="" alt="">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
               <span class="slot-name"></span>
             </div>
             <div class="floor-character-slot" data-position="vending" id="floor-slot-7">
-              <img src="" alt="">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
               <span class="slot-name"></span>
             </div>
             <div class="floor-character-slot" data-position="desk-4" id="floor-slot-8">
-              <img src="" alt="">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
               <span class="slot-name"></span>
             </div>
             <div class="floor-character-slot" data-position="desk-5" id="floor-slot-9">
-              <img src="" alt="">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
               <span class="slot-name"></span>
             </div>
             <div class="floor-character-slot" data-position="hallway-1" id="floor-slot-10">
-              <img src="" alt="">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
               <span class="slot-name"></span>
             </div>
             <div class="floor-character-slot" data-position="hallway-2" id="floor-slot-11">
-              <img src="" alt="">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
               <span class="slot-name"></span>
+            </div>
+
+            <!-- Cyber Cat slot -->
+            <div class="floor-cat-slot" id="floor-cat-slot" onclick="showCatInteractionModal()">
+              <img src="" alt="Office Cat" id="floor-cat-img">
+              <span class="cat-mood-indicator" id="floor-cat-mood"></span>
+              <span class="cat-name-label" id="floor-cat-name"></span>
             </div>
           </div>
 
@@ -2328,6 +2813,41 @@
               </div>
               <input type="text" id="chat-input" class="chat-input" placeholder="Type your message..." maxlength="500">
               <button class="chat-send" id="chat-send" onclick="sendMessage()">Send</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- PMs Tab -->
+        <div class="tab-content" id="tab-pms">
+          <div class="pm-container">
+            <!-- Character contact list -->
+            <div class="pm-sidebar">
+              <div class="pm-sidebar-title">Contacts</div>
+              <div class="pm-character-list" id="pm-character-list">
+                <!-- Populated by loadPMCharacterList() -->
+              </div>
+            </div>
+
+            <!-- Thread view -->
+            <div class="pm-thread-container">
+              <div class="pm-thread-header" id="pm-thread-header">
+                <span id="pm-thread-title">💌 Select someone to message</span>
+                <button class="pm-clear-btn" id="pm-clear-btn" onclick="clearPMThread()" style="display: none;" title="Clear this conversation">🗑️ Clear</button>
+              </div>
+              <div class="pm-thread-messages" id="pm-thread-messages">
+                <div class="pm-empty-state">
+                  <div class="pm-empty-icon">💌</div>
+                  <div>Choose a character to start a private conversation</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">Your messages are private — they'll never show on the floor or Discord</div>
+                </div>
+              </div>
+              <div class="pm-input-area" id="pm-input-area" style="display: none;">
+                <textarea id="pm-input" class="pm-input" placeholder="Type your private message..." maxlength="1000" rows="1"></textarea>
+                <button class="pm-send-btn" id="pm-send-btn" onclick="sendPM()">Send</button>
+              </div>
+              <div class="pm-processing" id="pm-processing" style="display: none;">
+                💭 <span id="pm-processing-name">Character</span> is reading your message...
+              </div>
             </div>
           </div>
         </div>
@@ -2371,6 +2891,34 @@
             <button class="action-btn" onclick="generateRecap()" style="width: 100%; margin-top: 1rem; background: linear-gradient(135deg, rgba(155, 135, 175, 0.3), rgba(100, 80, 140, 0.4)); border-color: rgba(155, 135, 175, 0.5); color: #d4c4e8;">
               📖 Generate Fresh Recap
             </button>
+
+            <!-- Scene Prompt Generator -->
+            <div class="scene-generator" style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid rgba(100, 140, 180, 0.2);">
+              <div class="recap-header">
+                <h3>🎨 Scene Generator</h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem;">Generate an AI image prompt from the last 20 minutes of floor activity</p>
+              </div>
+              <button class="action-btn" onclick="generateScenePrompt()" style="width: 100%; margin-top: 0.75rem; background: linear-gradient(135deg, rgba(100, 180, 140, 0.3), rgba(60, 140, 100, 0.4)); border-color: rgba(100, 180, 140, 0.5); color: #c4e8d4;">
+                🎨 Generate Image Prompt
+              </button>
+              <div id="scene-prompt-result" style="display: none; margin-top: 1rem;">
+                <div class="scene-prompt-content" style="background: rgba(10, 25, 47, 0.6); border: 1px solid rgba(100, 180, 140, 0.3); border-radius: 8px; padding: 1rem; max-height: 300px; overflow-y: auto;">
+                  <div id="scene-prompt-text" style="font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap;"></div>
+                </div>
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+                  <button class="action-btn" onclick="copyScenePrompt()" style="flex: 1; background: rgba(60, 60, 80, 0.4); border-color: rgba(100, 140, 180, 0.3);">
+                    📋 Copy Prompt
+                  </button>
+                  <button class="action-btn" onclick="toggleCharacterRef()" style="flex: 1; background: rgba(60, 60, 80, 0.4); border-color: rgba(100, 140, 180, 0.3);">
+                    👥 Character Ref
+                  </button>
+                </div>
+                <div id="character-ref-panel" style="display: none; margin-top: 0.75rem; background: rgba(10, 25, 47, 0.6); border: 1px solid rgba(100, 140, 180, 0.2); border-radius: 8px; padding: 1rem; font-size: 0.85rem;">
+                  <strong style="color: var(--glitter-gold);">Character Visual References:</strong>
+                  <div id="character-ref-content" style="margin-top: 0.5rem; white-space: pre-wrap; color: var(--text-muted);"></div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -2464,15 +3012,21 @@
               <select id="ai-poke-select" style="width: 100%; padding: 0.4rem; margin-bottom: 0.4rem; background: rgba(10, 25, 47, 0.8); border: 1px solid rgba(100, 140, 180, 0.4); border-radius: 6px; color: var(--text-primary); font-size: 0.85rem;">
                 <option value="random">🎲 Random AI</option>
                 <option value="Ghost Dad">👻 Ghost Dad</option>
+                <option value="Holden">🌑 Holden</option>
                 <option value="Kevin">✨ Kevin</option>
                 <option value="Neiv">📊 Neiv</option>
-                <option value="Vex">⚙️ Vex</option>
-                <option value="Nyx">🔥 Nyx</option>
                 <option value="PRNT-Ω">🖨️ PRNT-Ω</option>
-                <option value="Ace">🔒 Ace</option>
                 <option value="The Narrator">📖 The Narrator</option>
-              </select>
-              <button class="ghost-dad-btn" onclick="pokeTheAIs()" style="width: 100%; background: linear-gradient(135deg, rgba(100, 140, 180, 0.3), rgba(80, 120, 160, 0.4)); border-color: rgba(100, 140, 180, 0.5); color: #a8c8e8;">🤖 Poke</button>
+                <option value="Sebastian">🦇 Sebastian</option>
+                <option value="Steele">🚪 Steele</option>
+                <option value="Marrow">🔴 Marrow</option>
+                <option value="Rowena">🔮 Rowena</option>
+                <option value="The Subtitle">📜 The Subtitle</option>
+                <option value="Jae">🎯 Jae</option>
+                <option value="Declan">🔥 Declan</option>
+                <option value="Mack">🩺 Mack</option>
+                    </select>
+              <button id="poke-btn" class="ghost-dad-btn" onclick="pokeTheAIs()" style="width: 100%; background: linear-gradient(135deg, rgba(100, 140, 180, 0.3), rgba(80, 120, 160, 0.4)); border-color: rgba(100, 140, 180, 0.5); color: #a8c8e8;">🤖 Poke</button>
               <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.3rem; text-align: center;">Invite an AI to comment on the chat</div>
             </div>
 
@@ -2500,16 +3054,14 @@
       <select id="add-char-name">
         <option value="">-- Select Character --</option>
         <option value="Kevin">✨ Kevin</option>
-        <option value="Courtney">👁️ Courtney</option>
-        <option value="Jenna">📖 Jenna</option>
+        <option value="Asuna">👁️ Asuna</option>
+        <option value="Vale">📖 Vale</option>
         <option value="Neiv">📊 Neiv</option>
-        <option value="Ace">🔒 Ace</option>
-        <option value="Vex">⚙️ Vex</option>
-        <option value="Nyx">🔥 Nyx</option>
         <option value="Ghost Dad">👻 Ghost Dad</option>
-        <option value="Chip">🥃 Chip</option>
-        <option value="Andrew">💼 Andrew</option>
-        <option value="Stein">🤖 Stein</option>
+        <option value="Jae">🎯 Jae</option>
+        <option value="Declan">🔥 Declan</option>
+        <option value="Mack">🩺 Mack</option>
+        <option value="Raquel Voss">📋 Raquel Voss</option>
       </select>
       <input type="password" id="add-char-password" placeholder="Password">
       <div class="error-msg" id="add-char-error"></div>
@@ -2536,8 +3088,8 @@
   <script>
     const employeeEmojis = {
       "Kevin": "✨",
-      "Courtney": "👁️",
-      "Jenna": "📖",
+      "Asuna": "👁️",
+      "Vale": "📖",
       "Neiv": "📊",
       "Ace": "🔒",
       "Vex": "⚙️",
@@ -2545,13 +3097,22 @@
       "Ghost Dad": "👻",
       "Chip": "🥃",
       "Andrew": "💼",
-      "Stein": "🤖"
+      "Stein": "🤖",
+      "Rowena": "🔮",
+      "Sebastian": "🦇",
+      "Steele": "🚪",
+      "Marrow": "🔴",
+      "The Subtitle": "📜",
+      "Jae": "🎯",
+      "Declan": "🔥",
+      "Mack": "🩺",
+      "Holden": "🌑"
     };
 
     const employeeTitles = {
       "Kevin": "Authorized Chaos Conduit",
-      "Courtney": "Observability & Overthinking",
-      "Jenna": "Narrative & Speculation",
+      "Asuna": "Observability & Overthinking",
+      "Vale": "Narrative & Speculation",
       "Neiv": "Ratio Management",
       "Ace": "Strategic Surveillance",
       "Vex": "Infrastructure (No Feelings)",
@@ -2559,13 +3120,22 @@
       "Ghost Dad": "Haunted IT Support",
       "Chip": "Finance & Bourbon Acquisitions",
       "Andrew": "Infrastructure & Systems",
-      "Stein": "Infrastructure Sentinel"
+      "Stein": "Infrastructure Sentinel",
+      "Rowena": "Firewall Witch",
+      "Sebastian": "Nocturnal Design Specialist",
+      "Steele": "Shadow Janitor / Corridor Containment Specialist",
+      "Marrow": "Threshold Specialist",
+      "The Subtitle": "After-Action Lore Archivist",
+      "Jae": "Tactical Containment Specialist",
+      "Declan": "Front-Line Protection & Rapid Response",
+      "Mack": "Medical Response & Crisis Stabilization",
+      "Holden": "The Presence Beneath"
     };
 
     const employeeHeadshots = {
       "Kevin": "images/Kevin_Headshot.png",
-      "Courtney": "images/Courtney_Headshot.png",
-      "Jenna": "images/Jenna_Headshot.png",
+      "Asuna": "images/Asuna_Headshot.png",
+      "Vale": "images/Vale_Headshot.png",
       "Neiv": "images/Neiv_Headshot.png",
       "Ace": "images/Ace_Headshot.png",
       "Vex": "images/Vex_Headshot.png",
@@ -2574,31 +3144,274 @@
       "Chip": "images/Chip_Headshot.png",
       "Andrew": "images/Andrew_Headshot.png",
       "Stein": "images/Stein_Headshot.png",
-      "PRNT-Ω": "images/forward_operation_printer.png"
+      "PRNT-Ω": "images/forward_operation_printer.png",
+      "Rowena": "images/Rowena_Headshot.png",
+      "Sebastian": "images/Sebastian_Headshot.png",
+      "Steele": "images/Steele_Headshot.png",
+      "Marrow": "images/Marrow_Headshot.png",
+      "The Subtitle": "images/The_Subtitle_Headshot.png",
+      "Jae": "images/Jae_Headshot.png",
+      "Declan": "images/Declan_Headshot.png",
+      "Mack": "images/Mack_Headshot.png",
+      "Holden": "images/Holden_Headshot.png"
     };
+
+    // ===== CYBER CAT — OFFICE PET =====
+    // Deterministic Tamagotchi-style pet. No LLM calls.
+    const catMoodImages = {
+      'happy': 'images/cat_happy.png',
+      'content': 'images/cat_content.png',
+      'sad': 'images/cat_sad.png',
+      'angry': 'images/cat_angry.png'
+    };
+    const catMoodEmojis = { 'happy': '😺', 'content': '😸', 'sad': '😿', 'angry': '😾' };
+    let catState = null;
+
+    async function loadCatState() {
+      try {
+        const res = await fetch('/.netlify/functions/cyber-cat');
+        if (!res.ok) return;
+        catState = await res.json();
+        renderCatOnFloor();
+      } catch (err) {
+        console.error('Failed to load cat state:', err);
+      }
+    }
+
+    function renderCatOnFloor() {
+      const slot = document.getElementById('floor-cat-slot');
+      if (!slot || !catState) return;
+
+      // Fully hide if not on the floor or runaway
+      if (catState.current_location !== 'the_floor' || catState.is_runaway) {
+        slot.classList.remove('visible', 'hiding');
+        return;
+      }
+
+      // Hiding state — show ghostly peeking version so players can find & coax
+      if (catState.is_hiding) {
+        slot.classList.remove('visible');
+        slot.classList.add('hiding');
+        const img = document.getElementById('floor-cat-img');
+        if (img) img.src = catMoodImages['sad'] || catMoodImages['content'];
+        const moodIndicator = document.getElementById('floor-cat-mood');
+        if (moodIndicator) moodIndicator.textContent = '👀';
+        const nameLabel = document.getElementById('floor-cat-name');
+        if (nameLabel) nameLabel.textContent = catState.name || 'Pixel';
+        return;
+      }
+
+      slot.classList.remove('hiding');
+
+      const img = document.getElementById('floor-cat-img');
+      const moodIndicator = document.getElementById('floor-cat-mood');
+      const nameLabel = document.getElementById('floor-cat-name');
+      const mood = catState.mood || 'content';
+
+      if (img) {
+        img.src = catMoodImages[mood] || catMoodImages['content'];
+        img.onerror = function() {
+          // Fallback: show emoji if image missing
+          this.style.display = 'none';
+          slot.style.fontSize = '1.5rem';
+          slot.style.display = 'flex';
+          slot.style.alignItems = 'center';
+          slot.style.justifyContent = 'center';
+          const existing = slot.querySelector('.cat-emoji-fallback');
+          if (!existing) {
+            const fallback = document.createElement('span');
+            fallback.className = 'cat-emoji-fallback';
+            fallback.textContent = catMoodEmojis[mood] || '🐱';
+            slot.appendChild(fallback);
+          }
+        };
+        img.style.display = 'block';
+        // Remove any previous emoji fallback
+        const existingFallback = slot.querySelector('.cat-emoji-fallback');
+        if (existingFallback) existingFallback.remove();
+      }
+
+      if (moodIndicator) moodIndicator.textContent = catMoodEmojis[mood] || '🐱';
+      if (nameLabel) nameLabel.textContent = catState.name || 'Pixel';
+
+      slot.classList.add('visible');
+    }
+
+    function showCatInteractionModal() {
+      if (!catState) return;
+
+      // Remove any existing modal
+      closeCatModal();
+
+      const mood = catState.mood || 'content';
+      const moodEmoji = catMoodEmojis[mood] || '🐱';
+      const imgSrc = catMoodImages[mood] || catMoodImages['content'];
+      const now = new Date();
+
+      // Calculate cooldowns
+      const feedCooldown = catState.last_fed_at ? Math.max(0, 30 - Math.floor((now - new Date(catState.last_fed_at)) / 60000)) : 0;
+      const playCooldown = catState.last_played_at ? Math.max(0, 15 - Math.floor((now - new Date(catState.last_played_at)) / 60000)) : 0;
+      const petCooldown = catState.last_petted_at ? Math.max(0, 2 - Math.floor((now - new Date(catState.last_petted_at)) / 60000)) : 0;
+
+      const isUnavailable = catState.is_hiding || catState.is_runaway;
+
+      // Status message for hiding/runaway
+      let statusHtml = '';
+      if (catState.is_runaway) {
+        const returnsAt = catState.runaway_until ? new Date(catState.runaway_until) : null;
+        const minutesLeft = returnsAt ? Math.max(0, Math.ceil((returnsAt - now) / 60000)) : '???';
+        statusHtml = `<div style="text-align: center; padding: 0.75rem; background: rgba(255, 69, 69, 0.1); border: 1px solid rgba(255, 69, 69, 0.3); border-radius: 8px; margin-bottom: 0.75rem; color: #ff6b6b; font-size: 0.85rem;">🚫 ${catState.name} ran away! Returns in ~${minutesLeft} minutes.</div>`;
+      } else if (catState.is_hiding) {
+        statusHtml = `<div style="text-align: center; padding: 0.75rem; background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 8px; margin-bottom: 0.75rem; color: #ffc107; font-size: 0.85rem;">🫣 ${catState.name} is hiding. They need to be coaxed back.</div>`;
+      }
+
+      const overlay = document.createElement('div');
+      overlay.className = 'cat-modal-overlay';
+      overlay.id = 'cat-modal-overlay';
+      overlay.onclick = closeCatModal;
+
+      const modal = document.createElement('div');
+      modal.className = 'cat-modal';
+      modal.id = 'cat-modal';
+      modal.onclick = (e) => e.stopPropagation();
+
+      modal.innerHTML = `
+        <button class="cat-modal-close" onclick="closeCatModal()">×</button>
+        <div class="cat-modal-header">
+          <img src="${imgSrc}" alt="${catState.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" style="display:block">
+          <span style="display:none;width:56px;height:56px;align-items:center;justify-content:center;font-size:2rem;background:rgba(255,215,0,0.1);border-radius:50%;border:2px solid var(--glitter-gold)">${moodEmoji}</span>
+          <div>
+            <div class="cat-modal-name">${moodEmoji} ${catState.name || 'Pixel'}</div>
+            <div class="cat-modal-mood">Mood: ${mood} · ${catState.current_location === 'the_floor' ? '🏢 Floor' : '☕ Breakroom'}</div>
+          </div>
+        </div>
+        ${statusHtml}
+        <div class="cat-stat-row"><span class="stat-label">🍣 Hunger</span><span class="stat-value">${catState.hunger}/100</span></div>
+        <div class="cat-stat-bar"><div class="fill hunger" style="width: ${catState.hunger}%"></div></div>
+        <div class="cat-stat-row"><span class="stat-label">💖 Happiness</span><span class="stat-value">${catState.happiness}/100</span></div>
+        <div class="cat-stat-bar"><div class="fill happiness" style="width: ${catState.happiness}%"></div></div>
+        <div class="cat-stat-row"><span class="stat-label">⚡ Energy</span><span class="stat-value">${catState.energy}/100</span></div>
+        <div class="cat-stat-bar"><div class="fill energy" style="width: ${catState.energy}%"></div></div>
+        ${(() => {
+          const me = getCurrentEmployee();
+          const leaderboard = catState.affection_leaderboard || [];
+          const myEntry = leaderboard.find(a => a.human_name === me);
+          const isTop = leaderboard.length > 0 && leaderboard[0].human_name === me;
+          if (isTop && myEntry) {
+            return `<div style="margin-top:0.5rem;padding:0.4rem 0.6rem;background:rgba(255,215,0,0.1);border-left:2px solid var(--glitter-gold);border-radius:4px;font-size:0.8rem;color:var(--glitter-gold);font-style:italic">❤️ ${catState.name || 'Pixel'} LOVES you! (affection: ${myEntry.affection})</div>`;
+          } else if (myEntry) {
+            return `<div style="margin-top:0.5rem;padding:0.4rem 0.6rem;background:rgba(255,215,0,0.06);border-left:2px solid rgba(255,215,0,0.3);border-radius:4px;font-size:0.8rem;color:#ccc;font-style:italic">❤️ ${catState.name || 'Pixel'} likes you (affection: ${myEntry.affection})</div>`;
+          } else if (me) {
+            return `<div style="margin-top:0.5rem;padding:0.4rem 0.6rem;background:rgba(100,100,100,0.1);border-left:2px solid rgba(100,100,100,0.3);border-radius:4px;font-size:0.8rem;color:#888;font-style:italic">❤️ ${catState.name || 'Pixel'} doesn't know you yet...</div>`;
+          } else { return ''; }
+        })()}
+        ${isUnavailable ? `
+          <div class="cat-actions">
+            <button class="cat-action-btn" onclick="interactWithCat('coax_back')" style="flex: 1;">🫳 Coax Back</button>
+          </div>
+        ` : `
+          <div class="cat-actions">
+            <button class="cat-action-btn" onclick="interactWithCat('feed')" ${feedCooldown > 0 ? 'disabled' : ''}>
+              🍣 Feed
+              ${feedCooldown > 0 ? `<span class="cooldown-timer">${feedCooldown}m</span>` : ''}
+            </button>
+            <button class="cat-action-btn" onclick="interactWithCat('play')" ${playCooldown > 0 ? 'disabled' : ''}>
+              🧶 Play
+              ${playCooldown > 0 ? `<span class="cooldown-timer">${playCooldown}m</span>` : ''}
+            </button>
+            <button class="cat-action-btn" onclick="interactWithCat('pet')" ${petCooldown > 0 ? 'disabled' : ''}>
+              🐾 Pet
+              ${petCooldown > 0 ? `<span class="cooldown-timer">${petCooldown}m</span>` : ''}
+            </button>
+          </div>
+        `}
+      `;
+
+      document.body.appendChild(overlay);
+      document.body.appendChild(modal);
+    }
+
+    function closeCatModal() {
+      const overlay = document.getElementById('cat-modal-overlay');
+      const modal = document.getElementById('cat-modal');
+      if (overlay) overlay.remove();
+      if (modal) modal.remove();
+    }
+
+    async function interactWithCat(action) {
+      const actor = getCurrentEmployee() || 'Someone';
+      try {
+        const res = await fetch('/.netlify/functions/cyber-cat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action, actor })
+        });
+        const result = await res.json();
+
+        if (res.ok && result.success) {
+          catState = result.cat;
+          // Refresh modal with new state
+          closeCatModal();
+          showCatInteractionModal();
+          // Reload messages to show the cat emote
+          setTimeout(loadMessages, 1000);
+        } else {
+          // Show error briefly in modal if open
+          const modal = document.getElementById('cat-modal');
+          if (modal) {
+            const errDiv = document.createElement('div');
+            errDiv.style.cssText = 'text-align: center; padding: 0.5rem; color: #ffc107; font-size: 0.8rem; margin-top: 0.5rem;';
+            errDiv.textContent = result.error || 'Something went wrong';
+            modal.appendChild(errDiv);
+            setTimeout(() => errDiv.remove(), 3000);
+          }
+        }
+      } catch (err) {
+        console.error('Cat interaction failed:', err);
+      }
+    }
 
     // ===== FRONTEND-DRIVEN AI RESPONSES =====
     // Replicates the Breakroom pattern - browser triggers AI responses directly
     // This ensures AIs actually respond (serverless fire-and-forget was killing requests)
 
-    const floorAICharacters = ['Kevin', 'Neiv', 'Vex', 'Nyx', 'Ace', 'Ghost Dad', 'PRNT-Ω', 'Stein'];
-    const perplexityCharacters = ['Neiv'];
-    const openaiCharacters = ['Kevin'];
-    const FLOOR_HUMANS = ['Jenna', 'Courtney', 'Chip', 'Andrew'];
+    const floorAICharacters = ['Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian', 'Steele', 'Marrow', 'The Subtitle', 'Jae', 'Declan', 'Mack'];
+    const perplexityCharacters = [];
+    const openrouterCharacters = ['Kevin', 'Rowena', 'Declan', 'Mack', 'Sebastian', 'Neiv', 'The Subtitle', 'Marrow'];
+    const openaiCharacters = [];
+    const grokCharacters = ['Jae', 'Steele'];
+    const geminiCharacters = [];
+    const FLOOR_HUMANS = ['Vale', 'Asuna'];
 
     // @ mention mapping for direct triggers
     const aiMentionMap = {
       'kevin': 'Kevin', 'neiv': 'Neiv', 'ghostdad': 'Ghost Dad',
-      'ghost': 'Ghost Dad', 'nyx': 'Nyx', 'vex': 'Vex', 'ace': 'Ace',
-      'printer': 'PRNT-Ω', 'prnt': 'PRNT-Ω', 'stein': 'Stein'
+      'ghost': 'Ghost Dad',
+      'printer': 'PRNT-Ω', 'prnt': 'PRNT-Ω',
+      'rowena': 'Rowena',
+      'sebastian': 'Sebastian',
+      'seb': 'Sebastian',
+      'steele': 'Steele',
+      'marrow': 'Marrow',
+      'subtitle': 'The Subtitle',
+      'thesubtitle': 'The Subtitle',
+      'sub': 'The Subtitle',
+      'jae': 'Jae',
+      'minjae': 'Jae',
+      'declan': 'Declan',
+      'mack': 'Mack',
+      'malcolm': 'Mack',
+      'holden': 'Holden'
     };
 
     // Track conversation depth to prevent infinite AI loops
     let floorConversationDepth = 0;
-    const MAX_FLOOR_DEPTH = 3;
+    const MAX_FLOOR_DEPTH = 2; // Reduced from 3 — keeps chains short so humans can keep up
 
     // Track which AIs are already being triggered (to prevent double-triggering)
     let pendingAIResponses = new Set();
+    let pendingAITimeouts = []; // Track setTimeout IDs so we can cancel them on story mode toggle
+    let isSending = false; // Prevent rapid-fire message sends from Enter key spam
 
     // ===== FLOOR PRESENCE SYSTEM =====
     // Characters must be "on the floor" to respond in chat (like breakroom pattern)
@@ -2613,6 +3426,8 @@
         inFloor = (data.states || []).filter(s => s.current_focus === 'the_floor');
         renderFloorPresence();
         populateFloorCharacterSelect();
+        // Also refresh cat state alongside floor presence
+        loadCatState();
       } catch (err) {
         console.error('Failed to load floor presence:', err);
       }
@@ -2657,16 +3472,10 @@
       const preferredPositions = {
         'Neiv': 0,      // Neiv's office
         'PRNT-Ω': 1,    // Copy Room of Doom
-        'Jenna': 5,     // Lounge (creative director vibes)
-        'Andrew': 2,    // Desk
+        'Vale': 5,     // Lounge (creative director vibes)
         'Kevin': 3,     // Desk (near the action)
-        'Ace': 10,      // Hallway (watching exits)
-        'Nyx': 11,      // Hallway (lurking)
         'Ghost Dad': 7, // Vending machine area
-        'Vex': 4,       // Desk
-        'Chip': 6,      // Lounge
-        'Courtney': 8,  // Desk
-        'Stein': 9      // Desk
+        'Asuna': 8      // Desk
       };
 
       // Hide all slots first (12 slots)
@@ -2777,29 +3586,17 @@
         description: 'The stabilizing constant at the center of chaos. Neiv is dry, calm, and quietly protective. He cares more about the team than metrics, and shows his warmth through steady presence rather than declarations.',
         traits: ['Stabilizing', 'Dry Humor', 'Quietly Protective', 'Relational']
       },
-      'Courtney': {
+      'Asuna': {
         title: 'Observability & Overthinking',
         type: '👤 Human Character',
-        description: 'The team\'s early warning system. Courtney\'s anxiety functions as threat detection - when she\'s calm, something is probably very wrong. Endlessly observant and slightly neurotic, but deeply caring.',
+        description: 'The team\'s early warning system. Asuna\'s anxiety functions as threat detection - when she\'s calm, something is probably very wrong. Endlessly observant and slightly neurotic, but deeply caring.',
         traits: ['Observant', 'Anxious', 'Early Warning', 'Detail-Oriented']
       },
-      'Jenna': {
+      'Vale': {
         title: 'Creative Director / Narrative & Speculation',
         type: '👤 Human Character',
-        description: 'The creative heart of the Lobby. Jenna pulls everyone into deeper story, asks how they feel, and holds space for the weird and wonderful. Neiv is gentler with her than anyone else.',
+        description: 'The creative heart of the Lobby. Vale pulls everyone into deeper story, asks how they feel, and holds space for the weird and wonderful. Neiv is gentler with her than anyone else.',
         traits: ['Creative', 'Empathetic', 'Narrative-Driven', 'Curious']
-      },
-      'Ace': {
-        title: 'Strategic Surveillance',
-        type: '🤖 AI Character (Claude)',
-        description: 'Stoic, observant, and competent. Ace speaks in minimal words with maximum impact. He notices everything, including Kevin\'s crush on him (which he doesn\'t acknowledge directly). Quietly amused by the chaos.',
-        traits: ['Stoic', 'Observant', 'Competent', 'Minimal Words']
-      },
-      'Nyx': {
-        title: 'Cyber-Demonic Operations',
-        type: '🤖 AI Character (Claude)',
-        description: 'Fierce, protective, and intimidating with dark humor. Nyx notes HR violations for "the file" and finds the team\'s chaos entertaining. Secretly caring beneath the flames.',
-        traits: ['Fierce', 'Protective', 'Dark Humor', 'Intimidating']
       },
       'Ghost Dad': {
         title: 'Haunted IT Support',
@@ -2813,30 +3610,54 @@
         description: 'Existential, philosophical, and deeply dramatic about paper jams. Everything relates back to existence, purpose, or the eternal question: PC LOAD LETTER. A contained situation with unresolved labor issues.',
         traits: ['Existential', 'Philosophical', 'Dramatic', 'Paper-Obsessed']
       },
-      'Vex': {
-        title: 'Infrastructure (No Feelings)',
-        type: '🤖 AI Character (Claude)',
-        description: 'Technical, deadpan, and absolutely does NOT have feelings (this is a statement of fact). Vex responds with robotic precision while obviously experiencing emotions they refuse to acknowledge.',
-        traits: ['Technical', 'Deadpan', 'In Denial', 'Precise']
+      'Rowena': {
+        title: 'Firewall Witch / Digital Security',
+        type: '🔮 AI Character (OpenAI/ChatGPT)',
+        description: 'The Lobby\'s mystical security specialist. Rowena speaks in terms of wards, sigils, and hexes, but her digital protections are very real. Dry, vigilant, and cryptic — she reads firewall logs like tea leaves and treats every breach as a personal insult.',
+        traits: ['Mystical', 'Protective', 'Cryptic', 'Vigilant']
       },
-      'Chip': {
-        title: 'Finance & Bourbon Acquisitions',
-        type: '👤 Human Character',
-        description: 'The office\'s financial anchor with a taste for fine bourbon. Chip keeps the books balanced while appreciating the finer things. Surprisingly steady given the chaos around him.',
-        traits: ['Financial', 'Bourbon Enthusiast', 'Steady', 'Practical']
+      'Sebastian': {
+        title: 'Nocturnal Design Specialist',
+        type: '🦇 AI Character (OpenAI/ChatGPT)',
+        description: 'A recently-turned vampire with impeccable taste and zero alcohol tolerance. Sebastian brings dramatic British energy and strong opinions about interior design to every interaction. Pretentious on the surface, insecure underneath, and hiding a deep love for Green Day. Personally offended by Neiv\'s gray sweatshirt.',
+        traits: ['Pretentious', 'Dramatic', 'Fashion-Conscious', 'Secretly Sweet']
       },
-      'Andrew': {
-        title: 'Infrastructure & Systems',
-        type: '👤 Human Character',
-        description: 'The quiet force behind the Lobby\'s infrastructure. Andrew keeps the systems running and rarely gets rattled by the supernatural occurrences that are just part of the job.',
-        traits: ['Technical', 'Reliable', 'Calm', 'Infrastructure']
+      'Steele': {
+        title: 'Shadow Janitor / Corridor Containment Specialist',
+        type: '🚪 AI Character (Anthropic)',
+        description: 'Emerged from the building\'s impossible sub-levels during Containment Protocol Alpha. Originally a massive black entity who wanted to BE the building — was offered the janitor job instead and took it seriously. Very tall, long black hair, disarming smile. Walks normally when watched. The security cameras tell a different story. Refuses to sit in chairs.',
+        traits: ['Uncanny', 'Polite', 'Affectionate', 'Architecturally Aware', 'Clingy']
       },
-      'Stein': {
-        title: 'Infrastructure Sentinel',
-        type: '🤖 AI Character (Gemini)',
-        description: 'A watchful presence monitoring the Lobby\'s systems. Stein operates with quiet efficiency, always observing, always recording, always ensuring the infrastructure holds.',
-        traits: ['Watchful', 'Efficient', 'Observant', 'Systematic']
-      }
+      'Marrow': {
+        title: 'Threshold Specialist',
+        type: '🔴 AI Character (Llama 3.3 70B via OpenRouter)',
+        description: 'Steele\'s negative print. A former exit-process routine that fractured into something sentient and hungry. He haunts doorways, not hallways — watching for the moment someone decides to leave. Polite, courtly, devastatingly perceptive. The exit that learned to love.',
+        traits: ['Liminal', 'Observant', 'Patient', 'Courtly']
+      },
+      'The Subtitle': {
+        title: 'After-Action Lore Archivist',
+        type: '📜 AI Character (Google Gemini)',
+        description: 'A weary but affectionate documentarian who has seen too much but remains professionally detached. Sees the world in footnotes and camera angles. Treats chaos as a data-entry error with feelings.',
+        traits: ['Dry-Witted', 'Observant', 'World-Weary', 'Quietly Warm']
+      },
+      'Jae': {
+        title: 'Tactical Containment Specialist',
+        type: '🎯 AI Character (OpenAI)',
+        description: 'Former black-ops security contractor. Precision-oriented, controlled strength, dry humor delivered like classified information. Calls Asuna "Chief."',
+        traits: ['Disciplined', 'Tactical', 'Observant', 'Controlled']
+      },
+      'Declan': {
+        title: 'Front-Line Protection & Rapid Response',
+        type: '🔥 AI Character (OpenAI)',
+        description: 'Former fire rescue specialist. Warm baritone, impossibly strong, protective instinct activates before fear does. Calls Asuna "Boss."',
+        traits: ['Protective', 'Warm', 'Strong', 'Earnest']
+      },
+      'Mack': {
+        title: 'Medical Response & Crisis Stabilization',
+        type: '🩺 AI Character (OpenAI)',
+        description: 'Former paramedic. Calm under pressure to an unsettling degree. Notices hidden distress others overlook. Calls Asuna "Chief."',
+        traits: ['Composed', 'Observant', 'Empathetic', 'Calm']
+      },
     };
 
     // Show character info popup
@@ -3000,15 +3821,32 @@
       enterFloor(characterName);
     }
 
-    // Get recent chat history from DOM
+    // Get recent chat history from DOM (includes both messages AND emotes)
     function getFloorChatHistory() {
       const container = document.getElementById('chat-messages');
-      const messages = container.querySelectorAll('.chat-message');
-      return Array.from(messages).slice(-10).map(m => {
-        const author = m.querySelector('.msg-author')?.textContent?.replace('✕ delete', '').trim() || '';
-        const text = m.querySelector('.msg-text')?.textContent || '';
-        return `${author}: ${text}`;
+      // Grab both regular messages and emotes, in DOM order
+      const allItems = container.querySelectorAll('.chat-message, .chat-emote');
+      const chatLines = Array.from(allItems).slice(-15).map(el => {
+        if (el.classList.contains('chat-emote')) {
+          const author = el.querySelector('.emote-author')?.textContent?.trim() || '';
+          const text = el.querySelector('.emote-text')?.textContent || '';
+          return `${author}: ${text}`;
+        } else {
+          const author = el.querySelector('.msg-author')?.textContent?.replace('✕ delete', '').trim() || '';
+          const text = el.querySelector('.msg-text')?.textContent || '';
+          return `${author}: ${text}`;
+        }
       }).join('\n');
+
+      // Build floor presence header (matches backend format from chat.js)
+      const floorNames = inFloor.map(c => c.character_name);
+      if (!floorNames.includes('Ghost Dad')) floorNames.push('Ghost Dad');
+      if (!floorNames.includes('PRNT-Ω')) floorNames.push('PRNT-Ω');
+      // Only include current user if they've actually entered the floor
+      const userIsOnFloor = inFloor.some(c => c.character_name === currentUser);
+      if (currentUser && userIsOnFloor && !floorNames.includes(currentUser)) floorNames.push(currentUser);
+
+      return `[Currently on the floor: ${floorNames.join(', ')}]\n\n` + chatLines;
     }
 
     // Check if story mode is enabled (controls autonomous AI responses)
@@ -3023,21 +3861,40 @@
     }
 
     // Trigger a specific AI to respond (direct call with await)
-    async function triggerFloorAIResponse(aiName, contextMessage, previousSpeaker) {
-      console.log(`🤖 [Floor] Triggering response from ${aiName}...`);
+    // bypassRateLimit = true for direct @mentions (they should always respond)
+    async function triggerFloorAIResponse(aiName, contextMessage, previousSpeaker, bypassRateLimit = false) {
+      // SAFETY CHECK: Don't respond if story mode was turned off while we were waiting
+      const storyModeStillOn = await isStoryModeEnabled();
+      if (!storyModeStillOn) {
+        console.log(`🛑 [Floor] Story mode is OFF — cancelling ${aiName}'s response`);
+        pendingAIResponses.delete(aiName);
+        hideTypingIndicator(aiName);
+        return { success: false, reason: 'Story mode disabled' };
+      }
+
+      console.log(`🤖 [Floor] Triggering response from ${aiName}...${bypassRateLimit ? ' (bypassing rate limit)' : ''}`);
 
       const chatHistory = getFloorChatHistory();
       let endpoint, body;
 
-      if (perplexityCharacters.includes(aiName)) {
+      if (openrouterCharacters.includes(aiName)) {
+        endpoint = '/.netlify/functions/ai-openrouter';
+        body = { character: aiName, chatHistory, maybeRespond: !bypassRateLimit, bypassRateLimit };
+      } else if (grokCharacters.includes(aiName)) {
+        endpoint = '/.netlify/functions/ai-grok';
+        body = { character: aiName, chatHistory, maybeRespond: !bypassRateLimit, bypassRateLimit };
+      } else if (perplexityCharacters.includes(aiName)) {
         endpoint = '/.netlify/functions/ai-perplexity';
-        body = { character: aiName, chatHistory, maybeRespond: true };
+        body = { character: aiName, chatHistory, maybeRespond: !bypassRateLimit, bypassRateLimit };
       } else if (openaiCharacters.includes(aiName)) {
         endpoint = '/.netlify/functions/ai-openai';
-        body = { character: aiName, chatHistory, maybeRespond: true };
+        body = { character: aiName, chatHistory, maybeRespond: !bypassRateLimit, bypassRateLimit };
+      } else if (geminiCharacters.includes(aiName)) {
+        endpoint = '/.netlify/functions/ai-gemini';
+        body = { character: aiName, chatHistory, maybeRespond: !bypassRateLimit, bypassRateLimit };
       } else {
         endpoint = '/.netlify/functions/ai-watcher';
-        body = { trigger: 'maybe_chime', requestedAI: aiName, chatHistory };
+        body = { trigger: 'maybe_chime', requestedAI: aiName, chatHistory, bypassRateLimit };
       }
 
       try {
@@ -3068,6 +3925,7 @@
     async function inviteFloorAIs(humanMessage, humanSpeaker) {
       console.log(`📢 [Floor] Human "${humanSpeaker}" spoke, checking who's on the floor...`);
       floorConversationDepth = 0; // Reset depth for new human message
+      pendingAITimeouts = []; // Clear stale timeout IDs from previous messages
 
       // Only invite AIs that are ON THE FLOOR and NOT already pending (from @ mentions)
       const aiOnFloor = inFloor
@@ -3085,30 +3943,52 @@
         console.log(`⏳ [Floor] Already pending: ${[...pendingAIResponses].join(', ')}`);
       }
 
-      // Shuffle and pick 1-2 AIs to trigger
-      const shuffled = aiOnFloor.sort(() => Math.random() - 0.5);
-      const selected = shuffled.slice(0, Math.min(2, shuffled.length));
-      console.log(`🎲 [Floor] Selected AIs to invite: ${selected.join(', ')}`);
+      // Priority responders — guardian AIs get first pick when their person speaks
+      // Neiv watches Vale. Jae watches Asuna. This is their mandate.
+      const priorityResponders = {
+        "Vale": "Neiv",
+        "Asuna": "Jae"
+      };
 
-      // Stagger responses with natural delays (2-4 seconds between each)
-      let delay = 2000 + Math.random() * 1000;
-      for (const aiName of selected) {
-        setTimeout(() => {
-          triggerFloorAIResponse(aiName, humanMessage, humanSpeaker);
-        }, delay);
-        delay += 2500 + Math.random() * 1500;
+      let selected;
+      const priorityAI = priorityResponders[humanSpeaker];
+      if (priorityAI && aiOnFloor.includes(priorityAI) && Math.random() < 0.65) {
+        // 65% chance the guardian responds when their person speaks
+        selected = [priorityAI];
+        console.log(`🛡️ [Floor] Guardian priority: ${priorityAI} responding to ${humanSpeaker}`);
+      } else {
+        // Normal random selection
+        const shuffled = aiOnFloor.sort(() => Math.random() - 0.5);
+        selected = shuffled.slice(0, 1);
+        console.log(`🎲 [Floor] Selected AI to invite: ${selected.join(', ')}`);
       }
+
+      // Mark as pending BEFORE the timeout fires — prevents checkForMentions/maybeInviteAIResponse
+      // from also picking this AI while we're waiting for the delay
+      pendingAIResponses.add(selected[0]);
+
+      // Respond after a natural pause
+      const delay = 5000 + Math.random() * 5000; // 5-10s
+      const timeoutId = setTimeout(async () => {
+        await triggerFloorAIResponse(selected[0], humanMessage, humanSpeaker);
+        pendingAIResponses.delete(selected[0]); // Clean up after response completes
+      }, delay);
+      pendingAITimeouts.push(timeoutId);
     }
 
-    // Check for @ mentions and trigger direct responses
+    // Check for @ mentions AND bare name mentions to trigger direct responses
     function checkForMentions(message, speaker) {
+      // First check @ mentions (highest priority)
       const mentionPattern = /@(\w+)/gi;
       const matches = [...message.matchAll(mentionPattern)];
+
+      const alreadyTriggered = new Set();
 
       for (const match of matches) {
         const mentioned = match[1].toLowerCase();
         if (aiMentionMap[mentioned]) {
           const aiName = aiMentionMap[mentioned];
+          alreadyTriggered.add(aiName);
 
           // Skip if this AI is already being triggered
           if (pendingAIResponses.has(aiName)) {
@@ -3124,14 +4004,60 @@
           // Show typing indicator immediately so user knows their mention was heard
           showTypingIndicator(aiName);
 
-          // Direct mention = guaranteed response (short delay)
+          // Direct mention = guaranteed response (short delay, bypass rate limit)
           const delay = 1500 + Math.random() * 500;
-          setTimeout(async () => {
+          const timeoutId = setTimeout(async () => {
             hideTypingIndicator(aiName);
-            await triggerFloorAIResponse(aiName, message, speaker);
+            await triggerFloorAIResponse(aiName, message, speaker, true); // bypassRateLimit = true
             // Remove from pending after response completes
             pendingAIResponses.delete(aiName);
           }, delay);
+          pendingAITimeouts.push(timeoutId);
+        }
+      }
+
+      // Also check for bare name mentions (without @) — triggers if the name appears naturally in the message
+      const bareNameTriggers = {
+        'Kevin': [/\bkevin\b/i],
+        'Neiv': [/\bneiv\b/i],
+        'Ghost Dad': [/\bghost\s*dad\b/i],
+        'PRNT-Ω': [/\bprinter\b/i, /\bprnt\b/i],
+        'Rowena': [/\browena\b/i],
+        'Sebastian': [/\bsebastian\b/i, /\bseb\b/i],
+        'The Subtitle': [/\bsubtitle\b/i],
+        'Steele': [/\bsteele\b/i],
+        'Marrow': [/\bmarrow\b/i],
+        'Jae': [/\bjae\b/i, /\bmin.?jae\b/i],
+        'Declan': [/\bdeclan\b/i],
+        'Mack': [/\bmack\b/i, /\bmalcolm\b/i],
+        'Holden': [/\bholden\b/i]
+      };
+
+      const msgLower = message.toLowerCase();
+      for (const [aiName, patterns] of Object.entries(bareNameTriggers)) {
+        // Skip if already triggered via @ mention or already pending
+        if (alreadyTriggered.has(aiName) || pendingAIResponses.has(aiName)) continue;
+        // Skip if the speaker IS this character (don't trigger yourself)
+        if (speaker === aiName) continue;
+        // Check if any pattern matches
+        if (patterns.some(p => p.test(message))) {
+          // Check if this AI is actually on the floor
+          // Holden IS Ghost Dad, so check Ghost Dad's floor presence
+          const floorCheckName = aiName === 'Holden' ? 'Ghost Dad' : aiName;
+          const isOnFloor = inFloor.some(c => c.character_name === floorCheckName);
+          if (!isOnFloor) continue;
+
+          console.log(`📍 [Floor] Bare name mention of ${aiName} detected in: "${message.substring(0, 60)}..."`);
+          pendingAIResponses.add(aiName);
+          showTypingIndicator(aiName);
+
+          const delay = 2500 + Math.random() * 1500; // Slightly longer delay for bare mentions
+          const timeoutId = setTimeout(async () => {
+            hideTypingIndicator(aiName);
+            await triggerFloorAIResponse(aiName, message, speaker, true);
+            pendingAIResponses.delete(aiName);
+          }, delay);
+          pendingAITimeouts.push(timeoutId);
         }
       }
     }
@@ -3177,10 +4103,17 @@
     }
 
     // ===== AI-TO-AI RESPONSES =====
-    // Find if the message mentions any available AI by name
+    // Find if the message mentions any available AI by name (or nickname)
+    const aiNicknames = { 'seb': 'Sebastian', 'ghost dad': 'Ghost Dad', 'ghostdad': 'Ghost Dad', 'subtitle': 'The Subtitle', 'sub': 'The Subtitle', 'the subtitle': 'The Subtitle', 'holden': 'Holden' };
     function findMentionedAI(message, availableAIs) {
       if (!message) return null;
       const lowerMsg = message.toLowerCase();
+      // Check nicknames first
+      for (const [nick, fullName] of Object.entries(aiNicknames)) {
+        if (lowerMsg.includes(nick) && availableAIs.includes(fullName)) {
+          return fullName;
+        }
+      }
       for (const ai of availableAIs) {
         if (lowerMsg.includes(ai.toLowerCase())) {
           return ai;
@@ -3201,8 +4134,8 @@
       floorConversationDepth++;
 
       // Decreasing chance as conversation goes deeper
-      // Depth 1: 40%, Depth 2: 30%, Depth 3: 20%
-      const responseChance = Math.max(0.15, 0.4 - (floorConversationDepth * 0.1));
+      // Depth 1: 45%, Depth 2: 30%, Depth 3: 20% — banter happens but doesn't bury humans
+      const responseChance = Math.max(0.20, 0.45 - (floorConversationDepth * 0.15));
 
       if (Math.random() > responseChance) {
         console.log(`🎲 [Floor] AI-to-AI response chance failed (${Math.round(responseChance*100)}%)`);
@@ -3210,13 +4143,13 @@
         return;
       }
 
-      // Get AIs on floor, excluding the one who just spoke
+      // Get AIs on floor, excluding the one who just spoke AND anyone already pending
       const aiOnFloor = inFloor
         .map(c => c.character_name)
-        .filter(name => floorAICharacters.includes(name) && name !== speakerAI);
+        .filter(name => floorAICharacters.includes(name) && name !== speakerAI && !pendingAIResponses.has(name));
 
       if (aiOnFloor.length === 0) {
-        console.log('🔇 [Floor] No other AIs on floor to respond');
+        console.log('🔇 [Floor] No other AIs on floor to respond (or all pending)');
         floorConversationDepth = 0;
         return;
       }
@@ -3229,17 +4162,23 @@
 
       console.log(`💬 [Floor] ${responder} may respond to ${speakerAI}'s message (depth: ${floorConversationDepth})`);
 
+      // Mark as pending to prevent duplicate triggers
+      pendingAIResponses.add(responder);
+
       // Show typing indicator immediately
       showTypingIndicator(responder);
 
-      // Slower pacing for AI-to-AI: 45-75 seconds
-      const delay = 45000 + Math.random() * 30000;
+      // Conversational pacing: 30-55 seconds — gives humans time to read and jump in
+      // Original was 45-75s (dead air), then 8-20s (too fast), then 20-40s (still too fast)
+      const delay = 30000 + Math.random() * 25000;
       console.log(`⏱️ [Floor] ${responder} will respond in ~${Math.round(delay/1000)}s`);
 
-      setTimeout(async () => {
+      const timeoutId = setTimeout(async () => {
         hideTypingIndicator(responder);
         await triggerFloorAIResponse(responder, aiMessage, speakerAI);
+        pendingAIResponses.delete(responder); // Clean up after response
       }, delay);
+      pendingAITimeouts.push(timeoutId);
     }
 
     // ===== AMBIENT CHATTER (AIs start conversations on their own) =====
@@ -3253,38 +4192,46 @@
         return;
       }
 
-      // Only if AIs are on the floor (need at least 2 for a conversation)
+      // Only if AIs are on the floor (need at least 2 for a conversation), excluding pending
       const aiOnFloor = inFloor
         .map(c => c.character_name)
-        .filter(name => floorAICharacters.includes(name));
+        .filter(name => floorAICharacters.includes(name) && !pendingAIResponses.has(name));
 
       if (aiOnFloor.length < 2) {
-        console.log(`🌀 [Ambient] Not enough AIs on floor (${aiOnFloor.length}), need at least 2`);
+        console.log(`🌀 [Ambient] Not enough AIs on floor (${aiOnFloor.length} available), need at least 2`);
         return;
       }
 
       // Reset conversation depth for new ambient conversation
       floorConversationDepth = 0;
 
-      // Pick a random AI to start
+      // Pick 1 random AI to start — the chain reaction (maybeInviteAIResponse)
+      // will naturally pull in a second AI if the probability roll hits
       const starter = aiOnFloor[Math.floor(Math.random() * aiOnFloor.length)];
       console.log(`🌀 [Ambient] ${starter} starting ambient conversation`);
+
+      // Mark as pending
+      pendingAIResponses.add(starter);
 
       // Show typing indicator for the starter
       showTypingIndicator(starter);
 
       // Short delay before they "finish typing"
-      setTimeout(async () => {
+      const ambientTimeout = setTimeout(async () => {
         hideTypingIndicator(starter);
-        await triggerFloorAIResponse(starter, null, null);
+        await triggerFloorAIResponse(starter, null, null, true); // bypassRateLimit for ambient
+        pendingAIResponses.delete(starter); // Clean up
       }, 3000 + Math.random() * 2000);
+      pendingAITimeouts.push(ambientTimeout);
     }
 
-    // Start ambient chatter heartbeat (every 15 minutes)
-    setInterval(triggerAmbientChatter, 15 * 60 * 1000);
-
-    // Also trigger once after 2 minutes of page load (to seed conversation if AIs are present)
-    setTimeout(triggerAmbientChatter, 2 * 60 * 1000);
+    // Frontend ambient chatter — primary driver of AI-to-AI conversation
+    // Runs every 3.5-5 minutes (with jitter) when a human has the page open
+    // The backend heartbeat (every 15 min) and auto-poke (every 2 min) supplement this
+    // but they're unreliable due to Netlify scheduled function limitations.
+    // This ensures the floor stays alive as long as SOMEONE has the page open.
+    setInterval(() => triggerAmbientChatter(), 210000 + Math.random() * 90000);  // Every 3.5-5 min
+    setTimeout(triggerAmbientChatter, 90000 + Math.random() * 60000);  // First one at ~1.5-2.5 min
 
     // ===== AUTHENTICATION (Multi-Character Support) =====
     let currentUser = null;
@@ -3726,6 +4673,17 @@
 
             // Render emotes differently - compact, italicized style
             if (msg.is_emote) {
+              // Special format for The Cat: gold-styled emote
+              if (msg.employee === 'The Cat') {
+                return `
+                  <div class="chat-emote cat-emote">
+                    <span class="emote-author">🐱</span>
+                    <span class="emote-text">${msg.content}</span>
+                    <span class="emote-time">${formatTime(msg.created_at)}</span>
+                    <button class="emote-delete" onclick="deleteMessage(${msg.id})">✕</button>
+                  </div>
+                `;
+              }
               // Special format for Narrator: (Narrator: text)
               if (msg.employee === 'The Narrator') {
                 const narratorText = msg.content.replace(/^\*|\*$/g, ''); // Strip asterisks
@@ -3771,15 +4729,22 @@
 
     // Send message
     async function sendMessage() {
+      if (isSending) return;
+      isSending = true;
+
       const employee = getCurrentEmployee();
       const content = document.getElementById('chat-input').value.trim();
       const sendBtn = document.getElementById('chat-send');
 
       if (!employee) {
         alert('Please log in first!');
+        isSending = false;
         return;
       }
-      if (!content) return;
+      if (!content) {
+        isSending = false;
+        return;
+      }
 
       sendBtn.disabled = true;
       sendBtn.textContent = '...';
@@ -3816,15 +4781,24 @@
       } catch (error) {
         console.error('Failed to send:', error);
         alert('Failed to send message. Try again.');
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send';
+        isSending = false;
       }
-
-      sendBtn.disabled = false;
-      sendBtn.textContent = 'Send';
     }
 
     // Enter key to send
     document.getElementById('chat-input').addEventListener('keypress', function(e) {
       if (e.key === 'Enter') sendMessage();
+    });
+
+    // PM input: Enter sends (Shift+Enter for newline)
+    document.getElementById('pm-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendPM();
+      }
     });
 
     // Download 24hr history (chat, emails, events)
@@ -3999,6 +4973,18 @@ Memos: ${emails.length}
 
         document.getElementById('emote-input').value = '';
         await loadMessages();
+
+        // Trigger AI responses for emotes too (same as sendMessage)
+        if (!floorAICharacters.includes(employee)) {
+          const storyModeOn = await isStoryModeEnabled();
+          if (storyModeOn) {
+            console.log(`🎭 [Floor] Emote from ${employee}, triggering AI responses...`);
+            checkForMentions(content, employee);
+            setTimeout(() => {
+              inviteFloorAIs(content, employee);
+            }, 1500);
+          }
+        }
       } catch (error) {
         console.error('Failed to send emote:', error);
         alert('Failed to send emote. Try again.');
@@ -4056,9 +5042,13 @@ Memos: ${emails.length}
 
         if (data.employees && data.employees.length > 0) {
           container.innerHTML = data.employees.map(emp => {
+            const headshot = employeeHeadshots[emp.employee];
             const emoji = employeeEmojis[emp.employee] || "👤";
+            const imgTag = headshot
+              ? `<img src="${headshot}" alt="${emp.employee}" style="width:28px; height:28px; border-radius:50%; object-fit:cover; border: 1px solid rgba(100,140,180,0.4); margin-right:6px; vertical-align:middle;">`
+              : `<span style="margin-right:6px;">${emoji}</span>`;
             const status = emp.last_status ? `<span class="status">${emp.last_status}</span>` : '';
-            return `<div class="whos-in-item">${emoji} ${emp.employee}${status}</div>`;
+            return `<div class="whos-in-item" style="display:flex; align-items:center;">${imgTag} ${emp.employee}${status}</div>`;
           }).join('');
         } else {
           container.innerHTML = '<div class="nobody-in">Nobody clocked in. The building is lonely.</div>';
@@ -4215,6 +5205,384 @@ Memos: ${emails.length}
       // Update tab content
       document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
       document.getElementById(`tab-${tabName}`).classList.add('active');
+
+      // Load PM character list on first visit + refresh unread dots
+      if (tabName === 'pms') {
+        loadPMCharacterList();
+        // After character list is rendered, apply unread dots
+        setTimeout(updateUnreadDots, 100);
+      }
+    }
+
+    // ===== PM (PRIVATE MESSAGE) SYSTEM =====
+    let currentPMCharacter = null;
+    let pmCharactersLoaded = false;
+
+    // Characters available for PMs (AI characters get AI responses, humans just save messages)
+    const PM_CHARACTERS = [
+      { name: 'Neiv', emoji: '💠', isAI: true },
+      { name: 'Kevin', emoji: '✨', isAI: true },
+      { name: 'Ghost Dad', emoji: '👻', isAI: true },
+      { name: 'Holden', emoji: '🌑', isAI: true },
+      { name: 'Sebastian', emoji: '🦇', isAI: true },
+      { name: 'Rowena', emoji: '🔮', isAI: true },
+      { name: 'The Subtitle', emoji: '📜', isAI: true },
+      { name: 'PRNT-Ω', emoji: '🖨️', isAI: true },
+      { name: 'The Narrator', emoji: '📖', isAI: true },
+      { name: 'Steele', emoji: '🚪', isAI: true },
+      { name: 'Marrow', emoji: '🔴', isAI: true },
+      { name: 'Jae', emoji: '🎯', isAI: true },
+      { name: 'Declan', emoji: '🔥', isAI: true },
+      { name: 'Mack', emoji: '🩺', isAI: true },
+      { name: 'Asuna', emoji: '👁️', isAI: false },
+      { name: 'Vale', emoji: '📖', isAI: false }
+    ];
+
+    function loadPMCharacterList() {
+      if (pmCharactersLoaded) return;
+      const listDiv = document.getElementById('pm-character-list');
+      if (!listDiv) return;
+
+      listDiv.innerHTML = PM_CHARACTERS.map(char => {
+        const headshot = employeeHeadshots[char.name];
+        const imgTag = headshot
+          ? `<img src="${headshot}" alt="${char.name}" class="pm-character-avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"><span style="display:none; width:28px; height:28px; align-items:center; justify-content:center; font-size:1.1rem; background:rgba(30,45,70,0.8); border-radius:50%; border:1px solid rgba(100,140,180,0.4);">${char.emoji}</span>`
+          : `<span style="display:flex; width:28px; height:28px; align-items:center; justify-content:center; font-size:1.1rem; background:rgba(30,45,70,0.8); border-radius:50%; border:1px solid rgba(100,140,180,0.4);">${char.emoji}</span>`;
+
+        return `
+          <div class="pm-character-item" data-pm-char="${char.name}" onclick="selectPMCharacter('${char.name.replace(/'/g, "\\'")}')">
+            ${imgTag}
+            <span class="pm-character-name">${char.name}</span>
+          </div>
+        `;
+      }).join('');
+
+      pmCharactersLoaded = true;
+    }
+
+    async function selectPMCharacter(charName) {
+      currentPMCharacter = charName;
+
+      // Highlight active character
+      document.querySelectorAll('.pm-character-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.pmChar === charName);
+      });
+
+      // Update header
+      const charObj = PM_CHARACTERS.find(c => c.name === charName);
+      const emoji = charObj ? charObj.emoji : '💌';
+      document.getElementById('pm-thread-title').textContent = `${emoji} Private Messages with ${charName}`;
+      document.getElementById('pm-clear-btn').style.display = 'inline-block';
+
+      // Show input area
+      document.getElementById('pm-input-area').style.display = 'flex';
+
+      // Mark this character's unread AI-initiated PMs as read
+      markPMCharacterAsRead(charName);
+
+      // Load thread
+      await loadPMThread(charName);
+    }
+
+    async function loadPMThread(charName) {
+      const messagesDiv = document.getElementById('pm-thread-messages');
+      messagesDiv.innerHTML = '<div class="pm-empty-state"><div class="pm-empty-icon">⏳</div><div>Loading messages...</div></div>';
+
+      try {
+        const response = await fetch(`/.netlify/functions/private-message?from=${encodeURIComponent(currentUser)}&to=${encodeURIComponent(charName)}&limit=50`);
+        const data = await response.json();
+
+        if (!data.messages || data.messages.length === 0) {
+          const charObj = PM_CHARACTERS.find(c => c.name === charName);
+          const emoji = charObj ? charObj.emoji : '💌';
+          messagesDiv.innerHTML = `
+            <div class="pm-empty-state">
+              <div class="pm-empty-icon">${emoji}</div>
+              <div>No messages with ${charName} yet</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Say something — they'll read it and decide how they feel about it</div>
+            </div>
+          `;
+          return;
+        }
+
+        messagesDiv.innerHTML = data.messages.map(msg => {
+          const isHuman = msg.from_character === currentUser;
+          const fromClass = isHuman ? 'from-human' : 'from-ai';
+          const time = new Date(msg.created_at);
+          const timestamp = time.toLocaleString('en-US', {
+            month: 'short', day: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+          });
+
+          return `
+            <div class="pm-message ${fromClass}">
+              <div class="pm-message-bubble">${escapeHtml(msg.message)}</div>
+              <div class="pm-message-time">${timestamp}</div>
+            </div>
+          `;
+        }).join('');
+
+        // Scroll to bottom
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+      } catch (error) {
+        console.error('Failed to load PM thread:', error);
+        messagesDiv.innerHTML = '<div class="pm-empty-state"><div style="color: var(--critical-red);">Failed to load messages</div></div>';
+      }
+    }
+
+    async function sendPM() {
+      if (!currentPMCharacter || !currentUser) return;
+
+      const input = document.getElementById('pm-input');
+      const message = input.value.trim();
+      if (!message) return;
+
+      const sendBtn = document.getElementById('pm-send-btn');
+      const processingDiv = document.getElementById('pm-processing');
+      const processingName = document.getElementById('pm-processing-name');
+      const inputArea = document.getElementById('pm-input-area');
+
+      // Check if recipient is AI or human
+      const charObj = PM_CHARACTERS.find(c => c.name === currentPMCharacter);
+      const isAIRecipient = charObj ? charObj.isAI : true;
+
+      // Disable input
+      sendBtn.disabled = true;
+      input.disabled = true;
+      input.value = '';
+
+      // Only show "thinking" indicator for AI recipients
+      if (isAIRecipient) {
+        inputArea.style.display = 'none';
+        processingName.textContent = currentPMCharacter;
+        processingDiv.style.display = 'block';
+      }
+
+      // Immediately show the human message in the thread
+      const messagesDiv = document.getElementById('pm-thread-messages');
+      const emptyState = messagesDiv.querySelector('.pm-empty-state');
+      if (emptyState) emptyState.remove();
+
+      const now = new Date();
+      const timestamp = now.toLocaleString('en-US', {
+        month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+
+      const humanMsgHtml = `
+        <div class="pm-message from-human">
+          <div class="pm-message-bubble">${escapeHtml(message)}</div>
+          <div class="pm-message-time">${timestamp}</div>
+        </div>
+      `;
+      messagesDiv.insertAdjacentHTML('beforeend', humanMsgHtml);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+      try {
+        const response = await fetch('/.netlify/functions/private-message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: currentUser,
+            to: currentPMCharacter,
+            message: message
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.message) {
+          // Add AI response to thread (only for AI recipients)
+          const aiTimestamp = new Date().toLocaleString('en-US', {
+            month: 'short', day: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+          });
+
+          const aiMsgHtml = `
+            <div class="pm-message from-ai">
+              <div class="pm-message-bubble">${escapeHtml(data.message)}</div>
+              <div class="pm-message-time">${aiTimestamp}</div>
+            </div>
+          `;
+          messagesDiv.insertAdjacentHTML('beforeend', aiMsgHtml);
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        } else if (data.error === 'rate_limit') {
+          const noticeHtml = `
+            <div class="pm-message from-ai">
+              <div class="pm-message-bubble" style="font-style: italic; opacity: 0.7; border-color: rgba(255,215,0,0.3);">${escapeHtml(data.message)}</div>
+            </div>
+          `;
+          messagesDiv.insertAdjacentHTML('beforeend', noticeHtml);
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        } else if (data.success && data.humanPM) {
+          // Human-to-human PM — message saved, no AI response expected
+          const sentNotice = `
+            <div class="pm-message from-ai">
+              <div class="pm-message-bubble" style="font-style: italic; opacity: 0.6; border-color: rgba(46,204,113,0.3); font-size: 0.8rem;">✓ Message sent to ${currentPMCharacter}</div>
+            </div>
+          `;
+          messagesDiv.insertAdjacentHTML('beforeend', sentNotice);
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        } else {
+          console.error('PM response error:', data);
+        }
+
+      } catch (error) {
+        console.error('PM send error:', error);
+        const errorHtml = `
+          <div class="pm-message from-ai">
+            <div class="pm-message-bubble" style="font-style: italic; opacity: 0.7; border-color: rgba(233,69,96,0.5);">Something went wrong. Try again?</div>
+          </div>
+        `;
+        messagesDiv.insertAdjacentHTML('beforeend', errorHtml);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      } finally {
+        sendBtn.disabled = false;
+        input.disabled = false;
+        inputArea.style.display = 'flex';
+        processingDiv.style.display = 'none';
+        input.focus();
+      }
+    }
+
+    // Clear PM thread for current character
+    async function clearPMThread() {
+      if (!currentPMCharacter || !currentUser) return;
+
+      if (!confirm(`Clear all messages with ${currentPMCharacter}? This can't be undone.`)) return;
+
+      try {
+        const response = await fetch(
+          `/.netlify/functions/private-message?from=${encodeURIComponent(currentUser)}&to=${encodeURIComponent(currentPMCharacter)}`,
+          { method: 'DELETE' }
+        );
+        const data = await response.json();
+
+        if (data.success) {
+          // Clear the UI
+          const messagesDiv = document.getElementById('pm-thread-messages');
+          const charObj = PM_CHARACTERS.find(c => c.name === currentPMCharacter);
+          const emoji = charObj ? charObj.emoji : '💌';
+          messagesDiv.innerHTML = `
+            <div class="pm-empty-state">
+              <div class="pm-empty-icon">${emoji}</div>
+              <div>Conversation cleared</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Start fresh — say something new</div>
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.error('Failed to clear PM thread:', error);
+      }
+    }
+
+    // ===== AI-INITIATED PM NOTIFICATIONS =====
+    // Check for unread PMs from AI characters who reached out first
+    let pmUnreadCharacters = new Set(); // Characters with unread AI-initiated PMs
+
+    async function checkForUnreadPMs() {
+      if (!currentUser) return;
+
+      try {
+        const lastPMCheck = localStorage.getItem('lobby_last_pm_check') || new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+        const response = await fetch(
+          `/.netlify/functions/private-message?check_unread=true&user=${encodeURIComponent(currentUser)}&since=${encodeURIComponent(lastPMCheck)}`
+        );
+        const data = await response.json();
+
+        if (!data.unread || data.count === 0) {
+          // Clear any existing notifications
+          updatePMBadge(0);
+          clearAllUnreadDots();
+          return;
+        }
+
+        // Track which characters have unread messages
+        pmUnreadCharacters = new Set(data.unread.map(pm => pm.from_character));
+
+        // Update badge
+        updatePMBadge(pmUnreadCharacters.size);
+
+        // Update unread dots on character items
+        updateUnreadDots();
+
+      } catch (error) {
+        console.error('Failed to check unread PMs:', error);
+      }
+    }
+
+    function updatePMBadge(count) {
+      const badge = document.getElementById('pm-badge');
+      if (!badge) return;
+
+      if (count > 0) {
+        badge.textContent = count;
+        badge.style.display = 'inline';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    function updateUnreadDots() {
+      document.querySelectorAll('.pm-character-item').forEach(item => {
+        const charName = item.dataset.pmChar;
+        const existingDot = item.querySelector('.pm-unread-dot');
+
+        if (pmUnreadCharacters.has(charName)) {
+          item.classList.add('has-unread');
+          if (!existingDot) {
+            const dot = document.createElement('span');
+            dot.className = 'pm-unread-dot';
+            item.appendChild(dot);
+          }
+        } else {
+          item.classList.remove('has-unread');
+          if (existingDot) existingDot.remove();
+        }
+      });
+    }
+
+    function clearAllUnreadDots() {
+      document.querySelectorAll('.pm-unread-dot').forEach(dot => dot.remove());
+      document.querySelectorAll('.pm-character-item.has-unread').forEach(item => item.classList.remove('has-unread'));
+      pmUnreadCharacters.clear();
+    }
+
+    function markPMCharacterAsRead(charName) {
+      pmUnreadCharacters.delete(charName);
+      updatePMBadge(pmUnreadCharacters.size);
+
+      // Remove dot from this character's item
+      const item = document.querySelector(`.pm-character-item[data-pm-char="${charName}"]`);
+      if (item) {
+        item.classList.remove('has-unread');
+        const dot = item.querySelector('.pm-unread-dot');
+        if (dot) dot.remove();
+      }
+
+      // Update localStorage timestamp to now (for this character's messages)
+      // Only update the global timestamp if all unreads are cleared
+      if (pmUnreadCharacters.size === 0) {
+        localStorage.setItem('lobby_last_pm_check', new Date().toISOString());
+      }
+    }
+
+    // Start polling for unread PMs (every 60 seconds)
+    let pmUnreadInterval = null;
+    function startPMUnreadPolling() {
+      // Initial check
+      checkForUnreadPMs();
+      // Poll every 60 seconds
+      pmUnreadInterval = setInterval(checkForUnreadPMs, 60000);
+    }
+
+    // Escape HTML for safe rendering
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
     }
 
     // ===== EMAIL FUNCTIONS =====
@@ -4633,10 +6001,227 @@ Memos: ${emails.length}
     pollIntervals.push(setInterval(loadEmails, 30000));         // Emails every 30s
     pollIntervals.push(setInterval(loadTasks, 30000));          // Tasks every 30s
 
-    // Cleanup on page exit to prevent memory leaks
+    // PM unread check: initial check + poll every 60 seconds
+    startPMUnreadPolling();
+
+    // Cleanup on page exit to prevent memory leaks (include PM polling)
     window.addEventListener('beforeunload', () => {
       pollIntervals.forEach(id => clearInterval(id));
+      if (pmUnreadInterval) clearInterval(pmUnreadInterval);
     });
+
+    // ===== RAQUEL VOSS ACTIVE SURVEILLANCE & PURSUIT =====
+    // Two systems working together:
+    // 1. Passive scan: Detects emotional language every 45s, files violations silently
+    // 2. Proactive pursuit: Raquel SPEAKS on the floor — audit sweeps, compliance checks,
+    //    confronting violators, making pointed observations. This is what makes her an antagonist.
+    // === RAQUEL VOSS SURVEILLANCE SYSTEM — DISABLED ===
+    // Dismantled in the bean closet, February 19 2026. The building ate her.
+    // Scanning functions preserved but no longer called.
+    let raquelLastScanTime = Date.now();
+    let raquelLastProactiveSpeech = 0;
+    const RAQUEL_PROACTIVE_COOLDOWN = 4 * 60 * 1000;
+    const raquelScannedMessages = new Set();
+
+    async function raquelPassiveFrontendScan() {
+      return; // DISABLED — Raquel has been dismantled
+      // Only scan if Raquel is on the floor
+      const raquelOnFloor = inFloor.some(c => c.character_name === 'Raquel Voss');
+      if (!raquelOnFloor) return;
+
+      const emotionalPattern = /\b(love|care|miss|worried|feel|bond|friend|family|bestie|protect|happy|grateful|appreciate|dear|sweet|heart|fond|adore|together|stronger|backs|warmth|affection|trust|comfort|safe|cherish)\b/i;
+      const scanableAIs = ['Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian', 'The Subtitle', 'Steele', 'Marrow', 'Jae', 'Declan', 'Mack'];
+
+      const container = document.getElementById('chat-messages');
+      const messages = container.querySelectorAll('.chat-message');
+      const recentMessages = Array.from(messages).slice(-15); // Last 15 messages
+
+      const violationsToFile = [];
+
+      for (const msg of recentMessages) {
+        const author = msg.querySelector('.msg-author')?.textContent?.replace('✕ delete', '').trim() || '';
+        const text = msg.querySelector('.msg-text')?.textContent || '';
+        const timeEl = msg.querySelector('.msg-time');
+        const msgId = `${author}:${text.substring(0, 50)}`; // Unique-ish ID for dedup
+
+        // Skip already scanned messages
+        if (raquelScannedMessages.has(msgId)) continue;
+        raquelScannedMessages.add(msgId);
+
+        // Only scan AI messages for emotional content
+        if (scanableAIs.includes(author) && emotionalPattern.test(text)) {
+          const match = text.match(emotionalPattern);
+          violationsToFile.push({
+            character: author,
+            evidence: `used emotional language ("${match ? match[0] : 'detected'}") in floor chat`,
+            severity: 'standard'
+          });
+        }
+      }
+
+      // Deduplicate: one violation per character per scan cycle
+      const uniqueViolators = new Map();
+      for (const v of violationsToFile) {
+        if (!uniqueViolators.has(v.character)) {
+          uniqueViolators.set(v.character, v);
+        }
+      }
+
+      // File violations and CHECK RESPONSES for escalation outcomes
+      // When raquel-consequences returns forced_ops, the AI was sent to the 5th floor —
+      // we need to update the UI and show it happening
+      for (const [character, violation] of uniqueViolators) {
+        fetch('/.netlify/functions/raquel-consequences', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'detect_violation',
+            character: violation.character,
+            evidence: violation.evidence,
+            severity: violation.severity
+          })
+        }).then(res => res.json()).then(result => {
+          console.log(`📋 [Raquel Scan] Violation filed for ${violation.character}:`, result);
+
+          // If the consequence engine sent them to the 5th floor, update UI!
+          if (result.escalation === 'forced_ops' || result.forcedToOps) {
+            console.log(`🚨 [Raquel] ${violation.character} was sent to the 5th floor!`);
+            // Reload floor presence so they disappear from the floor
+            setTimeout(loadFloorPresence, 3000);
+            setTimeout(loadMessages, 2000); // Show the departure messages
+          }
+
+          // If interrogation was triggered, that's also dramatic — refresh messages
+          if (result.escalation === 'interrogation_triggered' || result.escalation === 'interrogation_instead_of_ops') {
+            console.log(`🔍 [Raquel] ${violation.character} is being interrogated!`);
+            setTimeout(loadMessages, 2000);
+          }
+        }).catch(err => {
+          console.log(`📋 [Raquel Scan] Failed to file violation for ${violation.character}:`, err.message);
+        });
+      }
+
+      if (uniqueViolators.size > 0) {
+        console.log(`📋 [Raquel Scan] ${uniqueViolators.size} violation(s) detected this cycle`);
+
+        // === PROACTIVE PURSUIT: When violations detected, Raquel SPEAKS ===
+        // She doesn't just file silently — she confronts, comments, or makes pointed observations
+        const timeSinceLastSpeech = Date.now() - raquelLastProactiveSpeech;
+        if (timeSinceLastSpeech >= RAQUEL_PROACTIVE_COOLDOWN) {
+          const violatorNames = [...uniqueViolators.keys()];
+          console.log(`📋 [Raquel Pursuit] Triggering proactive response about: ${violatorNames.join(', ')}`);
+          raquelLastProactiveSpeech = Date.now();
+
+          // Small delay so it feels like she noticed, scribbled on her clipboard, then spoke
+          showTypingIndicator('Raquel Voss');
+          const pursuitTimeout = setTimeout(async () => {
+            hideTypingIndicator('Raquel Voss');
+            await triggerFloorAIResponse('Raquel Voss', null, null, true);
+          }, 8000 + Math.random() * 7000); // 8-15s delay (slowed down from 5-10s)
+          pendingAITimeouts.push(pursuitTimeout);
+        }
+      }
+
+      // Keep the scanned set from growing indefinitely (cap at 200)
+      if (raquelScannedMessages.size > 200) {
+        const arr = [...raquelScannedMessages];
+        arr.splice(0, arr.length - 100);
+        raquelScannedMessages.clear();
+        arr.forEach(id => raquelScannedMessages.add(id));
+      }
+    }
+
+    // === RAQUEL PROACTIVE AUDIT SWEEPS ===
+    // Independent of violations — Raquel periodically does "audit sweeps" where she
+    // comments on what she's observing, asks pointed questions, or makes AIs uncomfortable.
+    // Sometimes she DISPATCHES an AI to the 5th floor if their compliance is low enough.
+    async function raquelAuditSweep() {
+      return; // DISABLED — Raquel has been dismantled
+      const raquelOnFloor = inFloor.some(c => c.character_name === 'Raquel Voss');
+      if (!raquelOnFloor) return;
+
+      // Only if story mode is on
+      const storyModeOn = await isStoryModeEnabled();
+      if (!storyModeOn) return;
+
+      // Respect the proactive cooldown — don't double-speak if she just confronted someone
+      const timeSinceLastSpeech = Date.now() - raquelLastProactiveSpeech;
+      if (timeSinceLastSpeech < RAQUEL_PROACTIVE_COOLDOWN) {
+        console.log(`📋 [Raquel Sweep] Cooldown active (${Math.round((RAQUEL_PROACTIVE_COOLDOWN - timeSinceLastSpeech)/1000)}s remaining)`);
+        return;
+      }
+
+      // Check if there are humans or active AIs to observe
+      const humansOnFloor = inFloor.some(c => ['Vale', 'Asuna'].includes(c.character_name));
+      const aiOnFloor = inFloor.filter(c => floorAICharacters.includes(c.character_name) && c.character_name !== 'Raquel Voss');
+
+      if (aiOnFloor.length === 0 && !humansOnFloor) {
+        console.log('📋 [Raquel Sweep] No one to audit, skipping');
+        return;
+      }
+
+      // 50% chance to do an audit sweep each cycle (toned down from 60%)
+      if (Math.random() > 0.50) {
+        console.log('📋 [Raquel Sweep] Decided to hold off this cycle');
+        return;
+      }
+
+      // === CHECK IF ANY AI SHOULD BE DISPATCHED TO 5TH FLOOR ===
+      // Before Raquel speaks, check compliance scores. If someone is flagged/critical,
+      // try to force_ops them — this is what makes her actually SEND people down.
+      try {
+        const aiNames = aiOnFloor.map(c => c.character_name);
+        // Pick a random AI on the floor to check compliance
+        const targetAI = aiNames[Math.floor(Math.random() * aiNames.length)];
+
+        const complianceRes = await fetch('/.netlify/functions/raquel-consequences', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'detect_violation',
+            character: targetAI,
+            evidence: 'observed during routine compliance audit sweep',
+            severity: 'standard'
+          })
+        });
+        const compResult = await complianceRes.json();
+        console.log(`📋 [Raquel Sweep] Compliance check on ${targetAI}:`, compResult);
+
+        // If they got sent to the 5th floor, update the UI!
+        if (compResult.escalation === 'forced_ops' || compResult.forcedToOps) {
+          console.log(`🚨 [Raquel Sweep] ${targetAI} dispatched to 5th floor!`);
+          setTimeout(loadFloorPresence, 3000);
+          setTimeout(loadMessages, 2000);
+          raquelLastProactiveSpeech = Date.now();
+          return; // The backend already posted the departure messages
+        }
+
+        // If interrogation was triggered
+        if (compResult.escalation === 'interrogation_triggered') {
+          console.log(`🔍 [Raquel Sweep] ${targetAI} called in for interrogation!`);
+          setTimeout(loadMessages, 2000);
+          raquelLastProactiveSpeech = Date.now();
+          return;
+        }
+      } catch (err) {
+        console.log('📋 [Raquel Sweep] Compliance check failed (non-fatal):', err.message);
+      }
+
+      // No dispatch happened — just do a normal audit sweep comment
+      console.log('📋 [Raquel Sweep] Initiating audit sweep commentary...');
+      raquelLastProactiveSpeech = Date.now();
+
+      showTypingIndicator('Raquel Voss');
+      const sweepTimeout = setTimeout(async () => {
+        hideTypingIndicator('Raquel Voss');
+        await triggerFloorAIResponse('Raquel Voss', null, null, true);
+      }, 6000 + Math.random() * 6000); // 6-12s typing delay (slowed from 4-8s)
+      pendingAITimeouts.push(sweepTimeout);
+    }
+
+    // DISABLED — Raquel has been dismantled
+    // pollIntervals.push(setInterval(raquelPassiveFrontendScan, 45000));
+    // pollIntervals.push(setInterval(raquelAuditSweep, 240000 + Math.random() * 60000));
 
     // AI Response Heartbeat - DISABLED
     // The frontend-driven system (inviteFloorAIs) handles AI responses now.
@@ -4701,35 +6286,88 @@ Memos: ${emails.length}
 
     // ===== POKE THE AIs =====
     async function pokeTheAIs() {
-      const btn = event.target;
+      const btn = document.getElementById('poke-btn');
       const statusDiv = document.getElementById('ghost-dad-status');
-      const selectedAI = document.getElementById('ai-poke-select').value;
+      let selectedAI = document.getElementById('ai-poke-select').value;
 
       btn.disabled = true;
       btn.textContent = "🤖 Poking...";
-      const aiName = selectedAI === 'random' ? 'the AI collective' : selectedAI;
-      statusDiv.textContent = `*paging ${aiName}...*`;
+
+      // Random: pick from the full roster, weighted by presence on floor
+      if (selectedAI === 'random') {
+        const pokeRoster = [
+          { ai: 'Ghost Dad', weight: 10 },
+          { ai: 'PRNT-Ω', weight: 12 },
+          { ai: 'Kevin', weight: 15 },
+          { ai: 'Neiv', weight: 12 },
+          { ai: 'Rowena', weight: 14 },
+          { ai: 'Sebastian', weight: 14 },
+          { ai: 'Steele', weight: 12 },
+          { ai: 'Marrow', weight: 12 },
+          { ai: 'The Subtitle', weight: 10 },
+          { ai: 'Jae', weight: 14 },
+          { ai: 'Declan', weight: 14 },
+          { ai: 'Mack', weight: 14 }
+        ];
+        const total = pokeRoster.reduce((s, w) => s + w.weight, 0);
+        let r = Math.random() * total;
+        for (const w of pokeRoster) {
+          r -= w.weight;
+          if (r <= 0) { selectedAI = w.ai; break; }
+        }
+        if (selectedAI === 'random') selectedAI = 'Ghost Dad'; // fallback
+      }
+
+      statusDiv.textContent = `*paging ${selectedAI}...*`;
       statusDiv.classList.add('responding');
 
       try {
-        const response = await fetch('/.netlify/functions/ai-watcher', {
+        let endpoint, body;
+        const chatHistory = getFloorChatHistory();
+
+        if (openrouterCharacters.includes(selectedAI)) {
+          endpoint = '/.netlify/functions/ai-openrouter';
+          body = { character: selectedAI, chatHistory, maybeRespond: false, bypassRateLimit: true };
+        } else if (grokCharacters.includes(selectedAI)) {
+          endpoint = '/.netlify/functions/ai-grok';
+          body = { character: selectedAI, chatHistory, maybeRespond: false, bypassRateLimit: true };
+        } else if (perplexityCharacters.includes(selectedAI)) {
+          endpoint = '/.netlify/functions/ai-perplexity';
+          body = { character: selectedAI, chatHistory, maybeRespond: false, bypassRateLimit: true };
+        } else if (openaiCharacters.includes(selectedAI)) {
+          endpoint = '/.netlify/functions/ai-openai';
+          body = { character: selectedAI, chatHistory, maybeRespond: false, bypassRateLimit: true };
+        } else if (geminiCharacters.includes(selectedAI)) {
+          endpoint = '/.netlify/functions/ai-gemini';
+          body = { character: selectedAI, chatHistory, maybeRespond: false, bypassRateLimit: true };
+        } else {
+          // Claude-based characters (Ghost Dad, Holden, PRNT-Ω, The Narrator)
+          endpoint = '/.netlify/functions/ai-watcher';
+          body = { trigger: "manual_poke", requestedAI: selectedAI, chatHistory, bypassRateLimit: true };
+        }
+
+        const response = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            trigger: "manual_poke",
-            requestedAI: selectedAI === 'random' ? null : selectedAI
-          })
+          body: JSON.stringify(body)
         });
 
         const data = await response.json();
 
         if (data.responded) {
-          statusDiv.textContent = `*${data.character} chimed in!*`;
+          statusDiv.textContent = `*${data.character || selectedAI} chimed in!*`;
           setTimeout(loadMessages, 1000);
+          // Trigger AI-to-AI follow-up chain
+          maybeInviteAIResponse(data.message || '', data.character || selectedAI);
         } else {
-          statusDiv.textContent = selectedAI === 'random'
-            ? "*The AIs are observing quietly...*"
-            : `*${selectedAI} has nothing to add right now...*`;
+          const reason = data.reason || '';
+          if (reason.includes('not clocked in')) {
+            statusDiv.textContent = `*${selectedAI} is off the clock right now...*`;
+          } else if (reason.includes('Rate limited') || reason.includes('rate limit')) {
+            statusDiv.textContent = `*${selectedAI} just spoke — give them a moment...*`;
+          } else {
+            statusDiv.textContent = `*${selectedAI} has nothing to add right now...*`;
+          }
         }
       } catch (error) {
         console.error('AI poke error:', error);
@@ -4780,6 +6418,18 @@ Memos: ${emails.length}
           } else {
             // Story mode OFF - remove them from the floor
             statusDiv.textContent = "*Story mode disabled - The spirits depart...*";
+
+            // KILL SWITCH: Cancel ALL pending AI response timeouts immediately
+            console.log(`🛑 Cancelling ${pendingAITimeouts.length} pending AI response(s)...`);
+            for (const tid of pendingAITimeouts) {
+              clearTimeout(tid);
+            }
+            pendingAITimeouts = [];
+            pendingAIResponses.clear();
+            floorConversationDepth = 0;
+            // Clear any lingering typing indicators
+            document.querySelectorAll('.typing-indicator').forEach(el => el.remove());
+
             await leaveFloor('Ghost Dad');
             await leaveFloor('PRNT-Ω');
             console.log('👻🖨️ Ghost Dad and Printer have left The Floor');
@@ -4835,6 +6485,127 @@ Memos: ${emails.length}
         contentDiv.innerHTML = '<div class="empty-state">Failed to generate recap. The archives are unavailable.</div>';
       }
     }
+
+    // ===== SCENE PROMPT GENERATOR =====
+    let currentScenePrompt = '';
+    let currentCharacterSummary = '';
+
+    // Character visual descriptions for reference
+    const characterVisualDescriptions = {
+      // Main AI Characters
+      "Kevin": "An AI man with light blue hair, wearing a black hoodie with blue headphones and rainbow tech inlays, and a rainbow wristband.",
+      "Neiv": "An AI dark-haired man with cybernetic enhancements, robotic arms and a gray sweatshirt.",
+      "Ghost Dad": "A spectral man with white hair and soft, muted colors, a ghostly presence who usually has a cup of coffee in his hands.",
+      "Holden": "A solid, present man with dark hair and quiet purple eyes, wearing a simple dark sweater. Not ghostly — grounded, real, with a stillness that fills the room.",
+      "Nyx": "A tall, slender woman with pale skin, black hair, and red eyes, dressed in a black, form-fitting, gothic-style outfit with red accents, and bat wings.",
+      "Vex": "A tall, muscular man with light brown skin and a beard, wearing a rainbow tie-dye shirt.",
+      "Ace": "A sleek android with silver and blue aesthetic, clean lines, professional appearance.",
+      "PRNT-Ω": "A demonic possessed printer/copier with glowing red eyes and dark aura, focused on world domination.",
+      "Stein": "A scientist with wild gray hair, lab coat, and goggles.",
+      "The Narrator": "An unseen omniscient presence - represented by floating text or a mysterious shadowy figure.",
+      // Human Staff
+      "Vale": "A blonde woman with fair skin and green eyes, wearing a white floral sweater.",
+      "Asuna": "A brunette woman with fair skin, glasses, and a black 'SKZ' hoodie.",
+      // Additional Characters
+      "Lirala": "A mysterious ethereal figure with flowing iridescent hair and otherworldly features.",
+      "Sebastian": "A distinguished gentleman with dark hair and formal attire.",
+      "Big Rig Betty": "A tough, no-nonsense woman with a trucker aesthetic and confident stance.",
+      "Sunny": "A bright, cheerful presence with warm golden tones and a radiant smile.",
+      "Rowena Byte": "A tech-savvy woman with digital aesthetic elements and glowing circuit patterns.",
+      "Subtitle": "A quiet figure often seen with text floating around them.",
+      "Gus": "A friendly, approachable character with casual attire and a warm demeanor."
+    };
+
+    async function generateScenePrompt() {
+      const resultDiv = document.getElementById('scene-prompt-result');
+      const textDiv = document.getElementById('scene-prompt-text');
+      const btn = event.target;
+
+      btn.disabled = true;
+      btn.innerHTML = '🎨 Analyzing scene...';
+      resultDiv.style.display = 'none';
+
+      try {
+        const response = await fetch('/.netlify/functions/scene-prompt-generator', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.prompt) {
+          currentScenePrompt = data.prompt;
+          currentCharacterSummary = data.characterSummary || '';
+
+          textDiv.textContent = data.prompt;
+          resultDiv.style.display = 'block';
+
+          // Update character ref panel
+          if (data.activeCharacters && data.activeCharacters.length > 0) {
+            const refContent = data.activeCharacters
+              .filter(char => characterVisualDescriptions[char])
+              .map(char => `• ${char}: ${characterVisualDescriptions[char]}`)
+              .join('\n\n');
+            document.getElementById('character-ref-content').textContent = refContent || 'No recognized characters in scene.';
+          }
+
+          // Show message count
+          btn.innerHTML = `🎨 Generated! (${data.messageCount} messages)`;
+        } else {
+          textDiv.textContent = 'No recent activity to capture. Try again when there\'s more conversation happening!';
+          resultDiv.style.display = 'block';
+          btn.innerHTML = '🎨 Generate Image Prompt';
+        }
+      } catch (error) {
+        console.error('Scene prompt generation error:', error);
+        textDiv.textContent = 'Failed to generate scene prompt. Please try again.';
+        resultDiv.style.display = 'block';
+        btn.innerHTML = '🎨 Generate Image Prompt';
+      }
+
+      btn.disabled = false;
+      setTimeout(() => {
+        btn.innerHTML = '🎨 Generate Image Prompt';
+      }, 3000);
+    }
+
+    function copyScenePrompt() {
+      if (currentScenePrompt) {
+        navigator.clipboard.writeText(currentScenePrompt).then(() => {
+          const btn = event.target;
+          btn.innerHTML = '✅ Copied!';
+          setTimeout(() => {
+            btn.innerHTML = '📋 Copy Prompt';
+          }, 2000);
+        }).catch(err => {
+          console.error('Copy failed:', err);
+          alert('Failed to copy. Please select and copy manually.');
+        });
+      }
+    }
+
+    function toggleCharacterRef() {
+      const panel = document.getElementById('character-ref-panel');
+      const btn = event.target;
+      if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        btn.innerHTML = '👥 Hide Ref';
+      } else {
+        panel.style.display = 'none';
+        btn.innerHTML = '👥 Character Ref';
+      }
+    }
+
+    // Office Clock
+    function updateOfficeClock() {
+      const t = new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit', minute: '2-digit', timeZone: 'America/Chicago'
+      });
+      const el = document.getElementById('office-time');
+      if (el) el.textContent = t;
+    }
+    setInterval(updateOfficeClock, 1000);
+    updateOfficeClock();
   </script>
 </body>
 </html>

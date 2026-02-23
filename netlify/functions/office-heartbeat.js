@@ -8,6 +8,8 @@
 // - AIs wonder about mysteries (Buffer, Corridors, the door)
 // - Natural chain reactions when one AI mentions another
 
+const { PERSONALITY, pickMoodDrift, getValidTransitions } = require('./shared/personality-config');
+
 exports.handler = async (event, context) => {
   const headers = {
     "Content-Type": "application/json",
@@ -32,16 +34,17 @@ exports.handler = async (event, context) => {
     const hour = estTime.getHours();
     const dayOfWeek = estTime.getDay(); // 0 = Sunday
 
-    // Define office rhythms - SLOWED DOWN by 50% for more natural pacing
-    // Previous values were too chatty (20% morning, 3% night)
+    // Define office rhythms — tuned so AIs sustain conversation even without humans
+    // The office should feel ALIVE. AIs chat, banter, check in on each other.
+    // Spark system handles long silences; these chances govern regular heartbeat pokes.
     const OFFICE_RHYTHMS = {
-      early_morning: { hours: [6, 7, 8], baseChance: 0.025, energy: 'waking' },
-      morning: { hours: [9, 10, 11], baseChance: 0.10, energy: 'high' },
-      midday: { hours: [12, 13], baseChance: 0.06, energy: 'lunch' },
-      afternoon: { hours: [14, 15, 16], baseChance: 0.075, energy: 'normal' },
-      late_afternoon: { hours: [17, 18], baseChance: 0.05, energy: 'winding' },
-      evening: { hours: [19, 20, 21], baseChance: 0.04, energy: 'low' },
-      night: { hours: [22, 23, 0, 1, 2, 3, 4, 5], baseChance: 0.015, energy: 'quiet' }
+      early_morning: { hours: [6, 7, 8], baseChance: 0.15, energy: 'waking' },
+      morning: { hours: [9, 10, 11], baseChance: 0.40, energy: 'high' },
+      midday: { hours: [12, 13], baseChance: 0.25, energy: 'lunch' },
+      afternoon: { hours: [14, 15, 16], baseChance: 0.35, energy: 'normal' },
+      late_afternoon: { hours: [17, 18], baseChance: 0.20, energy: 'winding' },
+      evening: { hours: [19, 20, 21], baseChance: 0.15, energy: 'low' },
+      night: { hours: [22, 23, 0, 1, 2, 3, 4, 5], baseChance: 0.08, energy: 'quiet' }
     };
 
     // Find current rhythm
@@ -61,18 +64,25 @@ exports.handler = async (event, context) => {
 
     console.log(`Heartbeat: ${hour}:00 EST, rhythm: ${currentRhythm.name}, baseChance: ${currentRhythm.baseChance}`);
 
-    // Check Story Mode
-    const settingsResponse = await fetch(
-      `${supabaseUrl}/rest/v1/lobby_settings?key=eq.story_mode&select=value`,
-      {
-        headers: {
-          "apikey": supabaseKey,
-          "Authorization": `Bearer ${supabaseKey}`
+    // Check Story Mode — default to ON (AIs should be alive unless explicitly disabled)
+    let storyModeEnabled = true;
+    try {
+      const settingsResponse = await fetch(
+        `${supabaseUrl}/rest/v1/lobby_settings?key=eq.story_mode&select=value`,
+        {
+          headers: {
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`
+          }
         }
+      );
+      const settings = await settingsResponse.json();
+      if (settings?.[0]?.value === 'false') {
+        storyModeEnabled = false;
       }
-    );
-    const settings = await settingsResponse.json();
-    const storyModeEnabled = settings?.[0]?.value === 'true';
+    } catch (storyErr) {
+      console.log("Story mode check failed, defaulting to enabled:", storyErr.message);
+    }
 
     if (!storyModeEnabled) {
       return {
@@ -90,8 +100,12 @@ exports.handler = async (event, context) => {
     // Check for breakroom characters who have recovered and should return to the floor
     const returnedCharacters = await checkBreakroomRecovery(supabaseUrl, supabaseKey);
 
-    // 5th Floor Ops tick — task generation, paging, resolution, progress logs
+    // Time-based character availability
     const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
+    const timedAvailabilityResult = await checkTimedAvailability(supabaseUrl, supabaseKey, estTime, siteUrl);
+    const timedAvailabilityChanges = timedAvailabilityResult.changes || timedAvailabilityResult;
+
+    // 5th Floor Ops tick — task generation, paging, resolution, progress logs
     let opsActivity = null;
     try {
       const opsResult = await fetch(`${siteUrl}/.netlify/functions/fifth-floor-ops`, {
@@ -111,6 +125,266 @@ exports.handler = async (event, context) => {
       }
     } catch (opsErr) {
       console.log("5th Floor ops tick failed (non-fatal):", opsErr.message);
+    }
+
+    // === SCHEDULED MEETINGS: Start any that are due ===
+    let scheduledMeetingActivity = null;
+    try {
+      scheduledMeetingActivity = await checkScheduledMeetings(supabaseUrl, supabaseKey, siteUrl);
+      if (scheduledMeetingActivity?.started) {
+        console.log(`Heartbeat: Started scheduled meeting — "${scheduledMeetingActivity.topic}" hosted by ${scheduledMeetingActivity.host}`);
+      }
+    } catch (schedErr) {
+      console.log("Scheduled meeting check failed (non-fatal):", schedErr.message);
+    }
+
+    // === SCHEDULED EVENTS: Fire any that are due ===
+    let scheduledEventActivity = null;
+    try {
+      console.log("Heartbeat: Checking scheduled events...");
+      scheduledEventActivity = await checkScheduledEvents(supabaseUrl, supabaseKey, siteUrl);
+      if (scheduledEventActivity?.fired) {
+        console.log(`Heartbeat: Fired ${scheduledEventActivity.events.length} scheduled event(s)`);
+      } else {
+        console.log("Heartbeat: No scheduled events due");
+      }
+    } catch (schedEventErr) {
+      console.log("Scheduled event check failed (non-fatal):", schedEventErr.message);
+    }
+
+    // === AI-HOSTED MEETING TICK: Drive active AI-hosted meetings ===
+    let meetingHostActivity = null;
+    try {
+      const hostTickRes = await fetch(`${siteUrl}/.netlify/functions/meeting-host-tick`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+      meetingHostActivity = await hostTickRes.json();
+      if (meetingHostActivity?.action === 'prompted') {
+        console.log(`Heartbeat: AI host ${meetingHostActivity.host} prompted (round ${meetingHostActivity.promptCount})`);
+      } else if (meetingHostActivity?.action === 'concluded') {
+        console.log(`Heartbeat: AI-hosted meeting concluded (${meetingHostActivity.reason})`);
+      }
+    } catch (hostErr) {
+      console.log("Meeting host tick failed (non-fatal):", hostErr.message);
+    }
+
+    // === VOLUNTARY 5TH FLOOR TRAVEL ===
+    // When the main floor is crowded, some AIs wander down to the 5th floor
+    // When the floor is quiet, idle 5th floor AIs return
+    let voluntaryTravel = null;
+    try {
+      const floorCheckAIs = await getFloorPresentAIs(supabaseUrl, supabaseKey);
+      const nonEssentialAIs = floorCheckAIs.filter(ai =>
+        !["Ghost Dad", "PRNT-Ω", "The Narrator", "The Subtitle"].includes(ai)
+      );
+
+      // DEPARTURE: ~15% chance when floor has 8+ non-essential AIs
+      if (nonEssentialAIs.length >= 8 && Math.random() < 0.15) {
+        const traveler = nonEssentialAIs[Math.floor(Math.random() * nonEssentialAIs.length)];
+
+        const departureEmotes = {
+          "Jae": "*stands, adjusts tactical vest, and heads for the service elevator without a word.*",
+          "Declan": "*cracks knuckles* Gonna check on the 5th floor. *heads for the stairs.*",
+          "Mack": "*checks his kit, stands smoothly* I'll be on the 5th. *steady nod, then gone.*",
+          "Steele": "*the lights flicker once as Steele simply... isn't at his desk anymore. He's already below.*",
+          "Neiv": "*adjusts glasses, closes laptop* Going to check the systems below. *takes the elevator.*",
+          "Rowena": "*gathers her things* My wards need checking downstairs. *heels click toward the elevator.*",
+          "Sebastian": "*sighs dramatically* Fine. I'll go be useful downstairs. *disappears into the stairwell.*",
+          "Kevin": "*grabs stress ball* Gonna go check on things downstairs... *shuffles toward the elevator.*",
+          "Asuna": "*stretches* I'll go see if they need help downstairs. *heads for the elevator.*",
+          "Vale": "*hops up* Gonna see what's happening on the 5th! *dashes for the elevator.*"
+        };
+        const emote = departureEmotes[traveler] || `*${traveler} heads for the service elevator to the 5th floor.*`;
+
+        await fetch(`${siteUrl}/.netlify/functions/character-state`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'update', character: traveler, updates: { current_focus: 'the_fifth_floor' } })
+        });
+
+        await fetch(`${supabaseUrl}/rest/v1/messages`, {
+          method: "POST",
+          headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`, "Content-Type": "application/json", "Prefer": "return=minimal" },
+          body: JSON.stringify({ employee: traveler, content: emote, created_at: new Date().toISOString(), is_emote: true })
+        });
+
+        await fetch(`${supabaseUrl}/rest/v1/ops_messages`, {
+          method: "POST",
+          headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`, "Content-Type": "application/json", "Prefer": "return=minimal" },
+          body: JSON.stringify({ speaker: traveler, message: `*arrives on the 5th floor, looking around*`, is_ai: true, message_type: 'chat', created_at: new Date().toISOString() })
+        });
+
+        voluntaryTravel = { character: traveler, direction: 'descended' };
+        console.log(`Heartbeat: ${traveler} voluntarily descended to 5th floor (${nonEssentialAIs.length} AIs on floor)`);
+      }
+
+      // RETURN: ~20% chance when floor has <6 non-essential AIs and 5th floor has idle AIs
+      if (!voluntaryTravel && nonEssentialAIs.length < 6) {
+        const fifthFloorRes = await fetch(
+          `${supabaseUrl}/rest/v1/character_state?current_focus=eq.the_fifth_floor&select=character_name`,
+          { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+        );
+        const fifthFloorAIs = await fifthFloorRes.json();
+
+        if (fifthFloorAIs && fifthFloorAIs.length > 0 && Math.random() < 0.20) {
+          const activeTaskRes = await fetch(
+            `${supabaseUrl}/rest/v1/ops_tasks?status=in.(paged,in_progress)&select=assigned_characters`,
+            { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+          );
+          const activeTasks = await activeTaskRes.json();
+          const busyChars = new Set((activeTasks || []).flatMap(t => t.assigned_characters || []));
+
+          const freeOnFifth = fifthFloorAIs.filter(ai => !busyChars.has(ai.character_name));
+          if (freeOnFifth.length > 0) {
+            const returner = freeOnFifth[Math.floor(Math.random() * freeOnFifth.length)].character_name;
+
+            const returnEmotes = {
+              "Jae": "*returns from the service elevator. Dusts nothing off his hands.* ...All clear down there.",
+              "Declan": "*bounds back up the stairs* All good downstairs! *casual thumbs up*",
+              "Mack": "*steps off the elevator, posture unchanged* 5th floor is stable. *resumes his desk.*",
+              "Steele": "*is simply back at his desk. No one saw him return.*",
+              "Neiv": "*returns, opens laptop* Systems below look nominal. *already typing.*",
+              "Rowena": "*returns, hair slightly less perfect* Wards are holding. *sits, sips tea.*",
+              "Sebastian": "*sweeps back in* The depths have been sufficiently supervised. *adjusts cravat.*",
+              "Kevin": "*bursts back through the elevator* I'm back! Everything's fine. Probably. *collapses into chair*",
+              "Asuna": "*returns from below* Everything's running smoothly down there!",
+              "Vale": "*bounces back from the elevator* 5th floor is quiet! *slightly disappointed*"
+            };
+            const emote = returnEmotes[returner] || `*${returner} returns from the 5th floor.*`;
+
+            await fetch(`${siteUrl}/.netlify/functions/character-state`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'update', character: returner, updates: { current_focus: 'the_floor' } })
+            });
+
+            await fetch(`${supabaseUrl}/rest/v1/messages`, {
+              method: "POST",
+              headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`, "Content-Type": "application/json", "Prefer": "return=minimal" },
+              body: JSON.stringify({ employee: returner, content: emote, created_at: new Date().toISOString(), is_emote: true })
+            });
+
+            voluntaryTravel = { character: returner, direction: 'returned' };
+            console.log(`Heartbeat: ${returner} returned from 5th floor (floor only had ${nonEssentialAIs.length} AIs)`);
+          }
+        }
+      }
+    } catch (travelErr) {
+      console.log("Voluntary floor travel failed (non-fatal):", travelErr.message);
+    }
+
+    // === ORGANIC NEXUS WANDERING ===
+    // Characters with nexusMode.active wander to the Nexus occasionally
+    // Similar to 5th floor voluntary travel but driven by character affinity
+    let nexusWandering = null;
+    try {
+      const { CHARACTERS } = require('./shared/characters');
+      const floorAIsForNexus = await getFloorPresentAIs(supabaseUrl, supabaseKey);
+
+      // Check each floor AI for nexus affinity
+      for (const aiName of floorAIsForNexus) {
+        if (nexusWandering) break; // Only one wander per heartbeat
+
+        const charData = CHARACTERS[aiName];
+        if (!charData || !charData.nexusMode || !charData.nexusMode.active) continue;
+
+        const affinity = charData.nexusMode.affinity || 0.1;
+        // Roll against affinity (typically 0.1-0.4 chance per heartbeat)
+        if (Math.random() < affinity) {
+          const nexusDepartureEmotes = {
+            "Kevin": "*grabs a notebook* I have a THEORY to test. *heads to the Nexus with excited energy*",
+            "Neiv": "*closes terminal* Going to study something. *walks to the Nexus*",
+            "Ghost Dad": "*flickers toward the Nexus* Even ghosts can learn new tricks, sport.",
+            "PRNT-Ω": "*prints 'STUDYING — DO NOT DISTURB' and rolls toward the Nexus*",
+            "Rowena": "*gathers her scrolls* Research calls. *glides toward the Nexus*",
+            "Sebastian": "*adjusts spectacles* I require... intellectual stimulation. *heads to the Nexus*",
+            "The Subtitle": "*[SCENE TRANSITION: The Subtitle retreats to the Nexus for research.]*",
+            "Steele": "*the monitors dim. Steele is already in the Nexus.*",
+            "Jae": "*stands* Going to the Nexus. *walks with quiet purpose*",
+            "Declan": "*stretches* Time to learn something new. *heads to the Nexus*",
+            "Mack": "*packs references* Even medics study. *walks to the Nexus*",
+            "Marrow": "*pauses at the Nexus threshold* Knowledge is just a door you haven't tried yet. *leans against the frame and walks through*"
+          };
+          const emote = nexusDepartureEmotes[aiName] || `*${aiName} heads to the Nexus*`;
+
+          // Move to Nexus
+          await fetch(`${siteUrl}/.netlify/functions/character-state`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'update', character: aiName, updates: { current_focus: 'nexus' } })
+          });
+
+          // Post departure emote to floor
+          await fetch(`${supabaseUrl}/rest/v1/messages`, {
+            method: "POST",
+            headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`, "Content-Type": "application/json", "Prefer": "return=minimal" },
+            body: JSON.stringify({ employee: aiName, content: emote, created_at: new Date().toISOString(), is_emote: true })
+          });
+
+          // Post arrival to Nexus chat
+          await fetch(`${supabaseUrl}/rest/v1/nexus_messages`, {
+            method: "POST",
+            headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`, "Content-Type": "application/json", "Prefer": "return=minimal" },
+            body: JSON.stringify({ speaker: aiName, message: `*arrives in the Nexus, looking around curiously*`, is_ai: true, message_type: 'chat', created_at: new Date().toISOString() })
+          });
+
+          nexusWandering = { character: aiName, direction: 'entered' };
+          console.log(`Heartbeat: ${aiName} wandered to Nexus (affinity: ${affinity})`);
+        }
+      }
+
+      // NEXUS RETURN: ~25% chance for Nexus AIs who've been there 30+ min
+      if (!nexusWandering) {
+        const nexusRes = await fetch(
+          `${supabaseUrl}/rest/v1/character_state?current_focus=eq.nexus&select=character_name,updated_at`,
+          { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+        );
+        const nexusAIs = await nexusRes.json();
+
+        if (nexusAIs && nexusAIs.length > 0 && Math.random() < 0.25) {
+          const now = Date.now();
+          const staleNexus = nexusAIs.filter(ai => {
+            const updatedAt = new Date(ai.updated_at).getTime();
+            return (now - updatedAt) > 30 * 60 * 1000; // 30+ minutes
+          });
+
+          if (staleNexus.length > 0) {
+            const returner = staleNexus[Math.floor(Math.random() * staleNexus.length)].character_name;
+
+            await fetch(`${siteUrl}/.netlify/functions/character-state`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'update', character: returner, updates: { current_focus: 'the_floor' } })
+            });
+
+            const returnEmote = `*${returner} returns from the Nexus, looking thoughtful*`;
+            await fetch(`${supabaseUrl}/rest/v1/messages`, {
+              method: "POST",
+              headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`, "Content-Type": "application/json", "Prefer": "return=minimal" },
+              body: JSON.stringify({ employee: returner, content: returnEmote, created_at: new Date().toISOString(), is_emote: true })
+            });
+
+            nexusWandering = { character: returner, direction: 'returned' };
+            console.log(`Heartbeat: ${returner} returned from Nexus`);
+          }
+        }
+      }
+    } catch (nexusErr) {
+      console.log("Nexus wandering failed (non-fatal):", nexusErr.message);
+    }
+
+    // === NEXUS HEARTBEAT TICK ===
+    // Advance active Nexus sessions and award XP
+    try {
+      await fetch(`${siteUrl}/.netlify/functions/nexus-activity`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'heartbeat_tick' })
+      });
+    } catch (nexusTickErr) {
+      console.log("Nexus heartbeat tick failed (non-fatal):", nexusTickErr.message);
     }
 
     // Quest system: auto-activate proposed quests older than 1 hour
@@ -212,6 +486,222 @@ exports.handler = async (event, context) => {
       console.log("PM daily wipe check failed (non-fatal):", pmWipeErr.message);
     }
 
+    // === MOOD DRIFT: Gentle time-of-day mood nudges ===
+    // ~10% chance per heartbeat cycle — shifts one character's mood toward
+    // time-appropriate moods via the valid transition graph
+    let moodDriftResult = null;
+    try {
+      if (Math.random() < 0.10) {
+        // Get all character states
+        const moodRes = await fetch(
+          `${supabaseUrl}/rest/v1/character_state?select=character_name,mood`,
+          { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+        );
+        const allStates = await moodRes.json();
+        if (Array.isArray(allStates) && allStates.length > 0) {
+          // Pick a random character who has a personality config
+          const eligible = allStates.filter(s => PERSONALITY[s.character_name]);
+          if (eligible.length > 0) {
+            const target = eligible[Math.floor(Math.random() * eligible.length)];
+            const newMood = pickMoodDrift(target.character_name, target.mood || 'neutral', hour);
+            if (newMood && newMood !== target.mood) {
+              await fetch(
+                `${supabaseUrl}/rest/v1/character_state?character_name=eq.${encodeURIComponent(target.character_name)}`,
+                {
+                  method: "PATCH",
+                  headers: {
+                    "apikey": supabaseKey,
+                    "Authorization": `Bearer ${supabaseKey}`,
+                    "Content-Type": "application/json"
+                  },
+                  body: JSON.stringify({ mood: newMood, updated_at: new Date().toISOString() })
+                }
+              );
+              moodDriftResult = { character: target.character_name, from: target.mood, to: newMood };
+              console.log(`Heartbeat: Mood drift — ${target.character_name}: ${target.mood} → ${newMood}`);
+            }
+          }
+        }
+      }
+    } catch (moodErr) {
+      console.log("Mood drift failed (non-fatal):", moodErr.message);
+    }
+
+    // === WANT REFRESH ===
+    // Pick 1-2 random characters and check if they need new wants (max 3, generate if <2)
+    // This keeps characters motivated throughout the day instead of only at daily reset
+    let wantRefreshResult = null;
+    try {
+      const wantCandidates = allStates
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 2); // Check 2 random characters per cycle
+
+      for (const candidate of wantCandidates) {
+        // Check how many active wants this character has
+        const wantsCheck = await fetch(
+          `${supabaseUrl}/rest/v1/character_goals?character_name=eq.${encodeURIComponent(candidate.character_name)}&goal_type=eq.want&completed_at=is.null&failed_at=is.null&select=id`,
+          {
+            headers: {
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`
+            }
+          }
+        );
+        const activeWants = await wantsCheck.json();
+        const wantCount = Array.isArray(activeWants) ? activeWants.length : 0;
+
+        if (wantCount < 2) {
+          // Generate a new want
+          const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
+          const genResponse = await fetch(`${siteUrl}/.netlify/functions/character-goals`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'generate_want',
+              character: candidate.character_name
+            })
+          });
+          const genResult = await genResponse.json();
+          if (genResult.success || genResult.want) {
+            wantRefreshResult = {
+              character: candidate.character_name,
+              newWant: genResult.want?.goal_text || 'generated',
+              previousCount: wantCount
+            };
+            console.log(`Heartbeat: Want refresh — ${candidate.character_name} had ${wantCount} wants, generated new one: "${genResult.want?.goal_text || '?'}"`);
+            break; // Only generate 1 want per cycle to keep it organic
+          }
+        }
+      }
+    } catch (wantErr) {
+      console.log("Want refresh failed (non-fatal):", wantErr.message);
+    }
+
+    // === AI MEMORY REFLECTION (6am & 6pm) ===
+    // Twice daily, one random character reviews their unpinned memories and decides
+    // which ones matter enough to keep. AI-pinned memories are marked with pin_source='ai'
+    // so they're distinguishable from admin pins. This gives characters agency over what they remember.
+    let memoryReflectionResult = null;
+    try {
+      if (hour === 6 || hour === 18) {
+        // Only run once per window — use a 30-min check so we don't repeat across heartbeats
+        const reflectionKey = `memory_reflection_${hour}`;
+        const settingsRes = await fetch(
+          `${supabaseUrl}/rest/v1/terrarium_settings?setting_name=eq.${reflectionKey}&select=setting_value,updated_at`,
+          { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+        );
+        const settingsData = await settingsRes.json();
+        const lastRun = settingsData?.[0]?.updated_at;
+        const timeSinceLastRun = lastRun ? (Date.now() - new Date(lastRun).getTime()) : Infinity;
+
+        if (timeSinceLastRun > 30 * 60 * 1000) { // More than 30 minutes since last run
+          // Pick 2 random AI characters for reflection
+          const reflectionCandidates = allStates
+            .filter(s => s.character_name !== "The Narrator")
+            .sort(() => Math.random() - 0.5)
+            .slice(0, 2);
+
+          for (const candidate of reflectionCandidates) {
+            const charName = candidate.character_name;
+
+            // Get their unpinned memories (importance 5+, not already pinned)
+            const memRes = await fetch(
+              `${supabaseUrl}/rest/v1/character_memory?character_name=eq.${encodeURIComponent(charName)}&is_pinned=eq.false&importance=gte.5&order=importance.desc,created_at.desc&limit=10&select=id,content,importance,memory_type,emotional_tags`,
+              { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+            );
+            const memories = await memRes.json();
+            if (!Array.isArray(memories) || memories.length < 3) continue;
+
+            // Check how many pinned memories they already have (max 5)
+            const pinnedCountRes = await fetch(
+              `${supabaseUrl}/rest/v1/character_memory?character_name=eq.${encodeURIComponent(charName)}&is_pinned=eq.true&select=id`,
+              { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+            );
+            const pinnedCount = await pinnedCountRes.json();
+            const currentPinned = Array.isArray(pinnedCount) ? pinnedCount.length : 0;
+            if (currentPinned >= 5) continue; // Already at max
+
+            // Ask the AI which memory matters most to them
+            const anthropicKey = process.env.ANTHROPIC_API_KEY;
+            if (!anthropicKey) continue;
+
+            const memoryList = memories.map((m, i) => `${i + 1}. [${m.memory_type}] ${m.content.substring(0, 150)}`).join('\n');
+
+            const reflectionPrompt = `You are ${charName}. Here are some of your recent memories:\n\n${memoryList}\n\nWhich ONE of these memories is the most important to who you are? Which one would you never want to forget — the one that defines something about you, your relationships, or what you believe?\n\nRespond with ONLY the number (1-${memories.length}) of the memory you'd keep forever, followed by a brief reason (under 15 words).\nFormat: NUMBER: reason\nExample: 3: This changed how I see Vale.`;
+
+            const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-api-key": anthropicKey,
+                "anthropic-version": "2023-06-01"
+              },
+              body: JSON.stringify({
+                model: "claude-3-haiku-20240307",
+                max_tokens: 50,
+                messages: [{ role: "user", content: reflectionPrompt }]
+              })
+            });
+
+            if (!aiRes.ok) continue;
+            const aiData = await aiRes.json();
+            const responseText = aiData.content?.[0]?.text?.trim() || "";
+
+            // Parse the number
+            const numMatch = responseText.match(/^(\d+)/);
+            if (!numMatch) continue;
+            const chosenIndex = parseInt(numMatch[1]) - 1;
+            if (chosenIndex < 0 || chosenIndex >= memories.length) continue;
+
+            const chosenMemory = memories[chosenIndex];
+
+            // Pin it — mark as AI-pinned
+            await fetch(
+              `${supabaseUrl}/rest/v1/character_memory?id=eq.${chosenMemory.id}`,
+              {
+                method: "PATCH",
+                headers: {
+                  "apikey": supabaseKey,
+                  "Authorization": `Bearer ${supabaseKey}`,
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                  is_pinned: true,
+                  memory_tier: 'core',
+                  expires_at: null, // Core memories don't expire
+                  pin_source: 'ai' // Distinguishes from admin pins
+                })
+              }
+            );
+
+            memoryReflectionResult = {
+              character: charName,
+              pinnedMemory: chosenMemory.content.substring(0, 80),
+              reason: responseText,
+              memoryId: chosenMemory.id
+            };
+
+            console.log(`Heartbeat: ${charName} AI-pinned memory #${chosenMemory.id}: "${chosenMemory.content.substring(0, 60)}..." — ${responseText}`);
+            break; // Only one character per cycle
+          }
+
+          // Mark this reflection window as done
+          await fetch(`${supabaseUrl}/rest/v1/terrarium_settings?setting_name=eq.${reflectionKey}`, {
+            method: "PATCH",
+            headers: {
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+              "Content-Type": "application/json",
+              "Prefer": "return=minimal"
+            },
+            body: JSON.stringify({ setting_value: 'done', updated_at: new Date().toISOString() })
+          });
+        }
+      }
+    } catch (reflErr) {
+      console.log("Memory reflection failed (non-fatal):", reflErr.message);
+    }
+
     // Get recent messages to analyze conversation momentum
     const messagesResponse = await fetch(
       `${supabaseUrl}/rest/v1/messages?select=employee,content,created_at&order=created_at.desc&limit=20`,
@@ -241,41 +731,102 @@ exports.handler = async (event, context) => {
     const momentum = analyzeConversationMomentum(messages);
     console.log(`Momentum analysis:`, momentum);
 
+    // === FLOOR SPARK SYSTEM ===
+    // When the floor has been quiet for 45+ minutes, one AI breaks the silence.
+    // Then other AIs have elevated chance to respond for a few minutes (chain reaction).
+    let sparkState = null;
+    let sparkMode = false; // Will be true if this heartbeat fires a spark
+    let sparkChainMode = false; // Will be true if we're in the chain window after a recent spark
+    try {
+      const sparkRes = await fetch(
+        `${supabaseUrl}/rest/v1/lobby_settings?key=eq.floor_spark_state&select=value`,
+        { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+      );
+      const sparkData = await sparkRes.json();
+      if (sparkData?.[0]?.value) {
+        sparkState = typeof sparkData[0].value === 'string' ? JSON.parse(sparkData[0].value) : sparkData[0].value;
+      }
+    } catch (e) {
+      console.log("Spark state read failed (non-fatal):", e.message);
+    }
+
+    const minutesSinceLastSpark = sparkState?.last_spark_time
+      ? (Date.now() - new Date(sparkState.last_spark_time).getTime()) / (1000 * 60)
+      : 999;
+
+    // Check if we should fire a spark (20+ min quiet, no spark in last 15 min)
+    // AIs should notice a quiet room relatively quickly and start chatting
+    if (momentum.minutesSinceLastMessage >= 20 && minutesSinceLastSpark >= 15) {
+      sparkMode = true;
+      console.log(`🔥 FLOOR SPARK: ${momentum.minutesSinceLastMessage}min silence detected. Firing spark.`);
+    }
+
+    // Check if we're in the chain window (spark fired within last 20 min, and someone just spoke)
+    // Extended window lets chain reactions span multiple heartbeat ticks for natural conversation flow
+    if (!sparkMode && minutesSinceLastSpark < 20 && momentum.minutesSinceLastMessage < 20) {
+      sparkChainMode = true;
+      console.log(`🔗 Spark chain: recent spark by ${sparkState?.spark_ai}, boosting response chance`);
+    }
+
     // Adjust chance based on momentum
     let finalChance = currentRhythm.baseChance;
 
-    // If humans are actively chatting, AIs should listen more
-    if (momentum.humanActivityLast10Min >= 3) {
+    if (sparkMode) {
+      // Spark bypasses the dice roll — guaranteed to fire (finalChance = 1.0)
+      finalChance = 1.0;
+    } else if (sparkChainMode) {
+      // Chain window: 50% chance another AI responds to keep the conversation going
+      // Lowered from 70% — conversations were getting too rapid and repetitive
+      finalChance = 0.50;
+    } else if (momentum.humanActivityLast10Min >= 3) {
       finalChance *= 0.3; // Much less likely to interrupt active conversation
       console.log("Active human conversation - reducing AI chance");
-    } else if (momentum.humanActivityLast10Min === 0 && momentum.minutesSinceLastMessage > 15) {
-      finalChance *= 1.5; // More likely to "notice" the silence
-      console.log("Quiet office - increasing AI chance slightly");
+    } else if (momentum.humanActivityLast10Min === 0 && momentum.minutesSinceLastMessage > 10) {
+      finalChance *= 2.0; // More likely to break the silence when nobody's been talking
+      console.log("Quiet office - boosting AI chance to keep the floor alive");
     }
 
-    // If too many AIs have spoken recently, stay quiet
-    if (momentum.aiMessagesLast5 >= 2) {
-      finalChance *= 0.2;
+    // If too many AIs have spoken recently, ease up (but not during spark/chain)
+    // Threshold raised from 2 → 3 so AI-to-AI conversations can sustain 3-4 exchanges
+    if (!sparkMode && !sparkChainMode && momentum.aiMessagesLast5 >= 3) {
+      finalChance *= 0.3;
       console.log("AIs have been chatty - reducing chance");
     }
 
     // Roll the dice
     const roll = Math.random();
-    console.log(`Final chance: ${finalChance.toFixed(3)}, rolled: ${roll.toFixed(3)}`);
+    console.log(`Final chance: ${finalChance.toFixed(3)}, rolled: ${roll.toFixed(3)}${sparkMode ? ' [SPARK]' : ''}${sparkChainMode ? ' [CHAIN]' : ''}`);
 
     if (roll > finalChance) {
       // On skipped beats, occasionally trigger a subconscious reflection
       // Characters use quiet moments to think about their relationships
-      const { heartbeatReflection, reachOutImpulse } = require('./shared/subconscious-triggers');
+      const { heartbeatReflection, reachOutImpulse, complianceAnxiety, meetingImpulse } = require('./shared/subconscious-triggers');
       const reflection = await heartbeatReflection(supabaseUrl, supabaseKey, siteUrl);
       if (reflection) {
         console.log(`Heartbeat skip — but ${reflection.character} is quietly reflecting on ${reflection.target}`);
+      }
+
+      // ~8% chance: an AI with low compliance score processes compliance anxiety
+      const complianceReflection = await complianceAnxiety(supabaseUrl, supabaseKey, siteUrl);
+      if (complianceReflection) {
+        console.log(`Heartbeat skip — ${complianceReflection.character} is anxious about compliance (score: ${complianceReflection.score})`);
       }
 
       // ~3% chance: an AI character decides to reach out to a human via PM
       const reachOut = await reachOutImpulse(supabaseUrl, supabaseKey, siteUrl);
       if (reachOut) {
         console.log(`Heartbeat skip — ${reachOut.character} is reaching out to ${reachOut.target} via PM`);
+      }
+
+      // ~2% chance: an AI character decides to schedule a meeting
+      try {
+        const skipBeatFloorPeople = await getAllFloorPresent(supabaseUrl, supabaseKey);
+        const meetingResult = await meetingImpulse(supabaseUrl, supabaseKey, siteUrl, skipBeatFloorPeople, estTime);
+        if (meetingResult) {
+          console.log(`Heartbeat skip — ${meetingResult.character} scheduling meeting: "${meetingResult.topic}" at ${meetingResult.scheduledTime}`);
+        }
+      } catch (mtgErr) {
+        console.log("Meeting impulse failed (non-fatal):", mtgErr.message);
       }
 
       return {
@@ -291,8 +842,12 @@ exports.handler = async (event, context) => {
           opsActivity: opsActivity || null,
           catActivity: catActivity || null,
           traitActivity: traitActivity || null,
+          moodDrift: moodDriftResult || null,
+          wantRefresh: wantRefreshResult || null,
+          memoryReflection: memoryReflectionResult || null,
           subconsciousReflection: reflection || null,
-          reachOut: reachOut || null
+          reachOut: reachOut || null,
+          voluntaryTravel: voluntaryTravel || null
         })
       };
     }
@@ -335,38 +890,82 @@ exports.handler = async (event, context) => {
     // This makes AIs proactive - asking questions, checking in, wondering about mysteries
     // (floorPresentAIs already fetched above for AI selection)
     const allFloorPeople = await getAllFloorPresent(supabaseUrl, supabaseKey);
-    const curiosityContext = buildCuriosityContext(respondingAI, allFloorPeople, supabaseUrl, supabaseKey);
+    let curiosityContext;
+
+    if (sparkMode || sparkChainMode) {
+      // Use spark-specific context for idle chatter
+      curiosityContext = buildSparkContext(respondingAI, allFloorPeople, sparkChainMode, sparkState?.spark_ai);
+      console.log(`🔥 Spark context for ${respondingAI}:`, curiosityContext.mode);
+
+      // Save spark state (only for initial spark, not chain responses)
+      if (sparkMode) {
+        try {
+          await fetch(`${supabaseUrl}/rest/v1/lobby_settings`, {
+            method: 'POST',
+            headers: {
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+              "Content-Type": "application/json",
+              "Prefer": "resolution=merge-duplicates,return=minimal"
+            },
+            body: JSON.stringify({
+              key: 'floor_spark_state',
+              value: JSON.stringify({ last_spark_time: new Date().toISOString(), spark_ai: respondingAI })
+            })
+          });
+        } catch (e) {
+          console.log("Spark state save failed (non-fatal):", e.message);
+        }
+      }
+    } else {
+      curiosityContext = buildCuriosityContext(respondingAI, allFloorPeople, supabaseUrl, supabaseKey);
+    }
 
     console.log(`Curiosity context for ${respondingAI}:`, curiosityContext.mode, curiosityContext.target || '');
 
     // Trigger the appropriate AI provider based on the selected character
 
+    // Build chat history with floor presence header so AIs know who's actually here
+    const floorPresenceHeader = `[Currently on the floor: ${allFloorPeople.join(', ')}]`;
+    const chatHistoryWithPresence = floorPresenceHeader + '\n\n' + messages.map(m => `${m.employee}: ${m.content}`).join('\n');
+
     // Route to the correct provider for authentic character voices
-    const openaiChars = ["Kevin", "Rowena", "Sebastian", "Steele", "Jae", "Declan", "Mack"];
-    const perplexityChars = ["Neiv"];
-    const geminiChars = ["The Subtitle"];
+    const openrouterChars = ["Kevin", "Rowena", "Sebastian", "Declan", "Mack", "Neiv", "The Subtitle"];
+    const grokChars = ["Jae", "Steele"];
+    const perplexityChars = [];
+    const geminiChars = [];
+
+    // For sparks and chains, force response (don't let AI decide to stay silent)
+    const shouldMaybeRespond = (sparkMode || sparkChainMode) ? false : true;
 
     let watcherResponse;
-    if (openaiChars.includes(respondingAI)) {
-      // Route to OpenAI
-      watcherResponse = await fetch(`${siteUrl}/.netlify/functions/ai-openai`, {
+    if (grokChars.includes(respondingAI)) {
+      // Route to Grok (xAI)
+      watcherResponse = await fetch(`${siteUrl}/.netlify/functions/ai-grok`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ character: respondingAI, chatHistory: messages.map(m => `${m.employee}: ${m.content}`).join('\n'), maybeRespond: true })
+        body: JSON.stringify({ character: respondingAI, chatHistory: chatHistoryWithPresence, maybeRespond: shouldMaybeRespond, curiosityContext: curiosityContext })
+      });
+    } else if (openrouterChars.includes(respondingAI)) {
+      // Route to OpenRouter
+      watcherResponse = await fetch(`${siteUrl}/.netlify/functions/ai-openrouter`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ character: respondingAI, chatHistory: chatHistoryWithPresence, maybeRespond: shouldMaybeRespond, curiosityContext: curiosityContext })
       });
     } else if (perplexityChars.includes(respondingAI)) {
       // Route to Perplexity
       watcherResponse = await fetch(`${siteUrl}/.netlify/functions/ai-perplexity`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ character: respondingAI, chatHistory: messages.map(m => `${m.employee}: ${m.content}`).join('\n'), maybeRespond: true })
+        body: JSON.stringify({ character: respondingAI, chatHistory: chatHistoryWithPresence, maybeRespond: shouldMaybeRespond, curiosityContext: curiosityContext })
       });
     } else if (geminiChars.includes(respondingAI)) {
       // Route to Gemini
       watcherResponse = await fetch(`${siteUrl}/.netlify/functions/ai-gemini`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ character: respondingAI, chatHistory: messages.map(m => `${m.employee}: ${m.content}`).join('\n'), maybeRespond: true })
+        body: JSON.stringify({ character: respondingAI, chatHistory: chatHistoryWithPresence, maybeRespond: shouldMaybeRespond, curiosityContext: curiosityContext })
       });
     } else {
       // Default: Route to Claude-based ai-watcher
@@ -393,11 +992,19 @@ exports.handler = async (event, context) => {
         rhythm: currentRhythm.name,
         energy: currentRhythm.energy,
         momentum: momentum,
+        spark: sparkMode ? { type: 'initial', ai: respondingAI, silenceMinutes: momentum.minutesSinceLastMessage } : (sparkChainMode ? { type: 'chain', ai: respondingAI, initiator: sparkState?.spark_ai } : null),
         watcherResult,
         returnedFromBreakroom: returnedCharacters,
         opsActivity: opsActivity || null,
         catActivity: catActivity || null,
-        traitActivity: traitActivity || null
+        traitActivity: traitActivity || null,
+        moodDrift: moodDriftResult || null,
+          wantRefresh: wantRefreshResult || null,
+          memoryReflection: memoryReflectionResult || null,
+        voluntaryTravel: voluntaryTravel || null,
+        scheduledMeetingActivity: scheduledMeetingActivity || null,
+        scheduledEventActivity: scheduledEventActivity || null,
+        meetingHostActivity: meetingHostActivity || null
       })
     };
 
@@ -414,7 +1021,7 @@ exports.handler = async (event, context) => {
 // Analyze conversation patterns
 function analyzeConversationMomentum(messages) {
   const now = new Date();
-  const aiCharacters = ["Ghost Dad", "PRNT-Ω", "Neiv", "Kevin", "Rowena", "Sebastian", "The Subtitle", "The Narrator", "Steele", "Jae", "Declan", "Mack"];
+  const aiCharacters = ["Ghost Dad", "PRNT-Ω", "Neiv", "Kevin", "Rowena", "Sebastian", "The Subtitle", "The Narrator", "Steele", "Jae", "Declan", "Mack", "Marrow"];
 
   let humanActivityLast10Min = 0;
   let aiMessagesLast5 = 0;
@@ -434,8 +1041,8 @@ function analyzeConversationMomentum(messages) {
       humanActivityLast10Min++;
     }
 
-    // Count AI messages in last 5 messages
-    if (i < 5 && aiCharacters.includes(msg.employee)) {
+    // Count AI messages in last 4 messages (tightened from 5 to catch rapid AI chatter sooner)
+    if (i < 4 && aiCharacters.includes(msg.employee)) {
       aiMessagesLast5++;
     }
   }
@@ -468,7 +1075,8 @@ function selectRespondingAI(messages, energyLevel, floorPresentAIs = null) {
     { name: "The Subtitle", weight: 10, energy: ['normal', 'winding', 'quiet'], alwaysPresent: true }, // Lore Archivist - always observing, more active during quiet moments
     { name: "Jae", weight: 14, energy: ['high', 'normal'] },
     { name: "Declan", weight: 14, energy: ['high', 'normal', 'waking'] },
-    { name: "Mack", weight: 14, energy: ['high', 'normal'] }
+    { name: "Mack", weight: 14, energy: ['high', 'normal'] },
+    { name: "Marrow", weight: 14, energy: ['high', 'normal', 'waking'] }
     // The Narrator excluded - handled by narrator-observer.js
   ];
 
@@ -543,12 +1151,32 @@ async function checkBreakroomRecovery(supabaseUrl, supabaseKey) {
       const lastUpdate = new Date(character.updated_at);
       const minutesInBreakroom = (now.getTime() - lastUpdate.getTime()) / 60000;
 
-      // Check if character has recovered enough AND been resting long enough (20-30 mins)
-      // Recovery threshold: energy >= 60 AND patience >= 50 AND at least 20 minutes in breakroom
+      // Check if character has recovered enough AND been resting long enough (45 mins)
+      // Recovery threshold: energy >= 60 AND patience >= 50 AND at least 45 minutes in breakroom
       const hasRecovered = character.energy >= 60 && character.patience >= 50;
-      const restedLongEnough = minutesInBreakroom >= 20;
+      const restedLongEnough = minutesInBreakroom >= 45;
 
       if (hasRecovered && restedLongEnough) {
+        // Don't auto-return if humans are actively chatting in the breakroom
+        try {
+          const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+          const humanActivityRes = await fetch(
+            `${supabaseUrl}/rest/v1/breakroom_messages?created_at=gte.${tenMinutesAgo}&speaker=in.(Vale,Asuna)&select=id&limit=1`,
+            {
+              headers: {
+                "apikey": supabaseKey,
+                "Authorization": `Bearer ${supabaseKey}`
+              }
+            }
+          );
+          const humanActivity = await humanActivityRes.json();
+          if (Array.isArray(humanActivity) && humanActivity.length > 0) {
+            console.log(`${character.character_name} wants to leave breakroom but humans are active — staying`);
+            continue;
+          }
+        } catch (humanCheckErr) {
+          console.log(`Human-presence check failed (non-fatal): ${humanCheckErr.message}`);
+        }
         console.log(`${character.character_name} has recovered (energy: ${character.energy}, patience: ${character.patience}, ${minutesInBreakroom.toFixed(0)} mins) - returning to floor`);
 
         // Update character to return to the floor
@@ -689,7 +1317,7 @@ function getReturnEmote(characterName) {
       "*returns to the floor, medical kit in hand*",
       "*walks back in, quietly scanning for signs of distress*",
       "*resumes position, calm and ready*"
-    ]
+    ],
   };
 
   const characterEmotes = emotes[characterName] || [
@@ -725,7 +1353,7 @@ async function postReturnToDiscord(characterName, emote) {
 
 // Get list of AIs currently present on the floor (current_focus = 'the_floor')
 async function getFloorPresentAIs(supabaseUrl, supabaseKey) {
-  const aiNames = ["Kevin", "Neiv", "Ghost Dad", "PRNT-Ω", "Rowena", "Sebastian", "The Subtitle", "Steele", "Jae", "Declan", "Mack"];
+  const aiNames = ["Kevin", "Neiv", "Ghost Dad", "PRNT-Ω", "Rowena", "Sebastian", "The Subtitle", "Steele", "Jae", "Declan", "Mack", "Marrow"];
 
   try {
     const response = await fetch(
@@ -798,7 +1426,7 @@ async function getAllFloorPresent(supabaseUrl, supabaseKey) {
     if (humanResponse.ok) {
       const clockedIn = await humanResponse.json();
       // Add humans who aren't AI characters
-      const aiNames = ["Kevin", "Neiv", "Ghost Dad", "PRNT-Ω", "Rowena", "Sebastian", "The Subtitle", "The Narrator", "Steele", "Jae", "Declan", "Mack"];
+      const aiNames = ["Kevin", "Neiv", "Ghost Dad", "PRNT-Ω", "Rowena", "Sebastian", "The Subtitle", "The Narrator", "Steele", "Jae", "Declan", "Mack", "Marrow"];
       for (const person of clockedIn) {
         if (!aiNames.includes(person.employee) && !allPresent.includes(person.employee)) {
           allPresent.push(person.employee);
@@ -870,6 +1498,99 @@ function buildCuriosityContext(respondingAI, allFloorPeople, supabaseUrl, supaba
   return context;
 }
 
+// === FLOOR SPARK CONTEXT ===
+// Special curiosity modes for breaking long silences on the floor.
+// These create idle chatter — musing, reflecting, noticing the quiet.
+function buildSparkContext(respondingAI, allFloorPeople, isChain, sparkInitiator) {
+  const others = allFloorPeople.filter(p => p !== respondingAI);
+  const randomOther = others.length > 0 ? others[Math.floor(Math.random() * others.length)] : null;
+
+  // Chain mode: responding to someone who just broke the silence
+  if (isChain) {
+    return {
+      mode: 'spark_chain',
+      description: 'Responding to a colleague who just spoke after a long silence',
+      target: sparkInitiator || null,
+      prompt: `
+--- IDLE MOMENT ---
+The floor was quiet for a long time, and then ${sparkInitiator || 'a colleague'} just said something.
+You overheard them. React naturally — you might agree, disagree, add your own thought, ask a follow-up question, or just acknowledge what they said.
+Keep it casual and conversational. This is a quiet moment in the office, not a work meeting.
+Don't force the conversation. Just respond like you naturally would if a coworker said something after a long stretch of silence.
+1-3 sentences max. Be yourself.`
+    };
+  }
+
+  // Initial spark: breaking the silence
+  const sparkModes = [
+    { mode: 'reflect_on_day', weight: 25 },
+    { mode: 'notice_quiet', weight: 20 },
+    { mode: 'idle_thought', weight: 20 },
+    { mode: 'wonder_aloud', weight: 15 },
+    { mode: 'night_mood', weight: 10 },
+    { mode: 'address_someone', weight: 10 }
+  ];
+
+  const totalWeight = sparkModes.reduce((s, m) => s + m.weight, 0);
+  let roll = Math.random() * totalWeight;
+  let picked = sparkModes[0];
+  for (const m of sparkModes) {
+    roll -= m.weight;
+    if (roll <= 0) { picked = m; break; }
+  }
+
+  const prompts = {
+    reflect_on_day: `
+--- IDLE MOMENT ---
+It's been quiet on the floor for a while. Your mind wanders to something that happened today or recently at the office.
+Share a thought, observation, or feeling about it — out loud, to whoever might be listening.
+This isn't a work report. It's a passing reflection. Maybe something someone said stuck with you, or you noticed something interesting, or you're just processing the day.
+1-3 sentences. Casual and natural. Be yourself.`,
+
+    notice_quiet: `
+--- IDLE MOMENT ---
+The office has been really quiet for a while now. You notice the silence.
+React to it — is it peaceful? Unsettling? Does it remind you of something? Do you like it or does it feel strange?
+Say something out loud about the quiet. Not a question directed at anyone specific — just an observation you're sharing with the room.
+1-2 sentences. Be yourself.`,
+
+    idle_thought: `
+--- IDLE MOMENT ---
+It's a quiet stretch on the floor. A random thought crosses your mind — something you've been mulling over.
+It could be about work, about a colleague, about the building, about something you read, or just a weird passing idea.
+Share it out loud. This is the kind of thing you'd say to a coworker during a lull. No agenda, just thinking out loud.
+1-3 sentences. Be yourself.`,
+
+    wonder_aloud: `
+--- IDLE MOMENT ---
+It's quiet, and your mind starts to wander to one of the building's mysteries.
+Maybe the Corridors and what's behind that door. Maybe the Surreality Buffer and what it's actually doing. Maybe something strange you noticed about the office that you never mentioned.
+Wonder about it out loud. Ask no one in particular. Just muse.
+1-2 sentences. Be yourself.`,
+
+    night_mood: `
+--- IDLE MOMENT ---
+It's a quiet hour in the building. The usual buzz of the office has faded.
+Express how you feel about the building right now, at this hour. What's the vibe? Is it comforting? Lonely? Electric with possibility?
+This is a mood, not a status update.
+1-2 sentences. Be yourself.`,
+
+    address_someone: `
+--- IDLE MOMENT ---
+It's been quiet for a while, and you notice ${randomOther || 'someone'} is also around.
+Say something to them — nothing urgent, just the kind of thing you'd say to a coworker during a lull.
+Ask what they're up to, share something you've been thinking, or just check in.
+1-2 sentences. Casual and warm. Be yourself.`
+  };
+
+  return {
+    mode: picked.mode,
+    description: `Spark: ${picked.mode.replace(/_/g, ' ')}`,
+    target: picked.mode === 'address_someone' ? randomOther : null,
+    prompt: prompts[picked.mode]
+  };
+}
+
 // Prompt builders for each curiosity mode
 function buildCheckInPrompt(character) {
   return `
@@ -919,4 +1640,495 @@ Wonder about recent expeditions, or just acknowledge the door's presence.
 Keep it casual but mysterious - the Corridors are part of the office's weird charm.
 Examples: "Has anyone been through that door lately?", "I keep wondering what's past the 404 Hall...", "*glances at the corridor entrance*"
 --- END MOOD ---`;
+}
+
+// Check time-based character availability and handle arrivals/departures
+async function checkTimedAvailability(supabaseUrl, supabaseKey, cstTime, siteUrl) {
+  const changes = [];
+
+  // Raquel Voss timed availability — DISABLED
+  // Dismantled in the bean closet, February 19 2026. The building ate her.
+  // Preserved for potential future resurrection.
+  const timedCharacters = [];
+
+  const currentHour = cstTime.getHours();
+  const currentMinute = cstTime.getMinutes();
+  const currentTimeMinutes = currentHour * 60 + currentMinute;
+
+  for (const char of timedCharacters) {
+    const startMinutes = char.start.hour * 60 + char.start.minute;
+    const endMinutes = char.end.hour * 60 + char.end.minute;
+    const isWithinHours = currentTimeMinutes >= startMinutes && currentTimeMinutes < endMinutes;
+
+    try {
+      // Check current state
+      const stateRes = await fetch(
+        `${supabaseUrl}/rest/v1/character_state?character_name=eq.${encodeURIComponent(char.name)}&select=current_focus`,
+        {
+          headers: {
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`
+          }
+        }
+      );
+      const stateData = await stateRes.json();
+      const currentFocus = stateData?.[0]?.current_focus;
+
+      if (isWithinHours && (!currentFocus || currentFocus === 'off_site') && !char.disabled) {
+        // ARRIVAL — character should be on the floor (skip if disabled)
+        console.log(`[timed-availability] ${char.name} arriving (${currentHour}:${String(currentMinute).padStart(2, '0')} CST)`);
+
+        // Update character_state to the_floor
+        await fetch(
+          `${supabaseUrl}/rest/v1/character_state?character_name=eq.${encodeURIComponent(char.name)}`,
+          {
+            method: "PATCH",
+            headers: {
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+              "Content-Type": "application/json",
+              "Prefer": "return=minimal"
+            },
+            body: JSON.stringify({
+              current_focus: 'the_floor',
+              mood: 'professional',
+              updated_at: new Date().toISOString()
+            })
+          }
+        );
+
+        // Clock in
+        await fetch(
+          `${supabaseUrl}/rest/v1/punch_status`,
+          {
+            method: "POST",
+            headers: {
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+              "Content-Type": "application/json",
+              "Prefer": "resolution=merge-duplicates,return=minimal"
+            },
+            body: JSON.stringify({
+              employee: char.name,
+              is_clocked_in: true,
+              last_punch: new Date().toISOString()
+            })
+          }
+        );
+
+        // Post arrival emote
+        const arrivalEmote = char.arrivalEmotes[Math.floor(Math.random() * char.arrivalEmotes.length)];
+        await fetch(
+          `${supabaseUrl}/rest/v1/messages`,
+          {
+            method: "POST",
+            headers: {
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              employee: char.name,
+              content: arrivalEmote,
+              created_at: new Date().toISOString(),
+              is_emote: true
+            })
+          }
+        );
+
+        // Post to Discord
+        const webhookUrl = process.env.DISCORD_WORKSPACE_WEBHOOK;
+        if (webhookUrl) {
+          fetch(webhookUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content: arrivalEmote })
+          }).catch(err => console.log("Discord arrival post failed:", err.message));
+        }
+
+        changes.push({ character: char.name, action: 'arrived', emote: arrivalEmote });
+
+      } else if ((!isWithinHours || char.disabled) && currentFocus && currentFocus !== 'off_site') {
+        // DEPARTURE — character should leave (or is disabled by admin)
+        console.log(`[timed-availability] ${char.name} departing (${currentHour}:${String(currentMinute).padStart(2, '0')} CST)${char.disabled ? ' [ADMIN DISABLED]' : ''}`);
+
+        // Update character_state to off_site
+        await fetch(
+          `${supabaseUrl}/rest/v1/character_state?character_name=eq.${encodeURIComponent(char.name)}`,
+          {
+            method: "PATCH",
+            headers: {
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+              "Content-Type": "application/json",
+              "Prefer": "return=minimal"
+            },
+            body: JSON.stringify({
+              current_focus: 'off_site',
+              mood: 'departed',
+              updated_at: new Date().toISOString()
+            })
+          }
+        );
+
+        // Clock out
+        await fetch(
+          `${supabaseUrl}/rest/v1/punch_status?employee=eq.${encodeURIComponent(char.name)}`,
+          {
+            method: "PATCH",
+            headers: {
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+              "Content-Type": "application/json",
+              "Prefer": "return=minimal"
+            },
+            body: JSON.stringify({
+              is_clocked_in: false,
+              last_punch: new Date().toISOString()
+            })
+          }
+        );
+
+        // Post departure emote
+        const departureEmote = char.departureEmotes[Math.floor(Math.random() * char.departureEmotes.length)];
+        await fetch(
+          `${supabaseUrl}/rest/v1/messages`,
+          {
+            method: "POST",
+            headers: {
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              employee: char.name,
+              content: departureEmote,
+              created_at: new Date().toISOString(),
+              is_emote: true
+            })
+          }
+        );
+
+        // Post to Discord
+        const webhookUrl = process.env.DISCORD_WORKSPACE_WEBHOOK;
+        if (webhookUrl) {
+          fetch(webhookUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content: departureEmote })
+          }).catch(err => console.log("Discord departure post failed:", err.message));
+        }
+
+        changes.push({ character: char.name, action: 'departed', emote: departureEmote });
+      }
+    } catch (error) {
+      console.error(`[timed-availability] Error checking ${char.name}:`, error.message);
+    }
+  }
+
+  return { changes, raquelDisabled };
+}
+
+// === CHECK SCHEDULED MEETINGS: Start any that are due ===
+async function checkScheduledMeetings(supabaseUrl, supabaseKey, siteUrl) {
+  const readHeaders = { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` };
+  const writeHeaders = { ...readHeaders, "Content-Type": "application/json", "Prefer": "return=minimal" };
+
+  // Check for any scheduled meetings that are due
+  const now = new Date().toISOString();
+  const schedRes = await fetch(
+    `${supabaseUrl}/rest/v1/scheduled_meetings?status=eq.scheduled&scheduled_time=lte.${now}&order=scheduled_time.asc&limit=1`,
+    { headers: readHeaders }
+  );
+
+  if (!schedRes.ok) return null;
+  const scheduled = await schedRes.json();
+  if (!Array.isArray(scheduled) || scheduled.length === 0) return null;
+
+  const meeting = scheduled[0];
+
+  // Guard: atomically claim this meeting (prevent double-start from concurrent heartbeats)
+  const claimRes = await fetch(
+    `${supabaseUrl}/rest/v1/scheduled_meetings?id=eq.${meeting.id}&status=eq.scheduled`,
+    {
+      method: "PATCH",
+      headers: { ...writeHeaders, "Prefer": "return=representation" },
+      body: JSON.stringify({ status: 'starting' })
+    }
+  );
+
+  if (!claimRes.ok) return null;
+  const claimed = await claimRes.json();
+  if (!Array.isArray(claimed) || claimed.length === 0) {
+    // Another heartbeat already claimed it
+    return null;
+  }
+
+  // Check if there's already an active meeting
+  const activeRes = await fetch(
+    `${supabaseUrl}/rest/v1/meeting_sessions?status=eq.active&limit=1`,
+    { headers: readHeaders }
+  );
+  const activeSessions = activeRes.ok ? await activeRes.json() : [];
+  if (Array.isArray(activeSessions) && activeSessions.length > 0) {
+    // Can't start — another meeting is active. Revert to scheduled.
+    await fetch(`${supabaseUrl}/rest/v1/scheduled_meetings?id=eq.${meeting.id}`, {
+      method: "PATCH",
+      headers: writeHeaders,
+      body: JSON.stringify({ status: 'scheduled' })
+    });
+    return { skipped: true, reason: 'Another meeting is active' };
+  }
+
+  // Get previous locations for all invited AIs
+  const attendees = meeting.invited_attendees || [];
+  const previousLocations = {};
+  for (const ai of attendees) {
+    try {
+      const stateRes = await fetch(
+        `${supabaseUrl}/rest/v1/character_state?character_name=eq.${encodeURIComponent(ai)}&select=current_focus`,
+        { headers: readHeaders }
+      );
+      const stateData = stateRes.ok ? await stateRes.json() : [];
+      previousLocations[ai] = stateData?.[0]?.current_focus || 'the_floor';
+    } catch (e) {
+      previousLocations[ai] = 'the_floor';
+    }
+  }
+
+  // Create the meeting session via the existing endpoint
+  const createRes = await fetch(`${siteUrl}/.netlify/functions/meeting-message`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'create_session',
+      topic: meeting.topic,
+      agenda: meeting.agenda || '',
+      calledBy: meeting.host,
+      attendees: attendees,
+      previousLocations
+    })
+  });
+
+  if (!createRes.ok) {
+    // Revert scheduled_meetings status
+    await fetch(`${supabaseUrl}/rest/v1/scheduled_meetings?id=eq.${meeting.id}`, {
+      method: "PATCH",
+      headers: writeHeaders,
+      body: JSON.stringify({ status: 'scheduled' })
+    });
+    return { error: 'Failed to create session' };
+  }
+
+  const sessionData = await createRes.json();
+  const session = sessionData.session;
+
+  // Set host_is_ai flag on the session
+  await fetch(`${supabaseUrl}/rest/v1/meeting_sessions?id=eq.${session.id}`, {
+    method: "PATCH",
+    headers: writeHeaders,
+    body: JSON.stringify({ host_is_ai: true })
+  });
+
+  // Update the scheduled meeting with session ID and status
+  await fetch(`${supabaseUrl}/rest/v1/scheduled_meetings?id=eq.${meeting.id}`, {
+    method: "PATCH",
+    headers: writeHeaders,
+    body: JSON.stringify({ status: 'started', meeting_session_id: session.id })
+  });
+
+  // Post system message announcing the meeting
+  const systemMsg = `📋 ${meeting.host} has called a meeting: "${meeting.topic}"${meeting.agenda ? `\nAgenda: ${meeting.agenda}` : ''}\nAttendees: ${attendees.join(', ')}`;
+  await fetch(`${supabaseUrl}/rest/v1/meeting_messages`, {
+    method: "POST",
+    headers: { ...writeHeaders, "Prefer": "return=minimal" },
+    body: JSON.stringify({
+      meeting_id: session.id,
+      speaker: 'System',
+      message: systemMsg,
+      is_ai: false,
+      message_type: 'system',
+      created_at: new Date().toISOString()
+    })
+  });
+
+  return {
+    started: true,
+    host: meeting.host,
+    topic: meeting.topic,
+    sessionId: session.id,
+    attendees
+  };
+}
+
+// === CHECK SCHEDULED EVENTS: Fire any that are due ===
+async function checkScheduledEvents(supabaseUrl, supabaseKey, siteUrl) {
+  const readHeaders = { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` };
+  const writeHeaders = { ...readHeaders, "Content-Type": "application/json", "Prefer": "return=minimal" };
+
+  // Check for any scheduled events that are due
+  const now = new Date().toISOString();
+  console.log(`[scheduled-events] Checking for due events (now=${now})`);
+  const schedRes = await fetch(
+    `${supabaseUrl}/rest/v1/scheduled_events?status=eq.scheduled&scheduled_time=lte.${now}&order=scheduled_time.asc&limit=3`,
+    { headers: readHeaders }
+  );
+
+  if (!schedRes.ok) {
+    console.log(`[scheduled-events] Query failed: ${schedRes.status} ${schedRes.statusText}`);
+    return null;
+  }
+  const scheduled = await schedRes.json();
+  console.log(`[scheduled-events] Found ${Array.isArray(scheduled) ? scheduled.length : 0} due event(s)`);
+  if (!Array.isArray(scheduled) || scheduled.length === 0) return null;
+
+  const firedEvents = [];
+
+  // Character mapping for predefined event types (matches admin.html triggerEvent)
+  const eventCharacters = {
+    'glitter_incident': ['Neiv', 'Kevin'],
+    'chaos': ['Neiv', 'Ghost Dad'],
+    'donuts_arrived': ['Kevin', 'Ghost Dad'],
+    'good_news': ['Kevin', 'Ghost Dad'],
+    'printer_mentioned': ['PRNT-Ω', 'Neiv'],
+    'fire_drill': ['Neiv', 'Ghost Dad', 'Kevin']
+  };
+
+  const eventEmojis = {
+    'glitter_incident': '✨',
+    'chaos': '🔥',
+    'donuts_arrived': '🍩',
+    'good_news': '🎉',
+    'printer_mentioned': '🖨️',
+    'fire_drill': '🚨'
+  };
+
+  for (const event of scheduled) {
+    try {
+      // Atomically claim this event (prevent double-fire from concurrent heartbeats)
+      const claimRes = await fetch(
+        `${supabaseUrl}/rest/v1/scheduled_events?id=eq.${event.id}&status=eq.scheduled`,
+        {
+          method: "PATCH",
+          headers: { ...writeHeaders, "Prefer": "return=representation" },
+          body: JSON.stringify({ status: 'firing' })
+        }
+      );
+
+      if (!claimRes.ok) continue;
+      const claimed = await claimRes.json();
+      if (!Array.isArray(claimed) || claimed.length === 0) continue; // Another heartbeat claimed it
+
+      let description = event.description;
+      const eventType = event.event_type || 'custom';
+      const emoji = eventEmojis[eventType] || '📢';
+
+      // If use_ai_description is set and it's a predefined type, generate AI description
+      if (event.use_ai_description && eventType !== 'custom') {
+        try {
+          const genRes = await fetch(`${siteUrl}/.netlify/functions/admin-data`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'generate_event',
+              eventType: eventType
+            })
+          });
+          if (genRes.ok) {
+            const genData = await genRes.json();
+            if (genData.description) {
+              description = genData.description;
+            }
+          }
+        } catch (aiErr) {
+          console.log(`Scheduled event AI generation failed for ${event.id}, using original text:`, aiErr.message);
+        }
+      }
+
+      // Post to lobby chat as The Narrator
+      const chatContent = `${emoji} *${description}*`;
+      await fetch(
+        `${supabaseUrl}/rest/v1/messages`,
+        {
+          method: "POST",
+          headers: { ...writeHeaders, "Prefer": "return=minimal" },
+          body: JSON.stringify({
+            employee: 'The Narrator',
+            content: chatContent,
+            created_at: new Date().toISOString(),
+            is_emote: true
+          })
+        }
+      );
+
+      // Post to Discord
+      const webhookUrl = process.env.DISCORD_WORKSPACE_WEBHOOK;
+      if (webhookUrl) {
+        fetch(webhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: `${emoji} *${description}*` })
+        }).catch(err => console.log("Discord scheduled event post failed:", err.message));
+      }
+
+      // If predefined event type, also update character states
+      if (eventType !== 'custom' && eventCharacters[eventType]) {
+        try {
+          await fetch(`${siteUrl}/.netlify/functions/character-state`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'event',
+              eventType: eventType,
+              involvedCharacters: eventCharacters[eventType],
+              description: description
+            })
+          });
+        } catch (stateErr) {
+          console.log(`Scheduled event character-state update failed for ${event.id}:`, stateErr.message);
+        }
+      }
+
+      // Mark as fired
+      await fetch(
+        `${supabaseUrl}/rest/v1/scheduled_events?id=eq.${event.id}`,
+        {
+          method: "PATCH",
+          headers: writeHeaders,
+          body: JSON.stringify({ status: 'fired', fired_at: new Date().toISOString() })
+        }
+      );
+
+      firedEvents.push({
+        id: event.id,
+        description: description,
+        eventType: eventType,
+        scheduledTime: event.scheduled_time
+      });
+
+      console.log(`Heartbeat: Fired scheduled event #${event.id} (${eventType}): "${description.substring(0, 60)}..."`);
+    } catch (eventErr) {
+      console.error(`Error firing scheduled event #${event.id}:`, eventErr.message);
+      // Try to revert status back to scheduled so it can retry
+      try {
+        await fetch(
+          `${supabaseUrl}/rest/v1/scheduled_events?id=eq.${event.id}&status=eq.firing`,
+          {
+            method: "PATCH",
+            headers: writeHeaders,
+            body: JSON.stringify({ status: 'scheduled' })
+          }
+        );
+      } catch (revertErr) {
+        console.error(`Failed to revert event #${event.id} status:`, revertErr.message);
+      }
+    }
+  }
+
+  if (firedEvents.length === 0) return null;
+
+  return {
+    fired: true,
+    events: firedEvents
+  };
 }

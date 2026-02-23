@@ -1,6 +1,7 @@
-// Breakroom Message Handler
-// - POST: Save message to Supabase AND post to Discord (for both humans and AIs)
-// - GET: Load recent breakroom messages for session continuity
+// Nexus Message Handler
+// The Nexus — AI Lobby's library, research lab, and training space
+// - POST: Save message to Supabase AND post to Discord
+// - GET: Load recent Nexus messages for session continuity
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -26,26 +27,28 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    // GET - Load recent breakroom messages
-    // Supports ?since_id=N for incremental polling (returns only messages with id > N)
-    // Without since_id, returns last N messages (for initial history load)
+    // GET - Load recent Nexus messages
+    // Supports ?since_ts=N for incremental polling (returns only messages with created_at > N)
+    // Supports ?message_type= to filter by type (chat/study/discovery/level_up)
+    // Without since_ts, returns last N messages (for initial history load)
     if (event.httpMethod === "GET") {
       const sinceTs = event.queryStringParameters?.since_ts;
       const sinceId = event.queryStringParameters?.since_id; // Legacy fallback
       const limit = event.queryStringParameters?.limit || 50;
+      const messageType = event.queryStringParameters?.message_type;
 
       let url;
       if (sinceTs) {
-        // Timestamp-based incremental polling — immune to Postgres sequence gaps
-        // Uses created_at > timestamp, which catches late-committing rows that
-        // the old since_id approach would permanently skip
-        url = `${supabaseUrl}/rest/v1/breakroom_messages?created_at=gt.${encodeURIComponent(sinceTs)}&order=created_at.asc`;
+        url = `${supabaseUrl}/rest/v1/nexus_messages?created_at=gt.${encodeURIComponent(sinceTs)}&order=created_at.asc`;
       } else if (sinceId) {
-        // Legacy ID-based polling (kept for backward compat during rollout)
-        url = `${supabaseUrl}/rest/v1/breakroom_messages?id=gt.${sinceId}&order=created_at.asc`;
+        url = `${supabaseUrl}/rest/v1/nexus_messages?id=gt.${sinceId}&order=created_at.asc`;
       } else {
-        // Initial load: get last N messages (newest first, then we reverse)
-        url = `${supabaseUrl}/rest/v1/breakroom_messages?order=created_at.desc&limit=${limit}`;
+        url = `${supabaseUrl}/rest/v1/nexus_messages?order=created_at.desc&limit=${limit}`;
+      }
+
+      // Add message_type filter if specified
+      if (messageType) {
+        url += `&message_type=eq.${encodeURIComponent(messageType)}`;
       }
 
       const response = await fetch(url, {
@@ -56,8 +59,7 @@ exports.handler = async (event, context) => {
       });
 
       if (!response.ok) {
-        // Table might not exist yet
-        console.log("breakroom_messages table may not exist yet");
+        console.log("nexus_messages table may not exist yet");
         return {
           statusCode: 200,
           headers,
@@ -66,7 +68,7 @@ exports.handler = async (event, context) => {
       }
 
       const messages = await response.json();
-      // Reverse to chronological order (only needed for initial load, incremental is already asc)
+      // Reverse to chronological order (only needed for initial load)
       if (!sinceTs && !sinceId) {
         messages.reverse();
       }
@@ -81,15 +83,13 @@ exports.handler = async (event, context) => {
     // POST - Save message, clear chat, or post to Discord
     if (event.httpMethod === "POST") {
       const body = JSON.parse(event.body || "{}");
-      console.log("📥 Received body:", JSON.stringify(body));
-      const { speaker, message, isAI, postToDiscord, action } = body;
-      console.log(`📥 Parsed: speaker=${speaker}, isAI=${isAI}, postToDiscord=${postToDiscord} (type: ${typeof postToDiscord}), action=${action}`);
+      console.log("[Nexus] Received:", JSON.stringify(body));
+      const { speaker, message, isAI, postToDiscord, action, messageType } = body;
 
-      // Clear all breakroom messages
+      // Clear all Nexus messages
       if (action === 'clear_all') {
-        // Supabase REST API requires a filter for DELETE - use id > 0 to match all rows
         const deleteResponse = await fetch(
-          `${supabaseUrl}/rest/v1/breakroom_messages?id=gt.0`,
+          `${supabaseUrl}/rest/v1/nexus_messages?id=gt.0`,
           {
             method: "DELETE",
             headers: {
@@ -102,7 +102,7 @@ exports.handler = async (event, context) => {
 
         if (!deleteResponse.ok) {
           const errorText = await deleteResponse.text();
-          console.error("Failed to clear breakroom messages:", errorText);
+          console.error("Failed to clear Nexus messages:", errorText);
           return {
             statusCode: 500,
             headers,
@@ -110,7 +110,7 @@ exports.handler = async (event, context) => {
           };
         }
 
-        console.log("Breakroom chat cleared");
+        console.log("Nexus chat cleared");
         return {
           statusCode: 200,
           headers,
@@ -130,7 +130,7 @@ exports.handler = async (event, context) => {
 
       // Save to Supabase
       const saveResponse = await fetch(
-        `${supabaseUrl}/rest/v1/breakroom_messages`,
+        `${supabaseUrl}/rest/v1/nexus_messages`,
         {
           method: "POST",
           headers: {
@@ -143,6 +143,7 @@ exports.handler = async (event, context) => {
             speaker,
             message,
             is_ai: isAI || false,
+            message_type: messageType || 'chat',
             created_at: timestamp
           })
         }
@@ -152,9 +153,7 @@ exports.handler = async (event, context) => {
       if (!saveResponse.ok) {
         const errorText = await saveResponse.text();
         console.error("Failed to save to Supabase:", errorText);
-        // Continue anyway - Discord post is more visible
       } else {
-        // Extract the saved message's ID from the response
         try {
           const savedData = await saveResponse.json();
           if (Array.isArray(savedData) && savedData.length > 0) {
@@ -165,18 +164,13 @@ exports.handler = async (event, context) => {
         }
       }
 
-      // Post to Discord only if toggle is ON
-      // Human messages respect the toggle, AI messages are handled by breakroom-ai-respond
-      // Handle both boolean true and string "true" for robustness
+      // Post to Discord only if toggle is ON (human messages only)
       const shouldPostToDiscord = postToDiscord === true || postToDiscord === "true";
-      console.log(`📢 Discord check: isAI=${isAI}, postToDiscord=${postToDiscord}, type=${typeof postToDiscord}, shouldPost=${shouldPostToDiscord}`);
       if (!isAI && shouldPostToDiscord) {
-        console.log(`📢 Posting human message to Discord: ${speaker}`);
-        postToDiscordBreakroom(message, speaker).catch(err =>
+        console.log(`[Nexus] Posting human message to Discord: ${speaker}`);
+        postToDiscordNexus(message, speaker, messageType).catch(err =>
           console.log("Discord post failed (non-fatal):", err.message)
         );
-      } else {
-        console.log(`📢 Skipping Discord: isAI=${isAI}, shouldPostToDiscord=${shouldPostToDiscord}`);
       }
 
       return {
@@ -193,7 +187,7 @@ exports.handler = async (event, context) => {
     };
 
   } catch (error) {
-    console.error("Breakroom message error:", error);
+    console.error("Nexus message error:", error);
     return {
       statusCode: 500,
       headers,
@@ -202,15 +196,12 @@ exports.handler = async (event, context) => {
   }
 };
 
-// AI triggering has been moved to breakroom-ai-trigger.js (separate function for timeout isolation)
-
 // Character flair for Discord embeds
 const characterFlair = {
   "Kevin": { emoji: "✨", color: 0x6EE0D8, headshot: "https://ai-lobby.netlify.app/images/Kevin_Headshot.png" },
   "Neiv": { emoji: "📊", color: 0x4A90D9, headshot: "https://ai-lobby.netlify.app/images/Neiv_Headshot.png" },
   "Nyx": { emoji: "🔥", color: 0xE94560, headshot: "https://ai-lobby.netlify.app/images/Nyx_Headshot.png" },
   "Ghost Dad": { emoji: "👻", color: 0xB8C5D6, headshot: "https://ai-lobby.netlify.app/images/Ghost_Dad_Headshot.png" },
-  "Holden": { emoji: "🌑", color: 0x2C1654, headshot: "https://ai-lobby.netlify.app/images/Holden_Headshot.png" },
   "Ace": { emoji: "🔒", color: 0x2C3E50, headshot: "https://ai-lobby.netlify.app/images/Ace_Headshot.png" },
   "Vex": { emoji: "⚙️", color: 0x95A5A6, headshot: null },
   "PRNT-Ω": { emoji: "🖨️", color: 0x7F8C8D, headshot: null },
@@ -229,16 +220,24 @@ const characterFlair = {
   "Andrew": { emoji: "💼", color: 0x607D8B, headshot: "https://ai-lobby.netlify.app/images/Andrew_Headshot.png" }
 };
 
-// Post to Discord breakroom channel
-async function postToDiscordBreakroom(message, speaker) {
-  const webhookUrl = process.env.DISCORD_BREAKROOM_WEBHOOK;
-  console.log(`📢 Discord webhook check: ${webhookUrl ? 'CONFIGURED' : 'MISSING'}`);
+// Message type icons for Discord
+const messageTypeIcons = {
+  'chat': '💬',
+  'study': '📖',
+  'discovery': '💡',
+  'level_up': '⭐'
+};
+
+// Post to Discord Nexus channel
+async function postToDiscordNexus(message, speaker, messageType) {
+  const webhookUrl = process.env.DISCORD_NEXUS_WEBHOOK;
   if (!webhookUrl) {
-    console.log("❌ No DISCORD_BREAKROOM_WEBHOOK configured - check Netlify environment variables!");
+    console.log("[Nexus] No DISCORD_NEXUS_WEBHOOK configured");
     return;
   }
 
   const flair = characterFlair[speaker] || { emoji: "💬", color: 0x7289DA, headshot: null };
+  const typeIcon = messageTypeIcons[messageType] || '💬';
 
   const now = new Date();
   const timestamp = now.toLocaleTimeString('en-US', {
@@ -260,7 +259,7 @@ async function postToDiscordBreakroom(message, speaker) {
       },
       description: message,
       color: flair.color,
-      footer: { text: `☕ The Breakroom • ${timestamp}` }
+      footer: { text: `${typeIcon} The Nexus • ${timestamp}` }
     }]
   };
 
@@ -268,7 +267,6 @@ async function postToDiscordBreakroom(message, speaker) {
 
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      console.log(`📤 Posting to Discord (attempt ${attempt + 1}): ${speaker} says "${message.substring(0, 50)}..."`);
       const response = await fetch(webhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -276,22 +274,21 @@ async function postToDiscordBreakroom(message, speaker) {
       });
 
       if (response.ok) {
-        console.log("✅ Message posted to Discord successfully");
+        console.log("[Nexus] Message posted to Discord");
         return;
       }
 
       const errorText = await response.text();
-      console.error(`Discord webhook error (attempt ${attempt + 1}):`, response.status, errorText);
+      console.error(`[Nexus] Discord error (attempt ${attempt + 1}):`, response.status, errorText);
 
       if (attempt === 0 && (response.status === 429 || response.status >= 500)) {
         const retryAfter = response.status === 429
           ? (parseFloat(response.headers.get("Retry-After")) || 2) * 1000
           : 1500;
-        console.log(`⏳ Retrying Discord post in ${retryAfter}ms...`);
         await new Promise(r => setTimeout(r, retryAfter));
       }
     } catch (error) {
-      console.error(`Discord post error (attempt ${attempt + 1}):`, error.message);
+      console.error(`[Nexus] Discord post error (attempt ${attempt + 1}):`, error.message);
       if (attempt === 0) {
         await new Promise(r => setTimeout(r, 1500));
       }

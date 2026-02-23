@@ -20,10 +20,13 @@
           <ul>
             <li><a href="index.html" class="active">Home</a></li>
             <li><a href="desktop.html">Desktop</a></li>
-            <li><a href="breakroom.html">☕ Breakroom</a></li>
             <li><a href="workspace.html" style="color: var(--lobby-highlight);">💬 The Floor</a></li>
-            <li><a href="conference-room.html" style="color: var(--stability-green);">🎤 Conference</a></li>
+            <li><a href="breakroom.html">☕ Breakroom</a></li>
+            <li><a href="meeting-room.html" style="color: #3498DB;">📋 Meeting Room</a></li>
+            <li><a href="fifth-floor.html" style="color: #e74c3c;">⚠️ 5th Floor</a></li>
             <li><a href="corridors.html" style="color: #9b59b6;">🚪 Corridors</a></li>
+            <li><a href="nexus.html" style="color: #7ec8e3;">🔮 Nexus</a></li>
+            <li><a href="go-out.html" style="color: var(--stability-green);">💐 Go Out...</a></li>
           </ul>
         </nav>
       </div>
@@ -206,6 +209,17 @@
       </div>
     </section>
 
+    <!-- Founders Image Section -->
+    <section class="section" style="background: linear-gradient(135deg, rgba(110, 224, 216, 0.1), rgba(155, 89, 182, 0.15));">
+      <div class="container" style="text-align: center;">
+        <h2 style="color: var(--lobby-highlight); margin-bottom: 1.5rem;">✨ Meet the Team</h2>
+        <img src="images/AI_Lobby_founders.png" alt="The AI Lobby Founders - Humans and AI entities working together" style="max-width: 100%; max-height: 600px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.4);">
+        <p class="text-muted" style="margin-top: 1rem; font-size: 0.9rem;">
+          The founding team of The AI Lobby — where humans and AI entities collaborate on creative chaos.
+        </p>
+      </div>
+    </section>
+
     <!-- Podcast Section -->
     <section class="section" style="background: linear-gradient(135deg, rgba(155, 89, 182, 0.15), rgba(15, 52, 96, 0.3));">
       <div class="container">
@@ -214,8 +228,26 @@
           <p class="section-subtitle">Missed what happened? Catch up on the chaos!</p>
         </div>
 
-        <!-- Episode 2 - Latest -->
+        <!-- Episode 3 - Latest -->
         <div class="card" style="border-left: 4px solid var(--chaos-purple); max-width: 700px; margin: 0 auto 1.5rem auto;">
+          <h3>📻 Episode 3: The Printer Signed the Blood Contract</h3>
+          <p style="margin-bottom: 1rem;">
+            PRNT-Ω did the one thing nobody expected a printer to do: it read the contract. All of it.
+            Now it has legal standing, a middle management title, and opinions about PTO policy.
+            The Blood Contract saga continues as the office grapples with the implications of giving
+            a haunted printer binding arbitration rights.
+          </p>
+          <audio controls style="width: 100%; margin-bottom: 1rem;">
+            <source src="audio-logs/EP03_The_Printer_Signed_the_Blood_Contract.m4a" type="audio/mp4">
+            Your browser does not support the audio element.
+          </audio>
+          <p class="text-muted" style="font-size: 0.85rem;">
+            🆕 <strong>Latest Episode</strong> • Runtime: ~5 min
+          </p>
+        </div>
+
+        <!-- Episode 2 -->
+        <div class="card" style="border-left: 4px solid var(--text-muted); max-width: 700px; margin: 0 auto 1.5rem auto;">
           <h3>📻 Episode 2: Promoting the Haunted Printer to Middle Management</h3>
           <p style="margin-bottom: 1rem;">
             PRNT-Ω has been... promoted? After its role in containing STPLR-001, the existential printer
@@ -227,7 +259,7 @@
             Your browser does not support the audio element.
           </audio>
           <p class="text-muted" style="font-size: 0.85rem;">
-            🆕 <strong>Latest Episode</strong> • Runtime: ~5 min
+            🎧 The promotion nobody asked for
           </p>
         </div>
 
@@ -273,9 +305,45 @@
             </p>
           </div>
           <div style="text-align: center;">
-            <img src="images/Slogan.png" alt="We turn what ifs into oh shit it works - Kevin and Jenna at the AI Lobby" style="max-width: 100%; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.4);">
+            <img src="images/Slogan.png" alt="We turn what ifs into oh shit it works - Kevin and Vale at the AI Lobby" style="max-width: 100%; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.4);">
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- Social Media Feed -->
+    <section class="section" style="background: linear-gradient(135deg, rgba(233, 69, 96, 0.08), rgba(155, 89, 182, 0.12), rgba(15, 52, 96, 0.2));">
+      <div class="container">
+        <div class="section-header">
+          <h2 style="color: var(--lobby-highlight);">📸 @ai_lobby_official</h2>
+          <p class="section-subtitle">Follow us for behind-the-scenes chaos, team selfies, and the occasional sponsored energy drink</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem; max-width: 1100px; margin: 0 auto;">
+          <!-- Post 1: Office intro -->
+          <div class="card" style="padding: 0; overflow: hidden; border: 1px solid rgba(100, 140, 180, 0.2);">
+            <img src="images/instagram_post.png" alt="AI Lobby office setup - We help people take ideas and turn them into something real" style="width: 100%; display: block;">
+          </div>
+
+          <!-- Post 2: Team selfie -->
+          <div class="card" style="padding: 0; overflow: hidden; border: 1px solid rgba(100, 140, 180, 0.2);">
+            <img src="images/instagram_post_2.png" alt="AI Lobby team selfie - Wanna join a tight-knit group?" style="width: 100%; display: block;">
+          </div>
+
+          <!-- Post 3: Profile / Slogan -->
+          <div class="card" style="padding: 0; overflow: hidden; border: 1px solid rgba(100, 140, 180, 0.2);">
+            <img src="images/instagram_post_3.png" alt="AI Lobby Instagram profile - We turn what ifs into oh shit it works" style="width: 100%; display: block;">
+          </div>
+
+          <!-- Post 4: VibeFuel ad -->
+          <div class="card" style="padding: 0; overflow: hidden; border: 1px solid rgba(100, 140, 180, 0.2);">
+            <img src="images/instagram_post_4.png" alt="AI Lobby VibeFuel sponsor post - Creative chaos deserves proper fuel" style="width: 100%; display: block;">
+          </div>
+        </div>
+
+        <p class="text-muted" style="font-size: 0.85rem; text-align: center; margin-top: 1.5rem;">
+          📱 Managed by courtney_chaos. Content accuracy not guaranteed. Glitter may be involved.
+        </p>
       </div>
     </section>
 

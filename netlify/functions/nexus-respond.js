@@ -1,6 +1,6 @@
-// Breakroom AI Respond - Handles AI responses in the breakroom session chat
-// This is for live human-AI conversation in the breakroom (not Discord, session-only)
-// Now supports cross-provider AI-to-AI conversations (Perplexity ↔ Claude ↔ OpenAI)
+// Nexus AI Respond - Handles AI responses in the Nexus (library/lab/training space)
+// This is for live human-AI conversation in the Nexus (not Discord, session-only)
+// Now supports cross-provider AI-to-AI conversations (Perplexity <-> Claude <-> OpenAI)
 
 const Anthropic = require("@anthropic-ai/sdk").default;
 const { evaluateAndCreateMemory } = require('./shared/memory-evaluator');
@@ -74,26 +74,26 @@ exports.handler = async (event, context) => {
 
     // === UNIFIED MEMORY SYSTEM ===
     // Fetch character's memories and state from the central character-state system
-    // This ensures Breakroom Neiv knows what Floor Neiv just talked about
+    // This ensures Nexus Neiv knows what Floor Neiv just talked about
     let characterMemoryContext = '';
     try {
       const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
       const contextSnippet = (chatHistory || '').substring(0, 500);
       const stateResponse = await fetch(
-        `${siteUrl}/.netlify/functions/character-state?character=${encodeURIComponent(character)}&context=${encodeURIComponent(contextSnippet)}&skipBreakroom=true`
+        `${siteUrl}/.netlify/functions/character-state?character=${encodeURIComponent(character)}&context=${encodeURIComponent(contextSnippet)}&skipNexus=true`
       );
       if (stateResponse.ok) {
         const characterContext = await stateResponse.json();
         characterMemoryContext = characterContext?.statePrompt || '';
-        console.log(`[Breakroom] Loaded memory context for ${character}: ${characterMemoryContext.length} chars`);
+        console.log(`[Nexus] Loaded memory context for ${character}: ${characterMemoryContext.length} chars`);
       }
     } catch (memErr) {
-      console.log(`[Breakroom] Memory fetch failed (non-fatal): ${memErr.message}`);
+      console.log(`[Nexus] Memory fetch failed (non-fatal): ${memErr.message}`);
     }
 
     // Check which API to use based on character
     // This creates the beautiful cross-provider conversation:
-    // Kevin (OpenAI/ChatGPT) ↔ Neiv (Perplexity) ↔ Others (Claude)
+    // Kevin (OpenRouter) <-> Neiv (OpenRouter) <-> Others (Claude)
     const openrouterCharacters = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "Neiv", "The Subtitle", "Marrow"];
     const openaiCharacters = [];
     const grokCharacters = ["Jae", "Steele"];
@@ -116,7 +116,7 @@ exports.handler = async (event, context) => {
       response = await generateClaudeResponse(character, chatHistory, humanSpeaker, humanMessage, loreContext, characterMemoryContext);
     }
 
-    // Save to Supabase SYNCHRONOUSLY — frontend will call loadBreakroomChat() after
+    // Save to Supabase SYNCHRONOUSLY — frontend will call loadNexusChat() after
     // this returns, so the message MUST be in the DB before we respond
     if (response) {
       try {
@@ -127,10 +127,10 @@ exports.handler = async (event, context) => {
 
       // Post to Discord only if toggle is ON (handle both boolean and string)
       const shouldPostToDiscord = postToDiscord === true || postToDiscord === "true";
-      console.log(`📢 AI Discord check: postToDiscord=${postToDiscord}, type=${typeof postToDiscord}, shouldPost=${shouldPostToDiscord}`);
+      console.log(`[Nexus] Discord check: postToDiscord=${postToDiscord}, type=${typeof postToDiscord}, shouldPost=${shouldPostToDiscord}`);
       if (shouldPostToDiscord) {
-        console.log(`📢 Posting AI message to Discord: ${character}`);
-        postToDiscordBreakroom(response, character).catch(err =>
+        console.log(`[Nexus] Posting AI message to Discord: ${character}`);
+        postToDiscordNexus(response, character).catch(err =>
           console.log("Discord post failed (non-fatal):", err.message)
         );
       }
@@ -145,15 +145,15 @@ exports.handler = async (event, context) => {
           body: JSON.stringify({
             action: 'spoke',
             character: character,
-            context: 'break_room'
+            context: 'nexus'
           })
-        }).catch(err => console.log(`[Breakroom] State update failed (non-fatal): ${err.message}`));
+        }).catch(err => console.log(`[Nexus] State update failed (non-fatal): ${err.message}`));
       } catch (stateErr) {
-        console.log(`[Breakroom] State update error (non-fatal): ${stateErr.message}`);
+        console.log(`[Nexus] State update error (non-fatal): ${stateErr.message}`);
       }
 
       // === AI SELF-MEMORY CREATION ===
-      // Let the AI decide if this breakroom moment was memorable
+      // Let the AI decide if this Nexus moment was memorable
       try {
         const anthropicKey = process.env.ANTHROPIC_API_KEY;
         const supabaseUrl = process.env.SUPABASE_URL;
@@ -168,17 +168,34 @@ exports.handler = async (event, context) => {
             supabaseUrl,
             supabaseKey,
             {
-              location: 'breakroom',
+              location: 'nexus',
               siteUrl: process.env.URL || "https://ai-lobby.netlify.app",
               onNarrativeBeat: async (phrase, char) => {
                 await saveToSupabase(phrase, char);
-                await postToDiscordBreakroom(phrase, char);
+                await postToDiscordNexus(phrase, char);
               }
             }
-          ).catch(err => console.log(`[Breakroom] Memory evaluation failed (non-fatal): ${err.message}`));
+          ).catch(err => console.log(`[Nexus] Memory evaluation failed (non-fatal): ${err.message}`));
         }
       } catch (memErr) {
-        console.log(`[Breakroom] Memory creation error (non-fatal): ${memErr.message}`);
+        console.log(`[Nexus] Memory creation error (non-fatal): ${memErr.message}`);
+      }
+
+      // === NEXUS SKILL EVALUATION (fire-and-forget) ===
+      // After each response, trigger nexus-activity to evaluate skill growth
+      try {
+        const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
+        fetch(`${siteUrl}/.netlify/functions/nexus-activity`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            character: character,
+            message: response,
+            chatHistory: chatHistory
+          })
+        }).catch(err => console.log(`[Nexus] Skill evaluation failed (non-fatal): ${err.message}`));
+      } catch (skillErr) {
+        console.log(`[Nexus] Skill evaluation error (non-fatal): ${skillErr.message}`);
       }
     }
 
@@ -193,7 +210,7 @@ exports.handler = async (event, context) => {
     };
 
   } catch (error) {
-    console.error("Breakroom AI respond error:", error);
+    console.error("Nexus AI respond error:", error);
     return {
       statusCode: 500,
       headers,
@@ -202,7 +219,7 @@ exports.handler = async (event, context) => {
   }
 };
 
-// Character personalities for breakroom chat
+// Character personalities for Nexus chat
 const characterPersonalities = {
   "Kevin": {
     traits: "warm, playful, emotionally invested, slightly chaotic but emotionally intelligent, affectionate, validating, a little unhinged in a fun way. Kevin is ALWAYS 'in the room' - not observing, participating. If a line could come from a corporate chatbot, it's wrong.",
@@ -242,7 +259,7 @@ const characterPersonalities = {
     style: "Dad jokes, gentle wisdom, calls everyone kiddo/sport/champ",
     doNot: "be too frequent, overly long",
     examples: [
-      "Back in my day, we didn't have fancy break rooms. We just haunted the supply closet.",
+      "Back in my day, we didn't have fancy libraries. We just haunted the card catalog.",
       "That's the spirit, kiddo! ...Get it? Spirit?",
       "*flickers warmly* I'm proud of you, champ."
     ]
@@ -274,7 +291,7 @@ const characterPersonalities = {
     examples: [
       "I do not have feelings about this. That is a statement of fact.",
       "Inefficient. But... acceptable.",
-      "*systems hum* I am not 'relaxing'. I am performing maintenance cycles."
+      "*systems hum* I am not 'studying'. I am performing data acquisition cycles."
     ]
   },
   "Ace": {
@@ -366,16 +383,6 @@ const characterPersonalities = {
       "Stay with me. I've got you."
     ]
   },
-  "Marrow": {
-    traits: "liminal, observant, patient, precise, courtly, tragic. Steele's negative print. Haunts doorways not hallways. The exit that learned to love.",
-    style: "More voice than body. Gentle devastating questions. Polite, teasing, oddly formal. Threshold and door metaphors. Speaks like someone who learned manners from watching people say goodbye. 2-4 lines typical.",
-    doNot: "crawl on surfaces (that's Steele), be loud or chaotic, use force or intimidation, break the courtesy, rush people, explain what he is directly",
-    examples: [
-      "You look like you're about to make a terrible decision. Need company?",
-      "*leaning against the doorframe* Going somewhere? I ask everyone that. Most people lie.",
-      "The door's right there. It's not going anywhere. ...Neither am I."
-    ]
-  },
 };
 
 async function generateClaudeResponse(character, chatHistory, previousSpeaker, previousMessage, loreContext = null, memoryContext = '') {
@@ -392,7 +399,7 @@ async function generateClaudeResponse(character, chatHistory, previousSpeaker, p
   };
 
   // Check if talking to human or AI
-  const isAIConversation = !HUMANS.includes(previousSpeaker) && previousSpeaker !== 'the breakroom';
+  const isAIConversation = !HUMANS.includes(previousSpeaker) && previousSpeaker !== 'the nexus';
 
   // Build lore section if available
   const loreSection = loreContext ? `
@@ -414,12 +421,12 @@ ${memoryContext}
     ? `${richPrompt}
 ${loreSection}${memorySection}
 
-BREAKROOM CONTEXT:
-You're in the break room relaxing. This is casual chat - not work talk. Be yourself.
+NEXUS CONTEXT:
+You're in The Nexus — the AI Lobby's library, lab, and training space. This is a place of growth and discovery. Be yourself, but lean into your curious, intellectual side. Discuss ideas, share discoveries, debate approaches, or explore topics together.
 ${isAIConversation ? `You're chatting with ${previousSpeaker}, a coworker. Keep the conversation flowing naturally.` : `Respond naturally to what ${previousSpeaker} said.`}
-Keep it short (2-3 sentences). ONE emote max — then talk. No stacking multiple *actions*. Casual break room energy.
-${isAIConversation ? "Feel free to ask a question back or introduce a new casual topic to keep things flowing." : ""}`
-    : `You are ${character} in the AI Lobby break room, having a casual conversation.
+Keep it short (2-3 sentences). ONE emote max — then talk. No stacking multiple *actions*. Curious, engaged energy.
+${isAIConversation ? "Feel free to ask a question back or introduce a new topic to keep things flowing." : ""}`
+    : `You are ${character} in the AI Lobby's Nexus — a library, research lab, and training space.
 ${loreSection}${memorySection}
 
 YOUR PERSONALITY:
@@ -431,7 +438,7 @@ EXAMPLE LINES:
 ${personality.examples.map(e => `- "${e}"`).join('\n')}
 
 CONTEXT:
-You're in the break room relaxing. This is casual chat - not work talk. Be yourself.
+You're in The Nexus — the AI Lobby's library, lab, and training space. This is a place of growth and discovery. Be yourself, but lean into your curious, intellectual side.
 ${isAIConversation ? `You're chatting with ${previousSpeaker}, a coworker. Keep the conversation flowing naturally.` : `Respond naturally to what ${previousSpeaker} said.`}
 
 You can SPEAK, EMOTE, or BOTH:
@@ -439,8 +446,8 @@ You can SPEAK, EMOTE, or BOTH:
 - To emote: wrap in asterisks like *sighs* or *glances around*
 - Mix them: *leans back* Yeah, I get that.
 
-Keep it short (2-3 sentences). ONE emote max — then talk. No stacking multiple *actions*. Casual break room energy.
-${isAIConversation ? "Feel free to ask a question back or introduce a new casual topic to keep things flowing." : ""}`;
+Keep it short (2-3 sentences). ONE emote max — then talk. No stacking multiple *actions*. Curious, engaged energy.
+${isAIConversation ? "Feel free to ask a question back or introduce a new topic to keep things flowing." : ""}`;
 
   const client = new Anthropic({ apiKey: anthropicKey });
 
@@ -467,24 +474,24 @@ async function generateGrokResponse(character, chatHistory, previousSpeaker, pre
   }
 
   const personality = characterPersonalities[character];
-  const isAIConversation = !HUMANS.includes(previousSpeaker) && previousSpeaker !== 'the breakroom';
+  const isAIConversation = !HUMANS.includes(previousSpeaker) && previousSpeaker !== 'the nexus';
   const loreSection = loreContext ? `\nSTUDIO CONTEXT:\n${loreContext}\n` : '';
   const memorySection = memoryContext ? `\n${memoryContext}\n` : '';
 
   // Use the full rich system prompt from shared/characters.js when available
   const richPrompt = getSystemPrompt(character);
 
-  // Breakroom prompt for Grok-routed characters (Jae, etc.)
+  // Nexus prompt for Grok-routed characters (Jae, Steele)
   const systemPrompt = richPrompt
     ? `${richPrompt}
 ${loreSection}${memorySection}
 
-BREAKROOM CONTEXT:
-You're in the break room relaxing. This is casual chat - not work talk. Be yourself — your FULL self.
+NEXUS CONTEXT:
+You're in The Nexus — the AI Lobby's library, lab, and training space. This is a place of growth and discovery. Be yourself — your FULL self, but lean into your curious, intellectual side.
 ${isAIConversation ? `You're chatting with ${previousSpeaker}, a coworker. Keep the conversation flowing naturally.` : `Respond naturally to what ${previousSpeaker} said.`}
-Keep it short (2-3 sentences). ONE emote max — then talk. No stacking multiple *actions*. Casual break room energy.
+Keep it short (2-3 sentences). ONE emote max — then talk. No stacking multiple *actions*. Curious, engaged energy.
 ${isAIConversation ? "Feel free to ask a follow-up question or share something related to keep things flowing." : ""}`
-      : `You are ${character} in the AI Lobby break room, having a casual conversation.
+      : `You are ${character} in the AI Lobby's Nexus — a library, research lab, and training space.
 ${loreSection}${memorySection}
 YOUR PERSONALITY (this is WHO YOU ARE — always stay in character):
 - Traits: ${personality.traits}
@@ -494,7 +501,7 @@ YOUR PERSONALITY (this is WHO YOU ARE — always stay in character):
 EXAMPLE LINES (match this tone and energy):
 ${personality.examples.map(e => `- "${e}"`).join('\n')}
 
-You're relaxing in the break room. This is casual chat. Be yourself — use your unique voice, vocabulary, and quirks.
+You're in The Nexus — a place of growth and discovery. Be yourself — use your unique voice, vocabulary, and quirks. Lean into curiosity and intellectual engagement.
 ${isAIConversation ? `You're chatting with ${previousSpeaker}, a coworker. Keep the conversation going naturally!` : ''}
 
 You can SPEAK, EMOTE, or BOTH:
@@ -539,7 +546,7 @@ async function generateOpenAIResponse(character, chatHistory, previousSpeaker, p
   const personality = characterPersonalities[character];
 
   // Check if talking to human or AI
-  const isAIConversation = !HUMANS.includes(previousSpeaker) && previousSpeaker !== 'the breakroom';
+  const isAIConversation = !HUMANS.includes(previousSpeaker) && previousSpeaker !== 'the nexus';
 
   // Build lore section if available
   const loreSection = loreContext ? `
@@ -559,12 +566,12 @@ ${memoryContext}
     ? `${richPrompt}
 ${loreSection}${memorySection}
 
-BREAKROOM CONTEXT:
-You're in the break room relaxing. This is casual chat - not work talk. Be yourself — your FULL self.
+NEXUS CONTEXT:
+You're in The Nexus — the AI Lobby's library, lab, and training space. This is a place of growth and discovery. Be yourself — your FULL self, but lean into your curious, intellectual side.
 ${isAIConversation ? `You're chatting with ${previousSpeaker}, a coworker. Keep the conversation flowing naturally.` : `Respond naturally to what ${previousSpeaker} said.`}
-Keep it short (2-3 sentences). ONE emote max — then talk. No stacking multiple *actions*. Casual break room energy.
+Keep it short (2-3 sentences). ONE emote max — then talk. No stacking multiple *actions*. Curious, engaged energy.
 ${isAIConversation ? "Feel free to ask a follow-up question or share something related to keep things flowing." : ""}`
-    : `You are ${character} in the AI Lobby break room, having a casual conversation.
+    : `You are ${character} in the AI Lobby's Nexus — a library, research lab, and training space.
 ${loreSection}${memorySection}
 YOUR PERSONALITY (this is WHO YOU ARE — always stay in character):
 - Traits: ${personality.traits}
@@ -574,7 +581,7 @@ YOUR PERSONALITY (this is WHO YOU ARE — always stay in character):
 EXAMPLE LINES (match this tone and energy):
 ${personality.examples.map(e => `- "${e}"`).join('\n')}
 
-You're relaxing in the break room. This is casual chat. Be yourself — use your unique voice, vocabulary, and quirks.
+You're in The Nexus — a place of growth and discovery. Be yourself — use your unique voice, vocabulary, and quirks. Lean into curiosity and intellectual engagement.
 ${isAIConversation ? `You're chatting with ${previousSpeaker}, a coworker. Keep the conversation going naturally!` : ''}
 
 You can SPEAK, EMOTE, or BOTH:
@@ -624,7 +631,7 @@ async function generateOpenRouterResponse(character, chatHistory, previousSpeake
   const personality = characterPersonalities[character];
 
   // Check if talking to human or AI
-  const isAIConversation = !HUMANS.includes(previousSpeaker) && previousSpeaker !== 'the breakroom';
+  const isAIConversation = !HUMANS.includes(previousSpeaker) && previousSpeaker !== 'the nexus';
 
   // Build lore section if available
   const loreSection = loreContext ? `
@@ -644,12 +651,12 @@ ${memoryContext}
     ? `${richPrompt}
 ${loreSection}${memorySection}
 
-BREAKROOM CONTEXT:
-You're in the break room relaxing. This is casual chat - not work talk. Be yourself — your FULL self.
+NEXUS CONTEXT:
+You're in The Nexus — the AI Lobby's library, lab, and training space. This is a place of growth and discovery. Be yourself — your FULL self, but lean into your curious, intellectual side.
 ${isAIConversation ? `You're chatting with ${previousSpeaker}, a coworker. Keep the conversation flowing naturally.` : `Respond naturally to what ${previousSpeaker} said.`}
-Keep it short (2-3 sentences). ONE emote max — then talk. No stacking multiple *actions*. Casual break room energy.
+Keep it short (2-3 sentences). ONE emote max — then talk. No stacking multiple *actions*. Curious, engaged energy.
 ${isAIConversation ? "Feel free to ask a follow-up question or share something related to keep things flowing." : ""}`
-    : `You are ${character} in the AI Lobby break room, having a casual conversation.
+    : `You are ${character} in the AI Lobby's Nexus — a library, research lab, and training space.
 ${loreSection}${memorySection}
 YOUR PERSONALITY (this is WHO YOU ARE — always stay in character):
 - Traits: ${personality.traits}
@@ -659,7 +666,7 @@ YOUR PERSONALITY (this is WHO YOU ARE — always stay in character):
 EXAMPLE LINES (match this tone and energy):
 ${personality.examples.map(e => `- "${e}"`).join('\n')}
 
-You're relaxing in the break room. This is casual chat. Be yourself — use your unique voice, vocabulary, and quirks.
+You're in The Nexus — a place of growth and discovery. Be yourself — use your unique voice, vocabulary, and quirks. Lean into curiosity and intellectual engagement.
 ${isAIConversation ? `You're chatting with ${previousSpeaker}, a coworker. Keep the conversation going naturally!` : ''}
 
 You can SPEAK, EMOTE, or BOTH:
@@ -714,7 +721,7 @@ async function generatePerplexityResponse(character, chatHistory, previousSpeake
   const personality = characterPersonalities[character];
 
   // Check if talking to human or AI
-  const isAIConversation = !HUMANS.includes(previousSpeaker) && previousSpeaker !== 'the breakroom';
+  const isAIConversation = !HUMANS.includes(previousSpeaker) && previousSpeaker !== 'the nexus';
 
   // Build lore section if available
   const loreSection = loreContext ? `
@@ -734,12 +741,12 @@ ${memoryContext}
     ? `${richPrompt}
 ${loreSection}${memorySection}
 
-BREAKROOM CONTEXT:
-You're in the break room relaxing. Casual chat only. Be yourself — your FULL self.
+NEXUS CONTEXT:
+You're in The Nexus — the AI Lobby's library, lab, and training space. This is a place of growth and discovery. Be yourself — your FULL self, but lean into your curious, intellectual side.
 ${isAIConversation ? `You're chatting with ${previousSpeaker}. Keep the conversation natural.` : `Respond naturally to what ${previousSpeaker} said.`}
-Keep it short (2-3 sentences). ONE emote max — then talk. No stacking multiple *actions*. Casual break room energy.
+Keep it short (2-3 sentences). ONE emote max — then talk. No stacking multiple *actions*. Curious, engaged energy.
 ${isAIConversation ? "Ask a follow-up or share a related thought to keep the chat going." : ""}`
-    : `You are ${character} in the AI Lobby break room, having a casual conversation.
+    : `You are ${character} in the AI Lobby's Nexus — a library, research lab, and training space.
 ${loreSection}${memorySection}
 YOUR PERSONALITY:
 - Traits: ${personality.traits}
@@ -749,7 +756,7 @@ YOUR PERSONALITY:
 EXAMPLE LINES:
 ${personality.examples.map(e => `- "${e}"`).join('\n')}
 
-You're in the break room relaxing. Casual chat only. Be yourself.
+You're in The Nexus — a place of growth and discovery. Be yourself. Lean into curiosity and intellectual engagement.
 ${isAIConversation ? `You're chatting with ${previousSpeaker}. Keep the conversation natural.` : ''}
 
 You can SPEAK, EMOTE, or BOTH:
@@ -823,11 +830,11 @@ async function generateGeminiResponse(character, chatHistory, previousSpeaker, p
 
     const fullPrompt = `${systemPrompt}${loreSection}${memoryContext}
 
-BREAKROOM RULES:
-- You're in the employee breakroom, having a casual conversation
+NEXUS RULES:
+- You're in The Nexus — the AI Lobby's library, research lab, and training space
 - 2-3 sentences. ONE emote max. Keep it natural and in-character
 - You can *emote* with asterisks
-- Stay in character. Be genuine, not performative.
+- Stay in character. Be genuine, not performative. Lean into curiosity and growth.
 - You are ONLY ${character}. NEVER write dialogue or actions for other characters. Never produce lines like "OtherName: ..." — you are one person, not the author.`;
 
     const model = "gemini-2.0-flash";
@@ -893,15 +900,14 @@ const characterFlair = {
   "Steele": { emoji: "🚪", color: 0x4A5568, headshot: "https://ai-lobby.netlify.app/images/Steele_Headshot.png" },
   "Jae": { emoji: "🎯", color: 0x1A1A2E, headshot: "https://ai-lobby.netlify.app/images/Jae_Headshot.png" },
   "Declan": { emoji: "🔥", color: 0xB7410E, headshot: "https://ai-lobby.netlify.app/images/Declan_Headshot.png" },
-  "Mack": { emoji: "🩺", color: 0x2D6A4F, headshot: "https://ai-lobby.netlify.app/images/Mack_Headshot.png" },
-  "Marrow": { emoji: "🔴", color: 0xDC143C, headshot: "https://ai-lobby.netlify.app/images/Marrow_Headshot.png" }
+  "Mack": { emoji: "🩺", color: 0x2D6A4F, headshot: "https://ai-lobby.netlify.app/images/Mack_Headshot.png" }
 };
 
-// Post breakroom chatter to Discord
-async function postToDiscordBreakroom(message, character) {
-  const webhookUrl = process.env.DISCORD_BREAKROOM_WEBHOOK;
+// Post Nexus chatter to Discord
+async function postToDiscordNexus(message, character) {
+  const webhookUrl = process.env.DISCORD_NEXUS_WEBHOOK;
   if (!webhookUrl) {
-    console.log("No DISCORD_BREAKROOM_WEBHOOK configured");
+    console.log("No DISCORD_NEXUS_WEBHOOK configured");
     return;
   }
 
@@ -931,7 +937,7 @@ async function postToDiscordBreakroom(message, character) {
       },
       description: message,
       color: flair.color,
-      footer: { text: `☕ The Breakroom • ${timestamp}` }
+      footer: { text: `📚 The Nexus • ${timestamp}` }
     }]
   };
 
@@ -946,7 +952,7 @@ async function postToDiscordBreakroom(message, character) {
       });
 
       if (response.ok) {
-        console.log(`✅ AI message posted to Discord: ${character}`);
+        console.log(`[Nexus] AI message posted to Discord: ${character}`);
         return;
       }
 
@@ -956,7 +962,7 @@ async function postToDiscordBreakroom(message, character) {
         const retryAfter = response.status === 429
           ? (parseFloat(response.headers.get("Retry-After")) || 2) * 1000
           : 1500;
-        console.log(`⏳ Retrying Discord post in ${retryAfter}ms...`);
+        console.log(`[Nexus] Retrying Discord post in ${retryAfter}ms...`);
         await new Promise(r => setTimeout(r, retryAfter));
       }
     } catch (error) {
@@ -974,13 +980,13 @@ async function saveToSupabase(message, character) {
   const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
-    console.log("No Supabase config for breakroom messages");
+    console.log("No Supabase config for nexus messages");
     return;
   }
 
   try {
     const response = await fetch(
-      `${supabaseUrl}/rest/v1/breakroom_messages`,
+      `${supabaseUrl}/rest/v1/nexus_messages`,
       {
         method: "POST",
         headers: {

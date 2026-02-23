@@ -1,6 +1,8 @@
 // Character Daily Reset - Runs at midnight to restore energy/patience
 // Characters "rest" overnight and start fresh each day
 
+const { PERSONALITY } = require('./shared/personality-config');
+
 exports.handler = async (event, context) => {
   const headers = {
     "Content-Type": "application/json",
@@ -42,9 +44,11 @@ exports.handler = async (event, context) => {
       // Restore patience (20 points, capped at 100)
       const newPatience = Math.min(100, (state.patience || 50) + 20);
 
-      // Reset mood to neutral if it was negative
-      const negativeMoods = ['frustrated', 'exhausted', 'annoyed', 'stressed', 'exasperated'];
-      const newMood = negativeMoods.includes(state.mood) ? 'neutral' : state.mood;
+      // Reset mood to character's default if it was negative (instead of always "neutral")
+      const negativeMoods = ['frustrated', 'exhausted', 'annoyed', 'stressed', 'exasperated',
+        'irritated', 'anxious', 'melancholy', 'suspicious', 'withdrawn', 'restless', 'prickly'];
+      const defaultMood = PERSONALITY[state.character_name]?.defaultMood || 'neutral';
+      const newMood = negativeMoods.includes(state.mood) ? defaultMood : state.mood;
 
       await fetch(
         `${supabaseUrl}/rest/v1/character_state?character_name=eq.${encodeURIComponent(state.character_name)}`,
@@ -74,6 +78,78 @@ exports.handler = async (event, context) => {
 
       console.log(`Reset ${state.character_name}: energy ${state.energy}→${newEnergy}, patience ${state.patience}→${newPatience}`);
     }
+
+    // === WANT MANAGEMENT ===
+    // 1. Expire old wants (active wants older than 24 hours)
+    // Extended from 6h to 24h so the affinity-loss-engine can detect unfulfilled wants
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    try {
+      const expireWantsResponse = await fetch(
+        `${supabaseUrl}/rest/v1/character_goals?goal_type=eq.want&completed_at=is.null&failed_at=is.null&created_at=lt.${twentyFourHoursAgo}`,
+        {
+          method: "PATCH",
+          headers: {
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`,
+            "Content-Type": "application/json",
+            "Prefer": "return=representation"
+          },
+          body: JSON.stringify({
+            failed_at: new Date().toISOString(),
+            fail_reason: "expired"
+          })
+        }
+      );
+      const expiredWants = await expireWantsResponse.json();
+      const expiredWantCount = Array.isArray(expiredWants) ? expiredWants.length : 0;
+      console.log(`Expired ${expiredWantCount} old wants`);
+    } catch (wantErr) {
+      console.log("Want expiration failed (non-fatal):", wantErr.message);
+    }
+
+    // 2. Generate 1-2 fresh wants per AI character
+    const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
+    const aiCharacters = ['Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian', 'The Subtitle', 'Steele', 'Jae', 'Declan', 'Mack', 'Marrow'];
+    let wantsGenerated = 0;
+
+    for (const charName of aiCharacters) {
+      try {
+        // Check how many active wants they have
+        const activeWantsResponse = await fetch(
+          `${supabaseUrl}/rest/v1/character_goals?character_name=eq.${encodeURIComponent(charName)}&goal_type=eq.want&completed_at=is.null&failed_at=is.null&select=id`,
+          {
+            headers: {
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`
+            }
+          }
+        );
+        const activeWants = await activeWantsResponse.json();
+        const activeCount = Array.isArray(activeWants) ? activeWants.length : 0;
+
+        // Generate wants to fill up to 2 (leave room for organic generation)
+        const wantsToGenerate = Math.max(0, 2 - activeCount);
+
+        for (let i = 0; i < wantsToGenerate; i++) {
+          try {
+            await fetch(`${siteUrl}/.netlify/functions/character-goals`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'generate_want',
+                character: charName
+              })
+            });
+            wantsGenerated++;
+          } catch (genErr) {
+            console.log(`Want generation failed for ${charName} (non-fatal):`, genErr.message);
+          }
+        }
+      } catch (err) {
+        console.log(`Want check failed for ${charName} (non-fatal):`, err.message);
+      }
+    }
+    console.log(`Generated ${wantsGenerated} fresh wants for characters`);
 
     // === MEMORY CLEANUP ===
     // 1. Delete EXPIRED working memories (non-pinned with expires_at in the past)
@@ -113,6 +189,55 @@ exports.handler = async (event, context) => {
       }
     );
 
+    // 3. IMPORTANCE DECAY — high-importance memories fade over time unless AI-pinned or admin-pinned
+    // Memories scored 9-10 decay to 7 after 24 hours
+    // Memories scored 8 decay to 6 after 48 hours
+    // This prevents "everything is important" syndrome — truly important memories get pinned by AIs
+    let decayCount = 0;
+    try {
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+
+      // Decay 9-10 → 7 after 24 hours (unpinned only)
+      const decay9Res = await fetch(
+        `${supabaseUrl}/rest/v1/character_memory?is_pinned=eq.false&importance=gte.9&created_at=lt.${oneDayAgo}`,
+        {
+          method: "PATCH",
+          headers: {
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`,
+            "Content-Type": "application/json",
+            "Prefer": "return=representation"
+          },
+          body: JSON.stringify({ importance: 7 })
+        }
+      );
+      const decayed9 = await decay9Res.json();
+      const count9 = Array.isArray(decayed9) ? decayed9.length : 0;
+
+      // Decay 8 → 6 after 48 hours (unpinned only)
+      const decay8Res = await fetch(
+        `${supabaseUrl}/rest/v1/character_memory?is_pinned=eq.false&importance=eq.8&created_at=lt.${twoDaysAgo}`,
+        {
+          method: "PATCH",
+          headers: {
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`,
+            "Content-Type": "application/json",
+            "Prefer": "return=representation"
+          },
+          body: JSON.stringify({ importance: 6 })
+        }
+      );
+      const decayed8 = await decay8Res.json();
+      const count8 = Array.isArray(decayed8) ? decayed8.length : 0;
+
+      decayCount = count9 + count8;
+      console.log(`Importance decay: ${count9} memories (9-10→7), ${count8} memories (8→6)`);
+    } catch (decayErr) {
+      console.log("Importance decay failed (non-fatal):", decayErr.message);
+    }
+
     console.log("Daily reset complete. Cleaned expired and old memories.");
 
     return {
@@ -122,6 +247,7 @@ exports.handler = async (event, context) => {
         success: true,
         message: "Daily reset complete",
         charactersReset: results.length,
+        wantsGenerated,
         results
       })
     };

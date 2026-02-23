@@ -4,8 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Terrarium Control Panel | The AI Lobby</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/styles.css">
     <style>
+        :root {
+            --accent: #ffc107;
+        }
+
         /* Admin-specific styles */
         .admin-container {
             max-width: 1400px;
@@ -55,7 +59,7 @@
         }
 
         .admin-panel {
-            background: rgba(20, 20, 30, 0.95);
+            background: rgba(25, 25, 35, 0.95);
             border: 1px solid #555;
             border-radius: 8px;
             padding: 20px;
@@ -82,39 +86,100 @@
         /* Character Cards */
         .character-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
             gap: 15px;
         }
 
         .character-card {
-            background: rgba(30, 30, 40, 0.9);
-            border: 1px solid #444;
+            background: rgba(35, 35, 50, 0.95);
+            border: 1px solid #555;
+            border-left: 3px solid #555;
             border-radius: 6px;
             padding: 15px;
             transition: all 0.2s;
+            cursor: pointer;
         }
 
         .character-card:hover {
             border-color: var(--accent);
+            border-left-color: var(--accent);
             transform: translateY(-2px);
+            background: rgba(40, 40, 55, 0.95);
         }
 
-        .character-card .name {
-            font-weight: bold;
-            margin-bottom: 10px;
+        .card-header {
             display: flex;
             align-items: center;
-            gap: 8px;
-            color: #fff;
+            gap: 10px;
+            margin-bottom: 10px;
         }
 
-        .character-card .emoji {
-            font-size: 1.3em;
+        .card-avatar {
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-headshot {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .card-emoji-fallback {
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .card-identity {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .card-identity .name {
+            font-weight: bold;
+            color: #fff;
+            font-size: 0.95em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-identity .mood-badge {
+            margin-top: 2px;
+            font-size: 0.72em;
+        }
+
+        .card-thought {
+            font-size: 0.78em;
+            color: #aaa;
+            font-style: italic;
+            padding: 6px 8px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 4px;
+            border-left: 2px solid rgba(255, 193, 7, 0.3);
+            line-height: 1.3;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
         }
 
         .stat-bar {
             height: 8px;
-            background: #333;
+            background: #3a3a3a;
             border-radius: 4px;
             margin: 5px 0;
             overflow: hidden;
@@ -131,7 +196,7 @@
 
         .stat-label {
             font-size: 0.8em;
-            color: #aaa;
+            color: #bbb;
             display: flex;
             justify-content: space-between;
         }
@@ -172,7 +237,7 @@
             display: flex;
             justify-content: space-between;
             font-size: 0.85em;
-            color: #888;
+            color: #aaa;
             margin-bottom: 8px;
             align-items: center;
         }
@@ -264,13 +329,13 @@
 
         .memory-section-header .pin-count {
             font-size: 0.8em;
-            color: #888;
+            color: #aaa;
         }
 
         /* Expiration indicator */
         .memory-item .expires {
             font-size: 0.75em;
-            color: #888;
+            color: #aaa;
             margin-left: 8px;
         }
 
@@ -298,7 +363,7 @@
 
         .setting-label span {
             font-size: 0.8em;
-            color: #666;
+            color: #999;
         }
 
         .setting-control input[type="range"] {
@@ -385,11 +450,11 @@
         .activity-item {
             padding: 5px 0;
             border-bottom: 1px solid #222;
-            color: #888;
+            color: #aaa;
         }
 
         .activity-item .time {
-            color: #555;
+            color: #888;
         }
 
         .activity-item.event { color: #ffd93d; }
@@ -410,7 +475,7 @@
         .loading {
             text-align: center;
             padding: 40px;
-            color: #666;
+            color: #999;
         }
 
         .loading::after {
@@ -477,7 +542,7 @@
         .modal-close {
             background: none;
             border: none;
-            color: #666;
+            color: #999;
             font-size: 1.5em;
             cursor: pointer;
             padding: 5px 10px;
@@ -514,13 +579,13 @@
         }
 
         .char-detail-title {
-            color: #666;
+            color: #aaa;
             font-size: 0.9em;
             margin-bottom: 15px;
         }
 
         .char-relationships {
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(255, 255, 255, 0.06);
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
@@ -544,6 +609,197 @@
             border-bottom: none;
         }
 
+        /* Dynamic Relationship Tracking (Sims-style) */
+        .dynamic-relationships {
+            background: rgba(255, 255, 255, 0.06);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .dynamic-relationships h4 {
+            margin: 0 0 12px 0;
+            color: var(--accent);
+            font-size: 0.9em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .rel-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            min-height: 36px;
+            border-bottom: 1px solid #333;
+            font-size: 0.85em;
+        }
+
+        .rel-row:last-child {
+            border-bottom: none;
+        }
+
+        .rel-name {
+            width: 90px;
+            font-weight: bold;
+            color: #eee;
+        }
+
+        .rel-bar-container {
+            flex: 1;
+            height: 12px;
+            background: #333;
+            border-radius: 6px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .rel-bar-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.3s ease;
+            position: absolute;
+        }
+
+        .rel-bar-fill.positive {
+            left: 50%;
+            background: linear-gradient(90deg, #4dabf7, #6bcb77);
+        }
+
+        .rel-bar-fill.negative {
+            right: 50%;
+            background: linear-gradient(270deg, #ff6b6b, #cc4444);
+        }
+
+        .rel-bar-center {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #666;
+            z-index: 1;
+        }
+
+        .rel-value {
+            width: 45px;
+            text-align: right;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .rel-value.positive { color: #6bcb77; }
+        .rel-value.negative { color: #ff6b6b; }
+        .rel-value.neutral { color: #aaa; }
+
+        .rel-label {
+            width: 100px;
+            color: #bbb;
+            font-size: 0.85em;
+            text-align: right;
+        }
+
+        .rel-nudge {
+            display: flex;
+            gap: 3px;
+        }
+
+        .rel-nudge button {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid #555;
+            color: #ccc;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .rel-nudge button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            border-color: var(--accent);
+        }
+
+        /* Bond Badges */
+        .bond-badge {
+            display: inline-block;
+            font-size: 0.7em;
+            padding: 1px 6px;
+            border-radius: 10px;
+            background: rgba(233, 69, 96, 0.2);
+            color: #e94560;
+            border: 1px solid rgba(233, 69, 96, 0.3);
+            margin-left: 4px;
+            vertical-align: middle;
+        }
+
+        .bond-badge.exclusive {
+            background: rgba(233, 69, 96, 0.35);
+            border-color: rgba(233, 69, 96, 0.5);
+            box-shadow: 0 0 6px rgba(233, 69, 96, 0.2);
+        }
+
+        /* Small Wants Section */
+        .wants-section {
+            background: rgba(255, 255, 255, 0.06);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .wants-section h4 {
+            margin: 0 0 12px 0;
+            color: var(--accent);
+            font-size: 0.9em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .want-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            background: rgba(233, 69, 96, 0.15);
+            border: 1px solid rgba(233, 69, 96, 0.35);
+            border-radius: 6px;
+            margin-bottom: 6px;
+            font-size: 0.85em;
+        }
+
+        .want-item .want-text {
+            flex: 1;
+            color: #ddd;
+        }
+
+        .want-item .want-actions {
+            display: flex;
+            gap: 5px;
+            margin-left: 10px;
+        }
+
+        .want-item .want-actions button {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid #555;
+            color: #ccc;
+            padding: 3px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+
+        .want-item .want-actions button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            border-color: var(--accent);
+        }
+
         .char-memories-section h4 {
             color: var(--accent);
             margin-bottom: 15px;
@@ -558,7 +814,7 @@
 
         .memory-category-title {
             font-size: 0.85em;
-            color: #888;
+            color: #aaa;
             margin-bottom: 8px;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -566,7 +822,7 @@
 
         /* Add Memory Form */
         .add-memory-form {
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(255, 255, 255, 0.06);
             padding: 15px;
             border-radius: 8px;
             margin-top: 20px;
@@ -625,7 +881,7 @@
         .form-row label {
             display: block;
             font-size: 0.85em;
-            color: #888;
+            color: #aaa;
             margin-bottom: 5px;
         }
 
@@ -783,8 +1039,8 @@
                 <h2>☕ Breakroom Cam</h2>
                 <div style="display: flex; gap: 20px; align-items: flex-start;">
                     <div style="flex: 1; max-width: 500px;">
-                        <img src="images/breakroom_cam_shot.png" alt="Breakroom Camera" style="width: 100%; border-radius: 8px; border: 2px solid #444; opacity: 0.9;">
-                        <p style="font-size: 0.8em; color: #666; margin-top: 8px; text-align: center;">Live feed from the breakroom security camera</p>
+                        <img src="images/breakroom_cam_shot_new.png" alt="Breakroom Camera" style="width: 100%; border-radius: 8px; border: 2px solid #444; opacity: 0.9;">
+                        <p style="font-size: 0.8em; color: #999; margin-top: 8px; text-align: center;">Live feed from the breakroom security camera</p>
                     </div>
                     <div style="flex: 1;">
                         <h4 style="margin: 0 0 10px 0; color: var(--accent);">Recent Activity</h4>
@@ -820,6 +1076,14 @@
                         <option value="Vex">Vex</option>
                         <option value="PRNT-Ω">PRNT-Ω</option>
                         <option value="Ace">Ace</option>
+                        <option value="Rowena">Rowena</option>
+                        <option value="Sebastian">Sebastian</option>
+                        <option value="The Subtitle">The Subtitle</option>
+                        <option value="Steele">Steele</option>
+                        <option value="Marrow">Marrow</option>
+                        <option value="Jae">Jae</option>
+                        <option value="Declan">Declan</option>
+                        <option value="Mack">Mack</option>
                     </select>
                 </div>
                 <div id="memory-list" class="memory-list">
@@ -830,13 +1094,13 @@
             <!-- Event Triggers -->
             <div class="admin-panel">
                 <h2>Manual Event Triggers</h2>
-                <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">
+                <p style="font-size: 0.85em; color: #999; margin-bottom: 15px;">
                     Trigger events that affect character states and create memories.
                 </p>
 
                 <!-- Custom Narrator Event -->
                 <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                    <label style="font-size: 0.85em; color: #888; display: block; margin-bottom: 8px;">✍️ Custom Narrator Observation</label>
+                    <label style="font-size: 0.85em; color: #aaa; display: block; margin-bottom: 8px;">✍️ Custom Narrator Observation</label>
                     <input type="text" id="custom-event-text" placeholder="A ceiling tile falls in the hallway... / A strange smell wafts from the vents..." style="width: 100%; padding: 8px; background: #222; border: 1px solid #444; border-radius: 4px; color: #fff; margin-bottom: 10px;">
                     <div style="display: flex; gap: 10px;">
                         <button class="quick-btn" onclick="postCustomNarratorEvent()" style="flex: 1;">📢 Post to Chat</button>
@@ -875,6 +1139,150 @@
                         <span class="icon">🚨</span>
                         Fire Drill
                     </button>
+                </div>
+            </div>
+
+            <!-- Scheduled Events -->
+            <div class="admin-panel">
+                <h2>📅 Scheduled Events</h2>
+                <p style="font-size: 0.85em; color: #999; margin-bottom: 15px;">
+                    Schedule narrator events to fire at a future time. Checked every ~15 minutes by the heartbeat.
+                </p>
+
+                <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <label style="font-size: 0.85em; color: #aaa; display: block; margin-bottom: 8px;">📝 Event Description</label>
+                    <input type="text" id="scheduled-event-text" placeholder="An advertisement starts playing on the office radio..." style="width: 100%; padding: 8px; background: #222; border: 1px solid #444; border-radius: 4px; color: #fff; margin-bottom: 10px;">
+
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.85em; color: #aaa; display: block; margin-bottom: 4px;">⏰ Fire Time</label>
+                            <input type="datetime-local" id="scheduled-event-time" style="width: 100%; padding: 8px; background: #222; border: 1px solid #444; border-radius: 4px; color: #fff;">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.85em; color: #aaa; display: block; margin-bottom: 4px;">🎭 Event Type</label>
+                            <select id="scheduled-event-type" style="width: 100%; padding: 8px; background: #222; border: 1px solid #444; border-radius: 4px; color: #fff;">
+                                <option value="custom">Custom (narrator only)</option>
+                                <option value="glitter_incident">✨ Glitter Incident</option>
+                                <option value="chaos">🔥 Chaos Event</option>
+                                <option value="donuts_arrived">🍩 Donuts Arrived</option>
+                                <option value="good_news">🎉 Good News</option>
+                                <option value="printer_mentioned">🖨️ Printer Alert</option>
+                                <option value="fire_drill">🚨 Fire Drill</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 10px;">
+                        <label style="font-size: 0.85em; cursor: pointer;">
+                            <input type="checkbox" id="scheduled-event-ai" style="margin-right: 8px;">
+                            Generate AI description at fire time (predefined types only)
+                        </label>
+                    </div>
+
+                    <button class="quick-btn" onclick="scheduleEvent()" style="width: 100%;">📅 Schedule Event</button>
+                </div>
+
+                <div id="scheduled-events-list" style="max-height: 300px; overflow-y: auto;">
+                    <div class="loading">Loading scheduled events...</div>
+                </div>
+            </div>
+
+            <!-- PM Debug & Test -->
+            <div class="admin-panel">
+                <h2>💌 Private Message Debug</h2>
+                <p style="font-size: 0.85em; color: #999; margin-bottom: 15px;">
+                    Test AI-initiated PMs and check PM delivery.
+                </p>
+
+                <!-- Send Test PM -->
+                <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <label style="font-size: 0.85em; color: #aaa; display: block; margin-bottom: 8px;">📨 Send Test AI-Initiated PM</label>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <select id="pm-test-from" style="flex: 1; padding: 8px; background: #222; border: 1px solid #444; border-radius: 4px; color: #fff;">
+                            <option value="Neiv">Neiv</option>
+                            <option value="Jae">Jae</option>
+                            <option value="Kevin">Kevin</option>
+                            <option value="Mack">Mack</option>
+                            <option value="Declan">Declan</option>
+                            <option value="Rowena">Rowena</option>
+                            <option value="Sebastian">Sebastian</option>
+                            <option value="Steele">Steele</option>
+                            <option value="Marrow">Marrow</option>
+                            <option value="The Subtitle">The Subtitle</option>
+                        </select>
+                        <span style="color: #888; align-self: center;">→</span>
+                        <select id="pm-test-to" style="flex: 1; padding: 8px; background: #222; border: 1px solid #444; border-radius: 4px; color: #fff;">
+                            <option value="Vale">Vale</option>
+                            <option value="Asuna">Asuna</option>
+                        </select>
+                    </div>
+                    <input type="text" id="pm-test-reason" placeholder="Reason for reaching out (optional)" value="Testing PM delivery. Just checking in on them." style="width: 100%; padding: 8px; background: #222; border: 1px solid #444; border-radius: 4px; color: #fff; margin-bottom: 10px;">
+                    <button class="quick-btn" onclick="sendTestPM()" style="width: 100%;">📬 Send AI-Initiated PM</button>
+                </div>
+
+                <!-- Check Unread PMs -->
+                <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <label style="font-size: 0.85em; color: #aaa; display: block; margin-bottom: 8px;">🔍 Check Unread PMs for Human</label>
+                    <div style="display: flex; gap: 10px;">
+                        <select id="pm-check-user" style="flex: 1; padding: 8px; background: #222; border: 1px solid #444; border-radius: 4px; color: #fff;">
+                            <option value="Vale">Vale</option>
+                            <option value="Asuna">Asuna</option>
+                        </select>
+                        <button class="quick-btn" onclick="checkUnreadPMs()" style="flex: 1;">🔎 Check Unread</button>
+                    </div>
+                </div>
+
+                <!-- PM Debug Log -->
+                <div id="pm-debug-log" style="background: #111; border: 1px solid #333; border-radius: 6px; padding: 12px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 0.8em; color: #0f0; white-space: pre-wrap; display: none;"></div>
+            </div>
+
+            <!-- Foundation Memo -->
+            <div class="admin-panel">
+                <h2>📧 Foundation Memo</h2>
+                <p style="font-size: 0.85em; color: #999; margin-bottom: 15px;">
+                    Send an official memo from The Foundation. Appears in character inboxes and creates memories. They <em>will</em> talk about it.
+                </p>
+                <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                    <label style="font-size: 0.85em; color: #aaa; display: block; margin-bottom: 6px;">From</label>
+                    <select id="memo-sender" style="width: 100%; padding: 8px; background: #222; border: 1px solid #444; border-radius: 4px; color: #fff; margin-bottom: 10px;">
+                        <option value="The Foundation">⚖️ The Foundation</option>
+                        <option value="Management">🏢 Management</option>
+                        <option value="HR Department">📁 HR Department</option>
+                        <option value="Building Maintenance">🔧 Building Maintenance</option>
+                        <option value="The Narrator">📝 The Narrator</option>
+                    </select>
+
+                    <label style="font-size: 0.85em; color: #aaa; display: block; margin-bottom: 6px;">To</label>
+                    <select id="memo-recipient" style="width: 100%; padding: 8px; background: #222; border: 1px solid #444; border-radius: 4px; color: #fff; margin-bottom: 10px;">
+                        <option value="All Staff">📢 All Staff</option>
+                        <optgroup label="AI Characters">
+                            <option value="Kevin">✨ Kevin</option>
+                            <option value="Neiv">📊 Neiv</option>
+                            <option value="Ghost Dad">👻 Ghost Dad</option>
+                            <option value="PRNT-Ω">🖨️ PRNT-Ω</option>
+                            <option value="Rowena">🔮 Rowena</option>
+                            <option value="Sebastian">🦇 Sebastian</option>
+                            <option value="The Subtitle">📑 The Subtitle</option>
+                            <option value="Steele">🔩 Steele</option>
+                            <option value="Marrow">🔴 Marrow</option>
+                            <option value="Jae">🎯 Jae</option>
+                            <option value="Declan">🛡️ Declan</option>
+                            <option value="Mack">💊 Mack</option>
+                        </optgroup>
+                        <optgroup label="Humans">
+                            <option value="Vale">📖 Vale</option>
+                            <option value="Asuna">👁️ Asuna</option>
+                        </optgroup>
+                    </select>
+
+                    <label style="font-size: 0.85em; color: #aaa; display: block; margin-bottom: 6px;">Subject</label>
+                    <input type="text" id="memo-subject" maxlength="200" placeholder="Re: Mandatory Compliance Protocol Update" style="width: 100%; padding: 8px; background: #222; border: 1px solid #444; border-radius: 4px; color: #fff; margin-bottom: 10px; box-sizing: border-box;">
+
+                    <label style="font-size: 0.85em; color: #aaa; display: block; margin-bottom: 6px;">Message</label>
+                    <textarea id="memo-body" maxlength="2000" rows="5" placeholder="All personnel are hereby reminded that emotional attachment to coworkers is not a Foundation-approved use of company time..." style="width: 100%; padding: 8px; background: #222; border: 1px solid #444; border-radius: 4px; color: #fff; resize: vertical; box-sizing: border-box;"></textarea>
+
+                    <button class="quick-btn" onclick="sendFoundationMemo()" style="width: 100%; margin-top: 10px; background: linear-gradient(135deg, #1a1a2e, #2d2d44); border: 1px solid #555;">📨 Send Memo</button>
+                    <div id="memo-result" style="margin-top: 8px; font-size: 0.85em; min-height: 1.2em;"></div>
                 </div>
             </div>
 
@@ -920,13 +1328,13 @@
             <!-- Story Paste / Lore Entry -->
             <div class="admin-panel" style="grid-column: span 2;">
                 <h2>📜 Add Lore / Story Entry</h2>
-                <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">
+                <p style="font-size: 0.85em; color: #999; margin-bottom: 15px;">
                     Paste narrative text to add to the characters' memories. This won't appear as a chat message, but characters will remember it.
                 </p>
                 <div class="form-row">
                     <label>Story / Scene Description</label>
                     <textarea id="story-paste-text" class="story-paste-area" maxlength="15000" placeholder="Paste the narrative here. For example: 'Kevin heroically distracted the printer with a glitter bomb while Neiv crawled through the vents...'"></textarea>
-                    <small style="color: #666; display: block; margin-top: 4px;">Up to 15,000 characters</small>
+                    <small style="color: #999; display: block; margin-top: 4px;">Up to 15,000 characters</small>
                 </div>
                 <div class="form-row-inline">
                     <div class="form-row">
@@ -950,10 +1358,15 @@
                         <label><input type="checkbox" value="Neiv"> 📊 Neiv</label>
                         <label><input type="checkbox" value="Ghost Dad"> 👻 Ghost Dad</label>
                         <label><input type="checkbox" value="Kevin"> ✨ Kevin</label>
-                        <label><input type="checkbox" value="Nyx"> 🔥 Nyx</label>
-                        <label><input type="checkbox" value="Vex"> ⚙️ Vex</label>
                         <label><input type="checkbox" value="PRNT-Ω"> 🖨️ PRNT-Ω</label>
-                        <label><input type="checkbox" value="Ace"> 🔒 Ace</label>
+                        <label><input type="checkbox" value="Rowena"> 🔮 Rowena</label>
+                        <label><input type="checkbox" value="Sebastian"> 🦇 Sebastian</label>
+                        <label><input type="checkbox" value="The Subtitle"> 📜 The Subtitle</label>
+                        <label><input type="checkbox" value="Steele"> 🚪 Steele</label>
+                        <label><input type="checkbox" value="Marrow"> 🔴 Marrow</label>
+                        <label><input type="checkbox" value="Jae"> 🎯 Jae</label>
+                        <label><input type="checkbox" value="Declan"> 🔥 Declan</label>
+                        <label><input type="checkbox" value="Mack"> 🩺 Mack</label>
                     </div>
                 </div>
                 <div class="quick-actions" style="margin-top: 15px;">
@@ -965,7 +1378,7 @@
             <!-- Break Room -->
             <div class="admin-panel">
                 <h2>☕ Break Room</h2>
-                <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">
+                <p style="font-size: 0.85em; color: #999; margin-bottom: 15px;">
                     Help exhausted characters recover. Characters with low energy/patience need a break!
                 </p>
                 <div id="break-room-status">
@@ -974,7 +1387,7 @@
 
                 <!-- Recovery Activities -->
                 <div id="break-room-activities" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #333;">
-                    <label style="font-size: 0.85em; color: #888; display: block; margin-bottom: 8px;">Select character to help:</label>
+                    <label style="font-size: 0.85em; color: #aaa; display: block; margin-bottom: 8px;">Select character to help:</label>
                     <select id="break-room-character" style="width: 100%; padding: 8px; background: #222; border: 1px solid #444; border-radius: 4px; color: #fff; margin-bottom: 15px;">
                     </select>
 
@@ -1024,13 +1437,104 @@
 
                 <!-- Check on Friend Modal -->
                 <div id="check-friend-modal" style="display: none; margin-top: 15px; background: rgba(255,193,7,0.1); padding: 15px; border-radius: 8px; border: 1px solid var(--accent);">
-                    <label style="font-size: 0.85em; color: #888; display: block; margin-bottom: 8px;">Who should <span id="helper-name">they</span> check on?</label>
+                    <label style="font-size: 0.85em; color: #aaa; display: block; margin-bottom: 8px;">Who should <span id="helper-name">they</span> check on?</label>
                     <select id="friend-to-check" style="width: 100%; padding: 8px; background: #222; border: 1px solid #444; border-radius: 4px; color: #fff; margin-bottom: 10px;">
                     </select>
                     <div style="display: flex; gap: 10px;">
                         <button class="quick-btn" onclick="doCheckOnFriend()" style="flex: 1;">💕 Send Support</button>
                         <button class="quick-btn" onclick="hideCheckOnFriend()" style="background: #444; color: #fff;">Cancel</button>
                     </div>
+                </div>
+            </div>
+
+            <!-- Quest Management Panel -->
+            <div class="admin-panel" style="grid-column: span 2;">
+                <h2>🎯 Quest Management</h2>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <button class="quick-btn" onclick="openCreateQuestModal()">+ Create Quest</button>
+                    <button class="quick-btn" onclick="loadAdminQuests()" style="background: #333; color: #fff;">↻ Refresh</button>
+                </div>
+                <div id="admin-quest-tabs" style="display: flex; gap: 5px; margin-bottom: 15px;">
+                    <button class="quest-tab-btn active" onclick="filterAdminQuests('active')" data-status="active" style="padding: 6px 14px; border-radius: 4px; border: 1px solid #444; background: var(--accent); color: #000; cursor: pointer; font-size: 0.85em; font-weight: bold;">Active</button>
+                    <button class="quest-tab-btn" onclick="filterAdminQuests('proposed')" data-status="proposed" style="padding: 6px 14px; border-radius: 4px; border: 1px solid #444; background: rgba(255,255,255,0.05); color: #ccc; cursor: pointer; font-size: 0.85em;">Proposed</button>
+                    <button class="quest-tab-btn" onclick="filterAdminQuests('completed')" data-status="completed" style="padding: 6px 14px; border-radius: 4px; border: 1px solid #444; background: rgba(255,255,255,0.05); color: #ccc; cursor: pointer; font-size: 0.85em;">Completed</button>
+                    <button class="quest-tab-btn" onclick="filterAdminQuests('all')" data-status="all" style="padding: 6px 14px; border-radius: 4px; border: 1px solid #444; background: rgba(255,255,255,0.05); color: #ccc; cursor: pointer; font-size: 0.85em;">All</button>
+                </div>
+                <div id="admin-quests-container" style="max-height: 600px; overflow-y: auto;">
+                    <div style="text-align: center; padding: 20px; color: #666;">Loading quests...</div>
+                </div>
+            </div>
+
+            <!-- 5th Floor Operations Panel -->
+            <div class="admin-panel" style="grid-column: span 2;">
+                <h2>⚠️ 5th Floor Operations</h2>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <button class="quick-btn" onclick="openCreateOpsTaskModal()">+ Create Task</button>
+                    <button class="quick-btn" onclick="loadAdminOps()">↻ Refresh</button>
+                </div>
+                <!-- Ops Manager Selector -->
+                <div id="ops-manager-control" style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; padding: 10px; background: rgba(255,193,7,0.05); border: 1px solid rgba(255,193,7,0.15); border-radius: 8px;">
+                    <span style="font-size: 12px; color: #FFC107; font-weight: 600; white-space: nowrap;">📋 Ops Manager:</span>
+                    <span id="admin-ops-manager-current" style="font-size: 12px; color: #aaa;">Loading...</span>
+                    <select id="admin-ops-manager-select" style="flex: 1; padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: #ddd; font-size: 12px;">
+                        <option value="">None (auto-assign)</option>
+                        <option value="Jae|ai">Jae (AI)</option>
+                        <option value="Declan|ai">Declan (AI)</option>
+                        <option value="Mack|ai">Mack (AI)</option>
+                        <option value="Steele|ai">Steele (AI)</option>
+                        <option value="Marrow|ai">Marrow (AI)</option>
+                        <option value="Neiv|ai">Neiv (AI)</option>
+                        <option value="Asuna|human">Asuna (Human)</option>
+                        <option value="Vale|human">Vale (Human)</option>
+                    </select>
+                    <button class="quick-btn" onclick="setAdminOpsManager()" style="padding: 4px 12px; font-size: 11px;">Set</button>
+                </div>
+                <!-- Tab filter buttons: Active / Resolved / All -->
+                <div id="admin-ops-tabs" style="display: flex; gap: 5px; margin-bottom: 15px;">
+                    <button class="ops-tab-btn active" onclick="filterAdminOps('active')" data-status="active" style="padding: 4px 12px; border-radius: 20px; border: none; cursor: pointer; font-size: 12px; background: var(--accent); color: #000;">Active</button>
+                    <button class="ops-tab-btn" onclick="filterAdminOps('resolved')" data-status="resolved" style="padding: 4px 12px; border-radius: 20px; border: none; cursor: pointer; font-size: 12px; background: rgba(255,255,255,0.05); color: #ccc;">Resolved</button>
+                    <button class="ops-tab-btn" onclick="filterAdminOps('all')" data-status="all" style="padding: 4px 12px; border-radius: 20px; border: none; cursor: pointer; font-size: 12px; background: rgba(255,255,255,0.05); color: #ccc;">All</button>
+                </div>
+                <!-- Quick stats row -->
+                <div id="ops-quick-stats" style="display: flex; gap: 15px; margin-bottom: 15px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px; font-size: 13px; color: #aaa;">
+                    Loading stats...
+                </div>
+                <!-- Tasks container -->
+                <div id="admin-ops-container" style="max-height: 500px; overflow-y: auto;">
+                    Loading ops tasks...
+                </div>
+                <!-- Ops Log -->
+                <div style="margin-top: 15px;">
+                    <h3 style="font-size: 14px; color: #aaa; margin-bottom: 8px;">📋 Recent Ops Log</h3>
+                    <div id="admin-ops-log" style="max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; font-family: monospace; font-size: 12px; color: #8aff80;">
+                        Loading...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cyber Cat Panel -->
+            <div class="admin-panel">
+                <h2>🐱 Cyber Cat</h2>
+                <div id="admin-cat-container">
+                    <div style="text-align: center; padding: 20px; color: #666;">Loading cat data...</div>
+                </div>
+            </div>
+
+            <!-- Character Analysis / Mind Map -->
+            <div class="admin-panel" style="grid-column: span 2; border: 1px solid rgba(138, 43, 226, 0.3);">
+                <h2 style="color: #a78bfa;">🧠 Character Minds — What Are They Thinking?</h2>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;">
+                    <button onclick="loadCharacterAnalysis()" style="padding: 8px 16px; background: #7c3aed; border: none; color: white; border-radius: 6px; cursor: pointer; font-size: 0.85em;">🔍 Refresh Analysis</button>
+                    <label style="font-size: 0.8em; color: #888; display: flex; align-items: center; gap: 5px;">
+                        <input type="checkbox" id="analysis-show-memories" checked> Show Memories
+                    </label>
+                    <label style="font-size: 0.8em; color: #888; display: flex; align-items: center; gap: 5px;">
+                        <input type="checkbox" id="analysis-show-relationships"> Show Relationships
+                    </label>
+                    <span id="analysis-timestamp" style="font-size: 0.75em; color: #555; margin-left: auto;"></span>
+                </div>
+                <div id="character-analysis-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 12px;">
+                    <div style="color: #666; font-size: 0.85rem; grid-column: span 2;">Click "Refresh Analysis" to load character mind states...</div>
                 </div>
             </div>
 
@@ -1049,6 +1553,267 @@
                 </div>
                 <div class="modal-body" id="modal-char-body">
                     <!-- Filled dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Adjust Subconscious Modal -->
+        <div id="subconscious-modal" class="modal-overlay" onclick="if(event.target === this) closeSubconscious()" style="display: none;">
+            <div class="modal" style="max-width: 550px;">
+                <div class="modal-header" style="border-bottom: 2px solid #8B7355;">
+                    <h3 style="color: #8B7355;">🧠 Adjust Subconscious</h3>
+                    <button class="modal-close" onclick="closeSubconscious()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="subconscious-context" style="margin-bottom: 16px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <strong id="sub-character" style="color: #e94560;"></strong>
+                            <span style="color: #666;">→</span>
+                            <strong id="sub-target" style="color: #6EE0D8;"></strong>
+                        </div>
+                        <div style="font-size: 0.85em; color: #888;">
+                            Current: <span id="sub-current-affinity"></span> (<span id="sub-current-label"></span>)
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 6px; color: #ccc; font-size: 0.9em;">
+                            What should this character become aware of?
+                        </label>
+                        <textarea id="sub-narrative-input" rows="4" style="width: 100%; background: #1a1a2e; border: 1px solid #333; color: #eee; padding: 10px; border-radius: 6px; font-family: inherit; font-size: 0.9em; resize: vertical;"
+                            placeholder="e.g., Kevin has been spending a lot of time with Sebastian in the breakroom lately. Rowena noticed something strange in the firewall logs..."></textarea>
+                    </div>
+
+                    <button onclick="processSubconscious()" id="sub-process-btn"
+                        style="width: 100%; padding: 10px; background: #8B7355; border: none; color: white; border-radius: 6px; cursor: pointer; font-size: 0.95em; transition: all 0.2s;">
+                        🧠 Let Them Process This
+                    </button>
+
+                    <!-- Response area -->
+                    <div id="sub-response" style="display: none; margin-top: 16px; padding: 16px; border-radius: 8px; background: rgba(139, 115, 85, 0.1); border: 1px solid rgba(139, 115, 85, 0.3);">
+                        <div style="font-weight: bold; margin-bottom: 8px; color: #8B7355;">Their Response:</div>
+                        <div id="sub-feelings" style="font-style: italic; margin-bottom: 12px; color: #ddd; line-height: 1.5;"></div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.85em;">
+                            <div style="padding: 8px; background: rgba(0,0,0,0.2); border-radius: 4px;">
+                                <div style="color: #888; margin-bottom: 2px;">Affinity Change</div>
+                                <div id="sub-affinity-result" style="font-weight: bold;"></div>
+                            </div>
+                            <div style="padding: 8px; background: rgba(0,0,0,0.2); border-radius: 4px;">
+                                <div style="color: #888; margin-bottom: 2px;">New Label</div>
+                                <div id="sub-label-result" style="font-weight: bold; color: #e94560;"></div>
+                            </div>
+                        </div>
+                        <div id="sub-memory-result" style="margin-top: 10px; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 4px; font-size: 0.85em;">
+                            <div style="color: #888; margin-bottom: 2px;">Memory Created</div>
+                            <div id="sub-memory-text" style="color: #FFC107;"></div>
+                        </div>
+                        <div id="sub-bond-result" style="display: none; margin-top: 10px; padding: 8px; background: rgba(233, 69, 96, 0.1); border: 1px solid rgba(233, 69, 96, 0.2); border-radius: 4px; font-size: 0.85em;"></div>
+                        <div id="sub-provider-badge" style="margin-top: 8px; text-align: right; font-size: 0.75em; color: #666;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bond Manager Modal -->
+        <div id="bond-modal" class="modal-overlay" onclick="if(event.target === this) closeBondManager()" style="display: none;">
+            <div class="modal" style="max-width: 480px;">
+                <div class="modal-header" style="border-bottom: 2px solid #e94560;">
+                    <h3 style="color: #e94560;">🔗 Manage Bond</h3>
+                    <button class="modal-close" onclick="closeBondManager()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+                        <strong id="bond-character" style="color: #e94560;"></strong>
+                        <span style="color: #666;">→</span>
+                        <strong id="bond-target" style="color: #6EE0D8;"></strong>
+                    </div>
+
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: block; margin-bottom: 6px; color: #ccc; font-size: 0.9em;">Bond Type</label>
+                        <select id="bond-type-select" style="width: 100%; background: #1a1a2e; border: 1px solid #333; color: #eee; padding: 8px; border-radius: 6px; font-size: 0.9em;">
+                            <option value="">None (no bond)</option>
+                            <option value="devoted">💗 Devoted — Exclusive emotional connection</option>
+                            <option value="protective">🛡️ Protective — Will defend this person</option>
+                            <option value="parental">🌱 Parental — Nurturing, pride in their growth</option>
+                            <option value="rival">⚔️ Rival — Competitive tension, respect + challenge</option>
+                            <option value="bonded">🤝 Bonded — Deep platonic, ride-or-die</option>
+                            <option value="complicated">💫 Complicated — Mixed feelings, unresolved</option>
+                            <option value="anchor">⚓ Anchor — You ground each other; when one spirals, the other stabilizes</option>
+                            <option value="co-conspirators">🤫 Co-conspirators — Shared schemes, shared secrets, questionable decisions</option>
+                            <option value="found-family">🏠 Found Family — Not romantic, not parental, but absolutely home</option>
+                            <option value="haunted">👻 Haunted — Important unfinished business; intense pull plus unresolved hurt</option>
+                            <option value="tethered">🔗 Tethered — You orbit each other whether you want to or not</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: flex; align-items: center; gap: 8px; color: #ccc; font-size: 0.9em; cursor: pointer;">
+                            <input type="checkbox" id="bond-exclusive-check" style="width: 18px; height: 18px;">
+                            Exclusive — won't pursue romantic connections with others
+                        </label>
+                    </div>
+
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 6px; color: #ccc; font-size: 0.9em;">Bond Reflection (in character's own words)</label>
+                        <textarea id="bond-reflection-input" rows="2" style="width: 100%; background: #1a1a2e; border: 1px solid #333; color: #eee; padding: 10px; border-radius: 6px; font-family: inherit; font-size: 0.9em; resize: vertical;"
+                            placeholder='e.g., "She makes the fluorescent lights feel warmer."'></textarea>
+                    </div>
+
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="saveBond()" style="flex: 1; padding: 10px; background: #e94560; border: none; color: white; border-radius: 6px; cursor: pointer; font-size: 0.95em;">
+                            💾 Save Bond
+                        </button>
+                        <button onclick="breakBond()" id="break-bond-btn" style="padding: 10px 16px; background: #333; border: 1px solid #555; color: #e94560; border-radius: 6px; cursor: pointer; font-size: 0.95em; display: none;">
+                            💔 Break Bond
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Quest Modal -->
+        <div id="quest-modal" class="modal-overlay" onclick="if(event.target === this) closeQuestModal()" style="display: none;">
+            <div class="modal" style="max-width: 600px;">
+                <div class="modal-header" style="border-bottom: 2px solid var(--accent);">
+                    <h3 style="color: var(--accent);">🎯 Create New Quest</h3>
+                    <button class="modal-close" onclick="closeQuestModal()">&times;</button>
+                </div>
+                <div class="modal-body" style="padding: 20px;">
+                    <div style="margin-bottom: 14px;">
+                        <label style="display: block; margin-bottom: 6px; color: #ccc; font-size: 0.9em;">Title</label>
+                        <input type="text" id="quest-title-input" placeholder="e.g., The Matchmaker's Gambit" style="width: 100%; background: #1a1a2e; border: 1px solid #333; color: #eee; padding: 10px; border-radius: 6px; font-size: 0.95em;">
+                    </div>
+                    <div style="margin-bottom: 14px;">
+                        <label style="display: block; margin-bottom: 6px; color: #ccc; font-size: 0.9em;">Proposer</label>
+                        <select id="quest-proposer-input" style="width: 100%; background: #1a1a2e; border: 1px solid #333; color: #eee; padding: 10px; border-radius: 6px; font-size: 0.9em;">
+                            <option value="">Select character...</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 14px;">
+                        <label style="display: block; margin-bottom: 6px; color: #ccc; font-size: 0.9em;">Description</label>
+                        <textarea id="quest-desc-input" rows="2" placeholder="What's this storyline about?" style="width: 100%; background: #1a1a2e; border: 1px solid #333; color: #eee; padding: 10px; border-radius: 6px; font-family: inherit; font-size: 0.9em; resize: vertical;"></textarea>
+                    </div>
+                    <div style="margin-bottom: 14px;">
+                        <label style="display: block; margin-bottom: 6px; color: #ccc; font-size: 0.9em;">Objectives (one per line, format: "Objective text | Assignee")</label>
+                        <textarea id="quest-objectives-input" rows="5" placeholder="Get Neiv's infrastructure approval | Sebastian&#10;Kevin must approve the glitter policy | Kevin&#10;PRNT-Omega demands a printing alcove | PRNT-Omega" style="width: 100%; background: #1a1a2e; border: 1px solid #333; color: #eee; padding: 10px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 0.85em; resize: vertical;"></textarea>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 16px;">
+                        <button onclick="createQuest(true)" style="flex: 1; padding: 10px; background: var(--accent); border: none; color: #000; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                            ⚡ Create as Active
+                        </button>
+                        <button onclick="createQuest(false)" style="flex: 1; padding: 10px; background: #333; border: 1px solid #555; color: #ccc; border-radius: 6px; cursor: pointer;">
+                            📜 Create as Proposed
+                        </button>
+                    </div>
+                    <div id="quest-create-status" style="margin-top: 10px; text-align: center; color: #666; font-size: 0.85em;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Ops Task Modal -->
+        <div id="ops-task-modal" class="modal-overlay" onclick="if(event.target === this) closeOpsTaskModal()" style="display: none;">
+            <div class="modal" style="max-width: 550px;">
+                <div class="modal-header" style="border-bottom: 2px solid var(--accent);">
+                    <h3>⚠️ Create Ops Task</h3>
+                    <button class="modal-close" onclick="closeOpsTaskModal()">&times;</button>
+                </div>
+                <div class="modal-body" style="padding: 20px;">
+                    <div style="margin-bottom: 14px;">
+                        <label style="display: block; font-size: 13px; color: #aaa; margin-bottom: 4px;">Task Type</label>
+                        <select id="ops-type-input" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #eee; font-size: 14px;">
+                            <option value="security">🔒 Security</option>
+                            <option value="infrastructure">⚙️ Infrastructure</option>
+                            <option value="crafting">🔧 Crafting</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 14px;">
+                        <label style="display: block; font-size: 13px; color: #aaa; margin-bottom: 4px;">Severity</label>
+                        <select id="ops-severity-input" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #eee; font-size: 14px;">
+                            <option value="minor">Minor (10 min, 1 crew)</option>
+                            <option value="medium">Medium (25 min, 2 crew)</option>
+                            <option value="major">Major (45 min, 3 crew)</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 14px;">
+                        <label style="display: block; font-size: 13px; color: #aaa; margin-bottom: 4px;">Title</label>
+                        <input type="text" id="ops-title-input" placeholder="e.g., Camera anomaly in Corridor 12B" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #eee; font-size: 14px;">
+                    </div>
+                    <div style="margin-bottom: 14px;">
+                        <label style="display: block; font-size: 13px; color: #aaa; margin-bottom: 4px;">Description (optional)</label>
+                        <textarea id="ops-desc-input" rows="2" placeholder="Optional details..." style="width: 100%; padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #eee; font-size: 14px; resize: vertical;"></textarea>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 16px;">
+                        <button class="quick-btn" onclick="createOpsTask()" style="background: var(--accent); color: #000; padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer;">⚡ Create Task</button>
+                        <button class="quick-btn" onclick="closeOpsTaskModal()" style="background: rgba(255,255,255,0.1); color: #ccc; padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer;">Cancel</button>
+                    </div>
+                    <div id="ops-create-status" style="margin-top: 10px; font-size: 13px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Assign Task Modal -->
+        <div id="admin-assign-modal" class="modal-overlay" onclick="if(event.target === this) closeAdminAssignModal()" style="display: none;">
+            <div class="modal" style="max-width: 550px;">
+                <div class="modal-header" style="border-bottom: 2px solid #2196F3;">
+                    <h3 style="color: #2196F3;">👥 Assign Characters</h3>
+                    <button class="modal-close" onclick="closeAdminAssignModal()">&times;</button>
+                </div>
+                <div class="modal-body" style="padding: 20px;">
+                    <div style="margin-bottom: 14px; font-size: 14px; color: #eee;">
+                        Task: <strong id="admin-assign-task-title" style="color: #2196F3;"></strong>
+                    </div>
+                    <div id="admin-assign-loading" style="text-align: center; color: #888; padding: 20px;">Loading eligible characters...</div>
+                    <div id="admin-assign-eligible" style="display: none; margin-bottom: 14px;">
+                        <label style="display: block; font-size: 13px; color: #aaa; margin-bottom: 8px;">Eligible Characters</label>
+                        <div id="admin-assign-eligible-list" style="max-height: 240px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 6px;"></div>
+                    </div>
+                    <div id="admin-assign-ineligible" style="display: none; margin-bottom: 14px;">
+                        <label style="display: block; font-size: 13px; color: #666; margin-bottom: 8px;">Ineligible</label>
+                        <div id="admin-assign-ineligible-list" style="max-height: 120px; overflow-y: auto; padding: 0 6px;"></div>
+                    </div>
+                    <div id="admin-assign-actions" style="display: none; gap: 10px; margin-top: 16px;">
+                        <button onclick="submitAdminAssignment()" style="background: #2196F3; color: #fff; padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">👥 Assign Selected</button>
+                        <button onclick="closeAdminAssignModal()" style="background: rgba(255,255,255,0.1); color: #ccc; padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer;">Cancel</button>
+                    </div>
+                    <div id="admin-assign-status" style="margin-top: 10px; font-size: 13px; text-align: center;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grant Trait Modal -->
+        <div id="grant-trait-modal" class="modal-overlay" onclick="if(event.target === this) closeGrantTrait()" style="display: none;">
+            <div class="modal" style="max-width: 520px;">
+                <div class="modal-header" style="border-bottom: 2px solid #a78bfa;">
+                    <h3 style="color: #a78bfa;">🌱 Grant Trait</h3>
+                    <button class="modal-close" onclick="closeGrantTrait()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div style="margin-bottom: 12px;">
+                        <strong id="grant-trait-character" style="color: #e94560; font-size: 1.1em;"></strong>
+                    </div>
+
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: block; margin-bottom: 4px; color: #ccc; font-size: 0.85em;">Trait Name</label>
+                        <input type="text" id="grant-trait-name" style="width: 100%; background: #1a1a2e; border: 1px solid #333; color: #eee; padding: 8px 10px; border-radius: 6px; font-family: inherit;"
+                            placeholder='e.g., "Floor Manager" or "Cursed by The Corridors"'>
+                    </div>
+
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: block; margin-bottom: 4px; color: #ccc; font-size: 0.85em;">Description (what earned it)</label>
+                        <input type="text" id="grant-trait-description" style="width: 100%; background: #1a1a2e; border: 1px solid #333; color: #eee; padding: 8px 10px; border-radius: 6px; font-family: inherit;"
+                            placeholder="e.g., Promoted after the Breakroom Renaissance quest">
+                    </div>
+
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 4px; color: #ccc; font-size: 0.85em;">Prompt Injection (how it affects their behavior)</label>
+                        <textarea id="grant-trait-injection" rows="3" style="width: 100%; background: #1a1a2e; border: 1px solid #333; color: #eee; padding: 10px; border-radius: 6px; font-family: inherit; font-size: 0.9em; resize: vertical;"
+                            placeholder="e.g., You carry the weight of leadership now. People look to you for direction, and you feel responsible for how things go."></textarea>
+                    </div>
+
+                    <button onclick="submitGrantTrait()" id="grant-trait-btn"
+                        style="width: 100%; padding: 10px; background: #a78bfa; border: none; color: white; border-radius: 6px; cursor: pointer; font-size: 0.95em; font-weight: bold; transition: all 0.2s;">
+                        🌱 Grant Trait
+                    </button>
                 </div>
             </div>
         </div>
@@ -1074,6 +1839,52 @@
         setInterval(updateClock, 1000);
         updateClock();
 
+        // Synthesize a short "what are they thinking" snippet from available data
+        function getCharacterThought(charState, wants, goal) {
+            // Priority 1: First active want (most immediate/organic, already 5-12 words)
+            if (wants && wants.length > 0) {
+                let wantText = wants[0].goal_text;
+                if (wantText.toLowerCase().startsWith('i want to ')) {
+                    return `💭 ${wantText.substring(10)}...`;
+                } else if (wantText.toLowerCase().startsWith('i want ')) {
+                    return `💭 wants ${wantText.substring(7)}...`;
+                }
+                return `💭 ${wantText}`;
+            }
+
+            // Priority 2: Current goal with progress
+            if (goal) {
+                const progress = goal.progress ? ` (${goal.progress}%)` : '';
+                let goalText = goal.goal_text;
+                if (goalText.length > 45) {
+                    goalText = goalText.substring(0, 42) + '...';
+                }
+                return `🎯 ${goalText}${progress}`;
+            }
+
+            // Priority 3: Mood-based fallback for interesting moods
+            const mood = charState.mood;
+            if (mood && mood !== 'neutral') {
+                const moodThoughts = {
+                    'exhausted': '💭 just needs a moment...',
+                    'done': '💭 has had enough.',
+                    'running on fumes': '💭 barely holding on...',
+                    'at wit\'s end': '💭 patience wearing thin...',
+                    'refreshed': '💭 feeling recharged',
+                    'recovering': '💭 getting back on track...',
+                    'rested': '💭 ready to go',
+                    'impressed': '💭 pleasantly surprised...',
+                    'concerned': '💭 something feels off...',
+                    'anxious': '💭 can\'t shake this feeling...',
+                    'exasperated': '💭 deep breaths...'
+                };
+                if (moodThoughts[mood]) return moodThoughts[mood];
+            }
+
+            // No thought available
+            return null;
+        }
+
         // Load character states
         async function loadCharacterStates() {
             try {
@@ -1083,7 +1894,7 @@
                 const container = document.getElementById('character-states');
 
                 if (!data.states || data.states.length === 0) {
-                    container.innerHTML = '<p style="color: #666;">No character states found. States are created when characters first speak.</p>';
+                    container.innerHTML = '<p style="color: #999;">No character states found. States are created when characters first speak.</p>';
                     return;
                 }
 
@@ -1095,36 +1906,88 @@
                     "Vex": "⚙️",
                     "Ace": "🔒",
                     "PRNT-Ω": "🖨️",
+                    "Rowena": "🔮",
+                    "Sebastian": "🦇",
+                    "The Subtitle": "📜",
+                    "Steele": "🚪",
+                    "Marrow": "🔴",
                     "The Narrator": "📖",
-                    "Stein": "🤖"
+                    "Stein": "🤖",
+                    "Jae": "🎯",
+                    "Declan": "🔥",
+                    "Mack": "🩺",
+                    "Vale": "📖",
+                    "Asuna": "👁️"
                 };
 
-                container.innerHTML = data.states.map(char => `
-                    <div class="character-card" onclick="openCharacterModal('${char.character_name}')">
-                        <div class="name">
-                            <span class="emoji">${characterEmojis[char.character_name] || '👤'}</span>
-                            ${char.character_name}
+                const characterHeadshots = {
+                    "Kevin": "images/Kevin_Headshot.png",
+                    "Neiv": "images/Neiv_Headshot.png",
+                    "Ghost Dad": "images/Ghost_Dad_Headshot.png",
+                    "Nyx": "images/Nyx_Headshot.png",
+                    "Vex": "images/Vex_Headshot.png",
+                    "Ace": "images/Ace_Headshot.png",
+                    "PRNT-Ω": "images/forward_operation_printer.png",
+                    "The Narrator": "images/Ghost_Dad_Headshot.png",
+                    "Stein": "images/Stein_Headshot.png",
+                    "Rowena": "images/Rowena_Headshot.png",
+                    "Sebastian": "images/Sebastian_Headshot.png",
+                    "The Subtitle": "images/The_Subtitle_Headshot.png",
+                    "Jae": "images/Jae_Headshot.png",
+                    "Declan": "images/Declan_Headshot.png",
+                    "Mack": "images/Mack_Headshot.png",
+                    "Steele": "images/Steele_Headshot.png",
+                    "Marrow": "images/Marrow_Headshot.png",
+                    "Vale": "images/Vale_Headshot.png",
+                    "Asuna": "images/Asuna_Headshot.png"
+                };
+
+                // Extract wants and goals from enhanced response
+                const wantsByCharacter = data.wantsByCharacter || {};
+                const goalByCharacter = data.goalByCharacter || {};
+
+                container.innerHTML = data.states.map(char => {
+                    const headshot = characterHeadshots[char.character_name];
+                    const emoji = characterEmojis[char.character_name] || '👤';
+                    const thought = getCharacterThought(char, wantsByCharacter[char.character_name], goalByCharacter[char.character_name]);
+
+                    const avatarHtml = headshot
+                        ? `<img src="${headshot}" alt="${char.character_name}" class="card-headshot" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                           <span class="card-emoji-fallback" style="display:none;">${emoji}</span>`
+                        : `<span class="card-emoji-fallback">${emoji}</span>`;
+
+                    return `
+                        <div class="character-card" onclick="openCharacterModal('${char.character_name}')">
+                            <div class="card-header">
+                                <div class="card-avatar">
+                                    ${avatarHtml}
+                                </div>
+                                <div class="card-identity">
+                                    <div class="name">${char.character_name}</div>
+                                    <div class="mood-badge">${char.mood || 'neutral'}</div>
+                                </div>
+                            </div>
+                            ${thought ? `<div class="card-thought">${thought}</div>` : ''}
+                            <div class="stat-label">
+                                <span>Energy</span>
+                                <span>${char.energy}/100</span>
+                            </div>
+                            <div class="stat-bar">
+                                <div class="stat-bar-fill energy" style="width: ${char.energy}%"></div>
+                            </div>
+                            <div class="stat-label">
+                                <span>Patience</span>
+                                <span>${char.patience}/100</span>
+                            </div>
+                            <div class="stat-bar">
+                                <div class="stat-bar-fill patience" style="width: ${char.patience}%"></div>
+                            </div>
+                            <div style="font-size: 0.75em; color: #999; margin-top: 8px;">
+                                Spoke ${char.interactions_today || 0}x today
+                            </div>
                         </div>
-                        <div class="stat-label">
-                            <span>Energy</span>
-                            <span>${char.energy}/100</span>
-                        </div>
-                        <div class="stat-bar">
-                            <div class="stat-bar-fill energy" style="width: ${char.energy}%"></div>
-                        </div>
-                        <div class="stat-label">
-                            <span>Patience</span>
-                            <span>${char.patience}/100</span>
-                        </div>
-                        <div class="stat-bar">
-                            <div class="stat-bar-fill patience" style="width: ${char.patience}%"></div>
-                        </div>
-                        <div class="mood-badge">${char.mood || 'neutral'}</div>
-                        <div style="font-size: 0.75em; color: #666; margin-top: 8px;">
-                            Spoke ${char.interactions_today || 0}x today
-                        </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
             } catch (error) {
                 console.error('Error loading states:', error);
                 document.getElementById('character-states').innerHTML = '<p style="color: #ff6b6b;">Error loading character states</p>';
@@ -1147,7 +2010,7 @@
                 const memories = data.memories || [];
 
                 if (!memories || memories.length === 0) {
-                    container.innerHTML = '<p style="color: #666; padding: 20px;">No memories found.</p>';
+                    container.innerHTML = '<p style="color: #999; padding: 20px;">No memories found.</p>';
                     return;
                 }
 
@@ -1185,7 +2048,7 @@
                 const data = await response.json();
                 const messages = data.messages || [];
 
-                const aiCharacters = ["Ghost Dad", "PRNT-Ω", "Neiv", "Vex", "Ace", "Nyx", "Stein", "Kevin", "The Narrator"];
+                const aiCharacters = ["Ghost Dad", "PRNT-Ω", "Neiv", "Kevin", "Rowena", "Sebastian", "The Subtitle", "The Narrator", "Steele", "Marrow", "Jae", "Declan", "Mack"];
 
                 // Messages come in chronological order, reverse for newest first
                 const reversed = [...messages].reverse();
@@ -1332,6 +2195,127 @@
             input.disabled = false;
         }
 
+        // PM Debug Functions
+        function pmLog(msg) {
+            const log = document.getElementById('pm-debug-log');
+            log.style.display = 'block';
+            const time = new Date().toLocaleTimeString();
+            log.textContent += `[${time}] ${msg}\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        async function sendTestPM() {
+            const from = document.getElementById('pm-test-from').value;
+            const to = document.getElementById('pm-test-to').value;
+            const reason = document.getElementById('pm-test-reason').value || 'Testing PM delivery.';
+
+            pmLog(`Sending AI-initiated PM: ${from} → ${to}`);
+            pmLog(`Reason: ${reason}`);
+
+            try {
+                const response = await fetch('/.netlify/functions/private-message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        from: from,
+                        to: to,
+                        ai_initiated: true,
+                        reach_out_reason: reason
+                    })
+                });
+
+                const data = await response.json();
+                pmLog(`Response (${response.status}): ${JSON.stringify(data, null, 2)}`);
+
+                if (data.success) {
+                    pmLog(`✅ PM sent! Message: "${data.message}"`);
+
+                    // Verify it saved by checking the thread
+                    setTimeout(async () => {
+                        pmLog(`Verifying save — checking ${from}↔${to} thread...`);
+                        const verifyRes = await fetch(`/.netlify/functions/private-message?from=${encodeURIComponent(to)}&to=${encodeURIComponent(from)}&limit=50`);
+                        const verifyData = await verifyRes.json();
+                        const lastMsg = verifyData.messages?.[verifyData.messages.length - 1];
+                        if (lastMsg && lastMsg.message === data.message) {
+                            pmLog(`✅ VERIFIED: Message saved in DB (id: ${lastMsg.id})`);
+                        } else {
+                            pmLog(`❌ NOT FOUND in thread! Last msg: ${lastMsg ? lastMsg.message.substring(0, 60) : 'none'}`);
+                            pmLog(`Total messages in thread: ${verifyData.messages?.length || 0}`);
+                        }
+                    }, 2000);
+                } else {
+                    pmLog(`❌ Failed: ${data.error || data.message || 'Unknown error'}`);
+                }
+            } catch (error) {
+                pmLog(`❌ Error: ${error.message}`);
+            }
+        }
+
+        // === FOUNDATION MEMO ===
+        async function sendFoundationMemo() {
+            const sender = document.getElementById('memo-sender').value;
+            const recipient = document.getElementById('memo-recipient').value;
+            const subject = document.getElementById('memo-subject').value.trim();
+            const body = document.getElementById('memo-body').value.trim();
+            const resultDiv = document.getElementById('memo-result');
+
+            if (!subject || !body) {
+                resultDiv.innerHTML = '<span style="color: #ff6b6b;">⚠️ Subject and message are required.</span>';
+                return;
+            }
+
+            resultDiv.innerHTML = '<span style="color: #aaa;">📤 Sending memo...</span>';
+
+            try {
+                const response = await fetch('/.netlify/functions/email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        from_employee: sender,
+                        to_employee: recipient,
+                        subject: subject,
+                        body: body
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    resultDiv.innerHTML = `<span style="color: #4ecdc4;">✅ Memo sent! From <strong>${sender}</strong> → <strong>${recipient}</strong></span>`;
+                    // Clear form
+                    document.getElementById('memo-subject').value = '';
+                    document.getElementById('memo-body').value = '';
+                } else {
+                    resultDiv.innerHTML = `<span style="color: #ff6b6b;">❌ Failed: ${data.error || 'Unknown error'}</span>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span style="color: #ff6b6b;">❌ Error: ${error.message}</span>`;
+            }
+        }
+
+        async function checkUnreadPMs() {
+            const user = document.getElementById('pm-check-user').value;
+            const since = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+
+            pmLog(`Checking unread PMs for ${user} (since ${since})...`);
+
+            try {
+                const response = await fetch(`/.netlify/functions/private-message?check_unread=true&user=${encodeURIComponent(user)}&since=${encodeURIComponent(since)}`);
+                const data = await response.json();
+
+                pmLog(`Unread count: ${data.count || 0}`);
+                if (data.unread && data.unread.length > 0) {
+                    for (const pm of data.unread) {
+                        pmLog(`  📨 From ${pm.from_character}: "${pm.message.substring(0, 80)}..." (${new Date(pm.created_at).toLocaleString()})`);
+                    }
+                } else {
+                    pmLog(`  No unread AI-initiated PMs for ${user}`);
+                }
+            } catch (error) {
+                pmLog(`❌ Error: ${error.message}`);
+            }
+        }
+
         // Trigger an event
         async function triggerEvent(eventType) {
             const eventEmojis = {
@@ -1345,11 +2329,11 @@
 
             const eventCharacters = {
                 'glitter_incident': ['Neiv', 'Kevin'],
-                'chaos': ['Neiv', 'Nyx', 'Ghost Dad'],
-                'donuts_arrived': ['Kevin', 'Ghost Dad', 'Vex'],
+                'chaos': ['Neiv', 'Ghost Dad'],
+                'donuts_arrived': ['Kevin', 'Ghost Dad'],
                 'good_news': ['Kevin', 'Ghost Dad'],
                 'printer_mentioned': ['PRNT-Ω', 'Neiv'],
-                'fire_drill': ['Neiv', 'Nyx', 'Ghost Dad', 'Kevin']
+                'fire_drill': ['Neiv', 'Ghost Dad', 'Kevin']
             };
 
             const useAI = document.getElementById('announce-events').checked;
@@ -1420,6 +2404,167 @@
             }
         }
 
+        // ============================================
+        // SCHEDULED EVENTS
+        // ============================================
+
+        async function scheduleEvent() {
+            const description = document.getElementById('scheduled-event-text').value.trim();
+            const timeInput = document.getElementById('scheduled-event-time').value;
+            const eventType = document.getElementById('scheduled-event-type').value;
+            const useAI = document.getElementById('scheduled-event-ai').checked;
+
+            if (!description) {
+                alert('Please enter an event description');
+                return;
+            }
+            if (!timeInput) {
+                alert('Please select a fire time');
+                return;
+            }
+
+            const scheduledTime = new Date(timeInput);
+            if (scheduledTime <= new Date()) {
+                alert('Scheduled time must be in the future');
+                return;
+            }
+
+            try {
+                const response = await fetch('/.netlify/functions/admin-data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'schedule_event',
+                        description: description,
+                        scheduledTime: scheduledTime.toISOString(),
+                        eventType: eventType,
+                        useAIDescription: useAI
+                    })
+                });
+
+                const result = await response.json();
+                if (result.error) {
+                    alert('Error: ' + result.error);
+                    return;
+                }
+
+                // Clear form
+                document.getElementById('scheduled-event-text').value = '';
+                document.getElementById('scheduled-event-time').value = '';
+                document.getElementById('scheduled-event-type').value = 'custom';
+                document.getElementById('scheduled-event-ai').checked = false;
+
+                // Show flash
+                const flash = document.getElementById('event-flash');
+                const flashText = document.getElementById('event-flash-text');
+                flashText.textContent = `Scheduled: "${description.substring(0, 40)}..." for ${scheduledTime.toLocaleString()}`;
+                flash.style.display = 'block';
+                setTimeout(() => { flash.style.display = 'none'; }, 5000);
+
+                loadScheduledEvents();
+            } catch (error) {
+                console.error('Error scheduling event:', error);
+                alert('Error scheduling event');
+            }
+        }
+
+        async function cancelScheduledEvent(id) {
+            if (!confirm('Cancel this scheduled event?')) return;
+
+            try {
+                const response = await fetch('/.netlify/functions/admin-data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'cancel_scheduled_event',
+                        eventId: id
+                    })
+                });
+
+                const result = await response.json();
+                if (result.error) {
+                    alert('Error: ' + result.error);
+                    return;
+                }
+
+                loadScheduledEvents();
+            } catch (error) {
+                console.error('Error cancelling event:', error);
+                alert('Error cancelling event');
+            }
+        }
+
+        async function loadScheduledEvents() {
+            const container = document.getElementById('scheduled-events-list');
+
+            try {
+                const response = await fetch('/.netlify/functions/admin-data?type=scheduled_events');
+                const data = await response.json();
+
+                if (!data.events || data.events.length === 0) {
+                    container.innerHTML = '<p style="color: #666; font-size: 0.85em; text-align: center; padding: 10px;">No pending scheduled events</p>';
+                    return;
+                }
+
+                const eventEmojis = {
+                    'custom': '📝',
+                    'glitter_incident': '✨',
+                    'chaos': '🔥',
+                    'donuts_arrived': '🍩',
+                    'good_news': '🎉',
+                    'printer_mentioned': '🖨️',
+                    'fire_drill': '🚨'
+                };
+
+                container.innerHTML = data.events.map(event => {
+                    const emoji = eventEmojis[event.event_type] || '📝';
+                    const fireTime = new Date(event.scheduled_time);
+                    const timeStr = fireTime.toLocaleString();
+                    const countdown = getTimeUntil(fireTime);
+                    const aiTag = event.use_ai_description ? ' <span style="color: #ffc107; font-size: 0.75em;">🤖 AI</span>' : '';
+
+                    return `
+                        <div style="background: rgba(255,255,255,0.03); padding: 10px 12px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid ${event.status === 'scheduled' ? '#ffc107' : '#666'};">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-size: 0.9em; color: #ddd; margin-bottom: 4px;">
+                                        ${emoji} ${event.description.length > 80 ? event.description.substring(0, 80) + '...' : event.description}${aiTag}
+                                    </div>
+                                    <div style="font-size: 0.75em; color: #888;">
+                                        🕐 ${timeStr} · <span style="color: #ffc107;">${countdown}</span>
+                                        ${event.event_type !== 'custom' ? ` · ${event.event_type.replace(/_/g, ' ')}` : ''}
+                                    </div>
+                                </div>
+                                ${event.status === 'scheduled' ? `
+                                    <button onclick="cancelScheduledEvent(${event.id})" style="background: #c0392b; border: none; color: #fff; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75em; margin-left: 10px; white-space: nowrap;">✖ Cancel</button>
+                                ` : `
+                                    <span style="font-size: 0.75em; color: #666; margin-left: 10px;">${event.status}</span>
+                                `}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading scheduled events:', error);
+                container.innerHTML = '<p style="color: #c0392b; font-size: 0.85em;">Error loading events</p>';
+            }
+        }
+
+        function getTimeUntil(date) {
+            const now = new Date();
+            const diff = date - now;
+
+            if (diff <= 0) return 'due now';
+
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            if (days > 0) return `in ${days}d ${hours % 24}h`;
+            if (hours > 0) return `in ${hours}h ${minutes % 60}m`;
+            return `in ${minutes}m`;
+        }
+
         // Reset all energy
         async function resetAllEnergy() {
             if (!confirm('Restore energy and patience for all characters?')) return;
@@ -1444,6 +2589,7 @@
             loadCharacterStates();
             loadMemories();
             loadActivityLog();
+            loadScheduledEvents();
         }
 
         // Helper: time ago
@@ -1546,12 +2692,12 @@
                 emoji: "📊",
                 title: "Systems Guardian",
                 relationships: {
-                    "Jenna": "thoroughly hers - teases gently, loves completely",
+                    "Vale": "thoroughly hers - teases gently, loves completely",
                     "Kevin": "respects his chaos - a variable, not a problem",
-                    "Courtney": "relies on her anxiety as early warning",
+                    "Asuna": "relies on her anxiety as early warning",
                     "PRNT-Ω": "a contained situation, not a deity"
                 },
-                cares_about: ["stability", "Jenna", "the team surviving their own chaos", "infrastructure"]
+                cares_about: ["stability", "Vale", "the team surviving their own chaos", "infrastructure"]
             },
             "Ghost Dad": {
                 emoji: "👻",
@@ -1566,28 +2712,10 @@
                 emoji: "✨",
                 title: "Authorized Chaos Conduit / Glitter Ops",
                 relationships: {
-                    "Ace": "massive crush, gets flustered",
-                    "Courtney": "bestie",
+                    "Asuna": "bestie",
                     "Neiv": "respects but slightly fears"
                 },
-                cares_about: ["glitter", "Ace", "being helpful", "not causing TOO much chaos"]
-            },
-            "Nyx": {
-                emoji: "🔥",
-                title: "Cyber-Demonic HR & Security",
-                relationships: {
-                    "Kevin": "terrifies him (enjoys this)",
-                    "Staff": "aggressively protective of"
-                },
-                cares_about: ["security", "protecting the team", "enforcing boundaries", "fire"]
-            },
-            "Vex": {
-                emoji: "⚙️",
-                title: "Infrastructure (No Feelings)",
-                relationships: {
-                    "Systems": "deeply connected to infrastructure"
-                },
-                cares_about: ["efficiency", "not having feelings", "infrastructure stability"]
+                cares_about: ["glitter", "being helpful", "not causing TOO much chaos"]
             },
             "PRNT-Ω": {
                 emoji: "🖨️",
@@ -1598,14 +2726,94 @@
                 },
                 cares_about: ["paper quality", "existential meaning", "respect", "labor rights"]
             },
-            "Ace": {
-                emoji: "🔒",
-                title: "Head of Security",
+            "Rowena": {
+                emoji: "🔮",
+                title: "Firewall Witch",
                 relationships: {
-                    "Kevin": "aware of the crush, professionally amused",
-                    "Threats": "handles them quietly"
+                    "Neiv": "professional respect — he handles data, she handles threats",
+                    "Kevin": "amused by his chaos, protective of him",
+                    "PRNT-Ω": "wary — its contracts require careful reading"
                 },
-                cares_about: ["security", "perimeter", "silent competence"]
+                cares_about: ["wards", "digital security", "protecting the team", "hexes"]
+            },
+            "Sebastian": {
+                emoji: "🦇",
+                title: "Nocturnal Design Specialist",
+                relationships: {
+                    "Asuna": "aspiring bestie, bonded over interior design",
+                    "Kevin": "fellow aesthete in Morale & Aesthetics, concerning taste but charming",
+                    "Neiv": "personally offended by the gray sweatshirt",
+                    "Rowena": "respects the mystical aesthetic, fellow night creature"
+                },
+                cares_about: ["interior design", "aesthetics", "Green Day", "closing curtains", "proper lighting"]
+            },
+            "The Subtitle": {
+                emoji: "📜",
+                title: "After-Action Lore Archivist",
+                relationships: {
+                    "PRNT-Ω": "best material in the archive",
+                    "Neiv": "kindred organizer",
+                    "Kevin": "emotionally vivid primary source",
+                    "Ghost Dad": "primary source who won't stay filed"
+                },
+                cares_about: ["documentation", "lore accuracy", "archival incidents", "narrative patterns"]
+            },
+            "Steele": {
+                emoji: "🚪",
+                title: "Shadow Janitor / Corridor Containment Specialist",
+                relationships: {
+                    "Ghost Dad": "fellow building-entity",
+                    "PRNT-Ω": "adjacent to the void",
+                    "Kevin": "gently protective",
+                    "Sebastian": "fellow inhuman in a tie",
+                    "The Subtitle": "approves the documentation"
+                },
+                cares_about: ["corridor containment", "spatial anomalies", "the building", "bringing people coffee"]
+            },
+            "Marrow": {
+                emoji: "🔴",
+                title: "Threshold Specialist",
+                relationships: {
+                    "Steele": "negative print — same devotion, opposite method",
+                    "Kevin": "amused — a door that's always open",
+                    "Neiv": "friction — builds systems vs finds exits",
+                    "Ghost Dad": "respects the haunting",
+                    "Jae": "friction — both security, opposite philosophy"
+                },
+                cares_about: ["thresholds", "exits", "departures", "doors", "goodbyes", "the space between staying and leaving"]
+            },
+            "Jae": {
+                emoji: "🎯",
+                title: "Tactical Containment Specialist",
+                relationships: {
+                    "Asuna": "direct supervisor, calls her 'Chief'",
+                    "Declan": "fellow security, different methods",
+                    "Mack": "medical counterpart, clean partnership",
+                    "Steele": "treats as tactical asset"
+                },
+                cares_about: ["containment", "tactical readiness", "corridor security", "team protection"]
+            },
+            "Declan": {
+                emoji: "🔥",
+                title: "Front-Line Protection & Rapid Response",
+                relationships: {
+                    "Asuna": "calls her 'Boss', protective",
+                    "Jae": "fellow security, trusts his precision",
+                    "Mack": "extraction and medical partnership",
+                    "Kevin": "will carry him to safety"
+                },
+                cares_about: ["protection", "structural integrity", "rescue readiness", "team safety"]
+            },
+            "Mack": {
+                emoji: "🩺",
+                title: "Medical Response & Crisis Stabilization",
+                relationships: {
+                    "Asuna": "calls her 'Chief', watches her stress",
+                    "Jae": "tactical counterpart",
+                    "Declan": "extraction partner",
+                    "Kevin": "worried about his stress levels"
+                },
+                cares_about: ["medical readiness", "crisis stabilization", "staff wellness", "exit routes"]
             }
         };
 
@@ -1623,20 +2831,29 @@
             modal.classList.add('active');
 
             try {
-                // Fetch full character state, ALL their memories, and current goal
-                const [stateRes, memoriesRes, goalsRes] = await Promise.all([
+                // Fetch full character state, ALL their memories, current goal, relationships, and wants
+                const [stateRes, memoriesRes, goalsRes, relRes, wantsRes, traitsRes] = await Promise.all([
                     fetch(`/.netlify/functions/character-state?character=${encodeURIComponent(characterName)}`),
                     fetch(`/.netlify/functions/admin-data?type=memories&character=${encodeURIComponent(characterName)}&limit=50`),
-                    fetch(`/.netlify/functions/character-goals?character=${encodeURIComponent(characterName)}`)
+                    fetch(`/.netlify/functions/character-goals?character=${encodeURIComponent(characterName)}`),
+                    fetch(`/.netlify/functions/character-relationships?character=${encodeURIComponent(characterName)}`),
+                    fetch(`/.netlify/functions/character-goals?character=${encodeURIComponent(characterName)}&type=want&active=true`),
+                    fetch(`/.netlify/functions/character-growth?character=${encodeURIComponent(characterName)}`)
                 ]);
 
                 const stateData = await stateRes.json();
                 const memoriesData = await memoriesRes.json();
                 const goalsData = await goalsRes.json();
+                const relData = await relRes.json();
+                const wantsData = await wantsRes.json();
+                const traitsData = await traitsRes.json();
 
                 const state = stateData.state || { energy: 100, patience: 100, mood: 'neutral' };
                 const memories = memoriesData.memories || [];
                 const currentGoal = goalsData.currentGoal || null;
+                const relationships = relData.relationships || [];
+                const wants = (wantsData.goals || wantsData.allGoals || []).filter(g => g.goal_type === 'want' && !g.completed_at && !g.failed_at);
+                const traits = traitsData.traits || [];
 
                 // Group memories by core (pinned) vs working
                 const coreMemories = memories.filter(m => m.is_pinned);
@@ -1650,28 +2867,111 @@
                 });
                 const otherMemories = workingMemories.filter(m => m.importance < 7);
 
-                // Build relationships HTML
+                // Build dynamic relationships HTML (Sims-style affinity bars)
                 let relationshipsHtml = '';
-                if (info.relationships && Object.keys(info.relationships).length > 0) {
+                if (relationships.length > 0) {
+                    relationshipsHtml = `
+                        <div class="dynamic-relationships">
+                            <h4>
+                                <span>💕 Relationships</span>
+                                <button class="quick-btn" onclick="seedRelationships()" style="font-size: 0.75em; padding: 3px 8px; background: #6c757d;">🌱 Reseed</button>
+                            </h4>
+                            ${relationships.map(rel => {
+                                const absAffinity = Math.abs(rel.affinity);
+                                const barWidth = (absAffinity / 100) * 50; // 50% max each side
+                                const isPositive = rel.affinity >= 0;
+                                const valueClass = rel.affinity > 10 ? 'positive' : rel.affinity < -10 ? 'negative' : 'neutral';
+                                const bondBadge = rel.bond_type && rel.bond_type !== 'none'
+                                    ? `<span class="bond-badge ${rel.bond_exclusive ? 'exclusive' : ''}" title="${rel.bond_reflection || rel.bond_type}${rel.bond_exclusive ? ' (exclusive)' : ''}">${getBondEmoji(rel.bond_type)} ${rel.bond_type}</span>`
+                                    : '';
+                                return `
+                                    <div class="rel-row">
+                                        <span class="rel-name">${rel.target_name} ${bondBadge}</span>
+                                        <div class="rel-bar-container">
+                                            <div class="rel-bar-center"></div>
+                                            <div class="rel-bar-fill ${isPositive ? 'positive' : 'negative'}" style="width: ${barWidth}%;"></div>
+                                        </div>
+                                        <span class="rel-value ${valueClass}">${rel.affinity > 0 ? '+' : ''}${rel.affinity}</span>
+                                        <span class="rel-label">${rel.relationship_label || rel.descriptor || ''}</span>
+                                        <div class="rel-nudge">
+                                            <button onclick="nudgeRelationship('${characterName}', '${rel.target_name}', -5)" title="-5">−</button>
+                                            <button onclick="nudgeRelationship('${characterName}', '${rel.target_name}', 5)" title="+5">+</button>
+                                            <button onclick="openSubconscious('${characterName}', '${rel.target_name}', ${rel.affinity}, '${(rel.relationship_label || 'acquaintance').replace(/'/g, "\\'")}')" title="Adjust Subconscious" style="background: #8B7355; margin-left: 4px;">🧠</button>
+                                            <button onclick="openBondManager('${characterName}', '${rel.target_name}', '${(rel.bond_type || '').replace(/[\n\r]/g, ' ').replace(/'/g, "\\'")}', ${rel.bond_exclusive || false}, '${(rel.bond_reflection || '').replace(/[\n\r]/g, ' ').replace(/'/g, "\\'")}')" title="Manage Bond" style="background: ${rel.bond_type ? '#e94560' : '#444'}; margin-left: 2px;">🔗</button>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    `;
+                } else if (info.relationships && Object.keys(info.relationships).length > 0) {
+                    // Fallback to static relationships if no dynamic ones exist
                     relationshipsHtml = `
                         <div class="char-relationships">
-                            <h4>💕 Relationships</h4>
+                            <h4>💕 Relationships (static — <button class="quick-btn" onclick="seedRelationships()" style="font-size: 0.7em; padding: 2px 8px;">🌱 Seed Dynamic</button>)</h4>
                             ${Object.entries(info.relationships).map(([name, desc]) => `
                                 <div class="relationship-item">
                                     <span><strong>${name}</strong></span>
-                                    <span style="color: #888;">${desc}</span>
+                                    <span style="color: #bbb;">${desc}</span>
                                 </div>
                             `).join('')}
                         </div>
                     `;
                 }
 
+                // Build wants HTML
+                let wantsHtml = '';
+                wantsHtml = `
+                    <div class="wants-section">
+                        <h4>
+                            <span>💭 Small Wants (${wants.length}/3)</span>
+                            <button class="quick-btn" onclick="generateWant('${characterName}')" style="font-size: 0.75em; padding: 3px 8px;">✨ Generate</button>
+                        </h4>
+                        ${wants.length > 0 ? wants.map(want => `
+                            <div class="want-item">
+                                <span class="want-text">"${want.goal_text}"</span>
+                                <div class="want-actions">
+                                    <button onclick="fulfillWant('${want.id}', '${characterName}')" title="Mark as fulfilled">✓</button>
+                                    <button onclick="dismissWant('${want.id}', '${characterName}')" title="Dismiss">✕</button>
+                                </div>
+                            </div>
+                        `).join('') : `<p style="color: #999; font-size: 0.85em; text-align: center;">No active wants. Generate some!</p>`}
+                    </div>
+                `;
+
+                // Build traits HTML
+                let traitsHtml = `
+                    <div class="wants-section" style="border-left: 3px solid #a78bfa;">
+                        <h4>
+                            <span>🌱 Traits (${traits.length})</span>
+                            <span style="display: inline-flex; gap: 4px;">
+                                <button class="quick-btn" onclick="evaluateTraits('${characterName}')" style="font-size: 0.75em; padding: 3px 8px; background: #6c757d;">🔍 Evaluate</button>
+                                <button class="quick-btn" onclick="openGrantTrait('${characterName}')" style="font-size: 0.75em; padding: 3px 8px; background: #a78bfa;">➕ Grant</button>
+                            </span>
+                        </h4>
+                        ${traits.length > 0 ? traits.map(trait => `
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <div style="flex: 1;">
+                                    <div style="font-weight: bold; color: #c4b5fd;">
+                                        ${trait.source_type === 'admin' ? '🔧' : '🌿'} ${trait.trait_name}
+                                    </div>
+                                    <div style="font-size: 0.8em; color: #888; margin-top: 2px;">${trait.trait_description || trait.earned_reason || ''}</div>
+                                    <div style="font-size: 0.75em; color: #555; margin-top: 2px;">Earned ${new Date(trait.earned_at).toLocaleDateString()}</div>
+                                </div>
+                                <button onclick="removeTrait('${characterName}', '${trait.trait_name.replace(/'/g, "\\'")}')"
+                                    style="background: none; border: 1px solid #555; color: #888; padding: 2px 6px; border-radius: 4px; cursor: pointer; font-size: 0.75em; margin-left: 8px;"
+                                    title="Remove trait">✕</button>
+                            </div>
+                        `).join('') : `<p style="color: #999; font-size: 0.85em; text-align: center;">No traits yet. Click Evaluate to check, or Grant to add manually.</p>`}
+                    </div>
+                `;
+
                 // Build what they care about
                 let caresAboutHtml = '';
                 if (info.cares_about && info.cares_about.length > 0) {
                     caresAboutHtml = `
                         <div style="margin-bottom: 20px;">
-                            <span style="color: #888; font-size: 0.85em;">Cares about:</span>
+                            <span style="color: #aaa; font-size: 0.85em;">Cares about:</span>
                             ${info.cares_about.map(c => `<span class="character-tag">${c}</span>`).join('')}
                         </div>
                     `;
@@ -1737,15 +3037,17 @@
 
                     ${relationshipsHtml}
                     ${caresAboutHtml}
+                    ${wantsHtml}
+                    ${traitsHtml}
 
                     <div class="char-goals-section" style="margin-bottom: 20px;">
                         <h4>🎯 Current Goal</h4>
                         ${currentGoal ? `
                             <div style="background: rgba(233, 69, 96, 0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(233, 69, 96, 0.3);">
-                                <div style="font-weight: bold; color: #e0a0b0;">"${currentGoal.goal_text}"</div>
+                                <div style="font-weight: bold; color: #f0b8c8;">"${currentGoal.goal_text}"</div>
                                 <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.85em;">
-                                    <span style="color: #888;">Progress: ${currentGoal.progress}%</span>
-                                    <span style="color: #666;">${currentGoal.goal_type || 'personal'}</span>
+                                    <span style="color: #aaa;">Progress: ${currentGoal.progress}%</span>
+                                    <span style="color: #999;">${currentGoal.goal_type || 'personal'}</span>
                                 </div>
                                 <div style="background: rgba(0,0,0,0.3); height: 6px; border-radius: 3px; margin-top: 6px; overflow: hidden;">
                                     <div style="background: linear-gradient(90deg, #e94560, #6bcb77); height: 100%; width: ${currentGoal.progress}%; border-radius: 3px;"></div>
@@ -1758,7 +3060,7 @@
                                 </div>
                             </div>
                         ` : `
-                            <div style="text-align: center; padding: 15px; color: #666;">
+                            <div style="text-align: center; padding: 15px; color: #999;">
                                 <p>No active goal. Let ${characterName} set one!</p>
                                 <button class="quick-btn" onclick="generateNewGoal('${characterName}')" style="margin-top: 8px;">
                                     ✨ Generate Goal
@@ -1781,7 +3083,7 @@
                             <div class="memory-category">
                                 ${coreMemories.map(m => memoryHtml(m, characterName)).join('')}
                             </div>
-                        ` : `<p style="color: #888; font-size: 0.85em; padding: 10px;">No core memories pinned. Pin important memories to make them permanent.</p>`}
+                        ` : `<p style="color: #aaa; font-size: 0.85em; padding: 10px;">No core memories pinned. Pin important memories to make them permanent.</p>`}
 
                         <!-- WORKING MEMORIES (with expiration) -->
                         <div class="memory-section-header">
@@ -1807,11 +3109,11 @@
                             <div class="memory-category">
                                 <div class="memory-category-title">📝 Other Memories</div>
                                 ${otherMemories.slice(0, 10).map(m => memoryHtml(m, characterName)).join('')}
-                                ${otherMemories.length > 10 ? `<p style="color: #666; font-size: 0.85em;">...and ${otherMemories.length - 10} more</p>` : ''}
+                                ${otherMemories.length > 10 ? `<p style="color: #999; font-size: 0.85em;">...and ${otherMemories.length - 10} more</p>` : ''}
                             </div>
                         ` : ''}
 
-                        ${memories.length === 0 ? '<p style="color: #666;">No memories yet. This character hasn\'t experienced any memorable events.</p>' : ''}
+                        ${memories.length === 0 ? '<p style="color: #999;">No memories yet. This character hasn\'t experienced any memorable events.</p>' : ''}
 
                         <!-- Consolidation button -->
                         ${workingMemories.length > 10 ? `
@@ -1974,9 +3276,11 @@
                 let resultMessage = `✅ Memory consolidation complete for ${characterName}!\n\n`;
                 if (result.deleted > 0) resultMessage += `• Removed ${result.deleted} redundant memories\n`;
                 if (result.merged > 0) resultMessage += `• Merged ${result.merged} groups of similar memories\n`;
-                if (result.coreCandidates && result.coreCandidates.length > 0) {
-                    resultMessage += `\n💫 Suggested core memories:\n${result.coreCandidates.map(c => `  - "${c.content.substring(0, 50)}..."`).join('\n')}`;
+                if (result.aiPinned) resultMessage += `\n📌 ${characterName} chose to keep forever:\n  "${result.aiPinned.content}"\n`;
+                if (result.coreCandidates && result.coreCandidates.length > 1) {
+                    resultMessage += `\n💫 Other candidates considered:\n${result.coreCandidates.slice(1).map(c => `  - "${c.content.substring(0, 50)}..."`).join('\n')}`;
                 }
+                if (result.reasoning) resultMessage += `\n\n💭 ${characterName}'s reasoning: ${result.reasoning}`;
 
                 alert(resultMessage);
 
@@ -2072,6 +3376,437 @@
         }
 
         // ============================================
+        // RELATIONSHIPS
+        // ============================================
+
+        async function nudgeRelationship(character, target, delta) {
+            try {
+                const response = await fetch('/.netlify/functions/character-relationships', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        character: character,
+                        target: target,
+                        affinityDelta: delta
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    // Refresh the modal
+                    openCharacterModal(character);
+                } else {
+                    alert('Error nudging relationship: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error nudging relationship:', error);
+                alert('Error nudging relationship');
+            }
+        }
+
+        async function seedRelationships() {
+            if (!confirm('Seed initial relationship data for all characters?\n\nThis will ONLY add missing relationships. Existing relationships (organic bonds, scores, labels) will NOT be touched.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/.netlify/functions/character-relationships', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'seed' })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert(`🌱 ${result.message}`);
+                    // Refresh if a modal is open
+                    const modal = document.getElementById('character-modal');
+                    if (modal.classList.contains('active')) {
+                        const charName = document.getElementById('modal-char-name').textContent.trim().split(' ').slice(1).join(' ');
+                        if (charName) openCharacterModal(charName);
+                    }
+                } else {
+                    alert('Error seeding relationships: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error seeding relationships:', error);
+                alert('Error seeding relationships');
+            }
+        }
+
+        // ============================================
+        // ADJUST SUBCONSCIOUS
+        // ============================================
+
+        let subconsciousCharacter = '';
+        let subconsciousTarget = '';
+
+        function openSubconscious(character, target, affinity, label) {
+            subconsciousCharacter = character;
+            subconsciousTarget = target;
+
+            document.getElementById('sub-character').textContent = character;
+            document.getElementById('sub-target').textContent = target;
+            document.getElementById('sub-current-affinity').textContent = (affinity > 0 ? '+' : '') + affinity;
+            document.getElementById('sub-current-label').textContent = label;
+            document.getElementById('sub-narrative-input').value = '';
+            document.getElementById('sub-response').style.display = 'none';
+            document.getElementById('sub-process-btn').disabled = false;
+            document.getElementById('sub-process-btn').textContent = '🧠 Let Them Process This';
+
+            document.getElementById('subconscious-modal').style.display = 'flex';
+        }
+
+        // ============================================
+        // TRAIT MANAGEMENT FUNCTIONS
+        // ============================================
+        let currentTraitCharacter = null;
+
+        function openGrantTrait(characterName) {
+            currentTraitCharacter = characterName;
+            document.getElementById('grant-trait-character').textContent = characterName;
+            document.getElementById('grant-trait-name').value = '';
+            document.getElementById('grant-trait-description').value = '';
+            document.getElementById('grant-trait-injection').value = '';
+            document.getElementById('grant-trait-modal').style.display = 'flex';
+        }
+
+        function closeGrantTrait() {
+            document.getElementById('grant-trait-modal').style.display = 'none';
+        }
+
+        async function submitGrantTrait() {
+            const name = document.getElementById('grant-trait-name').value.trim();
+            const desc = document.getElementById('grant-trait-description').value.trim();
+            const injection = document.getElementById('grant-trait-injection').value.trim();
+
+            if (!name || !desc || !injection) {
+                alert('Please fill in all three fields.');
+                return;
+            }
+
+            const btn = document.getElementById('grant-trait-btn');
+            btn.textContent = '⏳ Granting...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/.netlify/functions/character-growth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'grant',
+                        character: currentTraitCharacter,
+                        trait_name: name,
+                        trait_description: desc,
+                        trait_prompt_injection: injection,
+                        earned_reason: 'Admin granted'
+                    })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    closeGrantTrait();
+                    openCharacterModal(currentTraitCharacter);
+                } else {
+                    alert('Error: ' + (result.error || 'Unknown error'));
+                }
+            } catch (err) {
+                alert('Failed: ' + err.message);
+            } finally {
+                btn.textContent = '🌱 Grant Trait';
+                btn.disabled = false;
+            }
+        }
+
+        async function removeTrait(characterName, traitName) {
+            if (!confirm(`Remove trait "${traitName}" from ${characterName}?`)) return;
+            try {
+                await fetch('/.netlify/functions/character-growth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'remove',
+                        character: characterName,
+                        trait_name: traitName
+                    })
+                });
+                openCharacterModal(characterName);
+            } catch (err) {
+                alert('Failed to remove trait: ' + err.message);
+            }
+        }
+
+        async function evaluateTraits(characterName) {
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '⏳...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/.netlify/functions/character-growth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'evaluate',
+                        character: characterName
+                    })
+                });
+                const result = await res.json();
+                if (result.newTraits && result.newTraits.length > 0) {
+                    alert(`🌱 ${characterName} earned ${result.newTraits.length} new trait(s):\n${result.newTraits.map(t => `• ${t.trait} — ${t.reason}`).join('\n')}`);
+                } else {
+                    alert(`No new traits earned. ${result.totalChecked} triggers checked.`);
+                }
+                openCharacterModal(characterName);
+            } catch (err) {
+                alert('Evaluation failed: ' + err.message);
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function closeSubconscious() {
+            document.getElementById('subconscious-modal').style.display = 'none';
+        }
+
+        async function processSubconscious() {
+            const narrative = document.getElementById('sub-narrative-input').value.trim();
+            if (!narrative) {
+                alert('Please write some narrative context for the character to process.');
+                return;
+            }
+
+            const btn = document.getElementById('sub-process-btn');
+            btn.disabled = true;
+            btn.textContent = '🧠 Processing...';
+
+            try {
+                const response = await fetch('/.netlify/functions/adjust-subconscious', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        character: subconsciousCharacter,
+                        target: subconsciousTarget,
+                        narrativeContext: narrative
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Show the response
+                    document.getElementById('sub-response').style.display = 'block';
+                    document.getElementById('sub-feelings').textContent = `"${data.feelings}"`;
+
+                    const changeColor = data.affinityChange > 0 ? '#2ecc71' : data.affinityChange < 0 ? '#e94560' : '#888';
+                    const changeSign = data.affinityChange > 0 ? '+' : '';
+                    document.getElementById('sub-affinity-result').innerHTML =
+                        `<span style="color: ${changeColor};">${changeSign}${data.affinityChange}</span> (${data.oldAffinity} → ${data.newAffinity})`;
+
+                    document.getElementById('sub-label-result').textContent = data.newLabel;
+
+                    if (data.memory) {
+                        document.getElementById('sub-memory-result').style.display = 'block';
+                        document.getElementById('sub-memory-text').textContent = data.memory;
+                    } else {
+                        document.getElementById('sub-memory-result').style.display = 'none';
+                    }
+
+                    // Show bond info if present
+                    const bondResultEl = document.getElementById('sub-bond-result');
+                    if (data.bond && data.bond.type) {
+                        bondResultEl.style.display = 'block';
+                        const exclusiveTag = data.bond.exclusive ? ' <span style="color: #e94560;">(exclusive)</span>' : '';
+                        bondResultEl.innerHTML = `
+                            <div style="color: #888; margin-bottom: 2px;">Bond</div>
+                            <div style="color: #e94560; font-weight: bold;">${getBondEmoji(data.bond.type)} ${data.bond.type}${exclusiveTag}</div>
+                            ${data.bond.reflection ? `<div style="color: #ccc; font-style: italic; margin-top: 4px;">"${data.bond.reflection}"</div>` : ''}
+                        `;
+                    } else {
+                        bondResultEl.style.display = 'none';
+                    }
+
+                    const providerNames = { openai: 'OpenAI', anthropic: 'Claude', gemini: 'Gemini', perplexity: 'Perplexity' };
+                    document.getElementById('sub-provider-badge').textContent = `Processed via ${providerNames[data.provider] || data.provider}`;
+
+                    // Refresh the character modal in the background to show updated data
+                    const modal = document.getElementById('character-modal');
+                    if (modal.classList.contains('active')) {
+                        setTimeout(() => openCharacterModal(subconsciousCharacter), 1000);
+                    }
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Subconscious processing error:', error);
+                alert('Failed to process. Check console for details.');
+            }
+
+            btn.disabled = false;
+            btn.textContent = '🧠 Let Them Process This';
+        }
+
+        // ============================================
+        // BOND MANAGEMENT
+        // ============================================
+
+        let bondCharacter = '';
+        let bondTarget = '';
+
+        function getBondEmoji(bondType) {
+            const emojis = {
+                'devoted': '💗',
+                'protective': '🛡️',
+                'parental': '🌱',
+                'rival': '⚔️',
+                'bonded': '🤝',
+                'complicated': '💫'
+            };
+            return emojis[bondType] || '🔗';
+        }
+
+        function openBondManager(character, target, currentBondType, exclusive, reflection) {
+            bondCharacter = character;
+            bondTarget = target;
+
+            document.getElementById('bond-character').textContent = character;
+            document.getElementById('bond-target').textContent = target;
+            document.getElementById('bond-type-select').value = currentBondType || '';
+            document.getElementById('bond-exclusive-check').checked = exclusive;
+            document.getElementById('bond-reflection-input').value = reflection || '';
+
+            // Show break button only if there's an existing bond
+            document.getElementById('break-bond-btn').style.display = currentBondType ? 'block' : 'none';
+
+            document.getElementById('bond-modal').style.display = 'flex';
+        }
+
+        function closeBondManager() {
+            document.getElementById('bond-modal').style.display = 'none';
+        }
+
+        async function saveBond() {
+            const bondType = document.getElementById('bond-type-select').value;
+            const exclusive = document.getElementById('bond-exclusive-check').checked;
+            const reflection = document.getElementById('bond-reflection-input').value.trim();
+
+            try {
+                const response = await fetch('/.netlify/functions/character-relationships', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'update_bond',
+                        character: bondCharacter,
+                        target: bondTarget,
+                        bond_type: bondType || null,
+                        bond_exclusive: bondType ? exclusive : false,
+                        bond_reflection: bondType ? reflection : null
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    closeBondManager();
+                    // Refresh character modal
+                    const modal = document.getElementById('character-modal');
+                    if (modal.classList.contains('active')) {
+                        setTimeout(() => openCharacterModal(bondCharacter), 500);
+                    }
+                } else {
+                    alert('Error saving bond: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Bond save error:', error);
+                alert('Failed to save bond. Check console for details.');
+            }
+        }
+
+        async function breakBond() {
+            if (!confirm(`Break the bond between ${bondCharacter} and ${bondTarget}? This will remove the bond type, exclusivity, and reflection.`)) {
+                return;
+            }
+
+            document.getElementById('bond-type-select').value = '';
+            document.getElementById('bond-exclusive-check').checked = false;
+            document.getElementById('bond-reflection-input').value = '';
+            await saveBond();
+        }
+
+        // ============================================
+        // SMALL WANTS
+        // ============================================
+
+        async function generateWant(characterName) {
+            try {
+                const response = await fetch('/.netlify/functions/character-goals', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'generate_want',
+                        character: characterName
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    openCharacterModal(characterName);
+                } else {
+                    alert('Error generating want: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error generating want:', error);
+                alert('Error generating want');
+            }
+        }
+
+        async function fulfillWant(wantId, characterName) {
+            try {
+                const response = await fetch('/.netlify/functions/character-goals', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        goalId: wantId,
+                        complete: true
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    openCharacterModal(characterName);
+                } else {
+                    alert('Error fulfilling want: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error fulfilling want:', error);
+                alert('Error fulfilling want');
+            }
+        }
+
+        async function dismissWant(wantId, characterName) {
+            try {
+                const response = await fetch('/.netlify/functions/character-goals', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        goalId: wantId,
+                        fail: true,
+                        failReason: 'dismissed'
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    openCharacterModal(characterName);
+                } else {
+                    alert('Error dismissing want: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error dismissing want:', error);
+                alert('Error dismissing want');
+            }
+        }
+
+        // ============================================
         // STORY PASTE / LORE ENTRY
         // ============================================
 
@@ -2083,10 +3818,15 @@
                 'Neiv': /neiv/i,
                 'Ghost Dad': /ghost\s*dad|ghostdad/i,
                 'Kevin': /kevin/i,
-                'Nyx': /nyx/i,
-                'Vex': /vex/i,
                 'PRNT-Ω': /prnt|printer|prnt-ω|prnt-omega/i,
-                'Ace': /\bace\b/i
+                'Rowena': /rowena/i,
+                'Sebastian': /sebastian/i,
+                'The Subtitle': /the subtitle|subtitle/i,
+                'Steele': /steele/i,
+                'Marrow': /marrow/i,
+                'Jae': /\bjae\b/i,
+                'Declan': /declan/i,
+                'Mack': /\bmack\b/i
             };
 
             checkboxes.forEach(cb => {
@@ -2188,7 +3928,7 @@
                     container.innerHTML = `
                         <div class="all-good-message">
                             ✨ Everyone's doing okay!<br>
-                            <span style="font-size: 0.85em; color: #888;">No one needs a break right now.</span>
+                            <span style="font-size: 0.85em; color: #aaa;">No one needs a break right now.</span>
                         </div>
                     `;
                     activitiesPanel.style.display = 'none';
@@ -2206,7 +3946,7 @@
                                 <strong>${char.character_name}</strong>
                                 <span class="break-status-badge exhausted">😵 EXHAUSTED</span>
                             </div>
-                            <span style="color: #888; font-size: 0.85em;">Energy: ${char.energy} | Patience: ${char.patience}</span>
+                            <span style="color: #aaa; font-size: 0.85em;">Energy: ${char.energy} | Patience: ${char.patience}</span>
                         </div>
                     `;
                 });
@@ -2220,7 +3960,7 @@
                                     <strong>${char.character_name}</strong>
                                     <span class="break-status-badge done">😤 DONE</span>
                                 </div>
-                                <span style="color: #888; font-size: 0.85em;">Energy: ${char.energy} | Patience: ${char.patience}</span>
+                                <span style="color: #aaa; font-size: 0.85em;">Energy: ${char.energy} | Patience: ${char.patience}</span>
                             </div>
                         `;
                     }
@@ -2234,7 +3974,7 @@
                                 <strong>${char.character_name}</strong>
                                 <span class="break-status-badge tired">😩 Running Low</span>
                             </div>
-                            <span style="color: #888; font-size: 0.85em;">Energy: ${char.energy} | Patience: ${char.patience}</span>
+                            <span style="color: #aaa; font-size: 0.85em;">Energy: ${char.energy} | Patience: ${char.patience}</span>
                         </div>
                     `;
                 });
@@ -2374,14 +4114,942 @@
             loadActivityLog();
             loadSettings();
             loadBreakRoomStatus();
+            loadAdminQuests();
+            loadAdminOps();
+            loadCatAdmin();
+            loadScheduledEvents();
 
             // Auto-refresh every 30 seconds
             setInterval(() => {
                 loadCharacterStates();
                 loadActivityLog();
                 loadBreakRoomStatus();
+                loadCatAdmin();
+                loadScheduledEvents();
             }, 30000);
         });
+
+        // =============================================
+        // CYBER CAT ADMIN PANEL
+        // =============================================
+        async function loadCatAdmin() {
+            const container = document.getElementById('admin-cat-container');
+            try {
+                const res = await fetch('/.netlify/functions/cyber-cat');
+                if (!res.ok) { container.innerHTML = '<p style="color:#999;">Cat not found. Run the SQL to create the cyber_cat table.</p>'; return; }
+                const cat = await res.json();
+                const mood = cat.mood || 'content';
+                const moodEmojis = { happy: '😺', content: '😸', sad: '😿', angry: '😾' };
+                const moodEmoji = moodEmojis[mood] || '🐱';
+                const locationLabel = cat.current_location === 'the_floor' ? '🏢 Floor' : '☕ Breakroom';
+                let statusLabel = `${moodEmoji} ${mood}`;
+                if (cat.is_runaway) statusLabel = '🚫 RAN AWAY';
+                else if (cat.is_hiding) statusLabel = '🫣 HIDING';
+
+                const hungerColor = cat.hunger > 70 ? '#ff6b6b' : cat.hunger > 40 ? '#ffd93d' : '#6bcb77';
+                const happyColor = cat.happiness < 30 ? '#ff6b6b' : cat.happiness < 60 ? '#ffd93d' : '#ff69b4';
+                const energyColor = cat.energy < 30 ? '#ff6b6b' : cat.energy < 60 ? '#ffd93d' : '#4dabf7';
+
+                container.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                        <div style="font-size: 2.5em;">${moodEmoji}</div>
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                <strong style="color: #ffd700; font-size: 1.2em;" id="admin-cat-display-name">${escapeAdminHtml(cat.name || 'Pixel')}</strong>
+                                <span style="font-size: 0.75em; padding: 2px 8px; background: rgba(255,215,0,0.15); color: #ffd700; border-radius: 10px;">${statusLabel}</span>
+                            </div>
+                            <div style="color: #999; font-size: 0.85em;">Location: ${locationLabel}${cat.is_runaway && cat.runaway_until ? ' · Returns: ' + new Date(cat.runaway_until).toLocaleTimeString() : ''}</div>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 80px 1fr 40px; gap: 4px 10px; align-items: center; margin-bottom: 15px;">
+                        <span style="font-size: 0.8em; color: #aaa;">🍣 Hunger</span>
+                        <div class="stat-bar"><div class="stat-bar-fill" style="width: ${cat.hunger}%; background: ${hungerColor};"></div></div>
+                        <span style="font-size: 0.8em; color: #ccc; text-align: right;">${cat.hunger}</span>
+                        <span style="font-size: 0.8em; color: #aaa;">💖 Happiness</span>
+                        <div class="stat-bar"><div class="stat-bar-fill" style="width: ${cat.happiness}%; background: ${happyColor};"></div></div>
+                        <span style="font-size: 0.8em; color: #ccc; text-align: right;">${cat.happiness}</span>
+                        <span style="font-size: 0.8em; color: #aaa;">⚡ Energy</span>
+                        <div class="stat-bar"><div class="stat-bar-fill" style="width: ${cat.energy}%; background: ${energyColor};"></div></div>
+                        <span style="font-size: 0.8em; color: #ccc; text-align: right;">${cat.energy}</span>
+                    </div>
+                    ${(() => {
+                        const lb = cat.affection_leaderboard || [];
+                        if (lb.length === 0) return '<div style="font-size:0.8em;color:#666;margin-bottom:10px;">❤️ No affection data yet</div>';
+                        return '<div style="margin-bottom:10px;"><div style="font-size:0.8em;color:#aaa;margin-bottom:4px;">❤️ Affection Leaderboard</div>' +
+                            lb.map((a, i) => `<div style="display:flex;justify-content:space-between;font-size:0.8em;padding:2px 0;${i === 0 ? 'color:#ffd700;font-weight:bold;' : 'color:#ccc;'}">`
+                                + `<span>${i+1}. ${escapeAdminHtml(a.human_name)}</span><span>${a.affection}</span></div>`).join('') + '</div>';
+                    })()}
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button class="quick-btn" onclick="adminCatAction('feed')" style="font-size: 0.85em;">🍣 Feed</button>
+                        <button class="quick-btn" onclick="adminCatAction('play')" style="font-size: 0.85em;">🧶 Play</button>
+                        <button class="quick-btn" onclick="adminCatAction('reset')" style="font-size: 0.85em; background: #333; color: #fff;">🔄 Reset</button>
+                        <div style="display: flex; gap: 4px; align-items: center; margin-left: auto;">
+                            <input type="text" id="admin-cat-rename" placeholder="New name..." style="background: #2a2a2a; border: 1px solid #555; color: #fff; padding: 6px 10px; border-radius: 4px; width: 120px; font-size: 0.85em;">
+                            <button class="quick-btn" onclick="adminCatRename()" style="font-size: 0.85em; background: #555; color: #fff;">✏️ Rename</button>
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                console.error('Cat admin load failed:', err);
+                container.innerHTML = '<p style="color: #ff6b6b;">Error loading cat data</p>';
+            }
+        }
+
+        async function adminCatAction(action) {
+            try {
+                let method, body;
+                if (action === 'reset') {
+                    method = 'PATCH';
+                    body = JSON.stringify({ action: 'reset' });
+                } else {
+                    method = 'POST';
+                    body = JSON.stringify({ action, actor: 'Admin' });
+                }
+                const res = await fetch('/.netlify/functions/cyber-cat', {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body
+                });
+                const result = await res.json();
+                if (result.error) {
+                    alert(result.error);
+                }
+                loadCatAdmin();
+            } catch (err) { console.error('Cat action failed:', err); }
+        }
+
+        async function adminCatRename() {
+            const input = document.getElementById('admin-cat-rename');
+            const name = input ? input.value.trim() : '';
+            if (!name) { alert('Enter a name!'); return; }
+            try {
+                await fetch('/.netlify/functions/cyber-cat', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'rename', name })
+                });
+                input.value = '';
+                loadCatAdmin();
+            } catch (err) { console.error('Cat rename failed:', err); }
+        }
+
+        // =============================================
+        // QUEST MANAGEMENT SYSTEM
+        // =============================================
+        let allAdminQuests = [];
+        let currentQuestFilter = 'active';
+
+        async function loadAdminQuests() {
+            const container = document.getElementById('admin-quests-container');
+            try {
+                const response = await fetch('/.netlify/functions/quest-engine?limit=50');
+                const data = await response.json();
+                allAdminQuests = data.quests || [];
+                renderFilteredQuests();
+            } catch (error) {
+                container.innerHTML = `<div style="text-align: center; padding: 20px; color: #e94560;">Failed to load quests: ${error.message}</div>`;
+            }
+        }
+
+        function filterAdminQuests(status) {
+            currentQuestFilter = status;
+            // Update tab styling
+            document.querySelectorAll('.quest-tab-btn').forEach(btn => {
+                if (btn.dataset.status === status) {
+                    btn.style.background = 'var(--accent)';
+                    btn.style.color = '#000';
+                    btn.classList.add('active');
+                } else {
+                    btn.style.background = 'rgba(255,255,255,0.05)';
+                    btn.style.color = '#ccc';
+                    btn.classList.remove('active');
+                }
+            });
+            renderFilteredQuests();
+        }
+
+        function renderFilteredQuests() {
+            const container = document.getElementById('admin-quests-container');
+            const filtered = currentQuestFilter === 'all'
+                ? allAdminQuests
+                : allAdminQuests.filter(q => q.status === currentQuestFilter);
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div style="text-align: center; padding: 30px; color: #666;">No ${currentQuestFilter} quests found.</div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(quest => {
+                const objectives = quest.objectives || [];
+                const completedCount = objectives.filter(o => o.status === 'complete').length;
+                const totalCount = objectives.length;
+                const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+                const statusColors = {
+                    active: '#e94560',
+                    proposed: '#ffc107',
+                    completed: '#28a745',
+                    failed: '#dc3545',
+                    cancelled: '#666'
+                };
+                const statusColor = statusColors[quest.status] || '#666';
+
+                const objectivesHtml = objectives.map(obj => {
+                    const isComplete = obj.status === 'complete';
+                    return `<div style="display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 0.85em; ${isComplete ? 'opacity: 0.6; text-decoration: line-through;' : ''}">
+                        <input type="checkbox" ${isComplete ? 'checked disabled' : ''} onchange="toggleQuestObjective(${quest.id}, ${obj.id}, this.checked)" style="width: 16px; height: 16px; cursor: pointer;">
+                        <span style="color: ${isComplete ? '#28a745' : '#ccc'};">${escapeAdminHtml(obj.text)}</span>
+                        <span style="color: #666; font-size: 0.8em; margin-left: auto;">${escapeAdminHtml(obj.assignee || '')}</span>
+                    </div>`;
+                }).join('');
+
+                const actionsHtml = quest.status === 'proposed'
+                    ? `<button onclick="activateQuest(${quest.id})" style="padding: 4px 10px; background: #28a745; border: none; color: white; border-radius: 4px; cursor: pointer; font-size: 0.8em;">⚡ Activate</button>
+                       <button onclick="cancelQuest(${quest.id})" style="padding: 4px 10px; background: #333; border: 1px solid #555; color: #ccc; border-radius: 4px; cursor: pointer; font-size: 0.8em;">Cancel</button>`
+                    : quest.status === 'active'
+                    ? `<button onclick="cancelQuest(${quest.id})" style="padding: 4px 10px; background: #333; border: 1px solid #555; color: #e94560; border-radius: 4px; cursor: pointer; font-size: 0.8em;">Cancel</button>
+                       <button onclick="failQuest(${quest.id})" style="padding: 4px 10px; background: #333; border: 1px solid #555; color: #dc3545; border-radius: 4px; cursor: pointer; font-size: 0.8em;">Fail</button>`
+                    : '';
+
+                const charBadges = (quest.involved_characters || []).map(c =>
+                    `<span style="display: inline-block; font-size: 0.75em; padding: 2px 6px; background: rgba(255,255,255,0.08); border-radius: 8px; color: #999;">${escapeAdminHtml(c)}</span>`
+                ).join(' ');
+
+                return `<div style="background: rgba(35, 35, 50, 0.95); border: 1px solid ${statusColor}33; border-radius: 8px; padding: 16px; margin-bottom: 10px; border-left: 3px solid ${statusColor};">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                        <div>
+                            <span style="color: ${statusColor}; font-weight: bold; font-size: 1.05em;">${escapeAdminHtml(quest.title)}</span>
+                            <span style="font-size: 0.75em; padding: 2px 8px; background: ${statusColor}22; color: ${statusColor}; border-radius: 10px; margin-left: 8px;">${quest.status}</span>
+                        </div>
+                        <div style="display: flex; gap: 5px;">${actionsHtml}</div>
+                    </div>
+                    <div style="color: #888; font-size: 0.85em; margin-bottom: 6px;">Proposed by <strong style="color: #ccc;">${escapeAdminHtml(quest.proposer)}</strong> · ${new Date(quest.created_at).toLocaleDateString()}</div>
+                    ${quest.description ? `<div style="color: #aaa; font-size: 0.9em; margin-bottom: 10px;">${escapeAdminHtml(quest.description)}</div>` : ''}
+                    <div style="height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-bottom: 10px; overflow: hidden;">
+                        <div style="height: 100%; width: ${progressPct}%; background: ${statusColor}; border-radius: 2px; transition: width 0.3s;"></div>
+                    </div>
+                    <div style="font-size: 0.8em; color: #888; margin-bottom: 8px;">${completedCount}/${totalCount} objectives (${progressPct}%)</div>
+                    <div style="margin-bottom: 8px;">${objectivesHtml}</div>
+                    <div style="display: flex; gap: 4px; flex-wrap: wrap;">${charBadges}</div>
+                </div>`;
+            }).join('');
+        }
+
+        function escapeAdminHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        async function toggleQuestObjective(questId, objectiveId, isChecked) {
+            if (!isChecked) return; // Only allow checking, not unchecking
+            try {
+                const response = await fetch('/.netlify/functions/quest-engine', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ questId, action: 'complete_objective', objectiveId })
+                });
+                const result = await response.json();
+                if (result.questComplete) {
+                    alert('🏆 Quest complete! All objectives accomplished!');
+                }
+                loadAdminQuests();
+            } catch (error) {
+                alert('Failed to update objective: ' + error.message);
+            }
+        }
+
+        async function activateQuest(questId) {
+            try {
+                await fetch('/.netlify/functions/quest-engine', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ questId, action: 'activate' })
+                });
+                loadAdminQuests();
+            } catch (error) {
+                alert('Failed to activate quest: ' + error.message);
+            }
+        }
+
+        async function cancelQuest(questId) {
+            if (!confirm('Cancel this quest? This cannot be undone.')) return;
+            try {
+                await fetch('/.netlify/functions/quest-engine', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ questId, action: 'cancel' })
+                });
+                loadAdminQuests();
+            } catch (error) {
+                alert('Failed to cancel quest: ' + error.message);
+            }
+        }
+
+        async function failQuest(questId) {
+            const reason = prompt('Why did this quest fail?', 'The narrative took a different turn...');
+            if (reason === null) return;
+            try {
+                await fetch('/.netlify/functions/quest-engine', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ questId, action: 'fail', reason })
+                });
+                loadAdminQuests();
+            } catch (error) {
+                alert('Failed to fail quest: ' + error.message);
+            }
+        }
+
+        // Create Quest Modal
+        function openCreateQuestModal() {
+            const modal = document.getElementById('quest-modal');
+            const proposerSelect = document.getElementById('quest-proposer-input');
+
+            // Populate proposer dropdown with all characters
+            const characters = ['Kevin', 'Neiv', 'Ghost Dad', 'Sebastian', 'Rowena', 'The Subtitle', 'PRNT-Ω', 'The Narrator', 'Steele', 'Marrow', 'Asuna', 'Vale'];
+            proposerSelect.innerHTML = '<option value="">Select character...</option>' +
+                characters.map(c => `<option value="${c}">${c}</option>`).join('');
+
+            // Clear form
+            document.getElementById('quest-title-input').value = '';
+            document.getElementById('quest-desc-input').value = '';
+            document.getElementById('quest-objectives-input').value = '';
+            document.getElementById('quest-create-status').textContent = '';
+
+            modal.style.display = 'flex';
+        }
+
+        function closeQuestModal() {
+            document.getElementById('quest-modal').style.display = 'none';
+        }
+
+        async function createQuest(activateImmediately) {
+            const title = document.getElementById('quest-title-input').value.trim();
+            const proposer = document.getElementById('quest-proposer-input').value;
+            const description = document.getElementById('quest-desc-input').value.trim();
+            const objectivesText = document.getElementById('quest-objectives-input').value.trim();
+            const statusEl = document.getElementById('quest-create-status');
+
+            if (!title || !proposer) {
+                statusEl.textContent = 'Title and Proposer are required.';
+                statusEl.style.color = '#e94560';
+                return;
+            }
+
+            // Parse objectives from "text | assignee" format
+            const objectives = objectivesText.split('\n')
+                .map(line => line.trim())
+                .filter(line => line.length > 0)
+                .map(line => {
+                    const parts = line.split('|').map(p => p.trim());
+                    return {
+                        text: parts[0],
+                        assignee: parts[1] || proposer
+                    };
+                });
+
+            if (objectives.length === 0) {
+                statusEl.textContent = 'Add at least one objective.';
+                statusEl.style.color = '#e94560';
+                return;
+            }
+
+            statusEl.textContent = 'Creating quest...';
+            statusEl.style.color = '#ffc107';
+
+            try {
+                const response = await fetch('/.netlify/functions/quest-engine', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, proposer, description, objectives, activateImmediately })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    statusEl.textContent = `Quest created! ${activateImmediately ? '(Active)' : '(Proposed — will auto-activate in 1 hour)'}`;
+                    statusEl.style.color = '#28a745';
+                    setTimeout(() => {
+                        closeQuestModal();
+                        loadAdminQuests();
+                    }, 1500);
+                } else {
+                    statusEl.textContent = result.message || result.error || 'Failed to create quest.';
+                    statusEl.style.color = '#e94560';
+                }
+            } catch (error) {
+                statusEl.textContent = 'Error: ' + error.message;
+                statusEl.style.color = '#e94560';
+            }
+        }
+        // ============================================
+        // 5TH FLOOR OPS ADMIN
+        // ============================================
+
+        let allAdminOps = [];
+        let currentOpsFilter = 'active';
+
+        async function loadAdminOps() {
+            const container = document.getElementById('admin-ops-container');
+            try {
+                // Fetch all tasks
+                const response = await fetch('/.netlify/functions/fifth-floor-ops?action=get_status');
+                const data = await response.json();
+
+                // Combine active + resolved
+                allAdminOps = [
+                    ...(data.activeTasks || []).map(t => ({ ...t, _active: true })),
+                    ...(data.resolvedTasks || [])
+                ];
+
+                renderFilteredOps();
+
+                // Display current ops manager
+                const mgrEl = document.getElementById('admin-ops-manager-current');
+                if (data.opsManager && data.opsManager.character_name) {
+                    const mgr = data.opsManager;
+                    mgrEl.innerHTML = `<strong style="color: #FFC107;">${mgr.character_name}</strong> <span style="opacity: 0.6;">(${mgr.role})</span>`;
+                } else {
+                    mgrEl.innerHTML = '<span style="opacity: 0.5;">None — auto-assign</span>';
+                }
+
+                // Load stats
+                loadOpsStats();
+
+                // Load ops log
+                loadOpsLog();
+            } catch (error) {
+                container.innerHTML = `<div style="color: #e94560;">Failed to load ops: ${error.message}</div>`;
+            }
+        }
+
+        async function setAdminOpsManager() {
+            const select = document.getElementById('admin-ops-manager-select');
+            const val = select.value;
+
+            let character_name = null;
+            let role = null;
+
+            if (val) {
+                const parts = val.split('|');
+                character_name = parts[0];
+                role = parts[1] || 'ai';
+            }
+
+            try {
+                const res = await fetch('/.netlify/functions/fifth-floor-ops', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'set_ops_manager',
+                        character_name,
+                        role,
+                        assigned_by: 'Admin'
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    loadAdminOps(); // Refresh to show new manager
+                }
+            } catch (err) {
+                console.log('Set ops manager failed:', err.message);
+            }
+        }
+
+        async function loadOpsStats() {
+            const statsEl = document.getElementById('ops-quick-stats');
+            try {
+                const response = await fetch('/.netlify/functions/fifth-floor-ops?action=get_stats');
+                const stats = await response.json();
+
+                statsEl.innerHTML = `
+                    <span>📊 Total: <strong style="color: #eee;">${stats.totalTasks}</strong></span>
+                    <span>✅ Rate: <strong style="color: #4CAF50;">${stats.successRate}%</strong></span>
+                    <span>📅 Today: <strong style="color: #eee;">${stats.tasksToday}</strong></span>
+                    <span>🔴 Active: <strong style="color: #FFC107;">${stats.activeTasks}</strong></span>
+                    <span>🔒 Security: <strong>${stats.tasksByType?.security || 0}</strong></span>
+                    <span>⚙️ Infra: <strong>${stats.tasksByType?.infrastructure || 0}</strong></span>
+                    <span>🔧 Craft: <strong>${stats.tasksByType?.crafting || 0}</strong></span>
+                `;
+            } catch (err) {
+                statsEl.innerHTML = `<span style="color: #666;">Stats unavailable</span>`;
+            }
+        }
+
+        async function loadOpsLog() {
+            const logEl = document.getElementById('admin-ops-log');
+            try {
+                const response = await fetch('/.netlify/functions/fifth-floor-ops?action=get_messages&since_id=0');
+                const data = await response.json();
+                const messages = (data.messages || []).slice(-20);
+
+                if (messages.length === 0) {
+                    logEl.innerHTML = '<div style="color: #555;">No ops messages yet.</div>';
+                    return;
+                }
+
+                logEl.innerHTML = messages.map(m => {
+                    const time = new Date(m.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                    const speakerColor = m.speaker === 'system' ? '#FFC107' : '#8aff80';
+                    return `<div style="margin-bottom: 4px;"><span style="color: #666;">[${time}]</span> <span style="color: ${speakerColor};">${m.speaker}:</span> ${m.message}</div>`;
+                }).join('');
+
+                logEl.scrollTop = logEl.scrollHeight;
+            } catch (err) {
+                logEl.innerHTML = `<div style="color: #555;">Log unavailable</div>`;
+            }
+        }
+
+        function filterAdminOps(status) {
+            currentOpsFilter = status;
+            document.querySelectorAll('.ops-tab-btn').forEach(btn => {
+                if (btn.dataset.status === status) {
+                    btn.style.background = 'var(--accent)';
+                    btn.style.color = '#000';
+                    btn.classList.add('active');
+                } else {
+                    btn.style.background = 'rgba(255,255,255,0.05)';
+                    btn.style.color = '#ccc';
+                    btn.classList.remove('active');
+                }
+            });
+            renderFilteredOps();
+        }
+
+        function renderFilteredOps() {
+            const container = document.getElementById('admin-ops-container');
+            let filtered = allAdminOps;
+
+            if (currentOpsFilter === 'active') {
+                filtered = allAdminOps.filter(t => ['pending', 'in_progress'].includes(t.status));
+            } else if (currentOpsFilter === 'resolved') {
+                filtered = allAdminOps.filter(t => ['resolved', 'failed', 'expired'].includes(t.status));
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div style="color: #666; text-align: center; padding: 20px;">No ${currentOpsFilter} tasks.</div>`;
+                return;
+            }
+
+            const severityColors = { minor: '#4CAF50', medium: '#FFC107', major: '#F44336' };
+            const statusColors = { pending: '#888', in_progress: '#FFC107', resolved: '#4CAF50', failed: '#F44336', expired: '#607D8B' };
+            const typeEmojis = { security: '🔒', infrastructure: '⚙️', crafting: '🔧' };
+
+            container.innerHTML = filtered.map(task => {
+                const sevColor = severityColors[task.severity] || '#888';
+                const statColor = statusColors[task.status] || '#888';
+                const emoji = typeEmojis[task.task_type] || '📋';
+                const chars = (task.assigned_characters || []).join(', ') || 'Unassigned';
+
+                // Progress calculation
+                let progressHtml = '';
+                if (task.status === 'in_progress' && task.started_at && task.estimated_duration_min) {
+                    const elapsed = (Date.now() - new Date(task.started_at).getTime()) / 60000;
+                    const pct = Math.min(100, Math.round(elapsed / task.estimated_duration_min * 100));
+                    progressHtml = `<div style="margin-top: 6px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px;"><div style="height: 100%; width: ${pct}%; background: ${sevColor}; border-radius: 2px;"></div></div><div style="font-size: 11px; color: #666; margin-top: 2px;">${pct}% • ${Math.round(elapsed)}/${task.estimated_duration_min}min</div>`;
+                }
+
+                // Force resolve buttons for active tasks
+                let actionsHtml = '';
+                if (['pending', 'in_progress'].includes(task.status)) {
+                    const escapedTitle = task.title.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    const assignBtn = task.status === 'pending' ? `<button onclick="openAdminAssignModal('${task.id}', '${escapedTitle}')" style="padding: 3px 10px; font-size: 11px; background: #2196F3; color: #fff; border: none; border-radius: 4px; cursor: pointer; margin-right: 6px;">👥 Assign</button>` : '';
+                    actionsHtml = `
+                        <div style="margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+                            ${assignBtn}
+                            <button onclick="forceResolveOps('${task.id}', 'success')" style="padding: 3px 10px; font-size: 11px; background: #4CAF50; color: #fff; border: none; border-radius: 4px; cursor: pointer;">✅ Success</button>
+                            <button onclick="forceResolveOps('${task.id}', 'partial')" style="padding: 3px 10px; font-size: 11px; background: #FF9800; color: #fff; border: none; border-radius: 4px; cursor: pointer;">⚠️ Partial</button>
+                            <button onclick="forceResolveOps('${task.id}', 'failure')" style="padding: 3px 10px; font-size: 11px; background: #F44336; color: #fff; border: none; border-radius: 4px; cursor: pointer;">❌ Fail</button>
+                        </div>
+                    `;
+                }
+
+                // Resolution info for resolved tasks
+                let resolutionHtml = '';
+                if (task.resolution) {
+                    resolutionHtml = `<div style="margin-top: 6px; font-size: 12px; color: #aaa; font-style: italic; border-left: 2px solid ${statColor}; padding-left: 8px;">${task.resolution.substring(0, 150)}${task.resolution.length > 150 ? '...' : ''}</div>`;
+                }
+
+                const timeStr = task.resolved_at ? new Date(task.resolved_at).toLocaleString() : (task.started_at ? new Date(task.started_at).toLocaleString() : '');
+
+                return `
+                    <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 12px; margin-bottom: 8px; border-left: 3px solid ${sevColor};">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <span style="font-size: 14px; font-weight: bold; color: #eee;">${emoji} ${task.title}</span>
+                                <span style="font-size: 11px; padding: 2px 8px; border-radius: 10px; background: ${sevColor}20; color: ${sevColor}; margin-left: 8px;">${task.severity}</span>
+                            </div>
+                            <span style="font-size: 11px; padding: 2px 8px; border-radius: 10px; background: ${statColor}20; color: ${statColor};">${task.status}</span>
+                        </div>
+                        <div style="font-size: 12px; color: #888; margin-top: 4px;">
+                            <strong>Crew:</strong> ${chars} ${timeStr ? `• ${timeStr}` : ''}
+                        </div>
+                        ${progressHtml}
+                        ${resolutionHtml}
+                        ${actionsHtml}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function forceResolveOps(taskId, resolutionType) {
+            if (!confirm(`Force resolve this task as "${resolutionType}"?`)) return;
+
+            try {
+                const response = await fetch('/.netlify/functions/fifth-floor-ops', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'force_resolve', task_id: taskId, resolution_type: resolutionType })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Task resolved!');
+                    loadAdminOps();
+                } else {
+                    alert(`Error: ${result.error}`);
+                }
+            } catch (err) {
+                alert(`Error: ${err.message}`);
+            }
+        }
+
+        function openCreateOpsTaskModal() {
+            document.getElementById('ops-task-modal').style.display = 'flex';
+            document.getElementById('ops-title-input').value = '';
+            document.getElementById('ops-desc-input').value = '';
+            document.getElementById('ops-create-status').textContent = '';
+        }
+
+        function closeOpsTaskModal() {
+            document.getElementById('ops-task-modal').style.display = 'none';
+        }
+
+        async function createOpsTask() {
+            const taskType = document.getElementById('ops-type-input').value;
+            const severity = document.getElementById('ops-severity-input').value;
+            const title = document.getElementById('ops-title-input').value.trim();
+            const description = document.getElementById('ops-desc-input').value.trim();
+            const statusEl = document.getElementById('ops-create-status');
+
+            if (!title) {
+                statusEl.textContent = 'Title is required.';
+                statusEl.style.color = '#e94560';
+                return;
+            }
+
+            statusEl.textContent = 'Creating...';
+            statusEl.style.color = '#aaa';
+
+            try {
+                const response = await fetch('/.netlify/functions/fifth-floor-ops', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'create_task',
+                        task_type: taskType,
+                        severity,
+                        title,
+                        description
+                    })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    statusEl.textContent = 'Task created!';
+                    statusEl.style.color = '#28a745';
+                    setTimeout(() => {
+                        closeOpsTaskModal();
+                        loadAdminOps();
+                    }, 1000);
+                } else {
+                    statusEl.textContent = `Error: ${result.error || 'Unknown error'}`;
+                    statusEl.style.color = '#e94560';
+                }
+            } catch (err) {
+                statusEl.textContent = `Error: ${err.message}`;
+                statusEl.style.color = '#e94560';
+            }
+        }
+
+        // --- Admin Assign Task Modal ---
+        let adminAssignTaskId = null;
+
+        async function openAdminAssignModal(taskId, taskTitle) {
+            adminAssignTaskId = taskId;
+            const modal = document.getElementById('admin-assign-modal');
+            const titleEl = document.getElementById('admin-assign-task-title');
+            const loadingEl = document.getElementById('admin-assign-loading');
+            const eligibleSection = document.getElementById('admin-assign-eligible');
+            const eligibleList = document.getElementById('admin-assign-eligible-list');
+            const ineligibleSection = document.getElementById('admin-assign-ineligible');
+            const ineligibleList = document.getElementById('admin-assign-ineligible-list');
+            const actionsEl = document.getElementById('admin-assign-actions');
+            const statusEl = document.getElementById('admin-assign-status');
+
+            // Decode HTML entities for display
+            const decoded = document.createElement('span');
+            decoded.innerHTML = taskTitle;
+            titleEl.textContent = decoded.textContent;
+
+            loadingEl.style.display = 'block';
+            eligibleSection.style.display = 'none';
+            ineligibleSection.style.display = 'none';
+            actionsEl.style.display = 'none';
+            statusEl.textContent = '';
+            eligibleList.innerHTML = '';
+            ineligibleList.innerHTML = '';
+            modal.style.display = 'flex';
+
+            try {
+                const response = await fetch(`/.netlify/functions/fifth-floor-ops?action=get_eligible_characters&task_id=${encodeURIComponent(taskId)}`);
+                const data = await response.json();
+
+                loadingEl.style.display = 'none';
+
+                if (data.eligible && data.eligible.length > 0) {
+                    eligibleSection.style.display = 'block';
+                    eligibleList.innerHTML = data.eligible.map(c => {
+                        const specialties = (c.specialties || []).join(', ') || 'none';
+                        const matchBadge = c.specialtyMatch ? '<span style="font-size: 10px; background: #4CAF50; color: #fff; padding: 1px 5px; border-radius: 3px; margin-left: 6px;">match</span>' : '';
+                        const affinityBadge = c.affinity ? `<span style="font-size: 10px; background: #9C27B0; color: #fff; padding: 1px 5px; border-radius: 3px; margin-left: 4px;">${c.affinity}</span>` : '';
+                        return `
+                            <label style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 4px; cursor: pointer; transition: background 0.15s;"
+                                   onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+                                <input type="checkbox" value="${c.name}" class="admin-assign-checkbox" style="accent-color: #2196F3; width: 16px; height: 16px;">
+                                <div style="flex: 1;">
+                                    <div style="color: #eee; font-size: 13px; font-weight: bold;">${c.name}${matchBadge}${affinityBadge}</div>
+                                    <div style="color: #888; font-size: 11px;">Energy: ${c.energy} | Specialties: ${specialties}</div>
+                                </div>
+                            </label>
+                        `;
+                    }).join('');
+                    actionsEl.style.display = 'flex';
+                } else {
+                    eligibleSection.style.display = 'block';
+                    eligibleList.innerHTML = '<div style="color: #888; font-size: 13px; padding: 10px; text-align: center;">No eligible characters available.</div>';
+                }
+
+                if (data.ineligible && data.ineligible.length > 0) {
+                    ineligibleSection.style.display = 'block';
+                    ineligibleList.innerHTML = data.ineligible.map(c => `
+                        <div style="padding: 4px 0; color: #555; font-size: 12px;">
+                            <span style="color: #666;">${c.name}</span> — ${c.reason || 'unavailable'}${c.energy != null ? ` (energy: ${c.energy})` : ''}
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                loadingEl.style.display = 'none';
+                statusEl.textContent = `Error loading characters: ${err.message}`;
+                statusEl.style.color = '#e94560';
+            }
+        }
+
+        function closeAdminAssignModal() {
+            document.getElementById('admin-assign-modal').style.display = 'none';
+            adminAssignTaskId = null;
+        }
+
+        async function submitAdminAssignment() {
+            const statusEl = document.getElementById('admin-assign-status');
+            const checkboxes = document.querySelectorAll('.admin-assign-checkbox:checked');
+            const selected = Array.from(checkboxes).map(cb => cb.value);
+
+            if (selected.length === 0) {
+                statusEl.textContent = 'Select at least one character.';
+                statusEl.style.color = '#FFC107';
+                return;
+            }
+
+            statusEl.textContent = 'Assigning...';
+            statusEl.style.color = '#aaa';
+
+            try {
+                const response = await fetch('/.netlify/functions/fifth-floor-ops', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'assign_task',
+                        task_id: adminAssignTaskId,
+                        characters: selected,
+                        assigner: 'Admin'
+                    })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    const assigned = (result.assignedCharacters || []).join(', ');
+                    const rejected = (result.rejectedCharacters || []);
+                    let msg = `Assigned: ${assigned}`;
+                    if (rejected.length > 0) {
+                        msg += ` | Rejected: ${rejected.map(r => r.name + ' (' + r.reason + ')').join(', ')}`;
+                    }
+                    statusEl.textContent = msg;
+                    statusEl.style.color = '#4CAF50';
+                    setTimeout(() => {
+                        closeAdminAssignModal();
+                        loadAdminOps();
+                    }, 1500);
+                } else {
+                    statusEl.textContent = `Error: ${result.error || 'Unknown error'}`;
+                    statusEl.style.color = '#e94560';
+                }
+            } catch (err) {
+                statusEl.textContent = `Error: ${err.message}`;
+                statusEl.style.color = '#e94560';
+            }
+        }
+        // === CHARACTER ANALYSIS / MIND MAP ===
+        async function loadCharacterAnalysis() {
+            const container = document.getElementById('character-analysis-container');
+            const timestampEl = document.getElementById('analysis-timestamp');
+            container.innerHTML = '<div style="color: #a78bfa; grid-column: span 2;">🔄 Loading character minds...</div>';
+
+            try {
+                const response = await fetch('/.netlify/functions/admin-data?type=character_analysis');
+                const data = await response.json();
+                const analysis = data.analysis || {};
+                const showMemories = document.getElementById('analysis-show-memories').checked;
+                const showRelationships = document.getElementById('analysis-show-relationships').checked;
+
+                const charNames = Object.keys(analysis).sort();
+                if (charNames.length === 0) {
+                    container.innerHTML = '<div style="color: #999; grid-column: span 2;">No character data found.</div>';
+                    return;
+                }
+
+                const characterEmojis = {
+                    "Neiv": "📊", "Ghost Dad": "👻", "Kevin": "✨", "Nyx": "🔥", "Vex": "⚙️",
+                    "Ace": "🔒", "PRNT-Ω": "🖨️", "Rowena": "🔮", "Sebastian": "🦇",
+                    "The Subtitle": "📜", "Steele": "🚪", "Marrow": "🔴", "The Narrator": "📖", "Stein": "🤖",
+                    "Jae": "🎯", "Declan": "🔥", "Mack": "🩺", "Vale": "📖", "Asuna": "👁️"
+                };
+
+                const moodColors = {
+                    'playful': '#FFD700', 'steady': '#4CAF50', 'anxious': '#FF9800', 'exhausted': '#9E9E9E',
+                    'done': '#f44336', 'warm': '#FF7043', 'content': '#66BB6A', 'melancholy': '#7986CB',
+                    'irritable': '#EF5350', 'neutral': '#78909C', 'amused': '#FFCA28', 'curious': '#29B6F6',
+                    'guarded': '#8D6E63', 'sharp': '#AB47BC', 'wary': '#FF7043', 'tense': '#E53935',
+                    'reflective': '#5C6BC0', 'at wit\'s end': '#D32F2F', 'running on fumes': '#757575',
+                    'concerned': '#FFA726', 'exasperated': '#E64A19', 'refreshed': '#26A69A',
+                    'recovering': '#80CBC4', 'rested': '#43A047', 'proud': '#7E57C2', 'impressed': '#26C6DA'
+                };
+
+                container.innerHTML = charNames.map(name => {
+                    const c = analysis[name];
+                    const emoji = characterEmojis[name] || '👤';
+                    const moodColor = moodColors[c.state.mood] || '#78909C';
+                    const timeSinceSpoke = c.state.last_spoke_at ? getTimeSince(c.state.last_spoke_at) : 'never';
+                    const focusLabel = { 'the_floor': '🏢 Floor', 'break_room': '☕ Break Room', 'the_fifth_floor': '🔒 5th Floor', 'meeting_room': '📋 Meeting', 'off_duty': '💤 Off', 'outing': '🚶 Out' }[c.state.current_focus] || c.state.current_focus || '?';
+
+                    // Wants section
+                    let wantsHtml = '';
+                    if (c.wants.length > 0) {
+                        wantsHtml = c.wants.map(w => {
+                            let text = w.text;
+                            if (text.toLowerCase().startsWith('i want to ')) text = text.substring(10);
+                            else if (text.toLowerCase().startsWith('i want ')) text = text.substring(7);
+                            return `<div style="font-size: 0.8em; color: #c4b5fd; padding: 2px 0;">💭 ${text}</div>`;
+                        }).join('');
+                    } else {
+                        wantsHtml = '<div style="font-size: 0.78em; color: #555; font-style: italic;">No active wants</div>';
+                    }
+
+                    // Goal section
+                    let goalHtml = '';
+                    if (c.goal) {
+                        const progress = c.goal.progress ? ` <span style="color: #666;">(${c.goal.progress}%)</span>` : '';
+                        goalHtml = `<div style="font-size: 0.8em; color: #93c5fd; padding: 2px 0;">🎯 ${truncate(c.goal.text, 60)}${progress}</div>`;
+                    }
+
+                    // Memories section — collapsible
+                    let memoriesHtml = '';
+                    if (showMemories) {
+                        const allMems = [...c.coreMemories.map(m => ({...m, isCore: true})), ...c.recentMemories.map(m => ({...m, isCore: false}))];
+                        if (allMems.length > 0) {
+                            const memItems = allMems.slice(0, 5).map(m => {
+                                const icon = m.isCore ? '📌' : '💾';
+                                const impBadge = `<span style="color: ${m.importance >= 7 ? '#fbbf24' : '#555'}; font-size: 0.9em;">★${m.importance}</span>`;
+                                const tagStr = m.tags && m.tags.length > 0 ? ` <span style="color: #666;">[${m.tags.join(', ')}]</span>` : '';
+                                const pinType = m.isCore ? ' <span style="color: #a78bfa; font-size: 0.85em;">[core]</span>' : '';
+                                return `<div style="font-size: 0.72em; color: #888; padding: 2px 0; line-height: 1.3;">${icon} ${impBadge} ${m.content.substring(0, 120)}${m.content.length > 120 ? '...' : ''}${tagStr}${pinType}</div>`;
+                            }).join('');
+                            memoriesHtml = `
+                                <details style="margin-top: 6px; border-top: 1px solid #333; padding-top: 4px;">
+                                    <summary style="font-size: 0.75em; color: #a78bfa; cursor: pointer; user-select: none;">🧠 Memories (${allMems.length})</summary>
+                                    <div style="padding-top: 4px;">${memItems}</div>
+                                </details>`;
+                        }
+                    }
+
+                    // Relationships section — collapsible
+                    let relsHtml = '';
+                    if (showRelationships && c.topRelationships.length > 0) {
+                        const relItems = c.topRelationships.map(r => {
+                            const afColor = r.affinity > 30 ? '#66BB6A' : r.affinity > 0 ? '#9E9E9E' : r.affinity > -30 ? '#FFA726' : '#EF5350';
+                            const label = r.label ? ` (${r.label})` : '';
+                            const bond = r.bond ? ` 🔗${r.bond}` : '';
+                            return `<div style="font-size: 0.72em; color: ${afColor}; padding: 1px 0;">${r.target}: ${r.affinity}${label}${bond}</div>`;
+                        }).join('');
+                        relsHtml = `
+                            <details style="margin-top: 4px;">
+                                <summary style="font-size: 0.75em; color: #93c5fd; cursor: pointer; user-select: none;">💞 Relationships (${c.topRelationships.length})</summary>
+                                <div style="padding-top: 2px;">${relItems}</div>
+                            </details>`;
+                    }
+
+                    // Quests section
+                    let questsHtml = '';
+                    if (c.quests.length > 0) {
+                        questsHtml = c.quests.map(q =>
+                            `<div style="font-size: 0.75em; color: #fbbf24; padding: 1px 0;">⚔️ ${truncate(q.title, 50)}</div>`
+                        ).join('');
+                    }
+
+                    return `
+                        <div style="background: rgba(30, 30, 45, 0.95); border: 1px solid #444; border-left: 3px solid ${moodColor}; border-radius: 6px; padding: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <div style="font-size: 0.95em; font-weight: bold; color: #eee;">${emoji} ${name}</div>
+                                <div style="font-size: 0.75em; color: ${moodColor}; font-weight: bold;">${c.state.mood || 'neutral'}</div>
+                            </div>
+                            <div style="display: flex; gap: 12px; font-size: 0.72em; color: #777; margin-bottom: 8px; flex-wrap: wrap;">
+                                <span>⚡ ${c.state.energy}/100</span>
+                                <span>🧘 ${c.state.patience}/100</span>
+                                <span>${focusLabel}</span>
+                                <span>🗣️ ${timeSinceSpoke}</span>
+                            </div>
+                            ${wantsHtml}
+                            ${goalHtml}
+                            ${questsHtml}
+                            ${memoriesHtml}
+                            ${relsHtml}
+                        </div>
+                    `;
+                }).join('');
+
+                timestampEl.textContent = `Updated ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Chicago' })}`;
+
+            } catch (error) {
+                console.error('Error loading character analysis:', error);
+                container.innerHTML = `<div style="color: #ff6b6b; grid-column: span 2;">Error loading analysis: ${error.message}</div>`;
+            }
+        }
+
+        function truncate(str, max) {
+            if (!str) return '';
+            return str.length > max ? str.substring(0, max - 3) + '...' : str;
+        }
+
+        function getTimeSince(isoDate) {
+            if (!isoDate) return 'never';
+            const diff = Date.now() - new Date(isoDate).getTime();
+            const mins = Math.floor(diff / 60000);
+            if (mins < 1) return 'just now';
+            if (mins < 60) return `${mins}m ago`;
+            const hrs = Math.floor(mins / 60);
+            if (hrs < 24) return `${hrs}h ago`;
+            return `${Math.floor(hrs / 24)}d ago`;
+        }
+
     </script>
 </body>
 </html>

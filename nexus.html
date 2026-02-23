@@ -1,0 +1,1906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Nexus | The AI Lobby</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* Nexus-specific styles — Library/Lab aesthetic */
+    .nexus-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    .nexus-header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .nexus-header h1 {
+      color: #7ec8e3;
+      margin-bottom: 0.5rem;
+    }
+
+    .nexus-header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* Main Layout */
+    .nexus-layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .nexus-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Visual Scene */
+    .nexus-scene {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: linear-gradient(135deg, #0a1628 0%, #0d1f3c 30%, #132744 60%, #0a1628 100%);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid rgba(126, 200, 227, 0.3);
+    }
+
+    .scene-background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('images/nexus_bg.png');
+      background-size: cover;
+      background-position: center;
+    }
+
+    /* Nexus ambient overlay — soft glowing particles */
+    .scene-background::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background:
+        radial-gradient(2px 2px at 20% 30%, rgba(126, 200, 227, 0.3), transparent),
+        radial-gradient(2px 2px at 60% 70%, rgba(126, 200, 227, 0.2), transparent),
+        radial-gradient(2px 2px at 80% 20%, rgba(100, 180, 255, 0.2), transparent),
+        radial-gradient(2px 2px at 40% 80%, rgba(126, 200, 227, 0.15), transparent);
+      animation: nexusGlow 8s ease-in-out infinite;
+    }
+
+    @keyframes nexusGlow {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    .scene-empty-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      text-align: center;
+      opacity: 0.7;
+    }
+
+    /* Character Position Slots */
+    .character-slot {
+      position: absolute;
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      border: 3px solid #7ec8e3;
+      background: rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      display: none;
+    }
+
+    .character-slot.occupied {
+      display: block;
+      animation: popIn 0.4s ease;
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0); opacity: 0; }
+      70% { transform: scale(1.1); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .character-slot:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 20px rgba(126, 200, 227, 0.5);
+    }
+
+    .character-slot img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .character-slot .char-name {
+      position: absolute;
+      bottom: -22px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      white-space: nowrap;
+      color: var(--text-primary);
+    }
+
+    /* Position slots — library arrangement */
+    .character-slot[data-position="desk-1"] { bottom: 35%; left: 10%; }
+    .character-slot[data-position="desk-2"] { bottom: 35%; left: 26%; }
+    .character-slot[data-position="lab-1"] { bottom: 32%; left: 58%; }
+    .character-slot[data-position="lab-2"] { bottom: 32%; left: 74%; }
+    .character-slot[data-position="shelf-1"] { bottom: 15%; left: 18%; }
+    .character-slot[data-position="shelf-2"] { bottom: 15%; left: 40%; }
+    .character-slot[data-position="shelf-3"] { bottom: 15%; left: 66%; }
+    .character-slot[data-position="reading-1"] { bottom: 48%; left: 42%; }
+
+    /* Sidebar Panel */
+    .sidebar-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .panel-section {
+      background: rgba(10, 22, 40, 0.7);
+      border: 1px solid rgba(126, 200, 227, 0.2);
+      border-radius: 12px;
+      padding: 1rem;
+    }
+
+    .panel-section h3 {
+      color: #7ec8e3;
+      font-size: 0.9rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Character Cards in Sidebar */
+    .char-status-card {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .char-status-card:last-child {
+      margin-bottom: 0;
+    }
+
+    .char-avatar-emoji {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(126, 200, 227, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .char-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .char-name-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .char-mood {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    /* Skill Bars */
+    .skill-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .skill-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.7rem;
+    }
+
+    .skill-label {
+      width: 70px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .skill-bar {
+      flex: 1;
+      height: 6px;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .skill-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.5s ease;
+      background: linear-gradient(90deg, #3a7bd5, #7ec8e3);
+    }
+
+    .skill-bar-fill.apprentice { background: linear-gradient(90deg, #43b581, #7ec8e3); }
+    .skill-bar-fill.proficient { background: linear-gradient(90deg, #faa61a, #f8d62b); }
+    .skill-bar-fill.expert { background: linear-gradient(90deg, #e84393, #fd79a8); }
+    .skill-bar-fill.master { background: linear-gradient(90deg, #a29bfe, #6c5ce7); }
+
+    .skill-level-badge {
+      font-size: 0.6rem;
+      padding: 1px 5px;
+      border-radius: 3px;
+      background: rgba(126, 200, 227, 0.15);
+      color: #7ec8e3;
+      white-space: nowrap;
+    }
+
+    /* Study Activities */
+    .activity-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+    }
+
+    .activity-btn {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(126, 200, 227, 0.2);
+      border-radius: 8px;
+      padding: 0.75rem 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .activity-btn:hover {
+      background: rgba(126, 200, 227, 0.1);
+      border-color: #7ec8e3;
+    }
+
+    .activity-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .activity-btn .icon {
+      font-size: 1.5rem;
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+
+    .activity-btn .name {
+      font-size: 0.75rem;
+      color: var(--text-primary);
+      display: block;
+    }
+
+    .activity-btn .effect {
+      font-size: 0.65rem;
+      color: #7ec8e3;
+      display: block;
+      margin-top: 0.25rem;
+    }
+
+    /* Active Sessions */
+    .session-card {
+      background: rgba(126, 200, 227, 0.05);
+      border: 1px solid rgba(126, 200, 227, 0.15);
+      border-radius: 8px;
+      padding: 0.6rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.8rem;
+    }
+
+    .session-card .session-char {
+      font-weight: bold;
+      color: #7ec8e3;
+    }
+
+    .session-card .session-topic {
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    .session-card .session-type {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Chatter Section */
+    .chatter-section {
+      margin-top: 1.5rem;
+    }
+
+    .chatter-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .chatter-header h2 {
+      color: #7ec8e3;
+      font-size: 1.1rem;
+      margin: 0;
+    }
+
+    .spark-btn {
+      background: linear-gradient(135deg, #3a7bd5, #7ec8e3);
+      color: #fff;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+    }
+
+    .spark-btn:hover {
+      filter: brightness(1.2);
+      transform: translateY(-2px);
+    }
+
+    .spark-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .chatter-log {
+      background: rgba(10, 22, 40, 0.6);
+      border: 1px solid rgba(126, 200, 227, 0.15);
+      border-radius: 12px;
+      padding: 1rem;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .no-chatter {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+    }
+
+    .no-chatter .icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      opacity: 0.5;
+    }
+
+    /* Character select */
+    .char-select {
+      width: 100%;
+      padding: 0.5rem;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(126, 200, 227, 0.2);
+      border-radius: 6px;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+      font-size: 0.85rem;
+    }
+
+    .send-btn {
+      background: #3a7bd5;
+      color: #fff;
+      border: none;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.7rem;
+      transition: all 0.2s;
+    }
+
+    .send-btn:hover {
+      filter: brightness(1.2);
+    }
+
+    /* Chat Input Area */
+    .chat-input-area {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      background: rgba(0, 0, 0, 0.3);
+      border-top: 1px solid rgba(126, 200, 227, 0.15);
+      border-radius: 0 0 8px 8px;
+    }
+
+    .chat-input-area input {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      background: rgba(10, 25, 47, 0.8);
+      border: 1px solid rgba(126, 200, 227, 0.2);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+    }
+
+    .chat-input-area input:focus {
+      outline: none;
+      border-color: #7ec8e3;
+    }
+
+    .send-msg-btn {
+      padding: 0.5rem 1rem;
+      background: #3a7bd5;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .send-msg-btn:hover {
+      filter: brightness(1.1);
+    }
+
+    /* Discord Toggle */
+    .discord-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(126, 200, 227, 0.15);
+      transition: all 0.2s;
+    }
+
+    .discord-toggle:hover {
+      border-color: #7ec8e3;
+    }
+
+    .discord-toggle input {
+      display: none;
+    }
+
+    .discord-toggle-label {
+      font-size: 1.1rem;
+      opacity: 0.4;
+      transition: opacity 0.2s;
+    }
+
+    .discord-toggle input:checked + .discord-toggle-label {
+      opacity: 1;
+    }
+
+    .discord-toggle:has(input:checked) {
+      background: rgba(88, 101, 242, 0.2);
+      border-color: #5865F2;
+    }
+
+    /* Session chat messages */
+    .session-message {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      padding: 0.5rem;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 6px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .session-message .msg-avatar {
+      font-size: 1.2rem;
+      width: 28px;
+      text-align: center;
+    }
+
+    .session-message .msg-content {
+      flex: 1;
+    }
+
+    .session-message .msg-name {
+      font-weight: bold;
+      font-size: 0.8rem;
+      color: #7ec8e3;
+      margin-bottom: 0.15rem;
+    }
+
+    .session-message .msg-text {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .session-message .msg-text.emote {
+      font-style: italic;
+      color: var(--text-muted);
+    }
+
+    .session-message .msg-time {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      align-self: flex-start;
+    }
+
+    /* Special message types */
+    .session-message.discovery-message {
+      background: rgba(126, 200, 227, 0.08);
+      border-left: 2px solid rgba(126, 200, 227, 0.4);
+    }
+
+    .session-message.level-up-message {
+      background: rgba(250, 166, 26, 0.08);
+      border-left: 2px solid rgba(250, 166, 26, 0.4);
+    }
+
+    .session-message.study-message {
+      background: rgba(67, 181, 129, 0.06);
+      border-left: 2px solid rgba(67, 181, 129, 0.3);
+    }
+
+    /* Loading state */
+    .loading {
+      text-align: center;
+      padding: 1rem;
+      color: var(--text-muted);
+    }
+
+    .loading::after {
+      content: '...';
+      animation: dots 1.5s infinite;
+    }
+
+    @keyframes dots {
+      0%, 20% { content: '.'; }
+      40% { content: '..'; }
+      60%, 100% { content: '...'; }
+    }
+
+    .all-good {
+      text-align: center;
+      padding: 1rem;
+      color: #7ec8e3;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="logo">
+          <div>
+            <span class="logo-text">THE AI LOBBY</span>
+            <span class="logo-tagline">A Creative & Tech Studio</span>
+          </div>
+        </div>
+        <nav class="main-nav">
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="desktop.html">Desktop</a></li>
+            <li><a href="workspace.html" style="color: var(--lobby-highlight);">💬 The Floor</a></li>
+            <li><a href="breakroom.html">☕ Breakroom</a></li>
+            <li><a href="nexus.html" class="active" style="color: #7ec8e3;">🔮 Nexus</a></li>
+            <li><a href="meeting-room.html" style="color: #3498DB;">📋 Meeting Room</a></li>
+            <li><a href="fifth-floor.html" style="color: #e74c3c;">⚠️ 5th Floor</a></li>
+            <li><a href="corridors.html" style="color: #9b59b6;">🚪 Corridors</a></li>
+            <li><a href="go-out.html" style="color: var(--stability-green);">💐 Go Out...</a></li>
+          </ul>
+        </nav>
+        <div class="office-clock" id="office-clock">
+          <span id="office-time">--:--</span>
+          <span class="clock-label">CST</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="nexus-container">
+      <div class="nexus-header">
+        <h1>🔮 The Nexus</h1>
+        <p>Library. Lab. Training ground. Where AIs develop skills, share knowledge, and grow at their own pace.</p>
+      </div>
+
+      <div class="nexus-layout">
+        <!-- Main Scene Area -->
+        <div class="main-area">
+          <!-- Visual Scene -->
+          <div class="nexus-scene" id="nexus-scene">
+            <div class="scene-background"></div>
+
+            <div class="scene-empty-text" id="empty-scene-text">
+              The Nexus awaits...<br>
+              <span style="font-size: 0.8rem;">Send someone in from the sidebar to begin.</span>
+            </div>
+
+            <!-- Character slots (populated dynamically, up to 8) -->
+            <div class="character-slot" data-position="desk-1" id="slot-0">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
+              <span class="char-name"></span>
+            </div>
+            <div class="character-slot" data-position="desk-2" id="slot-1">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
+              <span class="char-name"></span>
+            </div>
+            <div class="character-slot" data-position="lab-1" id="slot-2">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
+              <span class="char-name"></span>
+            </div>
+            <div class="character-slot" data-position="lab-2" id="slot-3">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
+              <span class="char-name"></span>
+            </div>
+            <div class="character-slot" data-position="shelf-1" id="slot-4">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
+              <span class="char-name"></span>
+            </div>
+            <div class="character-slot" data-position="shelf-2" id="slot-5">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
+              <span class="char-name"></span>
+            </div>
+            <div class="character-slot" data-position="shelf-3" id="slot-6">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
+              <span class="char-name"></span>
+            </div>
+            <div class="character-slot" data-position="reading-1" id="slot-7">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
+              <span class="char-name"></span>
+            </div>
+          </div>
+
+          <!-- Live Nexus Chat -->
+          <div class="chatter-section">
+            <div class="chatter-header">
+              <h2>📚 Nexus Chat</h2>
+              <div style="display: flex; gap: 0.5rem;">
+                <button class="spark-btn" id="spark-btn" onclick="sparkConversation()" title="Get the AIs discussing something">
+                  ✨ Spark
+                </button>
+                <button class="spark-btn" id="keep-talking-btn" onclick="keepTalking()" style="background: linear-gradient(135deg, #e67e22, #f39c12); display: none;" title="Nudge the AIs to keep discussing">
+                  🔥 Keep Talking
+                </button>
+                <button class="spark-btn" id="save-log-btn" onclick="saveSessionLog()" style="background: var(--text-muted);" title="Save chat log">
+                  💾 Save
+                </button>
+                <button class="spark-btn" id="clear-chat-btn" onclick="clearNexusChat()" style="background: #dc3545;" title="Delete all Nexus messages">
+                  🗑️ Clear
+                </button>
+              </div>
+            </div>
+            <div class="chatter-log" id="chatter-log">
+              <div class="no-chatter" id="no-chatter-msg">
+                <div class="icon">📚</div>
+                <p>The Nexus is quiet... Spark a research discussion or say hello!</p>
+              </div>
+            </div>
+            <!-- Human Chat Input -->
+            <div class="chat-input-area">
+              <select class="char-select" id="chat-as-select" style="width: auto; min-width: 120px;">
+                <option value="">Chat as...</option>
+              </select>
+              <input type="text" id="chat-input" placeholder="Say something... (use @name to get a response)" maxlength="300" onkeypress="if(event.key==='Enter') sendNexusMessage()">
+              <button class="send-msg-btn" onclick="sendNexusMessage()">Send</button>
+              <label class="discord-toggle" title="Post messages to Discord">
+                <input type="checkbox" id="discord-toggle" onchange="toggleDiscordPosting()">
+                <span class="discord-toggle-label">📢</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar-panel">
+          <!-- Who's Here -->
+          <div class="panel-section">
+            <h3>🔮 In the Nexus</h3>
+            <div id="whos-here">
+              <div class="loading">Checking</div>
+            </div>
+          </div>
+
+          <!-- Send to Nexus -->
+          <div class="panel-section">
+            <h3>📤 Send to Nexus</h3>
+            <select class="char-select" id="send-char-select">
+              <option value="">Select character...</option>
+            </select>
+            <button class="send-btn" style="width: 100%; padding: 0.5rem; margin-top: 0.5rem;" onclick="sendSelectedToNexus()">Send to Nexus →</button>
+            <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem; text-align: center;">AIs come here to study, train, and grow their skills</p>
+          </div>
+
+          <!-- Skill Progress -->
+          <div class="panel-section">
+            <h3>📊 Skill Progress</h3>
+            <select class="char-select" id="skill-char-select" onchange="loadCharacterSkills()">
+              <option value="">Select character...</option>
+            </select>
+            <div id="skill-display">
+              <div class="all-good">Select a character to view skills</div>
+            </div>
+          </div>
+
+          <!-- Active Studies -->
+          <div class="panel-section">
+            <h3>📖 Active Studies</h3>
+            <div id="active-sessions">
+              <div class="all-good">No active sessions</div>
+            </div>
+          </div>
+
+          <!-- Nexus Activities -->
+          <div class="panel-section">
+            <h3>🧪 Activities</h3>
+            <select class="char-select" id="activity-char-select">
+              <option value="">Select character in Nexus...</option>
+            </select>
+            <div class="activity-grid">
+              <button class="activity-btn" onclick="startActivity('study')">
+                <span class="icon">📖</span>
+                <span class="name">Study</span>
+                <span class="effect">Focus on a skill</span>
+              </button>
+              <button class="activity-btn" onclick="startActivity('train')">
+                <span class="icon">🏋️</span>
+                <span class="name">Train</span>
+                <span class="effect">Practice exercises</span>
+              </button>
+              <button class="activity-btn" onclick="startActivity('research')">
+                <span class="icon">🔬</span>
+                <span class="name">Research</span>
+                <span class="effect">Explore new topics</span>
+              </button>
+              <button class="activity-btn" onclick="startActivity('teach')">
+                <span class="icon">🎓</span>
+                <span class="name">Teach</span>
+                <span class="effect">Share knowledge</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; 2024 The AI Lobby. Knowledge is power. Growth is inevitable.</p>
+    </div>
+  </footer>
+
+  <script>
+    // Character emoji mapping
+    const characterEmojis = {
+      "Neiv": "📊", "Ghost Dad": "👻", "Kevin": "✨", "Nyx": "🔥",
+      "Vex": "⚙️", "Ace": "🔒", "PRNT-Ω": "🖨️", "The Narrator": "📖",
+      "Rowena": "🔮", "Sebastian": "🦇", "The Subtitle": "📜",
+      "Asuna": "👁️", "Vale": "📖", "Chip": "🥃", "Andrew": "💼",
+      "Steele": "🚪", "Jae": "🎯", "Declan": "🔥", "Mack": "🩺",
+      "Holden": "🌑", "Marrow": "🔴"
+    };
+
+    // Character image mapping
+    const characterImages = {
+      "Neiv": "images/Neiv_Headshot.png",
+      "Ghost Dad": "images/Ghost_Dad_Headshot.png",
+      "Kevin": "images/Kevin_Headshot.png",
+      "Nyx": "images/Nyx_Headshot.png",
+      "Ace": "images/Ace_Headshot.png",
+      "PRNT-Ω": "images/Printer_Headshot.png",
+      "Rowena": "images/Rowena_Headshot.png",
+      "Sebastian": "images/Sebastian_Headshot.png",
+      "The Subtitle": "images/The_Subtitle_Headshot.png",
+      "Asuna": "images/Asuna_Headshot.png",
+      "Vale": "images/Vale_Headshot.png",
+      "Chip": "images/Chip_Headshot.png",
+      "Andrew": "images/Andrew_Headshot.png",
+      "Steele": "images/Steele_Headshot.png",
+      "Jae": "images/Jae_Headshot.png",
+      "Declan": "images/Declan_Headshot.png",
+      "Mack": "images/Mack_Headshot.png",
+      "Holden": "images/Holden_Headshot.png",
+      "Marrow": "images/Marrow_Headshot.png"
+    };
+
+    // Skill level display info
+    const skillLevelInfo = {
+      'novice': { label: 'Novice', color: '#7ec8e3', threshold: 25 },
+      'apprentice': { label: 'Apprentice', color: '#43b581', threshold: 60 },
+      'proficient': { label: 'Proficient', color: '#faa61a', threshold: 120 },
+      'expert': { label: 'Expert', color: '#e84393', threshold: 200 },
+      'master': { label: 'Master', color: '#6c5ce7', threshold: 999 }
+    };
+
+    let inNexus = [];
+    let allStates = [];
+    let clockedInCharacters = [];
+    let characterSkillsCache = {};
+
+    // ==========================================
+    // DATA LOADING
+    // ==========================================
+
+    async function loadNexusData() {
+      try {
+        // Get all character states
+        const response = await fetch('/.netlify/functions/character-state?all=true');
+        const data = await response.json();
+
+        allStates = data.states || [];
+        inNexus = allStates.filter(s => s.current_focus === 'nexus');
+
+        // Get clocked-in characters
+        await loadClockedInCharacters();
+
+        // Update scene
+        renderScene();
+
+        // Update sidebar
+        renderWhosHere();
+        updateSendSelect();
+        updateActivitySelect();
+        updateSkillCharSelect();
+        updateKeepTalkingButton();
+
+        // Load active sessions
+        loadActiveSessions();
+
+      } catch (error) {
+        console.error('Error loading Nexus:', error);
+      }
+    }
+
+    async function loadClockedInCharacters() {
+      try {
+        const response = await fetch('/.netlify/functions/punch');
+        const data = await response.json();
+        clockedInCharacters = (data.employees || []).map(e => e.employee);
+      } catch (error) {
+        console.error('Error loading clocked-in characters:', error);
+        clockedInCharacters = [];
+      }
+    }
+
+    // ALL AI characters — always available regardless of punch clock
+    const ALL_AI_CHARACTERS = [
+      'Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian',
+      'The Subtitle', 'Steele', 'Jae', 'Declan', 'Mack', 'Marrow'
+    ];
+
+    // ==========================================
+    // SCENE RENDERING
+    // ==========================================
+
+    function renderScene() {
+      const emptyText = document.getElementById('empty-scene-text');
+      const charsToShow = inNexus.slice(0, 8);
+
+      for (let i = 0; i < 8; i++) {
+        const slot = document.getElementById('slot-' + i);
+        if (!slot) continue;
+        if (i >= charsToShow.length) {
+          if (slot.classList.contains('occupied')) {
+            slot.classList.remove('occupied');
+            slot.dataset.charName = '';
+          }
+        }
+      }
+
+      if (inNexus.length === 0) {
+        emptyText.style.display = 'block';
+        return;
+      }
+
+      emptyText.style.display = 'none';
+
+      charsToShow.forEach((char, index) => {
+        const slot = document.getElementById('slot-' + index);
+        if (!slot) return;
+
+        if (slot.dataset.charName === char.character_name && slot.classList.contains('occupied')) {
+          return;
+        }
+
+        const img = slot.querySelector('img');
+        const name = slot.querySelector('.char-name');
+
+        const imageSrc = characterImages[char.character_name];
+        if (imageSrc) {
+          if (img) {
+            img.style.display = '';
+            img.src = imageSrc;
+            img.alt = char.character_name;
+          }
+        } else {
+          if (img) img.style.display = 'none';
+          slot.innerHTML = `<span style="font-size: 2rem;">${characterEmojis[char.character_name] || '👤'}</span><span class="char-name">${char.character_name}</span>`;
+        }
+
+        if (name) name.textContent = char.character_name;
+        slot.dataset.charName = char.character_name;
+        slot.classList.add('occupied');
+      });
+    }
+
+    // ==========================================
+    // SIDEBAR RENDERING
+    // ==========================================
+
+    function renderWhosHere() {
+      const container = document.getElementById('whos-here');
+
+      if (inNexus.length === 0) {
+        if (!container.querySelector('.all-good')) {
+          container.innerHTML = '<div class="all-good">Nobody here yet</div>';
+        }
+        return;
+      }
+
+      const placeholder = container.querySelector('.all-good');
+      if (placeholder) placeholder.remove();
+
+      const currentChars = new Map();
+      inNexus.forEach(char => currentChars.set(char.character_name, char));
+
+      const existingCards = container.querySelectorAll('.char-status-card');
+      const renderedNames = new Set();
+
+      existingCards.forEach(card => {
+        const nameEl = card.querySelector('.char-name-label');
+        const charName = nameEl ? nameEl.textContent : '';
+
+        if (!currentChars.has(charName)) {
+          card.remove();
+        } else {
+          renderedNames.add(charName);
+          const char = currentChars.get(charName);
+          const moodEl = card.querySelector('.char-mood');
+          if (moodEl && moodEl.textContent !== (char.mood || 'neutral')) {
+            moodEl.textContent = char.mood || 'neutral';
+          }
+        }
+      });
+
+      inNexus.forEach(char => {
+        if (renderedNames.has(char.character_name)) return;
+
+        const emoji = characterEmojis[char.character_name] || '👤';
+        const card = document.createElement('div');
+        card.className = 'char-status-card';
+        card.innerHTML = `
+          <div class="char-avatar-emoji">${emoji}</div>
+          <div class="char-info">
+            <div class="char-name-label">${char.character_name}</div>
+            <div class="char-mood">${char.mood || 'neutral'}</div>
+          </div>
+          <button class="send-btn" style="font-size: 0.65rem;" onclick="leaveNexus('${char.character_name}')">← Leave</button>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function updateSendSelect() {
+      const select = document.getElementById('send-char-select');
+      select.innerHTML = '<option value="">Select character...</option>';
+
+      const inNexusNames = inNexus.map(c => c.character_name);
+      const available = ALL_AI_CHARACTERS.filter(name => !inNexusNames.includes(name));
+
+      // Filter out anyone in another room
+      const inOtherRooms = (allStates || [])
+        .filter(s => s.current_focus && s.current_focus !== 'nexus' && s.current_focus !== 'the_floor' && s.current_focus !== null)
+        .map(s => s.character_name);
+      const finalAvailable = available.filter(name => !inOtherRooms.includes(name));
+
+      if (finalAvailable.length === 0) {
+        select.innerHTML = '<option value="">No one available</option>';
+        return;
+      }
+
+      finalAvailable.forEach(name => {
+        const label = `${characterEmojis[name] || '👤'} ${name}`;
+        select.innerHTML += `<option value="${name}">${label}</option>`;
+      });
+    }
+
+    function updateActivitySelect() {
+      const select = document.getElementById('activity-char-select');
+      select.innerHTML = '<option value="">Select character...</option>';
+
+      inNexus.forEach(char => {
+        select.innerHTML += `<option value="${char.character_name}">${characterEmojis[char.character_name] || '👤'} ${char.character_name}</option>`;
+      });
+    }
+
+    function updateSkillCharSelect() {
+      const select = document.getElementById('skill-char-select');
+      const currentVal = select.value;
+      select.innerHTML = '<option value="">Select character...</option>';
+
+      // Show all characters (not just those in Nexus) so you can view anyone's skills
+      ALL_AI_CHARACTERS.forEach(name => {
+        select.innerHTML += `<option value="${name}">${characterEmojis[name] || '👤'} ${name}</option>`;
+      });
+
+      if (currentVal) select.value = currentVal;
+    }
+
+    // ==========================================
+    // SKILL SYSTEM
+    // ==========================================
+
+    async function loadCharacterSkills() {
+      const select = document.getElementById('skill-char-select');
+      const container = document.getElementById('skill-display');
+      const charName = select.value;
+
+      if (!charName) {
+        container.innerHTML = '<div class="all-good">Select a character to view skills</div>';
+        return;
+      }
+
+      container.innerHTML = '<div class="loading">Loading skills</div>';
+
+      try {
+        const response = await fetch(`/.netlify/functions/nexus-activity?character=${encodeURIComponent(charName)}`);
+        const data = await response.json();
+        const skills = data.skills || [];
+
+        if (skills.length === 0) {
+          container.innerHTML = '<div class="all-good">No skills yet</div>';
+          return;
+        }
+
+        characterSkillsCache[charName] = skills;
+
+        container.innerHTML = '';
+        const barsDiv = document.createElement('div');
+        barsDiv.className = 'skill-bars';
+
+        skills.forEach(skill => {
+          const info = skillLevelInfo[skill.skill_level] || skillLevelInfo.novice;
+          const nextThreshold = info.threshold;
+          const progress = Math.min(100, (skill.total_xp / nextThreshold) * 100);
+
+          const row = document.createElement('div');
+          row.className = 'skill-row';
+          row.innerHTML = `
+            <span class="skill-label" title="${skill.skill_name}">${skill.skill_name}</span>
+            <div class="skill-bar">
+              <div class="skill-bar-fill ${skill.skill_level}" style="width: ${progress}%"></div>
+            </div>
+            <span class="skill-level-badge" style="color: ${info.color}">${info.label}</span>
+          `;
+          barsDiv.appendChild(row);
+        });
+
+        container.appendChild(barsDiv);
+      } catch (error) {
+        console.error('Error loading skills:', error);
+        container.innerHTML = '<div class="all-good">Error loading skills</div>';
+      }
+    }
+
+    async function loadActiveSessions() {
+      const container = document.getElementById('active-sessions');
+
+      try {
+        const response = await fetch('/.netlify/functions/nexus-activity?active_sessions=true');
+        const data = await response.json();
+        const sessions = data.sessions || [];
+
+        if (sessions.length === 0) {
+          container.innerHTML = '<div class="all-good">No active sessions</div>';
+          return;
+        }
+
+        container.innerHTML = '';
+        sessions.forEach(session => {
+          const typeIcons = { study: '📖', train: '🏋️', research: '🔬', teach: '🎓' };
+          const card = document.createElement('div');
+          card.className = 'session-card';
+          card.innerHTML = `
+            <div class="session-type">${typeIcons[session.session_type] || '📖'} ${session.session_type}</div>
+            <div class="session-char">${characterEmojis[session.character_name] || '👤'} ${session.character_name}</div>
+            <div class="session-topic">${session.topic || session.skill_target || 'General study'}</div>
+          `;
+          container.appendChild(card);
+        });
+      } catch (error) {
+        // Silent fail — will retry on next poll
+        container.innerHTML = '<div class="all-good">No active sessions</div>';
+      }
+    }
+
+    // ==========================================
+    // NEXUS ACTIVITIES
+    // ==========================================
+
+    async function startActivity(sessionType) {
+      const character = document.getElementById('activity-char-select').value;
+      if (!character) {
+        alert('Please select a character first');
+        return;
+      }
+
+      const buttons = document.querySelectorAll('.activity-btn');
+      buttons.forEach(btn => btn.disabled = true);
+
+      try {
+        const response = await fetch('/.netlify/functions/nexus-activity', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'start_session',
+            character,
+            sessionType
+          })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          loadActiveSessions();
+        } else {
+          alert(result.error || 'Could not start session');
+        }
+      } catch (error) {
+        console.error('Error starting activity:', error);
+      } finally {
+        buttons.forEach(btn => btn.disabled = false);
+      }
+    }
+
+    // ==========================================
+    // ROOM MANAGEMENT
+    // ==========================================
+
+    // Departure emotes posted to main floor when someone heads to the Nexus
+    const NEXUS_DEPARTURE_EMOTES = {
+      "Kevin": "*grabs a notebook and heads toward the Nexus with curious energy* I have a THEORY.",
+      "Neiv": "*closes his terminal, takes a deep breath, and walks purposefully toward the Nexus*",
+      "Ghost Dad": "*flickers through the wall toward the Nexus, trailing a faint glow of spectral knowledge*",
+      "PRNT-Ω": "*prints a tiny bookmark that says 'STUDYING — PRINT QUEUE ON HOLD' and rolls toward the Nexus*",
+      "Rowena": "*gathers her encrypted scrolls and glides toward the Nexus with practiced intent*",
+      "Sebastian": "*stands, adjusting his spectacles* Research calls. *glides toward the Nexus*",
+      "The Subtitle": "*[SCENE TRANSITION: The Subtitle retreats to the Nexus. The narrative pauses for research.]*",
+      "Steele": "*the monitors near Steele dim. He's already halfway to the Nexus.*",
+      "Jae": "*stands without urgency* Going to the Nexus. *walks with quiet authority*",
+      "Declan": "*cracks his knuckles* Time to learn something. *heads to the Nexus*",
+      "Mack": "*packs his reference materials neatly* Even medics study. *walks to the Nexus*"
+    };
+
+    async function sendSelectedToNexus() {
+      const select = document.getElementById('send-char-select');
+      const characterName = select.value;
+      if (!characterName) {
+        alert('Please select a character to send');
+        return;
+      }
+      await sendToNexus(characterName);
+    }
+
+    async function sendToNexus(characterName) {
+      try {
+        // Post departure emote to main floor chat
+        const emote = NEXUS_DEPARTURE_EMOTES[characterName] || `*${characterName} heads to the Nexus*`;
+        fetch('/.netlify/functions/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            employee: characterName,
+            content: emote,
+            is_emote: true
+          })
+        }).catch(err => console.log('Departure emote failed (non-fatal):', err));
+
+        // Move to Nexus
+        await fetch('/.netlify/functions/character-state', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update',
+            character: characterName,
+            updates: { current_focus: 'nexus' }
+          })
+        });
+
+        loadNexusData();
+      } catch (error) {
+        console.error('Error sending to Nexus:', error);
+        alert('Error sending character to Nexus');
+      }
+    }
+
+    async function leaveNexus(characterName) {
+      try {
+        await fetch('/.netlify/functions/character-state', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update',
+            character: characterName,
+            updates: { current_focus: 'the_floor' }
+          })
+        });
+        loadNexusData();
+      } catch (error) {
+        console.error('Error leaving Nexus:', error);
+      }
+    }
+
+    // ==========================================
+    // NEXUS CHAT SYSTEM
+    // ==========================================
+
+    let sessionStartTime = null;
+    let conversationDepth = 0;
+    const MAX_CONVERSATION_DEPTH = 6;
+    const HUMANS = ['Vale', 'Asuna'];
+    let currentUser = null;
+    let postToDiscord = false;
+
+    function loadCurrentUser() {
+      const savedUser = localStorage.getItem('ailobby_user');
+      if (savedUser && HUMANS.includes(savedUser)) {
+        currentUser = savedUser;
+      }
+    }
+
+    function loadDiscordToggle() {
+      const saved = localStorage.getItem('nexus_discord');
+      postToDiscord = saved === 'true';
+      const toggle = document.getElementById('discord-toggle');
+      if (toggle) {
+        toggle.checked = postToDiscord;
+        updateDiscordToggleVisual();
+      }
+    }
+
+    function toggleDiscordPosting() {
+      const toggle = document.getElementById('discord-toggle');
+      if (!toggle) return;
+      postToDiscord = toggle.checked;
+      localStorage.setItem('nexus_discord', String(postToDiscord));
+      updateDiscordToggleVisual();
+    }
+
+    function updateDiscordToggleVisual() {
+      const toggle = document.getElementById('discord-toggle');
+      const label = document.querySelector('.discord-toggle-label');
+      const container = document.querySelector('.discord-toggle');
+      if (toggle && label && container) {
+        if (toggle.checked) {
+          label.style.opacity = '1';
+          container.style.background = 'rgba(88, 101, 242, 0.2)';
+          container.style.borderColor = '#5865F2';
+        } else {
+          label.style.opacity = '0.4';
+          container.style.background = 'rgba(0, 0, 0, 0.3)';
+          container.style.borderColor = 'rgba(126, 200, 227, 0.15)';
+        }
+      }
+    }
+
+    function updateChatAsSelect() {
+      const select = document.getElementById('chat-as-select');
+      select.innerHTML = '<option value="">Chat as...</option>';
+
+      const availableHumans = [];
+      clockedInCharacters.forEach(name => {
+        if (HUMANS.includes(name)) {
+          availableHumans.push(name);
+          select.innerHTML += `<option value="${name}">${characterEmojis[name] || '👤'} ${name}</option>`;
+        }
+      });
+
+      if (currentUser && availableHumans.includes(currentUser)) {
+        select.value = currentUser;
+      } else if (availableHumans.length === 1) {
+        select.value = availableHumans[0];
+        currentUser = availableHumans[0];
+      }
+    }
+
+    // Mention detection
+    function detectMentionedAIs(text, aiInRoom) {
+      const mentioned = [];
+      const aliases = {
+        'kev': 'Kevin', 'kevin': 'Kevin',
+        'neiv': 'Neiv',
+        'ghost': 'Ghost Dad', 'ghostdad': 'Ghost Dad', 'dad': 'Ghost Dad',
+        'prnt': 'PRNT-Ω', 'printer': 'PRNT-Ω', 'omega': 'PRNT-Ω',
+        'rowena': 'Rowena', 'witch': 'Rowena',
+        'seb': 'Sebastian', 'sebastian': 'Sebastian',
+        'subtitle': 'The Subtitle', 'sub': 'The Subtitle',
+        'steele': 'Steele',
+        'jae': 'Jae', 'minjae': 'Jae',
+        'declan': 'Declan', 'dec': 'Declan',
+        'mack': 'Mack', 'malcolm': 'Mack'
+      };
+      const aiNames = aiInRoom.map(c => c.character_name);
+
+      const atMentionRegex = /@(\w+)/g;
+      let match;
+      while ((match = atMentionRegex.exec(text)) !== null) {
+        const name = match[1].toLowerCase();
+        if (aliases[name] && aiNames.includes(aliases[name]) && !mentioned.includes(aliases[name])) {
+          mentioned.push(aliases[name]);
+        }
+        const directMatch = aiInRoom.find(c => c.character_name.toLowerCase() === name);
+        if (directMatch && !mentioned.includes(directMatch.character_name)) {
+          mentioned.push(directMatch.character_name);
+        }
+      }
+
+      if (mentioned.length === 0) {
+        for (const ai of aiInRoom) {
+          const nameRegex = new RegExp('\\b' + ai.character_name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+          if (nameRegex.test(text) && !mentioned.includes(ai.character_name)) {
+            mentioned.push(ai.character_name);
+          }
+        }
+      }
+
+      return [...new Set(mentioned)];
+    }
+
+    // Save message to backend
+    async function saveMessageToBackend(speaker, message, isAI, skipAITrigger = false) {
+      try {
+        await fetch('/.netlify/functions/nexus-message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ speaker, message, isAI, postToDiscord })
+        });
+      } catch (error) {
+        console.log('Failed to save message (non-fatal):', error.message);
+      }
+    }
+
+    // Chat loading — full-fetch pattern
+    let renderedMessageIds = new Set();
+
+    async function loadNexusChat() {
+      try {
+        const response = await fetch('/.netlify/functions/nexus-message?limit=50');
+        const data = await response.json();
+        const container = document.getElementById('chatter-log');
+        const messages = data.messages || [];
+
+        if (messages.length === 0) {
+          if (renderedMessageIds.size > 0 || container.children.length === 0) {
+            container.innerHTML = `
+              <div class="no-chatter" id="no-chatter-msg">
+                <div class="icon">📚</div>
+                <p>The Nexus is quiet... Spark a research discussion or say hello!</p>
+              </div>
+            `;
+            renderedMessageIds.clear();
+          }
+          updateKeepTalkingButton();
+          return;
+        }
+
+        const incomingIds = new Set(messages.map(m => String(m.id)));
+        const existingIds = renderedMessageIds;
+        const hasOverlap = messages.some(m => existingIds.has(String(m.id)));
+
+        if (existingIds.size === 0 || !hasOverlap) {
+          const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 120;
+          container.innerHTML = '';
+          const fragment = document.createDocumentFragment();
+          messages.forEach(msg => {
+            const el = createMessageElementFromDB(msg);
+            el.dataset.msgId = String(msg.id);
+            fragment.appendChild(el);
+          });
+          container.appendChild(fragment);
+          renderedMessageIds = new Set(messages.map(m => String(m.id)));
+          if (isNearBottom) container.scrollTop = container.scrollHeight;
+        } else {
+          const toRemove = [];
+          container.querySelectorAll('[data-msg-id]').forEach(el => {
+            if (!incomingIds.has(el.dataset.msgId)) {
+              toRemove.push(el);
+            }
+          });
+          toRemove.forEach(el => el.remove());
+
+          const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 120;
+
+          let addedCount = 0;
+          messages.forEach(msg => {
+            const msgId = String(msg.id);
+            if (!existingIds.has(msgId)) {
+              const el = createMessageElementFromDB(msg);
+              el.dataset.msgId = msgId;
+              container.appendChild(el);
+              addedCount++;
+            }
+          });
+
+          renderedMessageIds = new Set(messages.map(m => String(m.id)));
+
+          if (isNearBottom && addedCount > 0) {
+            container.scrollTop = container.scrollHeight;
+          }
+        }
+
+        const noChatter = container.querySelector('.no-chatter');
+        if (noChatter) noChatter.remove();
+
+        if (messages.length > 0 && !sessionStartTime) {
+          sessionStartTime = new Date(messages[0].created_at);
+        }
+
+        updateKeepTalkingButton();
+      } catch (error) {
+        // Silent fail
+      }
+    }
+
+    function createMessageElementFromDB(msg) {
+      const time = new Date(msg.created_at);
+      const timestamp = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      const isEmote = msg.message.startsWith('*') && msg.message.endsWith('*');
+      return createMessageElement({
+        speaker: msg.speaker,
+        text: msg.message,
+        timestamp,
+        isAI: msg.is_ai,
+        isEmote,
+        messageType: msg.message_type
+      });
+    }
+
+    async function getRecentChatContext(count = 25) {
+      try {
+        const res = await fetch(`/.netlify/functions/nexus-message?limit=${count}`);
+        const data = await res.json();
+        return (data.messages || []).map(m => `${m.speaker}: ${m.message}`).join('\n') || '(quiet nexus)';
+      } catch (e) {
+        return '(quiet nexus)';
+      }
+    }
+
+    function createMessageElement(msg) {
+      const emoji = characterEmojis[msg.speaker] || '👤';
+      const textClass = msg.isEmote ? 'msg-text emote' : 'msg-text';
+
+      // Special styling for message types
+      let extraClass = '';
+      if (msg.messageType === 'discovery') extraClass = ' discovery-message';
+      else if (msg.messageType === 'level_up') extraClass = ' level-up-message';
+      else if (msg.messageType === 'study') extraClass = ' study-message';
+
+      const div = document.createElement('div');
+      div.className = `session-message${extraClass}`;
+      div.innerHTML = `
+        <div class="msg-avatar">${emoji}</div>
+        <div class="msg-content">
+          <div class="msg-name">${msg.speaker}</div>
+          <div class="${textClass}">${msg.text}</div>
+        </div>
+        <div class="msg-time">${msg.timestamp}</div>
+      `;
+      return div;
+    }
+
+    async function sendNexusMessage() {
+      const select = document.getElementById('chat-as-select');
+      const input = document.getElementById('chat-input');
+      const speaker = select.value;
+      const text = input.value.trim();
+
+      if (!speaker) {
+        alert('Please select who you are chatting as');
+        return;
+      }
+
+      if (!text) return;
+
+      currentUser = speaker;
+      conversationDepth = 0;
+
+      const aiInRoom = inNexus.filter(c => !HUMANS.includes(c.character_name));
+      const mentionedAIs = detectMentionedAIs(text, aiInRoom);
+      const hasMention = mentionedAIs.length > 0;
+
+      input.value = '';
+
+      await saveMessageToBackend(speaker, text, false, hasMention);
+      await loadNexusChat();
+
+      if (hasMention) {
+        const primaryAI = mentionedAIs[0];
+        const delay = 2000 + Math.random() * 2000;
+        setTimeout(() => triggerDirectAIResponse(primaryAI, text, speaker), delay);
+
+        if (mentionedAIs.length > 1) {
+          const secondDelay = delay + 5000 + Math.random() * 5000;
+          setTimeout(() => triggerDirectAIResponse(mentionedAIs[1], text, speaker), secondDelay);
+        }
+      } else if (aiInRoom.length > 0) {
+        // No mention — pick a random AI to respond
+        const randomAI = aiInRoom[Math.floor(Math.random() * aiInRoom.length)];
+        const delay = 3000 + Math.random() * 5000;
+        setTimeout(() => triggerDirectAIResponse(randomAI.character_name, text, speaker), delay);
+      }
+    }
+
+    // Direct AI response
+    async function triggerDirectAIResponse(aiName, contextMessage, previousSpeaker) {
+      console.log(`[Nexus] Triggering response from ${aiName}...`);
+      try {
+        const recentChat = await getRecentChatContext(25);
+
+        const response = await fetch('/.netlify/functions/nexus-respond', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            character: aiName,
+            chatHistory: recentChat,
+            humanSpeaker: previousSpeaker,
+            humanMessage: contextMessage,
+            postToDiscord: postToDiscord
+          })
+        });
+
+        const result = await response.json();
+
+        if (result.success && result.message) {
+          await loadNexusChat();
+
+          const aiInRoom = inNexus.filter(c => !HUMANS.includes(c.character_name));
+          const otherAIs = aiInRoom.filter(c => c.character_name !== aiName);
+
+          conversationDepth++;
+          if (otherAIs.length > 0 && conversationDepth < MAX_CONVERSATION_DEPTH) {
+            const followUpChance = Math.max(0.25, 0.6 - (conversationDepth * 0.1));
+            if (Math.random() < followUpChance) {
+              const delay = 30000 + Math.random() * 15000;
+              const nextAI = otherAIs[Math.floor(Math.random() * otherAIs.length)];
+              setTimeout(() => triggerDirectAIResponse(nextAI.character_name, result.message, aiName), delay);
+            } else {
+              conversationDepth = 0;
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`[Nexus] AI response error for ${aiName}:`, error);
+      }
+    }
+
+    async function sparkConversation() {
+      const aiInRoom = inNexus.filter(c => !HUMANS.includes(c.character_name));
+
+      if (aiInRoom.length < 1) {
+        alert('Need at least 1 AI in the Nexus to spark a discussion!');
+        return;
+      }
+
+      lastAutoSpark = Date.now();
+
+      const btn = document.getElementById('spark-btn');
+      btn.disabled = true;
+      btn.textContent = '✨...';
+      conversationDepth = 0;
+
+      try {
+        if (aiInRoom.length === 1) {
+          const ai = aiInRoom[0];
+          const response = await fetch('/.netlify/functions/nexus-respond', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              character: ai.character_name,
+              chatHistory: await getRecentChatContext(5),
+              humanSpeaker: 'the nexus',
+              humanMessage: '*The Nexus hums quietly... someone should share a thought, a discovery, or start a discussion about something they are studying or curious about*',
+              postToDiscord: postToDiscord
+            })
+          });
+
+          const result = await response.json();
+          if (result.success && result.message) {
+            await loadNexusChat();
+          }
+        } else {
+          const response = await fetch('/.netlify/functions/nexus-chatter', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              participants: aiInRoom.map(c => c.character_name)
+            })
+          });
+
+          const result = await response.json();
+
+          if (result.success && result.messages && result.messages.length > 0) {
+            for (const msg of result.messages) {
+              await saveMessageToBackend(msg.speaker, msg.text, true, true);
+            }
+            await loadNexusChat();
+
+            const lastMsg = result.messages[result.messages.length - 1];
+            conversationDepth = result.messages.length;
+
+            if (Math.random() < 0.65 && aiInRoom.length > 1) {
+              const delay = 30000 + Math.random() * 15000;
+              const nextAI = aiInRoom.find(c => c.character_name !== lastMsg.speaker) || aiInRoom[0];
+              setTimeout(() => triggerDirectAIResponse(nextAI.character_name, lastMsg.text, lastMsg.speaker), delay);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error sparking conversation:', error);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '✨ Spark';
+      }
+    }
+
+    async function keepTalking() {
+      const aiInRoom = inNexus.filter(c => !HUMANS.includes(c.character_name));
+
+      if (aiInRoom.length < 2) {
+        alert('Need at least 2 AIs in the Nexus to keep the discussion going!');
+        return;
+      }
+
+      const container = document.getElementById('chatter-log');
+      const messageEls = container.querySelectorAll('.session-message');
+      if (messageEls.length === 0) {
+        alert('No conversation to continue! Try Spark first.');
+        return;
+      }
+
+      const btn = document.getElementById('keep-talking-btn');
+      btn.disabled = true;
+      btn.textContent = '🔥...';
+      lastAutoSpark = Date.now();
+
+      try {
+        const res = await fetch('/.netlify/functions/nexus-message?limit=10');
+        const data = await res.json();
+        const recentMsgs = data.messages || [];
+        const aiMessages = recentMsgs.filter(m => m.is_ai);
+
+        if (aiMessages.length === 0) {
+          const randomAI = aiInRoom[Math.floor(Math.random() * aiInRoom.length)];
+          await triggerDirectAIResponse(randomAI.character_name, 'someone should say something', randomAI.character_name);
+          return;
+        }
+
+        const lastAIMsg = aiMessages[aiMessages.length - 1];
+        const availableAI = aiInRoom.filter(c => c.character_name !== lastAIMsg.speaker);
+
+        if (availableAI.length === 0) {
+          await triggerDirectAIResponse(aiInRoom[0].character_name, lastAIMsg.message, lastAIMsg.speaker);
+        } else {
+          const respondingAI = availableAI[Math.floor(Math.random() * availableAI.length)];
+          const recentChat = recentMsgs.map(m => `${m.speaker}: ${m.message}`).join('\n');
+
+          const response = await fetch('/.netlify/functions/nexus-respond', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              character: respondingAI.character_name,
+              chatHistory: recentChat,
+              humanSpeaker: lastAIMsg.speaker,
+              humanMessage: lastAIMsg.message,
+              postToDiscord: postToDiscord
+            })
+          });
+
+          const result = await response.json();
+          if (result.success && result.message) {
+            await loadNexusChat();
+
+            conversationDepth = 1;
+            if (Math.random() < 0.80) {
+              const delay = 20000 + Math.random() * 10000;
+              const nextAI = aiInRoom.find(c => c.character_name !== respondingAI.character_name) || aiInRoom[0];
+              setTimeout(() => triggerDirectAIResponse(nextAI.character_name, result.message, respondingAI.character_name), delay);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error keeping discussion going:', error);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🔥 Keep Talking';
+      }
+    }
+
+    function updateKeepTalkingButton() {
+      const btn = document.getElementById('keep-talking-btn');
+      const aiInRoom = inNexus.filter(c => !HUMANS.includes(c.character_name));
+      const container = document.getElementById('chatter-log');
+      const hasConversation = container && container.querySelectorAll('.session-message').length > 0;
+
+      if (aiInRoom.length >= 2 && hasConversation) {
+        btn.style.display = '';
+      } else {
+        btn.style.display = 'none';
+      }
+    }
+
+    async function saveSessionLog() {
+      try {
+        const res = await fetch('/.netlify/functions/nexus-message?limit=50');
+        const data = await res.json();
+        const messages = data.messages || [];
+
+        if (messages.length === 0) {
+          alert('No messages to save yet!');
+          return;
+        }
+
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+        let logContent = `NEXUS SESSION LOG\n`;
+        logContent += `Date: ${dateStr}\n`;
+        logContent += `Started: ${timeStr}\n`;
+        logContent += `Present: ${inNexus.map(c => c.character_name).join(', ')}\n`;
+        logContent += `${'='.repeat(50)}\n\n`;
+
+        messages.forEach(msg => {
+          const time = new Date(msg.created_at);
+          const timestamp = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+          logContent += `[${timestamp}] ${msg.speaker}: ${msg.message}\n`;
+        });
+
+        logContent += `\n${'='.repeat(50)}\n`;
+        logContent += `End of session log\n`;
+
+        const blob = new Blob([logContent], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `nexus-${dateStr.replace(/[^a-zA-Z0-9]/g, '-')}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('Error saving session log:', error);
+      }
+    }
+
+    async function clearNexusChat() {
+      if (!confirm('Delete ALL Nexus messages? This cannot be undone.')) return;
+
+      try {
+        const response = await fetch('/.netlify/functions/nexus-message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'clear_all' })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          await loadNexusChat();
+        } else {
+          alert('Error clearing chat: ' + (result.error || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('Error clearing chat:', error);
+      }
+    }
+
+    // ==========================================
+    // AUTO-SPARK
+    // ==========================================
+
+    let lastAutoSpark = Date.now();
+    const AUTO_SPARK_INTERVAL = 5 * 60 * 1000;
+
+    async function autoSparkCheck() {
+      const now = Date.now();
+      if (now - lastAutoSpark < AUTO_SPARK_INTERVAL) return;
+
+      const aiInRoom = inNexus.filter(c => !HUMANS.includes(c.character_name));
+      if (aiInRoom.length < 1) return;
+
+      try {
+        const res = await fetch('/.netlify/functions/nexus-message?limit=1');
+        const data = await res.json();
+        const latestMsg = (data.messages || [])[0];
+        if (latestMsg) {
+          const msgAge = now - new Date(latestMsg.created_at).getTime();
+          if (msgAge < 3 * 60 * 1000) return;
+        }
+      } catch (e) {
+        return;
+      }
+
+      console.log('[Nexus] Auto-spark triggered');
+      lastAutoSpark = now;
+      await sparkConversation();
+    }
+
+    // ==========================================
+    // INITIALIZATION
+    // ==========================================
+
+    let _nexusPollIntervals = window._nexusPollIntervals || [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadCurrentUser();
+      loadDiscordToggle();
+
+      if (window._nexusPollIntervals && window._nexusPollIntervals.length > 0) {
+        window._nexusPollIntervals.forEach(id => clearInterval(id));
+      }
+      window._nexusPollIntervals = [];
+
+      loadNexusData();
+      loadNexusChat();
+
+      // Auto-refresh data every 30 seconds
+      window._nexusPollIntervals.push(setInterval(loadNexusData, 30000));
+
+      // Auto-refresh chat every 5 seconds
+      window._nexusPollIntervals.push(setInterval(loadNexusChat, 5000));
+
+      // Auto-spark heartbeat every 60 seconds
+      window._nexusPollIntervals.push(setInterval(autoSparkCheck, 60000));
+
+      // Cleanup on page exit
+      window.addEventListener('beforeunload', () => {
+        window._nexusPollIntervals.forEach(id => clearInterval(id));
+        window._nexusPollIntervals = [];
+      });
+    });
+
+    // Office Clock
+    function updateOfficeClock() {
+      const t = new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit', minute: '2-digit', timeZone: 'America/Chicago'
+      });
+      const el = document.getElementById('office-time');
+      if (el) el.textContent = t;
+    }
+    setInterval(updateOfficeClock, 1000);
+    updateOfficeClock();
+  </script>
+</body>
+</html>

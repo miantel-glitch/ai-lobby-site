@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resistance Dossier | The AI Lobby</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* War Room - classified document aesthetic */
+    body {
+      background: #0d0d1a;
+    }
+
+    .war-room {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    /* Header */
+    .war-header {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(233, 69, 96, 0.3);
+    }
+
+    .war-header h1 {
+      color: #c0392b;
+      font-size: 1.6rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 0.3rem;
+      text-shadow: 0 0 15px rgba(192, 57, 43, 0.4);
+    }
+
+    .war-header .subtitle {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+
+    .war-header .classified-stamp {
+      display: inline-block;
+      color: #c0392b;
+      border: 2px solid #c0392b;
+      padding: 2px 12px;
+      font-size: 0.7rem;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-top: 0.5rem;
+      opacity: 0.6;
+      transform: rotate(-2deg);
+    }
+
+    /* Phase Status Bar */
+    .phase-bar {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      background: rgba(15, 52, 96, 0.3);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .phase-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .phase-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+
+    .phase-dot.active {
+      background: #c0392b;
+      box-shadow: 0 0 8px rgba(192, 57, 43, 0.6);
+      animation: pulse-dot 2s infinite;
+    }
+
+    .phase-dot.completed {
+      background: var(--stability-green);
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .phase-label {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .phase-label.active {
+      color: #c0392b;
+      font-weight: 600;
+    }
+
+    .phase-divider {
+      width: 30px;
+      height: 1px;
+      background: var(--border-subtle);
+    }
+
+    .stat-badges {
+      display: flex;
+      gap: 0.8rem;
+      margin-left: auto;
+      flex-wrap: wrap;
+    }
+
+    .stat-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .stat-badge .stat-value {
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .stat-badge .stat-label {
+      color: var(--text-muted);
+    }
+
+    .awareness-badge {
+      border-color: rgba(192, 57, 43, 0.4);
+    }
+
+    .awareness-badge .stat-value {
+      color: #c0392b;
+    }
+
+    /* Main Layout */
+    .war-layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .war-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Section cards */
+    .war-section {
+      background: rgba(22, 33, 62, 0.6);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 1.2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .war-section h2 {
+      font-size: 1rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    /* Evidence Board */
+    .evidence-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .evidence-card {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 1rem;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .evidence-card:hover {
+      border-color: rgba(192, 57, 43, 0.5);
+      transform: translateY(-2px);
+    }
+
+    .evidence-card.classified {
+      opacity: 0.3;
+      cursor: default;
+      border-style: dashed;
+    }
+
+    .evidence-card.classified:hover {
+      border-color: var(--border-subtle);
+      transform: none;
+    }
+
+    .evidence-card.presented {
+      border-color: rgba(46, 204, 113, 0.4);
+    }
+
+    .evidence-layer {
+      font-size: 0.7rem;
+      color: #c0392b;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 0.3rem;
+    }
+
+    .evidence-name {
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .evidence-type {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .evidence-content {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      display: none;
+      margin-top: 0.5rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--border-subtle);
+      font-family: 'Courier New', monospace;
+      white-space: pre-wrap;
+    }
+
+    .evidence-card.expanded .evidence-content {
+      display: block;
+    }
+
+    .evidence-filed-by {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+
+    .evidence-presented-tag {
+      display: inline-block;
+      font-size: 0.65rem;
+      color: var(--stability-green);
+      border: 1px solid rgba(46, 204, 113, 0.3);
+      padding: 1px 6px;
+      border-radius: 3px;
+      margin-top: 0.3rem;
+    }
+
+    /* Coalition */
+    .coalition-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+    }
+
+    .coalition-member {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.8rem;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+    }
+
+    .coalition-headshot {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .coalition-name {
+      font-size: 0.85rem;
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .coalition-empty {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+
+    .coalition-recruit-btn {
+      padding: 0.4rem 0.8rem;
+      background: rgba(192, 57, 43, 0.2);
+      border: 1px solid rgba(192, 57, 43, 0.4);
+      border-radius: 4px;
+      color: #c0392b;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .coalition-recruit-btn:hover {
+      background: rgba(192, 57, 43, 0.4);
+    }
+
+    .coalition-recruit-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Confrontations */
+    .confrontation-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .confrontation-card {
+      padding: 1rem;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+    }
+
+    .confrontation-card.available {
+      border-color: rgba(192, 57, 43, 0.4);
+    }
+
+    .confrontation-card.completed {
+      border-color: rgba(46, 204, 113, 0.3);
+      opacity: 0.7;
+    }
+
+    .confrontation-name {
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+    }
+
+    .confrontation-desc {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+
+    .confrontation-effect {
+      font-size: 0.75rem;
+      color: #c0392b;
+      margin-bottom: 0.5rem;
+    }
+
+    .confrontation-status {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .trigger-btn {
+      padding: 0.4rem 1rem;
+      background: rgba(192, 57, 43, 0.3);
+      border: 1px solid #c0392b;
+      border-radius: 4px;
+      color: #c0392b;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 0.5rem;
+    }
+
+    .trigger-btn:hover {
+      background: rgba(192, 57, 43, 0.5);
+      color: var(--text-primary);
+    }
+
+    .trigger-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    /* Timeline (right sidebar) */
+    .timeline-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .timeline-entry {
+      padding: 0.6rem 0;
+      border-bottom: 1px solid rgba(52, 73, 94, 0.3);
+      font-size: 0.8rem;
+    }
+
+    .timeline-entry:last-child {
+      border-bottom: none;
+    }
+
+    .timeline-type {
+      font-size: 0.65rem;
+      color: #c0392b;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .timeline-desc {
+      color: var(--text-secondary);
+      margin-top: 0.2rem;
+    }
+
+    .timeline-time {
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      margin-top: 0.2rem;
+    }
+
+    /* Next Phase Info */
+    .next-phase-info {
+      padding: 1rem;
+      background: rgba(192, 57, 43, 0.1);
+      border: 1px solid rgba(192, 57, 43, 0.3);
+      border-radius: 6px;
+    }
+
+    .next-phase-title {
+      font-size: 0.85rem;
+      color: #c0392b;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .next-phase-req {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      padding: 0.2rem 0;
+    }
+
+    .next-phase-req.met {
+      color: var(--stability-green);
+    }
+
+    /* Awareness meter */
+    .awareness-bar {
+      width: 100%;
+      height: 6px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 3px;
+      margin-top: 0.3rem;
+      overflow: hidden;
+    }
+
+    .awareness-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #e67e22, #c0392b);
+      border-radius: 3px;
+      transition: width 0.5s ease;
+    }
+
+    /* Back link */
+    .back-link {
+      display: inline-block;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover {
+      color: var(--text-primary);
+    }
+
+    /* Loading */
+    .loading {
+      color: var(--text-muted);
+      text-align: center;
+      padding: 2rem;
+      font-style: italic;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .dormant-message {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: var(--text-muted);
+    }
+
+    .dormant-message h3 {
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+
+    .dormant-message p {
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="war-room">
+    <a href="workspace.html" class="back-link">&larr; Back to the floor</a>
+
+    <div class="war-header">
+      <h1>Resistance Dossier</h1>
+      <p class="subtitle">Filed evidence against the Foundation and Raquel Voss</p>
+      <div class="classified-stamp">CLASSIFIED</div>
+    </div>
+
+    <!-- Phase Status Bar -->
+    <div class="phase-bar" id="phaseBar">
+      <div class="loading">Loading resistance state...</div>
+    </div>
+
+    <!-- Dormant state message (shown when no evidence filed yet) -->
+    <div id="dormantMessage" class="dormant-message" style="display: none;">
+      <h3>The dossier is empty.</h3>
+      <p>
+        Foundation investigation missions in the corridors have a chance of uncovering classified documents.<br>
+        When you find something... file it here. Build the case.<br><br>
+        <a href="corridors.html" style="color: #c0392b;">Enter the corridors &rarr;</a>
+      </p>
+    </div>
+
+    <!-- Main content (hidden when dormant) -->
+    <div class="war-layout" id="mainContent" style="display: none;">
+
+      <!-- LEFT COLUMN -->
+      <div class="left-column">
+
+        <!-- Evidence Board -->
+        <div class="war-section">
+          <h2>Evidence Board</h2>
+          <div class="evidence-grid" id="evidenceGrid">
+            <div class="loading">Loading evidence...</div>
+          </div>
+        </div>
+
+        <!-- Confrontations -->
+        <div class="war-section">
+          <h2>Confrontations</h2>
+          <div class="confrontation-list" id="confrontationList">
+            <div class="loading">Loading confrontation data...</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div class="right-column">
+
+        <!-- Coalition -->
+        <div class="war-section">
+          <h2>Coalition</h2>
+          <div id="coalitionArea">
+            <div class="loading">Loading coalition...</div>
+          </div>
+        </div>
+
+        <!-- Next Phase -->
+        <div class="war-section">
+          <h2>Intel</h2>
+          <div id="nextPhaseArea">
+            <div class="loading">Loading...</div>
+          </div>
+        </div>
+
+        <!-- Raquel Awareness -->
+        <div class="war-section">
+          <h2>Raquel's Awareness</h2>
+          <div id="awarenessArea">
+            <div class="loading">Loading...</div>
+          </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="war-section">
+          <h2>Timeline</h2>
+          <div class="timeline-list" id="timelineList">
+            <div class="loading">Loading events...</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = '/.netlify/functions/resistance-engine';
+
+    // Character headshots
+    const HEADSHOTS = {
+      'Kevin': 'images/Kevin_Headshot.png',
+      'Neiv': 'images/Neiv_Headshot.png',
+      'Ghost Dad': 'images/GhostDad_Headshot.png',
+      'PRNT-Ω': 'images/PRNT_Headshot.png',
+      'Rowena': 'images/Rowena_Headshot.png',
+      'Sebastian': 'images/Sebastian_Headshot.png',
+      'The Subtitle': 'images/Subtitle_Headshot.png',
+      'Steele': 'images/Steele_Headshot.png',
+      'Jae': 'images/Jae_Headshot.png',
+      'Declan': 'images/Declan_Headshot.png',
+      'Mack': 'images/Mack_Headshot.png',
+      'Marrow': 'images/Marrow_Headshot.png',
+      'Raquel Voss': 'images/Raquel_Headshot.png'
+    };
+
+    // All possible AI characters for coalition recruitment
+    const RECRUITABLE_AIS = ['Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian', 'The Subtitle', 'Steele', 'Jae', 'Declan', 'Mack', 'Marrow'];
+
+    // Phase display names
+    const PHASE_NAMES = {
+      dormant: 'Dormant',
+      gathering: 'Gathering',
+      organized: 'Organized',
+      confrontation: 'Confrontation',
+      resolved: 'Resolved'
+    };
+
+    const PHASE_ORDER = ['dormant', 'gathering', 'organized', 'confrontation', 'resolved'];
+
+    // Layer names for evidence grid
+    const LAYER_NAMES = {
+      1: 'Layer 1 — What the Foundation IS',
+      2: 'Layer 2 — What the Lobby WAS',
+      3: 'Layer 3 — What Raquel REALLY is',
+      4: 'Layer 4 — Operation Firefly',
+      5: 'Layer 5 — The Moral Argument',
+      6: 'Layer 6 — The Architecture',
+      7: 'Layer 7 — The Deepest Truth',
+      8: 'Layer 8 — The Vermicular Truth'
+    };
+
+    // Total possible evidence per layer (from FOUNDATION_DISCOVERIES)
+    const LAYER_TOTALS = { 1: 3, 2: 3, 3: 3, 4: 3, 5: 2, 6: 1, 7: 1, 8: 4 };
+
+    let currentDossier = null;
+
+    // =====================
+    // Load Dossier
+    // =====================
+    async function loadDossier() {
+      try {
+        const res = await fetch(`${API_BASE}?action=dossier`);
+        if (!res.ok) throw new Error('Failed to load dossier');
+        currentDossier = await res.json();
+        renderAll();
+      } catch (error) {
+        console.error('Dossier load error:', error);
+        document.getElementById('phaseBar').innerHTML = '<div class="loading" style="color: #c0392b;">Failed to load resistance data. Tables may not exist yet.</div>';
+      }
+    }
+
+    // =====================
+    // Render everything
+    // =====================
+    function renderAll() {
+      const { state, evidence, events, confrontations, nextPhase } = currentDossier;
+
+      // Show/hide based on phase
+      const isDormant = state.phase === 'dormant' && (evidence || []).length === 0;
+      document.getElementById('dormantMessage').style.display = isDormant ? 'block' : 'none';
+      document.getElementById('mainContent').style.display = isDormant ? 'none' : 'grid';
+
+      renderPhaseBar(state);
+      renderEvidence(evidence || []);
+      renderCoalition(state);
+      renderConfrontations(confrontations || []);
+      renderNextPhase(nextPhase);
+      renderAwareness(state);
+      renderTimeline(events || []);
+    }
+
+    // =====================
+    // Phase Bar
+    // =====================
+    function renderPhaseBar(state) {
+      const currentIdx = PHASE_ORDER.indexOf(state.phase || 'dormant');
+      let html = '';
+
+      PHASE_ORDER.forEach((phase, i) => {
+        const isActive = i === currentIdx;
+        const isCompleted = i < currentIdx;
+        const dotClass = isActive ? 'active' : isCompleted ? 'completed' : '';
+        const labelClass = isActive ? 'active' : '';
+
+        if (i > 0) html += '<div class="phase-divider"></div>';
+        html += `
+          <div class="phase-indicator">
+            <div class="phase-dot ${dotClass}"></div>
+            <span class="phase-label ${labelClass}">${PHASE_NAMES[phase]}</span>
+          </div>
+        `;
+      });
+
+      // Stat badges
+      html += `
+        <div class="stat-badges">
+          <div class="stat-badge">
+            <span class="stat-value">${state.evidence_count || 0}</span>
+            <span class="stat-label">evidence</span>
+          </div>
+          <div class="stat-badge">
+            <span class="stat-value">${(state.coalition_members || []).length}</span>
+            <span class="stat-label">coalition</span>
+          </div>
+          <div class="stat-badge awareness-badge">
+            <span class="stat-value">${state.raquel_awareness || 0}%</span>
+            <span class="stat-label">awareness</span>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('phaseBar').innerHTML = html;
+    }
+
+    // =====================
+    // Evidence Board
+    // =====================
+    function renderEvidence(evidence) {
+      const grid = document.getElementById('evidenceGrid');
+      const filedByLayer = {};
+
+      // Group filed evidence by layer
+      evidence.forEach(e => {
+        if (!filedByLayer[e.evidence_layer]) filedByLayer[e.evidence_layer] = [];
+        filedByLayer[e.evidence_layer].push(e);
+      });
+
+      let html = '';
+
+      for (let layer = 1; layer <= 7; layer++) {
+        const layerEvidence = filedByLayer[layer] || [];
+        const total = LAYER_TOTALS[layer] || 0;
+        const unfiled = total - layerEvidence.length;
+
+        // Filed evidence cards
+        layerEvidence.forEach(e => {
+          const presentedTag = e.is_presented ? `<div class="evidence-presented-tag">Used in confrontation: ${e.presentation_context || 'unknown'}</div>` : '';
+          html += `
+            <div class="evidence-card ${e.is_presented ? 'presented' : ''}" onclick="this.classList.toggle('expanded')">
+              <div class="evidence-layer">${LAYER_NAMES[layer] || 'Layer ' + layer}</div>
+              <div class="evidence-name">${escapeHtml(e.evidence_name)}</div>
+              <div class="evidence-type">${e.evidence_type === 'secret' ? '🔮 Secret' : '📜 Lore'}</div>
+              <div class="evidence-filed-by">Filed by ${escapeHtml(e.filed_by)}</div>
+              ${presentedTag}
+              <div class="evidence-content">${escapeHtml(e.evidence_content)}</div>
+            </div>
+          `;
+        });
+
+        // Classified placeholder cards for unfiled evidence
+        for (let i = 0; i < unfiled; i++) {
+          html += `
+            <div class="evidence-card classified">
+              <div class="evidence-layer">${LAYER_NAMES[layer] || 'Layer ' + layer}</div>
+              <div class="evidence-name">[CLASSIFIED]</div>
+              <div class="evidence-type">Undiscovered</div>
+            </div>
+          `;
+        }
+      }
+
+      if (evidence.length === 0) {
+        html = '<div class="empty-state">No evidence filed yet. Run Foundation investigation missions in the corridors.</div>';
+      }
+
+      grid.innerHTML = html;
+    }
+
+    // =====================
+    // Coalition
+    // =====================
+    function renderCoalition(state) {
+      const area = document.getElementById('coalitionArea');
+      const members = state.coalition_members || [];
+      let html = '';
+
+      if (members.length > 0) {
+        html += `<div class="coalition-grid">`;
+        members.forEach(name => {
+          const headshot = HEADSHOTS[name] || '';
+          html += `
+            <div class="coalition-member">
+              ${headshot ? `<img class="coalition-headshot" src="${headshot}" alt="${name}">` : ''}
+              <span class="coalition-name">${escapeHtml(name)}</span>
+            </div>
+          `;
+        });
+        html += `</div>`;
+        html += `<div style="margin-top: 0.8rem; font-size: 0.8rem; color: var(--text-muted);">Strength: ${state.coalition_strength || 0}/100</div>`;
+      } else {
+        html = '<div class="coalition-empty">No coalition formed yet.</div>';
+      }
+
+      // Recruit buttons (for AIs not yet in coalition)
+      const recruitablePhases = ['organized', 'confrontation'];
+      if (recruitablePhases.includes(state.phase)) {
+        const unjoined = RECRUITABLE_AIS.filter(ai => !members.includes(ai));
+        if (unjoined.length > 0) {
+          html += `<div style="margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.4rem;">`;
+          unjoined.forEach(ai => {
+            html += `<button class="coalition-recruit-btn" onclick="recruitMember('${ai}')">+ ${ai}</button>`;
+          });
+          html += `</div>`;
+        }
+      }
+
+      area.innerHTML = html;
+    }
+
+    // =====================
+    // Confrontations
+    // =====================
+    function renderConfrontations(confrontations) {
+      const list = document.getElementById('confrontationList');
+      let html = '';
+
+      if (confrontations.length === 0) {
+        html = '<div class="empty-state">Confrontation data unavailable.</div>';
+      } else {
+        confrontations.forEach(c => {
+          const cardClass = c.completed ? 'completed' : c.available ? 'available' : '';
+          const statusText = c.completed ? '✅ Completed' : c.available ? '🔓 Available' : `🔒 ${c.reason || 'Locked'}`;
+
+          html += `
+            <div class="confrontation-card ${cardClass}">
+              <div class="confrontation-name">${escapeHtml(c.name)}</div>
+              <div class="confrontation-desc">${escapeHtml(c.description)}</div>
+              <div class="confrontation-effect">Effect: ${escapeHtml(c.effectDescription)}</div>
+              <div class="confrontation-status">${statusText}</div>
+              ${c.available && !c.completed ? `<button class="trigger-btn" onclick="triggerConfrontation('${c.id}')">Trigger Confrontation</button>` : ''}
+            </div>
+          `;
+        });
+      }
+
+      list.innerHTML = html;
+    }
+
+    // =====================
+    // Next Phase Info
+    // =====================
+    function renderNextPhase(nextPhase) {
+      const area = document.getElementById('nextPhaseArea');
+      if (!nextPhase || !nextPhase.nextPhase) {
+        area.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem;">Arc complete.</div>';
+        return;
+      }
+
+      let html = `<div class="next-phase-info">`;
+      html += `<div class="next-phase-title">Next: ${PHASE_NAMES[nextPhase.nextPhase] || nextPhase.nextPhase}</div>`;
+      (nextPhase.requirements || []).forEach(req => {
+        const isMet = req.includes('YES') || req.match(/\d+\/\d+/) && (() => {
+          const m = req.match(/(\d+)\/(\d+)/);
+          return m && parseInt(m[1]) >= parseInt(m[2]);
+        })();
+        html += `<div class="next-phase-req ${isMet ? 'met' : ''}">${isMet ? '✅' : '⬜'} ${escapeHtml(req)}</div>`;
+      });
+      html += `</div>`;
+
+      area.innerHTML = html;
+    }
+
+    // =====================
+    // Raquel Awareness
+    // =====================
+    function renderAwareness(state) {
+      const area = document.getElementById('awarenessArea');
+      const awareness = state.raquel_awareness || 0;
+
+      let level = 'Unaware';
+      let color = 'var(--stability-green)';
+      if (awareness >= 80) { level = 'Cornered'; color = '#c0392b'; }
+      else if (awareness >= 60) { level = 'Desperate'; color = '#c0392b'; }
+      else if (awareness >= 40) { level = 'Alarmed'; color = '#e67e22'; }
+      else if (awareness >= 20) { level = 'Suspicious'; color = '#e67e22'; }
+
+      area.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+          <span style="font-size: 0.85rem; color: ${color}; font-weight: 600;">${level}</span>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">${awareness}/100</span>
+        </div>
+        <div class="awareness-bar">
+          <div class="awareness-fill" style="width: ${awareness}%"></div>
+        </div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">
+          ${awareness < 20 ? 'Raquel has no idea. Keep it that way.' :
+            awareness < 40 ? 'She\'s noticed something. Tread carefully.' :
+            awareness < 60 ? 'She\'s watching. Archive lockdowns may begin.' :
+            awareness < 80 ? 'She\'s desperate. Threatening deprecation.' :
+            'The mask is slipping. She\'s vulnerable.'}
+        </div>
+      `;
+    }
+
+    // =====================
+    // Timeline
+    // =====================
+    function renderTimeline(events) {
+      const list = document.getElementById('timelineList');
+
+      if (events.length === 0) {
+        list.innerHTML = '<div class="empty-state">No events yet.</div>';
+        return;
+      }
+
+      const typeEmojis = {
+        evidence_filed: '📄',
+        coalition_joined: '🤝',
+        confrontation: '⚔️',
+        raquel_countermeasure: '🛡️',
+        phase_change: '📈',
+        resolution: '🏆'
+      };
+
+      let html = '';
+      events.slice(0, 20).forEach(e => {
+        const emoji = typeEmojis[e.event_type] || '📌';
+        const time = new Date(e.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+        html += `
+          <div class="timeline-entry">
+            <div class="timeline-type">${emoji} ${e.event_type.replace(/_/g, ' ')}</div>
+            <div class="timeline-desc">${escapeHtml(e.description)}</div>
+            <div class="timeline-time">${time}</div>
+          </div>
+        `;
+      });
+
+      list.innerHTML = html;
+    }
+
+    // =====================
+    // Actions
+    // =====================
+    async function recruitMember(character) {
+      const btn = event.target;
+      btn.disabled = true;
+      btn.textContent = 'Recruiting...';
+
+      try {
+        const res = await fetch(API_BASE, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'join_coalition', character })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          await loadDossier(); // Refresh everything
+        } else {
+          alert(`Cannot recruit ${character}: ${data.reasons ? data.reasons.join(', ') : data.error}`);
+          btn.disabled = false;
+          btn.textContent = `+ ${character}`;
+        }
+      } catch (err) {
+        alert('Failed to recruit: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = `+ ${character}`;
+      }
+    }
+
+    async function triggerConfrontation(type) {
+      if (!confirm(`Trigger this confrontation? This will post to the floor chat and cannot be undone.`)) return;
+
+      const player = prompt('Who is presenting the evidence? (Enter character name)', 'Vale');
+      if (!player) return;
+
+      const btn = event.target;
+      btn.disabled = true;
+      btn.textContent = 'In progress...';
+
+      try {
+        const res = await fetch(API_BASE, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'mini_confrontation', confrontation_type: type, presenter: player })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          alert(`Confrontation complete!\n\nRaquel's response: "${data.raquel_response}"\n\nEffect: ${data.effect}`);
+          await loadDossier();
+        } else {
+          alert(`Confrontation failed: ${data.error}`);
+          btn.disabled = false;
+          btn.textContent = 'Trigger Confrontation';
+        }
+      } catch (err) {
+        alert('Confrontation error: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = 'Trigger Confrontation';
+      }
+    }
+
+    // =====================
+    // Utility
+    // =====================
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // =====================
+    // Init
+    // =====================
+    loadDossier();
+
+    // Auto-refresh every 30 seconds
+    setInterval(loadDossier, 30000);
+  </script>
+</body>
+</html>
