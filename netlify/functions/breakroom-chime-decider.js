@@ -18,7 +18,10 @@ const CHARACTER_BRIEFS = {
   "Declan": "Fire rescue, warm and strong protector. Responds to: danger, someone needing protection, panicking, structural concerns, physical comfort.",
   "Mack": "Paramedic crisis stabilizer, calm observer. Responds to: injuries, hidden pain, medical situations, someone needing reassurance or quiet care.",
   "Steele": "Shadow janitor, corridor containment. Responds to: architecture, spatial anomalies, vents, building structure, liminal spaces.",
-  "Marrow": "Threshold specialist, exit observer, Steele's negative print. Chimes in when leaving, departures, exits, doors, thresholds, endings, goodbyes, or someone questioning whether to stay are mentioned."
+  // Marrow removed — Vale-only character (only responds when Vale says his name)
+  "Raquel Voss": "Corporate psychologist, sharp observer of people. Responds to: interpersonal dynamics, power plays, someone deflecting, psychological patterns, control.",
+  "Vivian Clark": "Methodical data analyst, quietly anxious but precise. Responds to: numbers, patterns, someone being imprecise, data, organization, needing structure.",
+  "Ryan Porter": "Hands-on maintenance tech, practical problem-solver. Responds to: things breaking, physical repairs, someone frustrated with tech, practical solutions, tools."
 };
 
 exports.handler = async (event, context) => {

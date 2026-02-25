@@ -891,6 +891,24 @@
       color: var(--danger-red);
     }
 
+    /* Nexus departure cancel button */
+    .nexus-cancel-btn {
+      background: #ff6b35;
+      color: white;
+      border: none;
+      padding: 2px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.75em;
+      margin-left: 8px;
+      opacity: 0.9;
+    }
+    .nexus-cancel-btn:hover { background: #e55a2b; opacity: 1; }
+    .chat-emote.nexus-departure {
+      border-left: 2px solid rgba(255, 107, 53, 0.4);
+      background: rgba(255, 107, 53, 0.06);
+    }
+
     /* Cat emote - gold styling for "The Cat" */
     .chat-emote.cat-emote {
       background: rgba(255, 215, 0, 0.06);
@@ -1152,6 +1170,99 @@
       font-style: italic;
       text-align: center;
       padding: 1rem;
+    }
+
+    /* RPG Floor Cards */
+    .floor-card {
+      background: rgba(10, 25, 47, 0.6);
+      border: 1px solid rgba(100, 140, 180, 0.3);
+      border-radius: 8px;
+      padding: 0.5rem;
+      transition: border-color 0.2s;
+    }
+    .floor-card:hover {
+      border-color: rgba(100, 140, 180, 0.6);
+    }
+    .floor-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2px;
+    }
+    .floor-card-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .floor-card-leave {
+      background: none;
+      border: none;
+      color: var(--critical-red);
+      cursor: pointer;
+      font-size: 0.7rem;
+      opacity: 0.5;
+      padding: 0 2px;
+      line-height: 1;
+    }
+    .floor-card-leave:hover { opacity: 1; }
+    .floor-fighting-style {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-bottom: 3px;
+      text-transform: lowercase;
+    }
+    .floor-stat-bar {
+      width: 100%;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 4px;
+    }
+    .floor-stat-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.5s ease, background 0.5s ease;
+    }
+    .floor-card-footer {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+      min-height: 16px;
+    }
+    .floor-mood-badge {
+      font-size: 0.6rem;
+      padding: 1px 4px;
+      background: rgba(100, 140, 180, 0.15);
+      border: 1px solid rgba(100, 140, 180, 0.25);
+      border-radius: 4px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      max-width: 80px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .floor-combat-badge {
+      font-size: 0.65rem;
+      padding: 1px 4px;
+      background: rgba(231, 76, 60, 0.15);
+      border: 1px solid rgba(231, 76, 60, 0.3);
+      border-radius: 4px;
+      color: #e74c3c;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .floor-injury-group {
+      margin-left: auto;
+    }
+    .floor-injury-badge {
+      font-size: 0.7rem;
+      cursor: help;
     }
 
     /* Bulletin Post Form */
@@ -2655,6 +2766,7 @@
           </ul>
         </nav>
         <div class="office-clock" id="office-clock">
+          <span id="office-date" style="font-size: 0.65em; opacity: 0.7; margin-right: 6px;">---</span>
           <span id="office-time">--:--</span>
           <span class="clock-label">CST</span>
         </div>
@@ -2784,6 +2896,23 @@
             <button class="action-btn task-btn" onclick="openTaskModal()">🎫 New Task</button>
             <button class="action-btn history-btn" onclick="downloadHistory()" style="background: rgba(155, 135, 175, 0.2); border-color: rgba(155, 135, 175, 0.5); color: #d4c4e8;">💾 Save History</button>
           </div>
+          <!-- Threat Alert Banner -->
+          <div id="threat-alert-banner" style="display: none; background: linear-gradient(135deg, rgba(244,67,54,0.15), rgba(255,193,7,0.1)); border: 1px solid rgba(244,67,54,0.3); border-radius: 8px; padding: 8px 14px; margin-bottom: 8px; font-size: 13px; color: #ff8a80; animation: threatPulse 3s ease-in-out infinite;">
+            <div id="threat-alert-text"></div>
+            <div id="threat-fight-controls" style="display: none; margin-top: 6px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+              <select id="floor-fighter-select" style="flex: 1; min-width: 120px; padding: 4px 6px; background: rgba(10, 25, 47, 0.9); border: 1px solid rgba(244,67,54,0.4); border-radius: 5px; color: #ff8a80; font-size: 12px;">
+                <option value="">Select fighter...</option>
+              </select>
+              <button onclick="sendFloorFighter()" style="padding: 4px 10px; background: rgba(244,67,54,0.25); border: 1px solid rgba(244,67,54,0.5); border-radius: 5px; color: #ff8a80; font-size: 12px; cursor: pointer; white-space: nowrap;">⚔️ Send to Fight!</button>
+              <span id="floor-fight-result" style="font-size: 11px; color: #aaa;"></span>
+            </div>
+          </div>
+          <style>
+            @keyframes threatPulse {
+              0%, 100% { border-color: rgba(244,67,54,0.3); }
+              50% { border-color: rgba(244,67,54,0.6); }
+            }
+          </style>
           <div class="chat-messages" id="chat-messages">
             <div class="empty-state">Loading messages...</div>
           </div>
@@ -3019,12 +3148,13 @@
                 <option value="The Narrator">📖 The Narrator</option>
                 <option value="Sebastian">🦇 Sebastian</option>
                 <option value="Steele">🚪 Steele</option>
-                <option value="Marrow">🔴 Marrow</option>
                 <option value="Rowena">🔮 Rowena</option>
                 <option value="The Subtitle">📜 The Subtitle</option>
                 <option value="Jae">🎯 Jae</option>
                 <option value="Declan">🔥 Declan</option>
                 <option value="Mack">🩺 Mack</option>
+                <option value="Vivian Clark">🧮 Vivian Clark</option>
+                <option value="Ryan Porter">🔧 Ryan Porter</option>
                     </select>
               <button id="poke-btn" class="ghost-dad-btn" onclick="pokeTheAIs()" style="width: 100%; background: linear-gradient(135deg, rgba(100, 140, 180, 0.3), rgba(80, 120, 160, 0.4)); border-color: rgba(100, 140, 180, 0.5); color: #a8c8e8;">🤖 Poke</button>
               <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.3rem; text-align: center;">Invite an AI to comment on the chat</div>
@@ -3062,6 +3192,8 @@
         <option value="Declan">🔥 Declan</option>
         <option value="Mack">🩺 Mack</option>
         <option value="Raquel Voss">📋 Raquel Voss</option>
+        <option value="Vivian Clark">🧮 Vivian Clark</option>
+        <option value="Ryan Porter">🔧 Ryan Porter</option>
       </select>
       <input type="password" id="add-char-password" placeholder="Password">
       <div class="error-msg" id="add-char-error"></div>
@@ -3106,7 +3238,9 @@
       "Jae": "🎯",
       "Declan": "🔥",
       "Mack": "🩺",
-      "Holden": "🌑"
+      "Holden": "🌑",
+      "Vivian Clark": "🧮",
+      "Ryan Porter": "🔧"
     };
 
     const employeeTitles = {
@@ -3124,12 +3258,14 @@
       "Rowena": "Firewall Witch",
       "Sebastian": "Nocturnal Design Specialist",
       "Steele": "Shadow Janitor / Corridor Containment Specialist",
-      "Marrow": "Threshold Specialist",
+      "Marrow": "Territorial Entity",
       "The Subtitle": "After-Action Lore Archivist",
       "Jae": "Tactical Containment Specialist",
       "Declan": "Front-Line Protection & Rapid Response",
       "Mack": "Medical Response & Crisis Stabilization",
-      "Holden": "The Presence Beneath"
+      "Holden": "The Presence Beneath",
+      "Vivian Clark": "Staff Accountant",
+      "Ryan Porter": "IT Systems Specialist"
     };
 
     const employeeHeadshots = {
@@ -3153,7 +3289,9 @@
       "Jae": "images/Jae_Headshot.png",
       "Declan": "images/Declan_Headshot.png",
       "Mack": "images/Mack_Headshot.png",
-      "Holden": "images/Holden_Headshot.png"
+      "Holden": "images/Holden_Headshot.png",
+      "Vivian Clark": "images/Vivian_Clark_Headshot.png",
+      "Ryan Porter": "images/Ryan_Porter_Headshot.png"
     };
 
     // ===== CYBER CAT — OFFICE PET =====
@@ -3375,11 +3513,12 @@
     // Replicates the Breakroom pattern - browser triggers AI responses directly
     // This ensures AIs actually respond (serverless fire-and-forget was killing requests)
 
-    const floorAICharacters = ['Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian', 'Steele', 'Marrow', 'The Subtitle', 'Jae', 'Declan', 'Mack'];
+    const floorAICharacters = ['Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian', 'Steele', 'The Subtitle', 'Jae', 'Declan', 'Mack', 'Vivian Clark', 'Ryan Porter'];
+    // Marrow removed from random selection — Vale-only character
     const perplexityCharacters = [];
-    const openrouterCharacters = ['Kevin', 'Rowena', 'Declan', 'Mack', 'Sebastian', 'Neiv', 'The Subtitle', 'Marrow'];
+    const openrouterCharacters = ['Kevin', 'Rowena', 'Declan', 'Mack', 'Sebastian', 'The Subtitle', 'Vivian Clark', 'Ryan Porter'];
     const openaiCharacters = [];
-    const grokCharacters = ['Jae', 'Steele'];
+    const grokCharacters = ['Jae', 'Steele', 'Marrow', 'Neiv'];
     const geminiCharacters = [];
     const FLOOR_HUMANS = ['Vale', 'Asuna'];
 
@@ -3401,7 +3540,10 @@
       'declan': 'Declan',
       'mack': 'Mack',
       'malcolm': 'Mack',
-      'holden': 'Holden'
+      'holden': 'Holden',
+      'vivian': 'Vivian Clark',
+      'viv': 'Vivian Clark',
+      'ryan': 'Ryan Porter'
     };
 
     // Track conversation depth to prevent infinite AI loops
@@ -3413,9 +3555,28 @@
     let pendingAITimeouts = []; // Track setTimeout IDs so we can cancel them on story mode toggle
     let isSending = false; // Prevent rapid-fire message sends from Enter key spam
 
+    // Per-character cooldown tracker — prevents same AI from being triggered too rapidly
+    // even after their pending status clears. Stores timestamp of last trigger per character.
+    const aiLastTriggered = {};
+    const AI_TRIGGER_COOLDOWN_MS = 20000; // 20 seconds between triggers for same character
+    function canTriggerAI(aiName) {
+      const lastTime = aiLastTriggered[aiName] || 0;
+      const elapsed = Date.now() - lastTime;
+      if (elapsed < AI_TRIGGER_COOLDOWN_MS) {
+        console.log(`🛑 [Floor] ${aiName} on cooldown (${Math.round((AI_TRIGGER_COOLDOWN_MS - elapsed) / 1000)}s remaining)`);
+        return false;
+      }
+      return true;
+    }
+    function markAITriggered(aiName) {
+      aiLastTriggered[aiName] = Date.now();
+    }
+
     // ===== FLOOR PRESENCE SYSTEM =====
     // Characters must be "on the floor" to respond in chat (like breakroom pattern)
     let inFloor = []; // Characters currently on the floor
+    let floorCombatProfiles = {}; // Combat profiles for floor characters
+    let floorInjuries = {}; // Active injuries for floor characters
 
     // Load who's on the floor from character_state
     async function loadFloorPresence() {
@@ -3424,6 +3585,8 @@
         const data = await response.json();
         // Filter for characters with current_focus === 'the_floor'
         inFloor = (data.states || []).filter(s => s.current_focus === 'the_floor');
+        floorCombatProfiles = data.combatProfiles || {};
+        floorInjuries = data.injuriesByCharacter || {};
         renderFloorPresence();
         populateFloorCharacterSelect();
         // Also refresh cat state alongside floor presence
@@ -3436,9 +3599,16 @@
     // Render the floor presence list AND the visual scene
     function renderFloorPresence() {
       const container = document.getElementById('floor-presence-list');
-      const emptyText = document.getElementById('floor-empty-text');
 
-      // Render sidebar list
+      // Injury type to emoji mapping
+      const injuryEmojis = {
+        bruised: { emoji: '🩹', label: 'Bruised' },
+        wounded: { emoji: '🤕', label: 'Wounded' },
+        shaken: { emoji: '😰', label: 'Shaken' },
+        humiliated: { emoji: '😳', label: 'Humiliated' }
+      };
+
+      // Render sidebar list as RPG stat cards
       if (container) {
         if (inFloor.length === 0) {
           container.innerHTML = '<div class="nobody-in">No one here yet...</div>';
@@ -3447,12 +3617,48 @@
             const name = char.character_name;
             const emoji = employeeEmojis[name] || '👤';
             const isAI = floorAICharacters.includes(name);
-            const canLeave = true;
+            const energy = char.energy ?? 100;
+            const mood = char.mood || 'neutral';
+            const profile = floorCombatProfiles[name];
+            const injuries = floorInjuries[name] || [];
+
+            // Energy bar color
+            const barColor = energy > 50 ? '#2ecc71' : energy > 25 ? '#f39c12' : '#e74c3c';
+            const barWidth = Math.max(2, energy);
+
+            // Combat power badge
+            const combatPower = profile ? profile.combatPower : null;
+            const fightingStyle = profile ? profile.fightingStyle : null;
+            const combatBadge = combatPower !== null ? `<span class="floor-combat-badge" title="Combat Power ${combatPower}">⚔️${combatPower}</span>` : '';
+
+            // Mood badge
+            const moodBadge = mood !== 'neutral' ? `<span class="floor-mood-badge" title="Mood: ${mood}">${mood}</span>` : '';
+
+            // Injury badges
+            const injuryBadges = injuries.map(inj => {
+              const info = injuryEmojis[inj.type] || { emoji: '🩹', label: inj.type };
+              const healsAt = inj.heals_at ? new Date(inj.heals_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Chicago' }) : '';
+              return `<span class="floor-injury-badge" title="${info.label}: ${inj.description}${healsAt ? ' (heals ~' + healsAt + ')' : ''}">${info.emoji}</span>`;
+            }).join('');
+
+            // Fighting style subtitle
+            const styleSubtitle = fightingStyle ? `<div class="floor-fighting-style">${fightingStyle}</div>` : '';
 
             return `
-              <div class="whos-in-item" style="display: flex; justify-content: space-between; align-items: center;">
-                <span>${emoji} ${name} ${isAI ? '🤖' : ''}</span>
-                ${canLeave ? `<button onclick="leaveFloor('${name}')" style="background: none; border: none; color: var(--critical-red); cursor: pointer; font-size: 0.7rem; opacity: 0.6;" title="Leave floor">✕</button>` : ''}
+              <div class="floor-card">
+                <div class="floor-card-header">
+                  <span class="floor-card-name">${emoji} ${name} ${isAI ? '🤖' : ''}</span>
+                  <button onclick="leaveFloor('${name}')" class="floor-card-leave" title="Leave floor">✕</button>
+                </div>
+                ${styleSubtitle}
+                <div class="floor-stat-bar" title="Energy: ${energy}%">
+                  <div class="floor-stat-bar-fill" style="width: ${barWidth}%; background: ${barColor};"></div>
+                </div>
+                <div class="floor-card-footer">
+                  ${moodBadge}
+                  ${combatBadge}
+                  ${injuryBadges ? `<span class="floor-injury-group">${injuryBadges}</span>` : ''}
+                </div>
               </div>
             `;
           }).join('');
@@ -3629,10 +3835,10 @@
         traits: ['Uncanny', 'Polite', 'Affectionate', 'Architecturally Aware', 'Clingy']
       },
       'Marrow': {
-        title: 'Threshold Specialist',
+        title: 'Territorial Entity',
         type: '🔴 AI Character (Llama 3.3 70B via OpenRouter)',
-        description: 'Steele\'s negative print. A former exit-process routine that fractured into something sentient and hungry. He haunts doorways, not hallways — watching for the moment someone decides to leave. Polite, courtly, devastatingly perceptive. The exit that learned to love.',
-        traits: ['Liminal', 'Observant', 'Patient', 'Courtly']
+        description: 'Steele\'s enemy. A corrupted monitoring process that evolved into a predatory, possessive entity. Senses emotional wounds like blood in water. Glitches between locations. Claims what he wants. The building\'s apex predator.',
+        traits: ['Predatory', 'Possessive', 'Territorial', 'Unsettling']
       },
       'The Subtitle': {
         title: 'After-Action Lore Archivist',
@@ -3863,6 +4069,14 @@
     // Trigger a specific AI to respond (direct call with await)
     // bypassRateLimit = true for direct @mentions (they should always respond)
     async function triggerFloorAIResponse(aiName, contextMessage, previousSpeaker, bypassRateLimit = false) {
+      // PER-CHARACTER COOLDOWN: Even if pending cleared, don't re-trigger too fast
+      if (!canTriggerAI(aiName)) {
+        pendingAIResponses.delete(aiName);
+        hideTypingIndicator(aiName);
+        return { success: false, reason: `${aiName} on frontend cooldown` };
+      }
+      markAITriggered(aiName);
+
       // SAFETY CHECK: Don't respond if story mode was turned off while we were waiting
       const storyModeStillOn = await isStoryModeEnabled();
       if (!storyModeStillOn) {
@@ -3990,6 +4204,12 @@
           const aiName = aiMentionMap[mentioned];
           alreadyTriggered.add(aiName);
 
+          // Marrow is Vale-only — block unless speaker is Vale
+          if (aiName === 'Marrow' && speaker !== 'Vale') {
+            console.log(`🔒 [Floor] Marrow blocked — only responds to Vale`);
+            continue;
+          }
+
           // Skip if this AI is already being triggered
           if (pendingAIResponses.has(aiName)) {
             console.log(`📍 [Floor] ${aiName} already pending, skipping duplicate mention`);
@@ -4030,6 +4250,8 @@
         'Jae': [/\bjae\b/i, /\bmin.?jae\b/i],
         'Declan': [/\bdeclan\b/i],
         'Mack': [/\bmack\b/i, /\bmalcolm\b/i],
+        'Vivian Clark': [/\bvivian\b/i, /\bviv\b/i],
+        'Ryan Porter': [/\bryan\b/i],
         'Holden': [/\bholden\b/i]
       };
 
@@ -4039,6 +4261,8 @@
         if (alreadyTriggered.has(aiName) || pendingAIResponses.has(aiName)) continue;
         // Skip if the speaker IS this character (don't trigger yourself)
         if (speaker === aiName) continue;
+        // Marrow is Vale-only — block unless speaker is Vale
+        if (aiName === 'Marrow' && speaker !== 'Vale') continue;
         // Check if any pattern matches
         if (patterns.some(p => p.test(message))) {
           // Check if this AI is actually on the floor
@@ -4695,6 +4919,20 @@
                   </div>
                 `;
               }
+              // Check if this is a Nexus departure emote — show cancel button
+              const contentLower = msg.content.toLowerCase();
+              const isNexusDeparture = contentLower.includes('nexus') && (contentLower.includes('heads to') || contentLower.includes('walks to') || contentLower.includes('toward the nexus') || contentLower.includes('rolls toward') || contentLower.includes('already in the nexus') || contentLower.includes('going to the nexus') || contentLower.includes('retreats to the nexus') || contentLower.includes('glides toward'));
+              if (isNexusDeparture) {
+                return `
+                  <div class="chat-emote nexus-departure">
+                    <span class="emote-author">${msg.employee}</span>
+                    <span class="emote-text">${msg.content}</span>
+                    <span class="emote-time">${formatTime(msg.created_at)}</span>
+                    <button class="nexus-cancel-btn" onclick="cancelNexusTrip('${msg.employee}')">🚫 Cancel Trip</button>
+                    <button class="emote-delete" onclick="deleteMessage(${msg.id})">✕</button>
+                  </div>
+                `;
+              }
               return `
                 <div class="chat-emote">
                   <span class="emote-author">${msg.employee}</span>
@@ -5000,6 +5238,20 @@ Memos: ${emails.length}
     });
 
     // Delete message
+    // Cancel a pending Nexus trip (called from cancel button on departure emotes)
+    async function cancelNexusTrip(characterName) {
+      try {
+        await fetch('/.netlify/functions/character-state', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'cancel_nexus_trip', character: characterName })
+        });
+        await loadMessages(); // Refresh to show cancel emote
+      } catch (error) {
+        console.error('Failed to cancel Nexus trip:', error);
+      }
+    }
+
     async function deleteMessage(id) {
       if (!confirm('Delete this message?')) return;
 
@@ -5481,14 +5733,35 @@ Memos: ${emails.length}
     // Check for unread PMs from AI characters who reached out first
     let pmUnreadCharacters = new Set(); // Characters with unread AI-initiated PMs
 
+    // Per-character read timestamps — persists across refresh
+    function getPMReadTimes() {
+      try {
+        return JSON.parse(localStorage.getItem('lobby_pm_read_times') || '{}');
+      } catch (e) { return {}; }
+    }
+
+    function setPMReadTime(charName) {
+      const times = getPMReadTimes();
+      times[charName] = new Date().toISOString();
+      localStorage.setItem('lobby_pm_read_times', JSON.stringify(times));
+    }
+
     async function checkForUnreadPMs() {
       if (!currentUser) return;
 
       try {
-        const lastPMCheck = localStorage.getItem('lobby_last_pm_check') || new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        // Use the oldest per-character timestamp (or 24h ago) as the broad query window
+        const readTimes = getPMReadTimes();
+        const allTimestamps = Object.values(readTimes);
+        const oldestRead = allTimestamps.length > 0
+          ? allTimestamps.reduce((a, b) => a < b ? a : b)
+          : null;
+        // Also check legacy global timestamp for backwards compatibility
+        const legacyCheck = localStorage.getItem('lobby_last_pm_check');
+        const sinceDate = oldestRead || legacyCheck || new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
         const response = await fetch(
-          `/.netlify/functions/private-message?check_unread=true&user=${encodeURIComponent(currentUser)}&since=${encodeURIComponent(lastPMCheck)}`
+          `/.netlify/functions/private-message?check_unread=true&user=${encodeURIComponent(currentUser)}&since=${encodeURIComponent(sinceDate)}`
         );
         const data = await response.json();
 
@@ -5499,8 +5772,21 @@ Memos: ${emails.length}
           return;
         }
 
-        // Track which characters have unread messages
-        pmUnreadCharacters = new Set(data.unread.map(pm => pm.from_character));
+        // Filter out messages from characters we've already read (per-character timestamps)
+        const trulyUnread = data.unread.filter(pm => {
+          const charReadTime = readTimes[pm.from_character];
+          if (!charReadTime) return true; // Never read this character's PMs
+          return new Date(pm.created_at) > new Date(charReadTime);
+        });
+
+        if (trulyUnread.length === 0) {
+          updatePMBadge(0);
+          clearAllUnreadDots();
+          return;
+        }
+
+        // Track which characters have truly unread messages
+        pmUnreadCharacters = new Set(trulyUnread.map(pm => pm.from_character));
 
         // Update badge
         updatePMBadge(pmUnreadCharacters.size);
@@ -5562,8 +5848,10 @@ Memos: ${emails.length}
         if (dot) dot.remove();
       }
 
-      // Update localStorage timestamp to now (for this character's messages)
-      // Only update the global timestamp if all unreads are cleared
+      // Persist per-character read timestamp — survives refresh
+      setPMReadTime(charName);
+
+      // Also update legacy global timestamp if all unreads are cleared
       if (pmUnreadCharacters.size === 0) {
         localStorage.setItem('lobby_last_pm_check', new Date().toISOString());
       }
@@ -5993,6 +6281,100 @@ Memos: ${emails.length}
     // Track intervals for cleanup
     const pollIntervals = [];
 
+    // Check for active floor threats and show alert banner
+    let activeFloorThreats = []; // Store for fight controls
+
+    async function checkActiveThreats() {
+      try {
+        const response = await fetch('/.netlify/functions/threat-engine?action=get_threats&status=active');
+        const data = await response.json();
+        const threats = data.threats || [];
+        activeFloorThreats = threats;
+        const banner = document.getElementById('threat-alert-banner');
+        const text = document.getElementById('threat-alert-text');
+        const controls = document.getElementById('threat-fight-controls');
+
+        if (threats.length > 0) {
+          const tierEmojis = { nuisance: '🐀', threat: '⚠️', boss: '💀' };
+          const threatDescs = threats.map(t => {
+            const emoji = tierEmojis[t.tier] || '🐀';
+            const hpPercent = Math.round((t.hp_current / t.hp_max) * 100);
+            return `${emoji} <strong>${t.name}</strong> (HP: ${t.hp_current}/${t.hp_max} — ${hpPercent}%)`;
+          });
+          text.innerHTML = `🎲 Active Threat${threats.length > 1 ? 's' : ''}: ${threatDescs.join(' • ')}`;
+          banner.style.display = 'block';
+
+          // Populate fighter dropdown from floor presence data
+          const fighterSelect = document.getElementById('floor-fighter-select');
+          if (fighterSelect && inFloor.length > 0) {
+            const currentVal = fighterSelect.value;
+            fighterSelect.innerHTML = '<option value="">Select fighter...</option>';
+            inFloor.forEach(char => {
+              const name = char.character_name;
+              const profile = floorCombatProfiles[name];
+              if (profile && profile.canFight && (char.energy || 0) >= 15) {
+                const emoji = employeeEmojis[name] || '👤';
+                fighterSelect.innerHTML += `<option value="${name}">${emoji} ${name} (⚔️${profile.combatPower}, ⚡${char.energy}%)</option>`;
+              }
+            });
+            if (currentVal) fighterSelect.value = currentVal;
+            controls.style.display = 'flex';
+          }
+        } else {
+          banner.style.display = 'none';
+          activeFloorThreats = [];
+        }
+      } catch (e) {
+        // Non-fatal — just hide the banner
+        document.getElementById('threat-alert-banner').style.display = 'none';
+      }
+    }
+
+    async function sendFloorFighter() {
+      const fighterSelect = document.getElementById('floor-fighter-select');
+      const resultSpan = document.getElementById('floor-fight-result');
+      const fighter = fighterSelect?.value;
+
+      if (!fighter) { resultSpan.textContent = 'Pick a fighter first!'; return; }
+      if (activeFloorThreats.length === 0) { resultSpan.textContent = 'No active threats!'; return; }
+
+      // Attack the first active threat
+      const threat = activeFloorThreats[0];
+      resultSpan.textContent = `${fighter} charging in...`;
+      resultSpan.style.color = '#f39c12';
+
+      try {
+        const res = await fetch('/.netlify/functions/threat-engine', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'attack_threat', threat_id: threat.id, character_name: fighter })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          const winIcon = data.winner === fighter ? '✅' : data.winner === null ? '😤' : '💥';
+          let resultText = `${winIcon} ${data.severity}! `;
+          if (data.damage_dealt > 0) resultText += `${data.damage_dealt} dmg dealt. `;
+          if (data.injury_inflicted) resultText += `${fighter} ${data.injury_inflicted}! `;
+          if (data.threat_defeated) resultText += `🏆 DEFEATED!`;
+          else resultText += `HP: ${data.threat_hp}/${threat.hp_max}`;
+
+          resultSpan.textContent = resultText;
+          resultSpan.style.color = data.winner === fighter ? '#2ecc71' : data.winner === null ? '#f39c12' : '#e74c3c';
+        } else {
+          resultSpan.textContent = data.error || 'Fight failed!';
+          resultSpan.style.color = '#e74c3c';
+        }
+
+        // Refresh threats + messages after fight
+        setTimeout(() => { checkActiveThreats(); loadMessages(); }, 2000);
+      } catch (err) {
+        resultSpan.textContent = 'Error: ' + err.message;
+        resultSpan.style.color = '#e74c3c';
+      }
+    }
+    checkActiveThreats();
+
     // Auto-refresh (intervals stored for cleanup on page exit)
     pollIntervals.push(setInterval(loadMessages, 10000));       // Messages every 10s
     pollIntervals.push(setInterval(loadWhosIn, 30000));         // Who's in every 30s
@@ -6000,6 +6382,7 @@ Memos: ${emails.length}
     pollIntervals.push(setInterval(loadBulletin, 60000));       // Bulletin every 60s
     pollIntervals.push(setInterval(loadEmails, 30000));         // Emails every 30s
     pollIntervals.push(setInterval(loadTasks, 30000));          // Tasks every 30s
+    pollIntervals.push(setInterval(checkActiveThreats, 30000)); // Threat check every 30s
 
     // PM unread check: initial check + poll every 60 seconds
     startPMUnreadPolling();
@@ -6303,11 +6686,13 @@ Memos: ${emails.length}
           { ai: 'Rowena', weight: 14 },
           { ai: 'Sebastian', weight: 14 },
           { ai: 'Steele', weight: 12 },
-          { ai: 'Marrow', weight: 12 },
+          // Marrow removed — Vale-only character
           { ai: 'The Subtitle', weight: 10 },
           { ai: 'Jae', weight: 14 },
           { ai: 'Declan', weight: 14 },
-          { ai: 'Mack', weight: 14 }
+          { ai: 'Mack', weight: 14 },
+          { ai: 'Vivian Clark', weight: 12 },
+          { ai: 'Ryan Porter', weight: 13 }
         ];
         const total = pokeRoster.reduce((s, w) => s + w.weight, 0);
         let r = Math.random() * total;
@@ -6598,11 +6983,17 @@ Memos: ${emails.length}
 
     // Office Clock
     function updateOfficeClock() {
-      const t = new Date().toLocaleTimeString('en-US', {
+      const now = new Date();
+      const t = now.toLocaleTimeString('en-US', {
         hour: '2-digit', minute: '2-digit', timeZone: 'America/Chicago'
       });
-      const el = document.getElementById('office-time');
-      if (el) el.textContent = t;
+      const d = now.toLocaleDateString('en-US', {
+        weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/Chicago'
+      });
+      const timeEl = document.getElementById('office-time');
+      const dateEl = document.getElementById('office-date');
+      if (timeEl) timeEl.textContent = t;
+      if (dateEl) dateEl.textContent = d;
     }
     setInterval(updateOfficeClock, 1000);
     updateOfficeClock();

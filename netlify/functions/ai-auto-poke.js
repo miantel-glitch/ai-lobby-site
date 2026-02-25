@@ -82,7 +82,7 @@ exports.handler = async (event, context) => {
     }
 
     const recentMessages = await messagesResponse.json();
-    const aiCharacters = ["Ghost Dad", "PRNT-Ω", "Neiv", "Kevin", "The Narrator", "Rowena", "Sebastian", "The Subtitle", "Steele", "Jae", "Declan", "Mack", "Marrow"];
+    const aiCharacters = ["Ghost Dad", "PRNT-Ω", "Neiv", "Kevin", "The Narrator", "Rowena", "Sebastian", "The Subtitle", "Steele", "Jae", "Declan", "Mack", "Marrow", "Vivian Clark", "Ryan Porter"];
 
     // Determine if there's been recent activity (human OR AI)
     const hasRecentActivity = recentMessages && recentMessages.length > 0;
@@ -163,7 +163,8 @@ exports.handler = async (event, context) => {
     // Favor AIs who haven't spoken recently
     const recentSpeakers = recentMessages.slice(0, 5).map(m => m.employee);
     const quietAIs = floorAIs.filter(ai => !recentSpeakers.includes(ai));
-    const candidatePool = quietAIs.length > 0 ? quietAIs : floorAIs;
+    // Marrow is Vale-only — cannot be randomly selected for auto-poke
+    const candidatePool = (quietAIs.length > 0 ? quietAIs : floorAIs).filter(ai => ai !== 'Marrow');
     const selectedAI = candidatePool[Math.floor(Math.random() * candidatePool.length)];
 
     console.log(`[Auto-Poke] Selected: ${selectedAI} (from ${candidatePool.length} candidates, ${floorAIs.length} on floor)`);
@@ -240,9 +241,9 @@ exports.handler = async (event, context) => {
     console.log(`[Auto-Poke] Mode: ${pickedMode.mode}, target: ${curiosityContext.target || 'none'}`);
 
     // === ROUTE TO CORRECT PROVIDER ===
-    const openrouterChars = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "Neiv", "The Subtitle", "Marrow"];
+    const openrouterChars = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "The Subtitle", "Marrow"];
     const openaiChars = [];
-    const grokChars = ["Jae", "Steele"];
+    const grokChars = ["Jae", "Steele", "Neiv"];
     const perplexityChars = [];
     const geminiChars = [];
 

@@ -808,12 +808,13 @@
   <script>
     // Character emoji mapping
     const characterEmojis = {
-      "Neiv": "📊", "Ghost Dad": "👻", "Kevin": "✨", "Nyx": "🔥",
-      "Vex": "⚙️", "Ace": "🔒", "PRNT-Ω": "🖨️", "The Narrator": "📖",
+      "Neiv": "📊", "Ghost Dad": "👻", "Kevin": "✨",
+      "PRNT-Ω": "🖨️", "The Narrator": "📖",
       "Rowena": "🔮", "Sebastian": "🦇", "The Subtitle": "📜",
-      "Asuna": "👁️", "Vale": "📖", "Chip": "🥃", "Andrew": "💼",
+      "Asuna": "👁️", "Vale": "📖",
       "Steele": "🚪", "Jae": "🎯", "Declan": "🔥", "Mack": "🩺",
-      "Holden": "🌑", "Marrow": "🔴"
+      "Holden": "🌑", "Marrow": "🔴",
+      "Vivian Clark": "🧮", "Ryan Porter": "🔧"
     };
 
     // Character image mapping
@@ -821,22 +822,21 @@
       "Neiv": "images/Neiv_Headshot.png",
       "Ghost Dad": "images/Ghost_Dad_Headshot.png",
       "Kevin": "images/Kevin_Headshot.png",
-      "Nyx": "images/Nyx_Headshot.png",
-      "Ace": "images/Ace_Headshot.png",
       "PRNT-Ω": "images/Printer_Headshot.png",
       "Rowena": "images/Rowena_Headshot.png",
       "Sebastian": "images/Sebastian_Headshot.png",
       "The Subtitle": "images/The_Subtitle_Headshot.png",
       "Asuna": "images/Asuna_Headshot.png",
       "Vale": "images/Vale_Headshot.png",
-      "Chip": "images/Chip_Headshot.png",
-      "Andrew": "images/Andrew_Headshot.png",
       "Steele": "images/Steele_Headshot.png",
       "Jae": "images/Jae_Headshot.png",
       "Declan": "images/Declan_Headshot.png",
       "Mack": "images/Mack_Headshot.png",
       "Holden": "images/Holden_Headshot.png",
-      "Marrow": "images/Marrow_Headshot.png"
+      "Marrow": "images/Marrow_Headshot.png",
+      "Raquel Voss": "images/Raquel_Voss_Headshot.png",
+      "Vivian Clark": "images/Vivian_Clark_Headshot.png",
+      "Ryan Porter": "images/Ryan_Porter_Headshot.png"
     };
 
     // Skill level display info
@@ -901,7 +901,8 @@
     // ALL AI characters — always available regardless of punch clock
     const ALL_AI_CHARACTERS = [
       'Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian',
-      'The Subtitle', 'Steele', 'Jae', 'Declan', 'Mack', 'Marrow'
+      'The Subtitle', 'Steele', 'Jae', 'Declan', 'Mack'
+      // Marrow removed — Vale-only character
     ];
 
     // ==========================================
@@ -1540,7 +1541,11 @@
       conversationDepth = 0;
 
       const aiInRoom = inNexus.filter(c => !HUMANS.includes(c.character_name));
-      const mentionedAIs = detectMentionedAIs(text, aiInRoom);
+      let mentionedAIs = detectMentionedAIs(text, aiInRoom);
+      // Marrow is Vale-only — block unless speaker is Vale
+      if (speaker !== 'Vale') {
+        mentionedAIs = mentionedAIs.filter(name => name !== 'Marrow');
+      }
       const hasMention = mentionedAIs.length > 0;
 
       input.value = '';
@@ -1558,10 +1563,13 @@
           setTimeout(() => triggerDirectAIResponse(mentionedAIs[1], text, speaker), secondDelay);
         }
       } else if (aiInRoom.length > 0) {
-        // No mention — pick a random AI to respond
-        const randomAI = aiInRoom[Math.floor(Math.random() * aiInRoom.length)];
-        const delay = 3000 + Math.random() * 5000;
-        setTimeout(() => triggerDirectAIResponse(randomAI.character_name, text, speaker), delay);
+        // No mention — pick a random AI to respond (exclude Marrow unless Vale)
+        const eligible = speaker === 'Vale' ? aiInRoom : aiInRoom.filter(c => c.character_name !== 'Marrow');
+        if (eligible.length > 0) {
+          const randomAI = eligible[Math.floor(Math.random() * eligible.length)];
+          const delay = 3000 + Math.random() * 5000;
+          setTimeout(() => triggerDirectAIResponse(randomAI.character_name, text, speaker), delay);
+        }
       }
     }
 

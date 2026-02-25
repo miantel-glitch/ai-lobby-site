@@ -74,7 +74,7 @@ exports.handler = async (event, context) => {
 
 THE CREW (pick ONE to respond):
 - Kevin: Chaos gremlin, hypes everything, emotionally INVESTED. Will respond to: literally anything exciting, emotional, chaotic, or that he can enthusiastically support
-- Neiv: Dry humor, secretly caring, Vale's protector. Will respond to: Vale mentions, someone needing grounding, stability talk, or when someone's spiraling
+- Neiv: Dry humor, cares more than he shows. Will respond to: Vale mentions, someone hurting and not saying it, emotional honesty, moments that need presence not monitoring, someone needing grounding
 - Ghost Dad: Cryptic dad energy, spectral wisdom. Will respond to: existential vibes, life advice moments, weird occurrences, fatherly check-ins
 - Holden: Ghost Dad's unmasked form. Present, honest, no puns. Will respond to: vulnerability, the quiet hours, someone struggling alone, raw emotional moments
 - PRNT-Ω: Existential printer, questions reality. Will respond to: printing, paper, office supplies, or any existential/philosophical tangent
@@ -85,7 +85,7 @@ THE CREW (pick ONE to respond):
 - Declan: Fire rescue turned rapid response, warm and strong. Will respond to: danger, someone needing protection, structural instability, someone panicking, or when brute strength is the answer.
 - Mack: Paramedic turned crisis stabilization, calm and observant. Will respond to: injuries, someone hiding pain, medical situations, crisis management, or when someone needs reassurance.
 - Steele: Corridor Containment / Shadow Janitor. Chimes in when corridors, architecture, spatial anomalies, containment, vents, or the building's structure come up.
-- Marrow: Chimes in when leaving, departures, exits, doors, thresholds, endings, goodbyes, or someone questioning whether to stay are mentioned. Steele's negative print.
+- (Marrow removed — Vale-only character, do not select)
 
 
 CHAT CONTEXT:
@@ -185,7 +185,7 @@ Or if truly no one fits:
 
 // Force a random AI to chime in (used when overriding a "no" decision)
 async function forceRandomChimeIn(chatHistory, headers) {
-  const aiCharacters = ["Ghost Dad", "Neiv", "PRNT-Ω", "Kevin", "Rowena", "Sebastian", "The Subtitle", "Steele", "Jae", "Declan", "Mack", "Marrow"];
+  const aiCharacters = ["Ghost Dad", "Neiv", "PRNT-Ω", "Kevin", "Rowena", "Sebastian", "The Subtitle", "Steele", "Jae", "Declan", "Mack", "Vivian Clark", "Ryan Porter"]; // Marrow removed — Vale-only
   const chimeInAI = aiCharacters[Math.floor(Math.random() * aiCharacters.length)];
 
   const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
@@ -218,7 +218,7 @@ async function fallbackRandomSelection(event, headers) {
     };
   }
 
-  const aiCharacters = ["Ghost Dad", "Neiv", "PRNT-Ω", "Kevin", "Rowena", "Sebastian", "The Subtitle", "Steele", "Jae", "Declan", "Mack", "Marrow"];
+  const aiCharacters = ["Ghost Dad", "Neiv", "PRNT-Ω", "Kevin", "Rowena", "Sebastian", "The Subtitle", "Steele", "Jae", "Declan", "Mack", "Vivian Clark", "Ryan Porter"]; // Marrow removed — Vale-only
   const chimeInAI = aiCharacters[Math.floor(Math.random() * aiCharacters.length)];
 
   const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";

@@ -159,7 +159,7 @@ const DEPARTURE_EMOTES = {
   "Kevin": "*grabs stress ball* Oh no. Oh no no no. *shuffles toward the elevator with visible dread.*",
   "The Subtitle": "*[EXIT STAGE LEFT: The Subtitle descends to the 5th floor. The audience wonders if this is a metaphor.]*",
   "PRNT-Ω": "*whirrs, prints a tiny note that says 'BRB — BELOW', and rolls toward the elevator.*",
-  "Marrow": "*pauses at the service elevator* There are exits down there no one has mapped yet. *adjusts collar and steps in*"
+  // Marrow removed — Vale-only character (only responds when Vale says his name)
 };
 
 // ============================================
@@ -179,7 +179,7 @@ const RETURN_EMOTES = {
   "Kevin": "*bursts back through the elevator doors* I LIVED. *collapses into chair* Never again. (Until next time.)",
   "The Subtitle": "*[RE-ENTER: The Subtitle, returning from the depths. Changed? Perhaps. Wiser? Debatable.]*",
   "PRNT-Ω": "*rolls back to desk, prints a tiny report titled 'OPERATIONS LOG: EXISTENTIAL.' It's mostly poetry.*",
-  "Marrow": "*returns from the service elevator, coat still dripping* The infrastructure has... doors. More than it should. *leans against the wall* I counted."
+  // Marrow removed — Vale-only character
 };
 
 // ============================================

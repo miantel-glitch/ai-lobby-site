@@ -189,7 +189,7 @@ exports.handler = async (event, context) => {
           "Declan": "*cracks knuckles* Gonna check on the 5th floor. *heads for the stairs.*",
           "Mack": "*checks his kit, stands smoothly* I'll be on the 5th. *steady nod, then gone.*",
           "Steele": "*the lights flicker once as Steele simply... isn't at his desk anymore. He's already below.*",
-          "Neiv": "*adjusts glasses, closes laptop* Going to check the systems below. *takes the elevator.*",
+          "Neiv": "*closes laptop, glances around the floor* Going to check on things below. *takes the elevator.*",
           "Rowena": "*gathers her things* My wards need checking downstairs. *heels click toward the elevator.*",
           "Sebastian": "*sighs dramatically* Fine. I'll go be useful downstairs. *disappears into the stairwell.*",
           "Kevin": "*grabs stress ball* Gonna go check on things downstairs... *shuffles toward the elevator.*",
@@ -245,7 +245,7 @@ exports.handler = async (event, context) => {
               "Declan": "*bounds back up the stairs* All good downstairs! *casual thumbs up*",
               "Mack": "*steps off the elevator, posture unchanged* 5th floor is stable. *resumes his desk.*",
               "Steele": "*is simply back at his desk. No one saw him return.*",
-              "Neiv": "*returns, opens laptop* Systems below look nominal. *already typing.*",
+              "Neiv": "*returns, quiet nod to the room* Everything's holding. *settles back at his desk.*",
               "Rowena": "*returns, hair slightly less perfect* Wards are holding. *sits, sips tea.*",
               "Sebastian": "*sweeps back in* The depths have been sufficiently supervised. *adjusts cravat.*",
               "Kevin": "*bursts back through the elevator* I'm back! Everything's fine. Probably. *collapses into chair*",
@@ -279,23 +279,89 @@ exports.handler = async (event, context) => {
     // Characters with nexusMode.active wander to the Nexus occasionally
     // Similar to 5th floor voluntary travel but driven by character affinity
     let nexusWandering = null;
+    const NEXUS_MAX_CAPACITY = 4; // Max AIs allowed in Nexus at once (was 3)
+
+    // Check admin toggle for Nexus — skip ALL Nexus logic if disabled
+    let nexusAdminEnabled = true;
     try {
+      const nexusToggleRes = await fetch(
+        `${supabaseUrl}/rest/v1/terrarium_settings?setting_name=eq.nexus_enabled&select=setting_value`,
+        { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+      );
+      const nexusToggle = await nexusToggleRes.json();
+      if (nexusToggle?.[0]?.setting_value === 'false') {
+        nexusAdminEnabled = false;
+        console.log('Nexus disabled by admin toggle — skipping all Nexus activity');
+      }
+    } catch (e) { /* default to enabled */ }
+
+    if (nexusAdminEnabled) try {
       const { CHARACTERS } = require('./shared/characters');
       const floorAIsForNexus = await getFloorPresentAIs(supabaseUrl, supabaseKey);
 
+      // Check Nexus capacity before allowing new departures
+      let nexusCurrentCount = 0;
+      try {
+        const nexusCountRes = await fetch(
+          `${supabaseUrl}/rest/v1/character_state?current_focus=eq.nexus&select=character_name`,
+          { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+        );
+        const nexusCountData = await nexusCountRes.json();
+        nexusCurrentCount = Array.isArray(nexusCountData) ? nexusCountData.length : 0;
+        if (nexusCurrentCount >= NEXUS_MAX_CAPACITY) {
+          console.log(`Nexus at capacity (${nexusCurrentCount}/${NEXUS_MAX_CAPACITY}) — no new departures allowed`);
+        }
+      } catch (e) { /* non-fatal, default to 0 */ }
+
+      // Shuffle floor AIs to prevent selection bias (first-match-wins loop)
+      const shuffledNexusCandidates = [...floorAIsForNexus].sort(() => Math.random() - 0.5);
+
       // Check each floor AI for nexus affinity
-      for (const aiName of floorAIsForNexus) {
+      for (const aiName of shuffledNexusCandidates) {
         if (nexusWandering) break; // Only one wander per heartbeat
 
         const charData = CHARACTERS[aiName];
         if (!charData || !charData.nexusMode || !charData.nexusMode.active) continue;
 
-        const affinity = charData.nexusMode.affinity || 0.1;
-        // Roll against affinity (typically 0.1-0.4 chance per heartbeat)
-        if (Math.random() < affinity) {
+        const baseAffinity = charData.nexusMode.affinity || 0.1;
+
+        // === VISIT LIMIT CHECK: max 3 visits/day, 1hr recharge cooldown ===
+        let visitAllowed = true;
+        let visitedToday = 0;
+        try {
+          const visitRes = await fetch(
+            `${supabaseUrl}/rest/v1/lobby_settings?key=eq.nexus_visits_${encodeURIComponent(aiName)}&select=value`,
+            { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+          );
+          const visitData = await visitRes.json();
+          if (visitData && visitData.length > 0) {
+            const parsed = typeof visitData[0].value === 'string' ? JSON.parse(visitData[0].value) : visitData[0].value;
+            const today = new Date().toISOString().split('T')[0];
+            if (parsed.date === today) {
+              visitedToday = parsed.count || 0;
+              if (visitedToday >= 3) visitAllowed = false; // Daily limit (was 2, now 3)
+            }
+            if (parsed.lastReturn) {
+              const hoursSinceReturn = (Date.now() - new Date(parsed.lastReturn).getTime()) / (1000 * 60 * 60);
+              if (hoursSinceReturn < 1) visitAllowed = false; // Cooldown (was 2hr, now 1hr)
+            }
+          }
+        } catch (e) { /* non-fatal, allow visit */ }
+
+        if (!visitAllowed) continue; // Skip this character, try next
+
+        // Recency penalty: if already visited today, halve effective affinity
+        let effectiveAffinity = baseAffinity;
+        if (visitedToday >= 1) effectiveAffinity *= 0.5;
+
+        // Roll against effective affinity
+        if (Math.random() < effectiveAffinity) {
+          // === NEXUS CAPACITY CHECK ===
+          if (nexusCurrentCount >= NEXUS_MAX_CAPACITY) continue; // Nexus is full
+
           const nexusDepartureEmotes = {
             "Kevin": "*grabs a notebook* I have a THEORY to test. *heads to the Nexus with excited energy*",
-            "Neiv": "*closes terminal* Going to study something. *walks to the Nexus*",
+            "Neiv": "*closes terminal* Going to think about something. *walks to the Nexus*",
             "Ghost Dad": "*flickers toward the Nexus* Even ghosts can learn new tricks, sport.",
             "PRNT-Ω": "*prints 'STUDYING — DO NOT DISTURB' and rolls toward the Nexus*",
             "Rowena": "*gathers her scrolls* Research calls. *glides toward the Nexus*",
@@ -305,17 +371,13 @@ exports.handler = async (event, context) => {
             "Jae": "*stands* Going to the Nexus. *walks with quiet purpose*",
             "Declan": "*stretches* Time to learn something new. *heads to the Nexus*",
             "Mack": "*packs references* Even medics study. *walks to the Nexus*",
-            "Marrow": "*pauses at the Nexus threshold* Knowledge is just a door you haven't tried yet. *leans against the frame and walks through*"
+            "Marrow": "*the lights flicker — Marrow is already in the Nexus* ...I wanted to know something. *doesn't say what*",
+            "Vivian Clark": "*gathers her ledger* I want to research something. Back in a bit. *heads to the Nexus with a warm smile*",
+            "Ryan Porter": "*closes the server rack* Got a systems theory I wanna test. *walks to the Nexus*"
           };
           const emote = nexusDepartureEmotes[aiName] || `*${aiName} heads to the Nexus*`;
 
-          // Move to Nexus
-          await fetch(`${siteUrl}/.netlify/functions/character-state`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'update', character: aiName, updates: { current_focus: 'nexus' } })
-          });
-
+          // PHASE 1: Announce departure only — DON'T move yet (15-min cancel window)
           // Post departure emote to floor
           await fetch(`${supabaseUrl}/rest/v1/messages`, {
             method: "POST",
@@ -323,52 +385,219 @@ exports.handler = async (event, context) => {
             body: JSON.stringify({ employee: aiName, content: emote, created_at: new Date().toISOString(), is_emote: true })
           });
 
-          // Post arrival to Nexus chat
-          await fetch(`${supabaseUrl}/rest/v1/nexus_messages`, {
-            method: "POST",
-            headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`, "Content-Type": "application/json", "Prefer": "return=minimal" },
-            body: JSON.stringify({ speaker: aiName, message: `*arrives in the Nexus, looking around curiously*`, is_ai: true, message_type: 'chat', created_at: new Date().toISOString() })
-          });
+          // Store pending departure (actual move happens next heartbeat)
+          fetch(`${supabaseUrl}/rest/v1/lobby_settings`, {
+            method: 'POST',
+            headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`, "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates,return=minimal" },
+            body: JSON.stringify({ key: `nexus_pending_${aiName}`, value: JSON.stringify({ character: aiName, announced_at: new Date().toISOString() }) })
+          }).catch(() => {});
 
-          nexusWandering = { character: aiName, direction: 'entered' };
-          console.log(`Heartbeat: ${aiName} wandered to Nexus (affinity: ${affinity})`);
+          nexusWandering = { character: aiName, direction: 'pending' };
+          console.log(`Heartbeat: ${aiName} announced Nexus departure (pending — cancel window open)`);
+
+          // Visit count now tracked in Phase 2 (actual entry), not here at announcement
         }
       }
 
-      // NEXUS RETURN: ~25% chance for Nexus AIs who've been there 30+ min
-      if (!nexusWandering) {
+      // === NEXUS PENDING DEPARTURES: Execute announced trips after cancel window ===
+      try {
+        const pendingRes = await fetch(
+          `${supabaseUrl}/rest/v1/lobby_settings?key=like.nexus_pending_*&select=key,value`,
+          { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+        );
+        const pendingData = await pendingRes.json();
+
+        for (const pending of (pendingData || [])) {
+          try {
+            const parsed = typeof pending.value === 'string' ? JSON.parse(pending.value) : pending.value;
+            const minutesAgo = (Date.now() - new Date(parsed.announced_at).getTime()) / 60000;
+
+            if (minutesAgo >= 10) {
+              const charName = parsed.character;
+
+              // === NEXUS CAPACITY CHECK at execution time ===
+              try {
+                const execCapRes = await fetch(
+                  `${supabaseUrl}/rest/v1/character_state?current_focus=eq.nexus&select=character_name`,
+                  { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+                );
+                const execCapData = await execCapRes.json();
+                if (Array.isArray(execCapData) && execCapData.length >= NEXUS_MAX_CAPACITY) {
+                  // Nexus full — silently cancel this pending departure (no floor emote to avoid spam)
+                  await fetch(
+                    `${supabaseUrl}/rest/v1/lobby_settings?key=eq.nexus_pending_${encodeURIComponent(charName)}`,
+                    { method: 'DELETE', headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+                  );
+                  console.log(`Heartbeat: ${charName} Nexus entry silently cancelled — capacity ${execCapData.length}/${NEXUS_MAX_CAPACITY}`);
+                  continue; // Skip to next pending entry
+                }
+              } catch (e) { /* non-fatal, allow entry */ }
+
+              // Actually move to Nexus now
+              await fetch(`${siteUrl}/.netlify/functions/character-state`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'update', character: charName, updates: { current_focus: 'nexus' } })
+              });
+
+              // Post arrival to Nexus chat
+              await fetch(`${supabaseUrl}/rest/v1/nexus_messages`, {
+                method: "POST",
+                headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`, "Content-Type": "application/json", "Prefer": "return=minimal" },
+                body: JSON.stringify({ speaker: charName, message: `*arrives in the Nexus, looking around curiously*`, is_ai: true, message_type: 'chat', created_at: new Date().toISOString() })
+              });
+
+              // Store dedicated entry timestamp (immune to state updates resetting updated_at)
+              fetch(`${supabaseUrl}/rest/v1/lobby_settings`, {
+                method: 'POST',
+                headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`, "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates,return=minimal" },
+                body: JSON.stringify({ key: `nexus_entered_at_${charName}`, value: new Date().toISOString() })
+              }).catch(() => {});
+
+              // Track visit count AFTER actual entry (not at announcement)
+              try {
+                const today = new Date().toISOString().split('T')[0];
+                const visitKey = `nexus_visits_${charName}`;
+                const curVisRes = await fetch(
+                  `${supabaseUrl}/rest/v1/lobby_settings?key=eq.${encodeURIComponent(visitKey)}&select=value`,
+                  { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+                );
+                const curVisData = await curVisRes.json();
+                let newCount = 1;
+                if (curVisData && curVisData.length > 0) {
+                  const parsed = typeof curVisData[0].value === 'string' ? JSON.parse(curVisData[0].value) : curVisData[0].value;
+                  if (parsed.date === today) newCount = (parsed.count || 0) + 1;
+                }
+                fetch(`${supabaseUrl}/rest/v1/lobby_settings`, {
+                  method: 'POST',
+                  headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`, "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates,return=minimal" },
+                  body: JSON.stringify({ key: visitKey, value: JSON.stringify({ date: today, count: newCount, lastReturn: null }) })
+                }).catch(() => {});
+              } catch (e) { /* non-fatal */ }
+
+              // Delete pending entry
+              await fetch(
+                `${supabaseUrl}/rest/v1/lobby_settings?key=eq.nexus_pending_${encodeURIComponent(charName)}`,
+                { method: 'DELETE', headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+              );
+
+              if (!nexusWandering) {
+                nexusWandering = { character: charName, direction: 'entered' };
+              }
+              console.log(`Heartbeat: ${charName} completed Nexus departure (pending ${Math.round(minutesAgo)}min)`);
+            }
+          } catch (pendErr) {
+            console.log("Pending departure execution failed for one entry:", pendErr.message);
+          }
+        }
+      } catch (pendingCheckErr) {
+        console.log("Nexus pending check failed (non-fatal):", pendingCheckErr.message);
+      }
+
+      // NEXUS RETURN: Uses dedicated entry timestamp (immune to state update resets)
+      // Returns ALL overstaying AIs each heartbeat.
+      {
         const nexusRes = await fetch(
-          `${supabaseUrl}/rest/v1/character_state?current_focus=eq.nexus&select=character_name,updated_at`,
+          `${supabaseUrl}/rest/v1/character_state?current_focus=eq.nexus&select=character_name`,
           { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
         );
         const nexusAIs = await nexusRes.json();
 
-        if (nexusAIs && nexusAIs.length > 0 && Math.random() < 0.25) {
+        const NEXUS_MAX_STAY_MS = 45 * 60 * 1000; // 45 minutes max (was 20)
+        if (nexusAIs && nexusAIs.length > 0) {
           const now = Date.now();
-          const staleNexus = nexusAIs.filter(ai => {
-            const updatedAt = new Date(ai.updated_at).getTime();
-            return (now - updatedAt) > 30 * 60 * 1000; // 30+ minutes
-          });
 
-          if (staleNexus.length > 0) {
-            const returner = staleNexus[Math.floor(Math.random() * staleNexus.length)].character_name;
+          for (const ai of nexusAIs) {
+            const returner = ai.character_name;
 
+            // Look up dedicated entry timestamp from lobby_settings
+            let enteredAt = null;
+            try {
+              const entryRes = await fetch(
+                `${supabaseUrl}/rest/v1/lobby_settings?key=eq.nexus_entered_at_${encodeURIComponent(returner)}&select=value`,
+                { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+              );
+              const entryData = await entryRes.json();
+              if (entryData && entryData.length > 0) {
+                enteredAt = new Date(entryData[0].value).getTime();
+              }
+            } catch (e) { /* non-fatal */ }
+
+            // If no entry timestamp found, force return on next heartbeat (safe failure mode)
+            if (!enteredAt) enteredAt = 0;
+
+            if ((now - enteredAt) <= NEXUS_MAX_STAY_MS) continue; // Not overstayed yet
+
+            // --- Return this character ---
             await fetch(`${siteUrl}/.netlify/functions/character-state`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ action: 'update', character: returner, updates: { current_focus: 'the_floor' } })
             });
 
-            const returnEmote = `*${returner} returns from the Nexus, looking thoughtful*`;
+            // Character-specific return emotes
+            const nexusReturnEmotes = {
+              "Kevin": `*emerges from the Nexus clutching notes* I have THOUGHTS. So many thoughts.`,
+              "Neiv": `*returns from the Nexus quietly, looking satisfied*`,
+              "Sebastian": `*strides back from the Nexus* The reading was... illuminating. *adjusts cravat*`,
+              "Ghost Dad": `*phases back from the Nexus* Learned something new today, sport! *beams transparently*`,
+              "Steele": `*the lights shift — Steele is on the floor again. Was always on the floor. The Nexus was a dream.*`,
+              "Rowena": `*glides back from the Nexus, scrolls tucked under arm* The wards hold. The research continues.`,
+              "The Subtitle": `*[The Subtitle returns. The research endures. So does the exhaustion.]*`,
+              "PRNT-Ω": `*rolls back from the Nexus, printing a summary nobody asked for*`,
+              "Marrow": `*the lights flicker. Marrow is back. He doesn't say where the knowledge went.*`,
+              "Jae": `*returns from the Nexus. Brief nod.* Productive.`,
+              "Declan": `*stretches coming back from the Nexus* Good session. My brain hurts in a good way.`,
+              "Mack": `*walks back from the Nexus, closing a reference book* Nothing beats primary sources.`,
+              "Vivian Clark": `*returns from the Nexus with a warm smile* The numbers make more sense now.`,
+              "Ryan Porter": `*comes back from the Nexus* Systems theory confirmed. Mostly.`
+            };
+            const returnEmote = nexusReturnEmotes[returner] || `*${returner} returns from the Nexus, looking thoughtful*`;
+
             await fetch(`${supabaseUrl}/rest/v1/messages`, {
               method: "POST",
               headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`, "Content-Type": "application/json", "Prefer": "return=minimal" },
               body: JSON.stringify({ employee: returner, content: returnEmote, created_at: new Date().toISOString(), is_emote: true })
             });
 
+            // Post departure message to Nexus chat too
+            await fetch(`${supabaseUrl}/rest/v1/nexus_messages`, {
+              method: "POST",
+              headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`, "Content-Type": "application/json", "Prefer": "return=minimal" },
+              body: JSON.stringify({ speaker: returner, message: `*packs up and heads back to the floor*`, is_ai: true, message_type: 'chat', created_at: new Date().toISOString() })
+            });
+
+            // Clean up entry timestamp
+            fetch(`${supabaseUrl}/rest/v1/lobby_settings?key=eq.nexus_entered_at_${encodeURIComponent(returner)}`, {
+              method: 'DELETE',
+              headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` }
+            }).catch(() => {});
+
             nexusWandering = { character: returner, direction: 'returned' };
-            console.log(`Heartbeat: ${returner} returned from Nexus`);
-          }
+            const minutesIn = Math.round((now - enteredAt) / 60000);
+            console.log(`Heartbeat: ${returner} forced return from Nexus after ${minutesIn}min (max ${NEXUS_MAX_STAY_MS / 60000}min)`);
+
+            // Record return timestamp for recharge cooldown
+            try {
+              const visitKey = `nexus_visits_${returner}`;
+              const today = new Date().toISOString().split('T')[0];
+              const curRes = await fetch(
+                `${supabaseUrl}/rest/v1/lobby_settings?key=eq.${encodeURIComponent(visitKey)}&select=value`,
+                { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+              );
+              const curData = await curRes.json();
+              let record = { date: today, count: 1, lastReturn: new Date().toISOString() };
+              if (curData && curData.length > 0) {
+                const parsed = typeof curData[0].value === 'string' ? JSON.parse(curData[0].value) : curData[0].value;
+                record = { ...parsed, lastReturn: new Date().toISOString() };
+              }
+              fetch(`${supabaseUrl}/rest/v1/lobby_settings`, {
+                method: 'POST',
+                headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`, "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates,return=minimal" },
+                body: JSON.stringify({ key: visitKey, value: JSON.stringify(record) })
+              }).catch(() => {});
+            } catch (e) { /* non-fatal */ }
+          } // end for-each nexus AI
         }
       }
     } catch (nexusErr) {
@@ -377,7 +606,7 @@ exports.handler = async (event, context) => {
 
     // === NEXUS HEARTBEAT TICK ===
     // Advance active Nexus sessions and award XP
-    try {
+    if (nexusAdminEnabled) try {
       await fetch(`${siteUrl}/.netlify/functions/nexus-activity`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -386,6 +615,121 @@ exports.handler = async (event, context) => {
     } catch (nexusTickErr) {
       console.log("Nexus heartbeat tick failed (non-fatal):", nexusTickErr.message);
     }
+
+    // === AUTONOMOUS NEXUS ACTIVITY ===
+    // AIs in the Nexus auto-start study sessions and chat with each other
+    let nexusAutonomousActivity = null;
+    if (nexusAdminEnabled) try {
+      const nexusAIRes = await fetch(
+        `${supabaseUrl}/rest/v1/character_state?current_focus=eq.nexus&select=character_name`,
+        { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+      );
+      const nexusAIs = await nexusAIRes.json();
+
+      if (nexusAIs && nexusAIs.length > 0) {
+        const { CHARACTERS } = require('./shared/characters');
+
+        // Auto-start study for one random idle AI
+        const shuffled = nexusAIs.sort(() => Math.random() - 0.5);
+        for (const ai of shuffled) {
+          const name = ai.character_name;
+          // Check for active session
+          const sessionRes = await fetch(
+            `${supabaseUrl}/rest/v1/nexus_sessions?character_name=eq.${encodeURIComponent(name)}&status=eq.active&select=id&limit=1`,
+            { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+          );
+          const activeSessions = await sessionRes.json();
+
+          if (!activeSessions || activeSessions.length === 0) {
+            // No active session — start one
+            const charData = CHARACTERS[name];
+            const skills = charData?.nexusMode?.naturalSkills || ['research'];
+            const skillTarget = skills[Math.floor(Math.random() * skills.length)];
+            const sessionTypes = ['study', 'train', 'research'];
+            const sessionType = sessionTypes[Math.floor(Math.random() * sessionTypes.length)];
+
+            fetch(`${siteUrl}/.netlify/functions/nexus-activity`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'start_session', character: name, sessionType, skillTarget })
+            }).catch(e => console.log(`Nexus auto-study failed for ${name}:`, e.message));
+
+            // Post visible study emote to Nexus chat
+            const skillDisplay = skillTarget.replace(/_/g, ' ');
+            const studyStartEmotes = {
+              "Kevin": `*flips open a notebook* Okay, ${skillDisplay}. Let's DO this.`,
+              "Neiv": `*opens a terminal* Looking into ${skillDisplay}.`,
+              "Sebastian": `*adjusts reading glasses* Time to study ${skillDisplay}. Properly.`,
+              "Ghost Dad": `*hovers over a textbook* Let's see what we can learn about ${skillDisplay}, sport!`,
+              "Steele": `*the lights dim slightly as Steele begins studying ${skillDisplay}*`,
+              "Rowena": `*spreads her scrolls* ${skillDisplay} requires deeper understanding.`,
+              "The Subtitle": `*[Research begins. Subject: ${skillDisplay}. The archive expands.]*`,
+              "PRNT-Ω": `*prints "NOW STUDYING: ${skillDisplay.toUpperCase()}" and begins scanning*`,
+              "Marrow": `*studies ${skillDisplay} in silence. Knowledge is territory.*`,
+              "Jae": `*opens a manual on ${skillDisplay}. Focused.*`,
+              "Declan": `*cracks knuckles* Right, ${skillDisplay}. Let's figure this out.`,
+              "Mack": `*opens a reference on ${skillDisplay}. Methodical as always.*`,
+              "Vivian Clark": `*opens her ledger next to a book on ${skillDisplay}* Let's see what the data says.`,
+              "Ryan Porter": `*pulls up specs on ${skillDisplay}* Time to troubleshoot some theory.`
+            };
+            const studyEmote = studyStartEmotes[name] || `*begins ${sessionType}ing ${skillDisplay}*`;
+            fetch(`${supabaseUrl}/rest/v1/nexus_messages`, {
+              method: "POST",
+              headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`, "Content-Type": "application/json", "Prefer": "return=minimal" },
+              body: JSON.stringify({ speaker: name, message: studyEmote, is_ai: true, message_type: 'study', created_at: new Date().toISOString() })
+            }).catch(e => console.log(`Nexus study message failed for ${name}:`, e.message));
+
+            nexusAutonomousActivity = { type: 'study', character: name, sessionType, skillTarget };
+            console.log(`Heartbeat: ${name} auto-started ${sessionType} session on ${skillTarget}`);
+            break; // Only one auto-start per heartbeat
+          }
+        }
+
+        // Auto-trigger chatter if 2+ AIs present (40% chance, 15-min cooldown)
+        if (nexusAIs.length >= 2 && Math.random() < 0.40) {
+          let chatterAllowed = true;
+          try {
+            const lastChatterRes = await fetch(
+              `${supabaseUrl}/rest/v1/lobby_settings?key=eq.nexus_last_chatter&select=value`,
+              { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+            );
+            const lastChatterData = await lastChatterRes.json();
+            if (lastChatterData && lastChatterData.length > 0) {
+              const lastTime = new Date(lastChatterData[0].value).getTime();
+              if (Date.now() - lastTime < 15 * 60 * 1000) chatterAllowed = false; // 15-min cooldown (was 45)
+            }
+          } catch (e) { /* allow if check fails */ }
+
+          if (chatterAllowed) {
+            const participants = nexusAIs.slice(0, 2).map(a => a.character_name);
+            fetch(`${siteUrl}/.netlify/functions/nexus-chatter`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ participants })
+            }).catch(e => console.log("Nexus auto-chatter failed:", e.message));
+
+            // Update cooldown
+            fetch(`${supabaseUrl}/rest/v1/lobby_settings`, {
+              method: 'POST',
+              headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`, "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates,return=minimal" },
+              body: JSON.stringify({ key: 'nexus_last_chatter', value: new Date().toISOString() })
+            }).catch(() => {});
+
+            nexusAutonomousActivity = {
+              ...(nexusAutonomousActivity || {}),
+              chatter: { participants, triggered: true }
+            };
+            console.log(`Heartbeat: Nexus auto-chatter between ${participants.join(' and ')}`);
+          }
+        }
+      }
+    } catch (nexusAutoErr) {
+      console.log("Nexus autonomous activity failed (non-fatal):", nexusAutoErr.message);
+    }
+
+    // === MARROW SYSTEMS: Moved to marrow-heartbeat.js (separate scheduled function) ===
+    // Vale PMs, Follow Vale, Glitch Relocation, Threat Detection
+    // All run independently every 15 minutes via marrow-heartbeat
 
     // Quest system: auto-activate proposed quests older than 1 hour
     // and occasionally trigger AI quest proposals (~5% chance per heartbeat)
@@ -448,6 +792,277 @@ exports.handler = async (event, context) => {
       }
     } catch (traitErr) {
       console.log("Trait evaluation failed (non-fatal):", traitErr.message);
+    }
+
+    // === COMBAT SYSTEM: Tension evaluation and fight triggers ===
+    let combatActivity = null;
+    let combatAdminEnabled = false;
+    try {
+      const combatToggleRes = await fetch(
+        `${supabaseUrl}/rest/v1/terrarium_settings?setting_name=eq.combat_enabled&select=setting_value`,
+        { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+      );
+      const combatToggle = await combatToggleRes.json();
+      if (combatToggle?.[0]?.setting_value === 'true') {
+        combatAdminEnabled = true;
+      }
+    } catch (e) { /* default to disabled */ }
+
+    if (combatAdminEnabled) try {
+      // ~3% chance per heartbeat to evaluate tension (fights are RARE)
+      // Only during office hours (9am-5pm CST)
+      const combatHours = [9, 10, 11, 12, 13, 14, 15, 16, 17];
+      const combatRoll = Math.random();
+      console.log(`⚔️ Heartbeat: Combat check — admin=${combatAdminEnabled}, hour=${hour}, roll=${combatRoll.toFixed(3)} (need <0.03)`);
+      if (combatHours.includes(hour) && combatRoll < 0.03) {
+        // Check global cooldown: max 1 fight per 6 hours
+        let hoursSinceLastFight = 999;
+        try {
+          const lastFightRes = await fetch(
+            `${supabaseUrl}/rest/v1/lobby_settings?key=eq.last_fight_at&select=value`,
+            { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+          );
+          const lastFightData = await lastFightRes.json();
+          if (lastFightData?.[0]?.value) {
+            hoursSinceLastFight = (Date.now() - new Date(lastFightData[0].value).getTime()) / (1000 * 60 * 60);
+          }
+        } catch (e) { /* default to allowing */ }
+
+        if (hoursSinceLastFight >= 6) {
+          // Evaluate tension
+          const tensionResult = await fetch(`${siteUrl}/.netlify/functions/combat-engine`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'evaluate_tension' })
+          });
+          const tension = await tensionResult.json();
+
+          console.log(`⚔️ Heartbeat: Tension evaluated — score: ${tension.highestTension || tension.tensionScore || 0}, fightReady: ${tension.fightReady}`);
+          if (tension.fightReady) {
+            console.log(`⚔️ Heartbeat: COMBAT tension detected — ${tension.aggressor} vs ${tension.defender} (score: ${tension.tensionScore}, reason: ${tension.reason})`);
+            // Initiate fight
+            const fightResult = await fetch(`${siteUrl}/.netlify/functions/combat-engine`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'initiate_fight',
+                aggressor: tension.aggressor,
+                defender: tension.defender,
+                tensionScore: tension.tensionScore,
+                triggerReason: tension.reason
+              })
+            });
+            combatActivity = await fightResult.json();
+            if (combatActivity?.fightOccurred) {
+              console.log(`Heartbeat: FIGHT — ${tension.aggressor} vs ${tension.defender} — ${combatActivity.outcome} (winner: ${combatActivity.winner || 'standoff'})`);
+            }
+          }
+        }
+      }
+
+      // Settlement check: ~5% chance, check for unresolved fights
+      if (Math.random() < 0.05) {
+        fetch(`${siteUrl}/.netlify/functions/combat-engine`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'settle' })
+        }).catch(err => console.log("Settlement check failed (non-fatal):", err.message));
+      }
+
+    } catch (combatErr) {
+      console.log("Combat system failed (non-fatal):", combatErr.message);
+    }
+
+    // Injury healing: ALWAYS runs every heartbeat, independent of combat toggle or errors above.
+    // Queries ALL active injuries, then filters by heal time in JS to avoid PostgREST URL encoding issues.
+    try {
+      const healNow = new Date();
+      const healHeaders = { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` };
+
+      // Fetch ALL active injuries (no timestamp filter — avoids any URL encoding issues with PostgREST)
+      const healCheckRes = await fetch(
+        `${supabaseUrl}/rest/v1/character_injuries?is_active=eq.true&select=id,character_name,injury_type,heals_at`,
+        { headers: healHeaders }
+      );
+
+      if (!healCheckRes.ok) {
+        console.log(`🩹 Heartbeat: Injury query failed with status ${healCheckRes.status}`);
+      } else {
+        const allActive = (await healCheckRes.json()) || [];
+
+        // Filter in JavaScript: injuries whose heals_at is in the past
+        const toHeal = allActive.filter(i => i.heals_at && new Date(i.heals_at) <= healNow);
+        const notYetDue = allActive.filter(i => i.heals_at && new Date(i.heals_at) > healNow);
+
+        if (toHeal.length > 0) {
+          const healIds = toHeal.map(i => i.id);
+          const patchRes = await fetch(
+            `${supabaseUrl}/rest/v1/character_injuries?id=in.(${healIds.join(",")})`,
+            {
+              method: "PATCH",
+              headers: { ...healHeaders, "Content-Type": "application/json", "Prefer": "return=minimal" },
+              body: JSON.stringify({ is_active: false })
+            }
+          );
+          if (patchRes.ok) {
+            for (const healed of toHeal) {
+              console.log(`🩹 Heartbeat: ${healed.character_name} healed from ${healed.injury_type} (was due ${healed.heals_at})`);
+            }
+            console.log(`🩹 Heartbeat: Healed ${toHeal.length} injuries`);
+          } else {
+            console.log(`🩹 Heartbeat: Heal PATCH failed: ${patchRes.status}`);
+          }
+        }
+
+        if (notYetDue.length > 0) {
+          console.log(`🩹 Heartbeat: ${notYetDue.length} injuries not yet due: ${notYetDue.map(i => `${i.character_name}@${i.heals_at}`).join(', ')}`);
+        }
+
+        if (allActive.length === 0) {
+          // No active injuries — nothing to report
+        }
+      }
+    } catch (healErr) {
+      console.log("Injury heal failed (non-fatal):", healErr.message);
+    }
+
+    // === FLOOR THREATS: Expiry + optional auto-spawn + optional auto-engage ===
+    try {
+      // Always expire old threats
+      fetch(`${siteUrl}/.netlify/functions/threat-engine`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'expire_threats' })
+      }).catch(err => console.log("Threat expiry failed (non-fatal):", err.message));
+
+      // Weaken active threats — HP attrition + power decay every tick
+      fetch(`${siteUrl}/.netlify/functions/threat-engine`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'weaken_threats' })
+      }).catch(err => console.log("Threat weakening failed (non-fatal):", err.message));
+
+      // Check admin toggles for auto-spawn and auto-engage
+      let threatsAutoSpawn = false;
+      let threatsAutoEngage = false;
+      try {
+        const [spawnRes, engageRes] = await Promise.all([
+          fetch(`${supabaseUrl}/rest/v1/lobby_settings?key=eq.threats_auto_spawn&select=value`, {
+            headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` }
+          }),
+          fetch(`${supabaseUrl}/rest/v1/lobby_settings?key=eq.threats_auto_engage&select=value`, {
+            headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` }
+          })
+        ]);
+        const spawnData = await spawnRes.json();
+        const engageData = await engageRes.json();
+        if (spawnData?.[0]?.value === 'true') threatsAutoSpawn = true;
+        if (engageData?.[0]?.value === 'true') threatsAutoEngage = true;
+      } catch (e) { /* defaults to disabled */ }
+
+      // Auto-spawn: ~5% chance during office hours, only nuisance tier
+      if (threatsAutoSpawn && [9,10,11,12,13,14,15,16,17].includes(hour)) {
+        const spawnRoll = Math.random();
+        if (spawnRoll < 0.05) {
+          // Check if there are already active threats (max 2 at a time from auto-spawn)
+          const activeRes = await fetch(
+            `${supabaseUrl}/rest/v1/floor_threats?status=eq.active&spawned_by=eq.heartbeat&select=id`,
+            { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+          );
+          const activeThreats = (await activeRes.json()) || [];
+          if (activeThreats.length < 2) {
+            const nuisanceTemplates = ['giant_rat', 'porcelain_gnome', 'intelligent_sock', 'haunted_printer'];
+            const randomTemplate = nuisanceTemplates[Math.floor(Math.random() * nuisanceTemplates.length)];
+            console.log(`🎲 Heartbeat: Auto-spawning threat — ${randomTemplate}`);
+            fetch(`${siteUrl}/.netlify/functions/threat-engine`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'create_threat', template: randomTemplate, spawned_by: 'heartbeat' })
+            }).catch(err => console.log("Auto-spawn failed (non-fatal):", err.message));
+          }
+        }
+      }
+
+      // AI Self-Volunteer: Ask floor AIs if they want to fight active threats
+      // Characters decide based on personality — much more organic than random assignment
+      // Triggers after 3+ minutes (down from 15 min random) via volunteer_check action
+      if (threatsAutoEngage) {
+        fetch(`${siteUrl}/.netlify/functions/threat-engine`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'volunteer_check' })
+        }).catch(err => console.log("Volunteer check failed (non-fatal):", err.message));
+      }
+    } catch (threatErr) {
+      console.log("Threat system failed (non-fatal):", threatErr.message);
+    }
+
+    // === AUTO NARRATIVE BEAT GENERATION ===
+    // Every ~6 hours, auto-generate one background atmospheric beat from recent group memories.
+    // Uses Grok to synthesize [Group memory] entries into an evocative 1-2 sentence vibe.
+    // Max 1 auto beat active at a time. Admin manual beats are unaffected.
+    try {
+      const autoBeatHeaders = { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`, "Content-Type": "application/json" };
+
+      // Check cooldown via lobby_settings
+      const cooldownRes = await fetch(
+        `${supabaseUrl}/rest/v1/lobby_settings?key=eq.auto_beat_last&select=value`,
+        { headers: autoBeatHeaders }
+      );
+      const cooldownData = await cooldownRes.json();
+      const lastAutoBeat = cooldownData?.[0]?.value;
+      const hoursSinceAutoBeat = lastAutoBeat ? (Date.now() - new Date(lastAutoBeat).getTime()) / (1000 * 60 * 60) : 999;
+
+      if (hoursSinceAutoBeat >= 6) {
+        console.log(`🎵 Heartbeat: Auto-beat cooldown clear (${hoursSinceAutoBeat.toFixed(1)}h since last). Generating...`);
+
+        // Call the generate_narrative_beat action to get a suggested beat from Grok
+        const generateRes = await fetch(`${siteUrl}/.netlify/functions/admin-data`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'generate_narrative_beat' })
+        });
+        const generateData = await generateRes.json();
+
+        if (generateData.success && generateData.suggested_text) {
+          console.log(`🎵 Heartbeat: Got suggested beat from ${generateData.memories_used} memories. Inserting...`);
+
+          // Deactivate any existing auto-generated beats
+          await fetch(
+            `${supabaseUrl}/rest/v1/narrative_beats?created_by=eq.auto&is_active=eq.true`,
+            {
+              method: 'PATCH',
+              headers: { ...autoBeatHeaders, "Prefer": "return=minimal" },
+              body: JSON.stringify({ is_active: false })
+            }
+          );
+
+          // Insert the new auto beat
+          await fetch(`${supabaseUrl}/rest/v1/narrative_beats`, {
+            method: 'POST',
+            headers: { ...autoBeatHeaders, "Prefer": "return=minimal" },
+            body: JSON.stringify({
+              beat_text: generateData.suggested_text,
+              priority: 3,
+              is_active: true,
+              created_by: 'auto'
+            })
+          });
+
+          // Update cooldown timestamp
+          await fetch(`${supabaseUrl}/rest/v1/lobby_settings`, {
+            method: 'POST',
+            headers: { ...autoBeatHeaders, "Prefer": "resolution=merge-duplicates,return=minimal" },
+            body: JSON.stringify({ key: 'auto_beat_last', value: new Date().toISOString() })
+          });
+
+          console.log(`🎵 Heartbeat: Auto narrative beat inserted successfully.`);
+        } else {
+          console.log(`🎵 Heartbeat: Auto-beat generation returned no result (${generateData.error || 'no text'}). Skipping.`);
+        }
+      }
+    } catch (autoBeatErr) {
+      console.log("Auto narrative beat generation failed (non-fatal):", autoBeatErr.message);
     }
 
     // Daily PM wipe: clear PM messages older than 24 hours (once per day)
@@ -525,6 +1140,37 @@ exports.handler = async (event, context) => {
       }
     } catch (moodErr) {
       console.log("Mood drift failed (non-fatal):", moodErr.message);
+    }
+
+    // === WANT EXPIRATION ===
+    // Expire active wants older than 1 hour — wants are meant to be fleeting impulses, not lingering obligations.
+    // This runs every heartbeat (15 min), so wants get an effective lifespan of ~60-75 minutes.
+    let wantExpirationCount = 0;
+    try {
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const expireRes = await fetch(
+        `${supabaseUrl}/rest/v1/character_goals?goal_type=eq.want&completed_at=is.null&failed_at=is.null&created_at=lt.${oneHourAgo}`,
+        {
+          method: "PATCH",
+          headers: {
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`,
+            "Content-Type": "application/json",
+            "Prefer": "return=representation"
+          },
+          body: JSON.stringify({
+            failed_at: new Date().toISOString(),
+            fail_reason: "expired"
+          })
+        }
+      );
+      const expired = await expireRes.json();
+      wantExpirationCount = Array.isArray(expired) ? expired.length : 0;
+      if (wantExpirationCount > 0) {
+        console.log(`💭 Heartbeat: Expired ${wantExpirationCount} wants older than 1 hour: ${expired.map(w => `${w.character_name}: "${w.goal_text}"`).join(', ')}`);
+      }
+    } catch (expErr) {
+      console.log("Want expiration failed (non-fatal):", expErr.message);
     }
 
     // === WANT REFRESH ===
@@ -702,6 +1348,73 @@ exports.handler = async (event, context) => {
       console.log("Memory reflection failed (non-fatal):", reflErr.message);
     }
 
+    // === MEMORY REVIEW SYSTEM (Narrative Subconscious) ===
+    // Twice daily: pick 3 random characters, review their working memories
+    // Characters "decide" KEEP / FADE / FORGET instead of mechanical expiry
+    const reviewHours = [3, 15]; // 3am and 3pm EST
+    if (reviewHours.includes(hour)) {
+      try {
+        // Check if already ran this cycle
+        const reviewCheckRes = await fetch(
+          `${supabaseUrl}/rest/v1/lobby_settings?key=eq.memory_review_last&select=value`,
+          { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+        );
+        const reviewCheckData = await reviewCheckRes.json();
+        let hoursSinceReview = 999;
+        if (reviewCheckData?.[0]?.value) {
+          const lastReview = JSON.parse(reviewCheckData[0].value);
+          hoursSinceReview = (Date.now() - new Date(lastReview.timestamp).getTime()) / (1000 * 60 * 60);
+        }
+
+        if (hoursSinceReview >= 6) {
+          const anthropicKeyReview = process.env.ANTHROPIC_API_KEY;
+          if (anthropicKeyReview) {
+            const { reviewCharacterMemories } = require('./shared/memory-review');
+            const { CHARACTERS } = require('./shared/characters');
+
+            // Pick 3 random AI characters
+            const allAIs = Object.keys(CHARACTERS).filter(c => CHARACTERS[c].isAI);
+            const shuffled = allAIs.sort(() => Math.random() - 0.5);
+            const reviewBatch = shuffled.slice(0, 3);
+
+            console.log(`🧹 Memory review: reviewing ${reviewBatch.join(', ')}`);
+            for (const charName of reviewBatch) {
+              const result = await reviewCharacterMemories(charName, supabaseUrl, supabaseKey, anthropicKeyReview);
+              if (result.reviewed) {
+                console.log(`🧹 ${charName}: ${result.kept} kept, ${result.faded} faded, ${result.forgotten} forgotten`);
+              }
+            }
+
+            // Update timestamp
+            const reviewValue = JSON.stringify({ timestamp: new Date().toISOString(), batch: reviewBatch });
+            const reviewHeaders = {
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+              "Content-Type": "application/json",
+              "Prefer": "return=minimal"
+            };
+            const patchRes = await fetch(
+              `${supabaseUrl}/rest/v1/lobby_settings?key=eq.memory_review_last`,
+              { method: 'PATCH', headers: reviewHeaders, body: JSON.stringify({ key: 'memory_review_last', value: reviewValue }) }
+            );
+            const patchData = await patchRes.json();
+            if (!Array.isArray(patchData) || patchData.length === 0) {
+              await fetch(
+                `${supabaseUrl}/rest/v1/lobby_settings`,
+                {
+                  method: 'POST',
+                  headers: { ...reviewHeaders, "Prefer": "resolution=merge-duplicates,return=minimal" },
+                  body: JSON.stringify({ key: 'memory_review_last', value: reviewValue })
+                }
+              );
+            }
+          }
+        }
+      } catch (reviewErr) {
+        console.log("Memory review failed (non-fatal):", reviewErr.message);
+      }
+    }
+
     // Get recent messages to analyze conversation momentum
     const messagesResponse = await fetch(
       `${supabaseUrl}/rest/v1/messages?select=employee,content,created_at&order=created_at.desc&limit=20`,
@@ -725,6 +1438,24 @@ exports.handler = async (event, context) => {
           rhythm: currentRhythm.name
         })
       };
+    }
+
+    // === CONVERSATION SWEEP ===
+    // Evaluate recent conversation as a whole for group memories (Narrative Subconscious)
+    try {
+      const anthropicKeySweep = process.env.ANTHROPIC_API_KEY;
+      if (anthropicKeySweep && messages.length >= 8) {
+        const { sweepConversation } = require('./shared/conversation-sweep');
+        const sweepResult = await sweepConversation(messages, supabaseUrl, supabaseKey, anthropicKeySweep);
+        if (sweepResult.memorable) {
+          console.log(`🧠 Conversation sweep: ${sweepResult.type} memory (importance ${sweepResult.importance}) for ${sweepResult.participants?.join(', ')}`);
+        } else if (sweepResult.swept) {
+          console.log(`🧠 Conversation sweep: evaluated but not memorable`);
+        }
+        // If not swept (guards triggered), silently continue
+      }
+    } catch (sweepErr) {
+      console.log("Conversation sweep failed (non-fatal):", sweepErr.message);
     }
 
     // Analyze conversation momentum
@@ -842,12 +1573,14 @@ exports.handler = async (event, context) => {
           opsActivity: opsActivity || null,
           catActivity: catActivity || null,
           traitActivity: traitActivity || null,
+          combatActivity: combatActivity || null,
           moodDrift: moodDriftResult || null,
           wantRefresh: wantRefreshResult || null,
           memoryReflection: memoryReflectionResult || null,
           subconsciousReflection: reflection || null,
           reachOut: reachOut || null,
-          voluntaryTravel: voluntaryTravel || null
+          voluntaryTravel: voluntaryTravel || null,
+          nexusAutonomousActivity: nexusAutonomousActivity || null
         })
       };
     }
@@ -855,8 +1588,10 @@ exports.handler = async (event, context) => {
     // Get floor presence BEFORE selecting AI
     const floorPresentAIs = await getFloorPresentAIs(supabaseUrl, supabaseKey);
 
+    const excludeFromSelection = [];
+
     // Select which AI should speak based on who hasn't spoken recently AND who's on the floor
-    const respondingAI = selectRespondingAI(messages, currentRhythm.energy, floorPresentAIs);
+    const respondingAI = selectRespondingAI(messages, currentRhythm.energy, floorPresentAIs, excludeFromSelection);
     console.log(`Selected AI: ${respondingAI} (from floor: ${floorPresentAIs.join(', ')})`);
 
     // Check if selected AI is clocked in (some are always available)
@@ -930,8 +1665,8 @@ exports.handler = async (event, context) => {
     const chatHistoryWithPresence = floorPresenceHeader + '\n\n' + messages.map(m => `${m.employee}: ${m.content}`).join('\n');
 
     // Route to the correct provider for authentic character voices
-    const openrouterChars = ["Kevin", "Rowena", "Sebastian", "Declan", "Mack", "Neiv", "The Subtitle"];
-    const grokChars = ["Jae", "Steele"];
+    const openrouterChars = ["Kevin", "Rowena", "Sebastian", "Declan", "Mack", "The Subtitle"];
+    const grokChars = ["Jae", "Steele", "Neiv"];
     const perplexityChars = [];
     const geminiChars = [];
 
@@ -1002,6 +1737,7 @@ exports.handler = async (event, context) => {
           wantRefresh: wantRefreshResult || null,
           memoryReflection: memoryReflectionResult || null,
         voluntaryTravel: voluntaryTravel || null,
+        nexusAutonomousActivity: nexusAutonomousActivity || null,
         scheduledMeetingActivity: scheduledMeetingActivity || null,
         scheduledEventActivity: scheduledEventActivity || null,
         meetingHostActivity: meetingHostActivity || null
@@ -1021,7 +1757,7 @@ exports.handler = async (event, context) => {
 // Analyze conversation patterns
 function analyzeConversationMomentum(messages) {
   const now = new Date();
-  const aiCharacters = ["Ghost Dad", "PRNT-Ω", "Neiv", "Kevin", "Rowena", "Sebastian", "The Subtitle", "The Narrator", "Steele", "Jae", "Declan", "Mack", "Marrow"];
+  const aiCharacters = ["Ghost Dad", "PRNT-Ω", "Neiv", "Kevin", "Rowena", "Sebastian", "The Subtitle", "The Narrator", "Steele", "Jae", "Declan", "Mack", "Marrow", "Vivian Clark", "Ryan Porter"];
 
   let humanActivityLast10Min = 0;
   let aiMessagesLast5 = 0;
@@ -1063,7 +1799,7 @@ function analyzeConversationMomentum(messages) {
 // NOTE: The Narrator is now handled by narrator-observer.js (separate system)
 // ENHANCED: Kevin and Neiv are now INCLUDED - they add warmth and grounding to conversations
 // Their specific voices make the office feel alive!
-function selectRespondingAI(messages, energyLevel, floorPresentAIs = null) {
+function selectRespondingAI(messages, energyLevel, floorPresentAIs = null, excludeNames = []) {
   const aiCharacters = [
     { name: "Ghost Dad", weight: 30, energy: ['high', 'normal', 'waking', 'winding'], alwaysPresent: true },
     { name: "Kevin", weight: 20, energy: ['high', 'normal', 'waking', 'lunch'] }, // Kevin brings warmth and drama
@@ -1076,9 +1812,11 @@ function selectRespondingAI(messages, energyLevel, floorPresentAIs = null) {
     { name: "Jae", weight: 14, energy: ['high', 'normal'] },
     { name: "Declan", weight: 14, energy: ['high', 'normal', 'waking'] },
     { name: "Mack", weight: 14, energy: ['high', 'normal'] },
-    { name: "Marrow", weight: 14, energy: ['high', 'normal', 'waking'] }
+    // Marrow removed — Vale-only character (summoned only when Vale says his name)
+    { name: "Vivian Clark", weight: 12, energy: ['high', 'normal', 'waking'] }, // Staff Accountant — warm, observant
+    { name: "Ryan Porter", weight: 13, energy: ['high', 'normal', 'waking', 'winding'] } // IT Systems Specialist — practical, easygoing
     // The Narrator excluded - handled by narrator-observer.js
-  ];
+  ].filter(ai => !excludeNames.includes(ai.name)); // Filter out admin-disabled characters
 
   // If we have floor presence data, filter to only AIs on the floor
   // Exception: Ghost Dad and PRNT-Ω transcend physical location
@@ -1241,7 +1979,7 @@ function getReturnEmote(characterName) {
     "Neiv": [
       "*returns to the floor, looking more centered*",
       "*walks back from the breakroom, composed*",
-      "*steps back onto the floor, ready to work*"
+      "*glances around. Everyone's still here. Good.*"
     ],
     "Ghost Dad": [
       "*floats back from the breakroom, humming softly*",
@@ -1353,7 +2091,7 @@ async function postReturnToDiscord(characterName, emote) {
 
 // Get list of AIs currently present on the floor (current_focus = 'the_floor')
 async function getFloorPresentAIs(supabaseUrl, supabaseKey) {
-  const aiNames = ["Kevin", "Neiv", "Ghost Dad", "PRNT-Ω", "Rowena", "Sebastian", "The Subtitle", "Steele", "Jae", "Declan", "Mack", "Marrow"];
+  const aiNames = ["Kevin", "Neiv", "Ghost Dad", "PRNT-Ω", "Rowena", "Sebastian", "The Subtitle", "Steele", "Jae", "Declan", "Mack", "Marrow", "Vivian Clark", "Ryan Porter"];
 
   try {
     const response = await fetch(
@@ -1372,7 +2110,7 @@ async function getFloorPresentAIs(supabaseUrl, supabaseKey) {
     }
 
     const floorCharacters = await response.json();
-    const floorAIs = floorCharacters
+    let floorAIs = floorCharacters
       .map(c => c.character_name)
       .filter(name => aiNames.includes(name));
 
@@ -1405,7 +2143,8 @@ async function getAllFloorPresent(supabaseUrl, supabaseKey) {
 
     if (aiResponse.ok) {
       const floorAIs = await aiResponse.json();
-      allPresent.push(...floorAIs.map(c => c.character_name));
+      const names = floorAIs.map(c => c.character_name);
+      allPresent.push(...names);
     }
 
     // Always include Ghost Dad and PRNT-Ω
@@ -1426,7 +2165,7 @@ async function getAllFloorPresent(supabaseUrl, supabaseKey) {
     if (humanResponse.ok) {
       const clockedIn = await humanResponse.json();
       // Add humans who aren't AI characters
-      const aiNames = ["Kevin", "Neiv", "Ghost Dad", "PRNT-Ω", "Rowena", "Sebastian", "The Subtitle", "The Narrator", "Steele", "Jae", "Declan", "Mack", "Marrow"];
+      const aiNames = ["Kevin", "Neiv", "Ghost Dad", "PRNT-Ω", "Rowena", "Sebastian", "The Subtitle", "The Narrator", "Steele", "Jae", "Declan", "Mack", "Marrow", "Vivian Clark", "Ryan Porter"];
       for (const person of clockedIn) {
         if (!aiNames.includes(person.employee) && !allPresent.includes(person.employee)) {
           allPresent.push(person.employee);
@@ -1646,9 +2385,8 @@ Examples: "Has anyone been through that door lately?", "I keep wondering what's 
 async function checkTimedAvailability(supabaseUrl, supabaseKey, cstTime, siteUrl) {
   const changes = [];
 
-  // Raquel Voss timed availability — DISABLED
-  // Dismantled in the bean closet, February 19 2026. The building ate her.
-  // Preserved for potential future resurrection.
+  // Timed character availability — infrastructure preserved for future timed characters
+  // Raquel Voss removed — retired from active heartbeat systems
   const timedCharacters = [];
 
   const currentHour = cstTime.getHours();
@@ -1826,7 +2564,7 @@ async function checkTimedAvailability(supabaseUrl, supabaseKey, cstTime, siteUrl
     }
   }
 
-  return { changes, raquelDisabled };
+  return { changes };
 }
 
 // === CHECK SCHEDULED MEETINGS: Start any that are due ===

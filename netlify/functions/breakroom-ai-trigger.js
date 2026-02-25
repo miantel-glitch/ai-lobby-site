@@ -4,7 +4,7 @@
 // Separated from breakroom-message.js to avoid timeout issues (each function gets its own 10s window)
 
 // Human characters - never trigger AI responses AS these characters
-const HUMANS = ["Vale", "Asuna", "Chip", "Andrew"];
+const HUMANS = ["Vale", "Asuna"];
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -145,6 +145,18 @@ exports.handler = async (event, context) => {
           }
         }
       }
+    }
+
+    // Marrow is Vale-only — only responds when Vale says his name
+    if (humanSpeaker !== 'Vale') {
+      const marrowIdx = mentions.indexOf('Marrow');
+      if (marrowIdx !== -1) {
+        mentions.splice(marrowIdx, 1);
+        console.log(`[AI trigger] Marrow blocked — only responds to Vale`);
+      }
+      // Also exclude from solo/chime-decider selection
+      const aiRoomIdx = aiInRoom.indexOf('Marrow');
+      if (aiRoomIdx !== -1) aiInRoom.splice(aiRoomIdx, 1);
     }
 
     let primaryResponder;

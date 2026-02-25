@@ -945,25 +945,21 @@
       "Neiv": "📊",
       "Ghost Dad": "👻",
       "Kevin": "✨",
-      "Nyx": "🔥",
-      "Vex": "⚙️",
-      "Ace": "🔒",
       "PRNT-Ω": "🖨️",
       "The Narrator": "📖",
-      "Stein": "🤖",
       "Rowena": "🔮",
       "Sebastian": "🦇",
       "The Subtitle": "📜",
       "Asuna": "👁️",
       "Vale": "📖",
-      "Chip": "🥃",
-      "Andrew": "💼",
       "Steele": "🚪",
       "Marrow": "🔴",
       "Jae": "🎯",
       "Declan": "🔥",
       "Mack": "🩺",
-      "Holden": "🌑"
+      "Holden": "🌑",
+      "Vivian Clark": "🧮",
+      "Ryan Porter": "🔧"
     };
 
     // Character image mapping (AI characters can join the breakroom!)
@@ -971,22 +967,20 @@
       "Neiv": "images/Neiv_Headshot.png",
       "Ghost Dad": "images/Ghost_Dad_Headshot.png",
       "Kevin": "images/Kevin_Headshot.png",
-      "Nyx": "images/Nyx_Headshot.png",
-      "Ace": "images/Ace_Headshot.png",
-      "PRNT-Ω": "images/Printer_Headshot.png", // The existential printer
+      "PRNT-Ω": "images/Printer_Headshot.png",
       "Rowena": "images/Rowena_Headshot.png",
       "Sebastian": "images/Sebastian_Headshot.png",
       "The Subtitle": "images/The_Subtitle_Headshot.png",
       "Asuna": "images/Asuna_Headshot.png",
       "Vale": "images/Vale_Headshot.png",
-      "Chip": "images/Chip_Headshot.png",
-      "Andrew": "images/Andrew_Headshot.png",
       "Steele": "images/Steele_Headshot.png",
       "Marrow": "images/Marrow_Headshot.png",
       "Jae": "images/Jae_Headshot.png",
       "Declan": "images/Declan_Headshot.png",
       "Mack": "images/Mack_Headshot.png",
-      "Holden": "images/Holden_Headshot.png"
+      "Holden": "images/Holden_Headshot.png",
+      "Vivian Clark": "images/Vivian_Clark_Headshot.png",
+      "Ryan Porter": "images/Ryan_Porter_Headshot.png"
     };
 
     // ===== CYBER CAT =====
@@ -1237,7 +1231,9 @@
     // ALL AI characters — always available regardless of punch clock
     const ALL_AI_CHARACTERS = [
       'Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian',
-      'The Subtitle', 'Steele', 'Marrow', 'Jae', 'Declan', 'Mack'
+      'The Subtitle', 'Steele', 'Jae', 'Declan', 'Mack',
+      'Vivian Clark', 'Ryan Porter'
+      // Marrow removed — Vale-only character
     ];
 
     function updateSendSelect() {
@@ -2022,7 +2018,11 @@
       // === MENTION DETECTION (Frontend — fast path) ===
       // Detect BEFORE saving so we can tell the backend to skip its own AI trigger
       const aiInRoom = inBreakroom.filter(c => !HUMANS.includes(c.character_name));
-      const mentionedAIs = detectMentionedAIs(text, aiInRoom);
+      let mentionedAIs = detectMentionedAIs(text, aiInRoom);
+      // Marrow is Vale-only — block unless speaker is Vale
+      if (speaker !== 'Vale') {
+        mentionedAIs = mentionedAIs.filter(name => name !== 'Marrow');
+      }
       const hasMention = mentionedAIs.length > 0;
 
       input.value = '';

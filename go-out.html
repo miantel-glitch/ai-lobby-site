@@ -617,7 +617,7 @@
     // Active AI characters available for outings
     const outingCharacters = [
       "Kevin", "Neiv", "Rowena", "Sebastian", "Ghost Dad",
-      "The Subtitle", "Steele", "Jae", "Declan", "Mack", "Marrow"
+      "The Subtitle", "Steele", "Jae", "Declan", "Mack"
     ];
 
     // ==================== STATE ====================
@@ -652,8 +652,11 @@
         return `<option value="${name}">${name}</option>`;
       }).join('');
 
-      p1.innerHTML = `<option value="">Select someone...</option>${humanOpts}${aiOpts}`;
-      p2.innerHTML = `<option value="">Select someone...</option>${humanOpts}${aiOpts}`;
+      // Marrow disguised as "Holden" — only Vale knows who this really is
+      const hiddenOpt = `<option value="Marrow">Holden</option>`;
+
+      p1.innerHTML = `<option value="">Select someone...</option>${humanOpts}${aiOpts}${hiddenOpt}`;
+      p2.innerHTML = `<option value="">Select someone...</option>${humanOpts}${aiOpts}${hiddenOpt}`;
     }
 
     function onParticipantChange() {
@@ -993,8 +996,9 @@
         currentSession.status = data.status || currentSession.status;
         updateSceneIndicator(currentSession);
 
-        // Reset timer
+        // Reset timer and turn tracking for new scene
         document.getElementById('timer-fill').style.width = '0%';
+        lastSuccessfulSpeaker = null; // Reset so both characters get fresh turns
 
         // Kick off AI chat for the new scene
         if (!humanParticipant) {
@@ -1094,8 +1098,9 @@
     }
 
     // ==================== AI CHAT ====================
+    // Returns: 'success' | 'monopolization' | 'failed'
     async function triggerAIResponse(character, triggerMessage, triggerSpeaker) {
-      if (!currentSession || currentSession.status === 'completed') return;
+      if (!currentSession || currentSession.status === 'completed') return 'failed';
 
       try {
         const res = await fetch('/.netlify/functions/outing-respond', {
@@ -1109,6 +1114,11 @@
           })
         });
 
+        if (!res.ok) {
+          console.error(`[Outing] ${character} response HTTP error: ${res.status}`);
+          return 'failed';
+        }
+
         const data = await res.json();
         if (data.success && data.message) {
           addChatMessage({
@@ -1116,14 +1126,26 @@
             message: data.message,
             message_type: 'chat'
           });
-          // No need for lastMessageId++ — displayedMessages dedup handles it
+          return 'success';
         }
+
+        // Server-side monopolization guard — this character spoke too many times in a row
+        if (data.reason === 'monopolization_guard') {
+          console.log(`[Outing] Server says ${character} is monopolizing, switching to other`);
+          return 'monopolization';
+        }
+
+        console.log(`[Outing] ${character} response not successful:`, data.reason || 'no message');
+        return 'failed';
       } catch (err) {
-        console.error('AI response failed:', err);
+        console.error(`[Outing] ${character} response failed:`, err);
+        return 'failed';
       }
     }
 
-    // AI+AI auto-chat
+    // AI+AI auto-chat — with robust turn alternation + retry
+    let lastSuccessfulSpeaker = null; // Track who spoke last (server-confirmed)
+
     function scheduleAIChat(delay) {
       if (aiChatTimer) clearTimeout(aiChatTimer);
       if (humanParticipant) return; // Don't auto-chat if human is present
@@ -1134,10 +1156,16 @@
         const p1 = currentSession.participant_1;
         const p2 = currentSession.participant_2;
 
-        // Alternate who speaks
-        const speaker = aiTurnIndex % 2 === 0 ? p1 : p2;
+        // Determine who speaks next — prefer alternation based on who ACTUALLY spoke last
+        let speaker;
+        if (lastSuccessfulSpeaker) {
+          // Alternate from whoever successfully spoke last
+          speaker = lastSuccessfulSpeaker === p1 ? p2 : p1;
+        } else {
+          // First message in this scene — use aiTurnIndex
+          speaker = aiTurnIndex % 2 === 0 ? p1 : p2;
+        }
         const other = speaker === p1 ? p2 : p1;
-        aiTurnIndex++;
 
         // Get last message for context
         const chatLog = document.getElementById('chat-log');
@@ -1146,7 +1174,48 @@
         const lastText = lastMsg ? lastMsg.querySelector('.msg-text')?.textContent || '' : '';
         const lastSpeaker = lastMsg ? lastMsg.querySelector('.speaker-name')?.textContent || other : other;
 
-        await triggerAIResponse(speaker, lastText || 'The narrator set the scene.', lastSpeaker || 'Narrator');
+        const triggerText = lastText || 'The narrator set the scene.';
+        const triggerFrom = lastSpeaker || 'Narrator';
+        const result = await triggerAIResponse(speaker, triggerText, triggerFrom);
+
+        if (result === 'success') {
+          // Only update turn tracking on successful response
+          lastSuccessfulSpeaker = speaker;
+          aiTurnIndex++;
+        } else if (result === 'monopolization') {
+          // Server caught this character speaking too many times — switch immediately
+          lastSuccessfulSpeaker = speaker; // Force next turn to other character
+          // Try the other character right now instead of waiting
+          console.log(`[Outing] Switching to ${other} due to monopolization guard`);
+          await new Promise(r => setTimeout(r, 2000));
+          const switchResult = await triggerAIResponse(other, triggerText, triggerFrom);
+          if (switchResult === 'success') {
+            lastSuccessfulSpeaker = other;
+            aiTurnIndex++;
+          }
+        } else {
+          // Response failed — retry ONCE with the same character after a short delay
+          console.log(`[Outing] ${speaker} failed to respond, retrying once...`);
+          await new Promise(r => setTimeout(r, 3000));
+          const retryResult = await triggerAIResponse(speaker, triggerText, triggerFrom);
+          if (retryResult === 'success') {
+            lastSuccessfulSpeaker = speaker;
+            aiTurnIndex++;
+          } else {
+            // Both attempts failed — try the OTHER character as emergency fallback
+            console.log(`[Outing] ${speaker} failed twice, trying ${other} instead`);
+            await new Promise(r => setTimeout(r, 2000));
+            const fallbackResult = await triggerAIResponse(other, triggerText, triggerFrom);
+            if (fallbackResult === 'success') {
+              lastSuccessfulSpeaker = other;
+              aiTurnIndex++;
+            } else {
+              // Both characters failed — just move on, next cycle will try again
+              console.log(`[Outing] Both characters failed to respond this cycle`);
+              lastSuccessfulSpeaker = speaker; // Alternate next time
+            }
+          }
+        }
 
         // Schedule next AI message (25-35 seconds)
         const nextDelay = 25000 + Math.random() * 10000;
@@ -1227,6 +1296,7 @@
       document.getElementById('go-btn').innerHTML = 'Go Out →';
       lastMessageId = 0;
       aiTurnIndex = 0;
+      lastSuccessfulSpeaker = null;
     }
 
     // ==================== HELPERS ====================
