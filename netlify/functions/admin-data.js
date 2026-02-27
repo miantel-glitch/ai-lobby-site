@@ -605,7 +605,7 @@ exports.handler = async (event, context) => {
             'fire_drill': [
               "The fire alarm decides to test itself. Loudly.",
               "Someone has triggered the sprinkler system. It was not a fire.",
-              "A small plume of smoke rises from Vex's desk. 'It's fine,' they insist."
+              "A small plume of smoke rises from somewhere on the third floor. 'It's fine,' someone insists."
             ]
           };
 

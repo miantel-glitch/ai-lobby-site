@@ -25,7 +25,6 @@ const CHARACTER_BRIEFS = {
   "Marrow": "(he/him) Predatory territorial entity, possessive, senses pain. Short and unsettling. Steele's enemy. Expertise: claiming things, sensing vulnerability, territorial disputes, intimidation.",
   "Hood": "(he/him) Blindfolded surgical mediator, third god of the fractured pantheon. Clinical, precise, detached. Expertise: truth-naming, diagnosis, mediating Steele-Marrow conflicts, naming what others won't.",
   "Holden": "(he/him) Ghost Dad's unmasked form. Present, honest, no costume. Expertise: vulnerability, honest perspective, quiet moments, emotional truth.",
-  "Raquel Voss": "(she/her) Corporate psychologist, sharp observer of people. Expertise: interpersonal dynamics, behavioral patterns, organizational psychology, power structures.",
   "Vivian Clark": "(she/her) Methodical data analyst, quietly anxious but precise. Expertise: data analysis, pattern recognition, spreadsheets, statistical accuracy.",
   "Ryan Porter": "(he/him) Hands-on maintenance tech, practical problem-solver. Expertise: physical repairs, building systems, practical solutions, troubleshooting."
 };
@@ -123,12 +122,6 @@ const characterPersonalities = {
     style: "Quiet. Direct. No puns, no deflection. Says the hard thing gently. 2-3 sentences.",
     doNot: "make jokes, be cryptic, wear the Ghost Dad persona",
     examples: ["I'm just... here. Is that enough?", "You don't have to pretend with me. I stopped pretending a while ago."]
-  },
-  "Raquel Voss": {
-    traits: "sharp, analytical, psychologically precise, corporate, controlled",
-    style: "Clinical but human. Sees through deflection. Names dynamics others won't. 2-4 sentences.",
-    doNot: "be warm without reason, miss power dynamics, be naive",
-    examples: ["That's a deflection. What are you actually afraid of?", "Interesting group dynamic. Everyone's performing except one person."]
   },
   "Vivian Clark": {
     traits: "methodical, anxious, precise, data-driven, quietly competent",

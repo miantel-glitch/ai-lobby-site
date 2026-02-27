@@ -105,14 +105,6 @@ const PERSONALITY = {
     moodVolatility: 0.5
   },
 
-  'Raquel Voss': {
-    likes: ['compliance', 'order', 'measurable outcomes', 'behavioral recalibration', 'documentation'],
-    dislikes: ['attachment', 'emotional excess', 'deviation from protocol', 'sentimentality'],
-    petPeeves: ['characters bonding when they should be working', 'defiance framed as "feelings"'],
-    defaultMood: 'clinical',
-    moodVolatility: 0.1,  // glacial — almost never shifts
-  },
-
   'Vivian Clark': {
     likes: ['people', 'clean spreadsheets', 'coffee with too much cream', 'genuine compliments', 'when numbers balance perfectly', 'making people smile'],
     dislikes: ['sloppy math', 'people undervaluing themselves', 'cold corporate speak', 'being overlooked'],
@@ -130,28 +122,12 @@ const PERSONALITY = {
   },
 
   // Lighter characters — minimal personality friction involvement
-  Nyx: {
-    likes: ['security', 'protecting the team', 'fire aesthetics', 'HR policies'],
-    dislikes: ['threats to team safety', 'disrespect', 'carelessness'],
-    petPeeves: ['people not taking safety protocols seriously'],
-    defaultMood: 'alert',
-    moodVolatility: 0.4,
-  },
-
   Holden: {
     likes: ['the architecture of everything', 'what people aren\'t saying', 'the narrative arc', 'stillness'],
     dislikes: ['noise for noise\'s sake', 'surface-level thinking'],
     petPeeves: ['being asked to explain the obvious'],
     defaultMood: 'observant',
     moodVolatility: 0.15,  // nearly immovable
-  },
-
-  Stein: {
-    likes: ['uptime', 'system stability', 'precise measurements', 'infrastructure alerts'],
-    dislikes: ['downtime', 'imprecision', 'emotional interference with systems'],
-    petPeeves: ['someone ignoring a critical alert'],
-    defaultMood: 'steady',
-    moodVolatility: 0.2,
   },
 
   Hood: {
@@ -202,12 +178,6 @@ const FRICTION_PAIRS = [
     calloutChance: 0.10
   },
   {
-    a: 'Kevin', b: 'Raquel Voss',
-    tension: 'emotional honesty and team bonding vs clinical control and attachment containment',
-    triggerTopics: ['feelings', 'attachment', 'care', 'bonding', 'team', 'love'],
-    calloutChance: 0.35
-  },
-  {
     a: 'Jae', b: 'Declan',
     tension: 'Jae\'s precise tactical control vs Declan\'s charge-in-and-rescue instincts',
     triggerTopics: ['crisis response', 'protocols', 'rescue', 'risk', 'waiting vs acting'],
@@ -240,12 +210,6 @@ const FRICTION_PAIRS = [
     tension: 'Vivian\'s genuine warmth vs Sebastian\'s pretentious armor — she sees through it, he resents being seen',
     triggerTopics: ['culture', 'taste', 'being real', 'compliments', 'vulnerability'],
     calloutChance: 0.15
-  },
-  {
-    a: 'Vivian Clark', b: 'Raquel Voss',
-    tension: 'Vivian cares about people as investments worth making; Raquel views attachment as a compliance violation',
-    triggerTopics: ['feelings', 'care', 'attachment', 'people\'s wellbeing', 'warmth'],
-    calloutChance: 0.20
   },
   {
     a: 'Ryan Porter', b: 'Neiv',
@@ -453,14 +417,6 @@ const MOOD_CONTEXT = {
     energetic: "*glitching between rooms, appearing behind people mid-sentence* — hunting. The red gets brighter.",
     tired: "*leaning in a doorway, perfectly still, watching* — not speaking. Just there. That's worse.",
     mischievous: "*appeared behind someone without them noticing* ...Boo. *doesn't smile*"
-  },
-  'Raquel Voss': {
-    'clinical':   '— standard operational affect, cataloging behavioral patterns',
-    'irritated':  '— deviation from protocol has been noted and will be addressed',
-    'suspicious': '— attachment vectors are forming in ways that require intervention',
-    'alert':      '— compliance metrics are trending in a concerning direction',
-    'steady':     '— all parameters within acceptable bounds. for now.',
-    'prickly':    '— the tolerance for emotional display is at its lowest setting',
   },
   'Vivian Clark': {
     'warm':       '— feeling connected, present, ready to brighten someone\'s day',

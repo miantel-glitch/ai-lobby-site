@@ -307,13 +307,13 @@ async function reachOutImpulse(supabaseUrl, supabaseKey, siteUrl) {
   if (Math.random() > 0.25) return null;
 
   try {
-    const HUMAN_NAMES = ["Vale", "Asuna", "Chip", "Andrew"];
+    const HUMAN_NAMES = ["Vale", "Asuna"];
 
     // Pick a random ACTIVE AI character (filter out retired, special entities, and Marrow who has his own PM system)
-    const EXCLUDED_FROM_AUTO_PM = ['Marrow', 'Hood', 'The Narrator', 'Holden', 'Raquel Voss'];
+    const EXCLUDED_FROM_AUTO_PM = ['Marrow', 'Hood', 'The Narrator', 'Holden'];
     const aiNames = Object.keys(CHARACTERS).filter(name => {
       const char = CHARACTERS[name];
-      if (char.retired) return false;           // No retired characters (Ace, Nyx, Stein, etc.)
+      if (char.retired) return false;           // No retired characters
       if (!char.isAI) return false;             // Only AI characters
       if (EXCLUDED_FROM_AUTO_PM.includes(name)) return false; // Marrow has his own system, others are special
       return true;
@@ -570,7 +570,7 @@ async function meetingImpulse(supabaseUrl, supabaseKey, siteUrl, floorPeople, cs
     if (hour < 9 || hour >= 17) return null;
 
     // Need at least 3 AIs on the floor
-    const HUMAN_NAMES = ["Vale", "Asuna", "Chip", "Andrew"];
+    const HUMAN_NAMES = ["Vale", "Asuna"];
     const aiOnFloor = (floorPeople || []).filter(p => !HUMAN_NAMES.includes(p));
     if (aiOnFloor.length < 3) return null;
 
@@ -772,20 +772,6 @@ async function jealousyRealization(character, target, rivalAI, siteUrl) {
   return triggerSubconscious(character, target, narrativeContext, siteUrl, discordWebhook);
 }
 
-/**
- * TRIGGER 10: Raquel Collateral Awareness
- * When Raquel's punishment makes a character pull away from their bond.
- * Fired from affinity-loss-engine after Raquel punishment + active bond.
- */
-async function raquelCollateralRealization(character, target, punishment, siteUrl) {
-  const narrativeContext = `Raquel punished you recently — ${punishment} — because of your closeness with ${target}. You're not angry at ${target}. But you're starting to wonder if being close to them is putting you both at risk. It's not about love fading. It's about self-preservation. How do you process this?`;
-
-  const discordWebhook = process.env.DISCORD_WEBHOOK;
-  console.log(`[raquel-collateral] ${character} processing punishment fallout re: ${target}`);
-
-  return triggerSubconscious(character, target, narrativeContext, siteUrl, discordWebhook);
-}
-
 module.exports = {
   triggerSubconscious,
   heartbeatReflection,
@@ -796,6 +782,5 @@ module.exports = {
   complianceAnxiety,
   meetingImpulse,
   neglectRealization,
-  jealousyRealization,
-  raquelCollateralRealization
+  jealousyRealization
 };

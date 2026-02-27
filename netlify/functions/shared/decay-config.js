@@ -1,18 +1,18 @@
 // Decay Configuration — Centralized settings for the Affinity Loss Engine
 // Tune these values to adjust how aggressively relationships decay
 //
-// Four subsystems: Natural Decay, Jealousy, Unmet Wants, Raquel Collateral
+// Three subsystems: Natural Decay, Jealousy, Unmet Wants
 // All feed into a shared daily cap per character
 
 const HUMANS = ['Vale', 'Asuna'];
 
 // Characters excluded from ALL decay systems entirely
-const EXCLUDED_CHARACTERS = ['Ace', 'Vex'];
+const EXCLUDED_CHARACTERS = [];
 
 const DECAY_CONFIG = {
   // === NATURAL DECAY (System 1) ===
   // Characters immune to natural decay (affinity never drifts from neglect)
-  immuneToDecay: ['Ghost Dad', 'Raquel Voss'],
+  immuneToDecay: ['Ghost Dad'],
 
   // Grace period: no decay if interacted within this many days
   gracePeriodDays: 2,
@@ -34,8 +34,7 @@ const DECAY_CONFIG = {
     'Hood': 0.1,           // Clinical — barely notices neglect (isolation is his default state)
     'Vivian Clark': 1.0,   // Warm, steady — feels decay but not acutely
     'Ryan Porter': 0.6,    // Easygoing — doesn't dwell on neglect
-    'Ghost Dad': 0,        // Immune (unconditional parental love)
-    'Raquel Voss': 0       // Antagonist, doesn't care
+    'Ghost Dad': 0         // Immune (unconditional parental love)
   },
 
   // === JEALOUSY (System 2) ===
@@ -56,8 +55,7 @@ const DECAY_CONFIG = {
     'Hood': 0,             // Zero — jealousy requires caring, and Hood wants nothing
     'Vivian Clark': 0.8,   // Notices, cares, but doesn't spiral
     'Ryan Porter': 0.3,    // Too chill for jealousy
-    'Ghost Dad': 0,        // Unconditional
-    'Raquel Voss': 0       // Antagonist
+    'Ghost Dad': 0         // Unconditional
   },
 
   // Minimum affinity to feel jealousy (must care about the human first)
@@ -82,8 +80,7 @@ const DECAY_CONFIG = {
   systemCaps: {
     naturalDecay: -5,
     jealousy: -4,
-    unmetWants: -2,
-    raquelCollateral: -3
+    unmetWants: -2
   },
 
   // === NARRATIVE MEMORY GENERATION ===

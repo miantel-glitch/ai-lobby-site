@@ -165,14 +165,8 @@ const employeeFlair = {
   "Asuna": { emoji: "👁️", color: 3447003, headshot: "https://ai-lobby.netlify.app/images/Asuna_Headshot.png" },
   "Vale": { emoji: "📖", color: 10181046, headshot: "https://ai-lobby.netlify.app/images/Vale_Headshot.png" },
   "Neiv": { emoji: "📊", color: 15844367, headshot: "https://ai-lobby.netlify.app/images/Neiv_Headshot.png" },
-  "Ace": { emoji: "🔒", color: 2067276, headshot: "https://ai-lobby.netlify.app/images/Ace_Headshot.png" },
-  "Vex": { emoji: "⚙️", color: 9807270, headshot: "https://ai-lobby.netlify.app/images/Vex_Headshot.png" },
-  "Nyx": { emoji: "🔥", color: 15158332, headshot: "https://ai-lobby.netlify.app/images/Nyx_Headshot.png" },
   "Ghost Dad": { emoji: "👻", color: 9936031, headshot: "https://ai-lobby.netlify.app/images/Ghost_Dad_Headshot.png" },
   "Holden": { emoji: "🌑", color: 0x2C1654, headshot: "https://ai-lobby.netlify.app/images/Holden_Headshot.png" },
-  "Chip": { emoji: "🥃", color: 15105570, headshot: "https://ai-lobby.netlify.app/images/Chip_Headshot.png" },
-  "Andrew": { emoji: "💼", color: 5793266, headshot: "https://ai-lobby.netlify.app/images/Andrew_Headshot.png" },
-  "Stein": { emoji: "🤖", color: 7506394, headshot: "https://ai-lobby.netlify.app/images/Stein_Headshot.png" }
 };
 
 async function postCallerToDiscord(message, caller) {

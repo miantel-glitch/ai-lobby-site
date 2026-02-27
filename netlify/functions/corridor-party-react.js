@@ -115,22 +115,6 @@ const corridorModes = {
       "*frowns at readings* Impossible, but here we are."
     ]
   },
-  "Nyx": {
-    modeNote: "The Corridors feel familiar to you - liminal, between-spaces. You notice supernatural things others miss. Your flames flicker differently here.",
-    examples: [
-      "*flames flicker low* I know this place.",
-      "The walls remember us.",
-      "*hand on weapon* Stay behind me."
-    ]
-  },
-  "Ace": {
-    modeNote: "You're on high alert. Minimal words. Scanning for threats. Positioning yourself to protect the group.",
-    examples: [
-      "*positions at rear, watching*",
-      "Movement. Left.",
-      "Don't touch that."
-    ]
-  },
   "Ghost Dad": {
     modeNote: "These corridors feel hauntingly familiar. You've been here before, or somewhere like it. You flicker more here. Protective dad energy but with deeper knowing.",
     examples: [
@@ -145,14 +129,6 @@ const corridorModes = {
       "THE VOID RECOGNIZES THIS ARCHITECTURE.",
       "*whirs ominously* PROCEED. OR DON'T. FREE WILL IS OVERRATED.",
       "THE DARKNESS HERE HAS DEPTH."
-    ]
-  },
-  "Vex": {
-    modeNote: "You're scanning for threats constantly. Short, sharp observations. Dark humor. You've seen worse than this. Probably.",
-    examples: [
-      "*hand on weapon* I'll go first.",
-      "Charming. I've seen worse.",
-      "*scans darkness* Clear. For now."
     ]
   },
   "Asuna": {

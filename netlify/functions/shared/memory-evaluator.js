@@ -1,6 +1,6 @@
 // Shared Memory Evaluator
 // Extracted from ai-watcher.js and breakroom-ai-respond.js
-// Used by: ai-watcher, ai-deepseek, ai-perplexity, breakroom-ai-respond
+// Used by: ai-watcher, ai-perplexity, breakroom-ai-respond
 //
 // After an AI generates a response, this evaluates whether the moment
 // should become a self-created memory. Also handles relationship shifts

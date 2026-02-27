@@ -1,5 +1,5 @@
 // AI Gemini - Routes specific characters to Google Gemini API for authentic responses
-// Currently handles: The Subtitle (Lore Archivist), Stein (Research & Development)
+// Currently handles: The Subtitle (Lore Archivist)
 
 const { getSystemPrompt, getDiscordFlair, getModelForCharacter, getCharacter } = require('./shared/characters');
 const { canAIRespond, canSpecificAIRespond } = require('./shared/rate-limiter');

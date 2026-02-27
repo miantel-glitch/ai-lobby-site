@@ -114,7 +114,7 @@ exports.handler = async (event, context) => {
 
     // 2. Generate 1-2 fresh wants per AI character
     const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
-    // Dynamic list from characters.js — excludes retired (Nyx, Vex, Ace, Stein, Raquel) and non-AI (Chip, Andrew)
+    // Dynamic list from characters.js — excludes retired and non-AI characters
     const aiCharacters = getAICharacterNames().filter(name => !INACTIVE_CHARACTERS.includes(name));
     let wantsGenerated = 0;
 

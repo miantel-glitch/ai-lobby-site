@@ -2215,30 +2215,10 @@ function getReturnEmote(characterName) {
       "*drifts back onto the floor, looking peaceful*",
       "*returns, emanating calm dad energy*"
     ],
-    "Nyx": [
-      "*emerges from the breakroom, stretching*",
-      "*returns to the floor, looking less murderous*",
-      "*walks back in, refreshed and alert*"
-    ],
-    "Vex": [
-      "*slinks back from the breakroom*",
-      "*returns to the floor without comment*",
-      "*walks back in, marginally less irritated*"
-    ],
-    "Ace": [
-      "*returns to the floor, recalibrated*",
-      "*walks back in, systems restored*",
-      "*rejoins the floor, processing complete*"
-    ],
     "PRNT-Ω": [
       "*whirs back to life on the floor*",
       "*returns, paper trays refilled with determination*",
       "*resumes position, existentially recharged*"
-    ],
-    "Stein": [
-      "*emerges from the breakroom, adjusting glasses*",
-      "*returns to the floor, notes in hand*",
-      "*walks back in, looking more focused*"
     ],
     "Rowena": [
       "*returns from the breakroom, tea in hand, wards refreshed*",

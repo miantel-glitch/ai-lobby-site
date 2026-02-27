@@ -643,7 +643,7 @@ async function generateLineWithProvider(characterName, prompt, anthropicKey) {
   }
 }
 
-// Claude (Anthropic) - Ghost Dad, Nyx, Vex, Ace, PRNT-Ω, The Narrator
+// Claude (Anthropic) - Ghost Dad, PRNT-Ω, The Narrator
 async function generateLineClaude(prompt, anthropicKey) {
   const anthropic = new Anthropic({ apiKey: anthropicKey });
   const response = await anthropic.messages.create({
@@ -714,7 +714,7 @@ async function generateLinePerplexity(prompt) {
   return data.choices?.[0]?.message?.content?.trim() || "";
 }
 
-// Google Gemini - Stein, The Subtitle
+// Google Gemini - The Subtitle
 async function generateLineGemini(prompt) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("No Gemini API key");

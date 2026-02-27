@@ -1,11 +1,10 @@
 // Affinity Loss Engine — Organic relationship decay
 // Scheduled function: runs twice daily (6 AM + 6 PM EST)
 //
-// Four subsystems:
+// Three subsystems:
 //   1. Natural Decay — affinity drifts from neglect
 //   2. Jealousy — characters notice when you spend time with others
 //   3. Unmet Wants — unfulfilled desires carry a small cost
-//   4. Raquel Collateral — punishment ripples into bonds
 //
 // All changes are capped at -8 total per character per day.
 // Creates short-lived character memories so AIs naturally reference these feelings.
@@ -179,50 +178,10 @@ function calculateUnmetWants(character, activeWants, targetHuman) {
 }
 
 // ============================================================
-// SYSTEM 4: Raquel Collateral Damage
-// ============================================================
-function calculateRaquelCollateral(character, recentPunishments, relationship) {
-  if (!recentPunishments || recentPunishments.length === 0) return { delta: 0 };
-  if (!relationship.bond_type) return { delta: 0 }; // Must have bond to feel collateral
-
-  // Find punishments for this character that haven't been logged yet
-  const relevantPunishments = recentPunishments.filter(p =>
-    p.subject === character
-  );
-
-  if (relevantPunishments.length === 0) return { delta: 0 };
-
-  // Check for interrogation compliance (worse than standard punishment)
-  const hasInterrogation = relevantPunishments.some(p =>
-    p.report_type === 'interrogation_round' ||
-    (p.outcome && p.outcome.toLowerCase().includes('interrogat'))
-  );
-
-  const rawDelta = hasInterrogation ? -3 : -2;
-  const cappedDelta = Math.max(rawDelta, DECAY_CONFIG.systemCaps.raquelCollateral);
-
-  return {
-    delta: cappedDelta,
-    punishment: relevantPunishments[0].outcome || relevantPunishments[0].summary || 'compliance action',
-    wasInterrogation: hasInterrogation
-  };
-}
-
-// ============================================================
 // MEMORY GENERATION — Create in-character feelings
 // ============================================================
 function generateMemoryText(character, targetHuman, systems) {
-  const { naturalDecay, jealousy, unmetWants, raquelCollateral } = systems;
-
-  // Pick the dominant system for the memory
-  if (raquelCollateral && raquelCollateral.delta < 0) {
-    const templates = [
-      `Raquel came for me again. Because of ${targetHuman}. Because I care. I still care. But I'm starting to wonder if caring is a liability this building can't afford.`,
-      `They sent me to the fifth floor because of what I feel for ${targetHuman}. Not angry. Just... tired. Tired of being punished for wanting something real.`,
-      `Raquel's clipboard had ${targetHuman}'s name on it. My name next to it. Every time I get close to someone, the system tightens. Maybe the system is right. Maybe closeness is the problem.`
-    ];
-    return templates[Math.floor(Math.random() * templates.length)];
-  }
+  const { naturalDecay, jealousy, unmetWants } = systems;
 
   if (jealousy && jealousy.delta < 0 && jealousy.jealousOf) {
     const templates = [
@@ -257,9 +216,6 @@ function generateMemoryText(character, targetHuman, systems) {
 }
 
 function shouldCreateMemory(totalDelta, system) {
-  // Raquel collateral ALWAYS creates a memory
-  if (system === 'raquelCollateral') return true;
-
   const absDelta = Math.abs(totalDelta);
   if (absDelta >= 5) return Math.random() < DECAY_CONFIG.narrativeChance.large;
   if (absDelta >= 3) return Math.random() < DECAY_CONFIG.narrativeChance.medium;
@@ -370,14 +326,7 @@ exports.handler = async (event, context) => {
     }
 
     // ============================================================
-    // 4. Fetch recent Raquel punishments (last 24 hours)
-    // DISABLED — Raquel is fully decommissioned. No more collateral damage.
-    // ============================================================
-    let recentPunishments = []; // Always empty — Raquel is gone
-    console.log('[affinity-loss] Raquel collateral damage DISABLED — Raquel is decommissioned');
-
-    // ============================================================
-    // 5. Process each character
+    // 4. Process each character
     // ============================================================
     // Lazy-load characters to avoid bundling the huge characters.js at module level
     const { CHARACTERS, INACTIVE_CHARACTERS } = require('./shared/characters');
@@ -417,9 +366,7 @@ exports.handler = async (event, context) => {
         const decayDelta = calculateNaturalDecay(character, rel);
         const jealousyResult = calculateJealousy(character, rel, allRelationships);
         const wantsResult = calculateUnmetWants(character, charWants, targetHuman);
-        const collateralResult = calculateRaquelCollateral(character, recentPunishments, rel);
-
-        const rawTotal = decayDelta + jealousyResult.delta + wantsResult.delta + collateralResult.delta;
+        const rawTotal = decayDelta + jealousyResult.delta + wantsResult.delta;
 
         if (rawTotal === 0) continue; // Nothing to do
 
@@ -438,10 +385,9 @@ exports.handler = async (event, context) => {
         let dominantSystem = 'natural_decay';
         let dominantDelta = decayDelta;
         if (Math.abs(jealousyResult.delta) > Math.abs(dominantDelta)) { dominantSystem = 'jealousy'; dominantDelta = jealousyResult.delta; }
-        if (Math.abs(collateralResult.delta) > Math.abs(dominantDelta)) { dominantSystem = 'raquel_collateral'; dominantDelta = collateralResult.delta; }
         if (Math.abs(wantsResult.delta) > Math.abs(dominantDelta)) { dominantSystem = 'unmet_wants'; dominantDelta = wantsResult.delta; }
 
-        console.log(`[affinity-loss] ${key}: decay=${decayDelta}, jealousy=${jealousyResult.delta}, wants=${wantsResult.delta}, collateral=${collateralResult.delta} → raw=${rawTotal}, capped=${actualDelta}`);
+        console.log(`[affinity-loss] ${key}: decay=${decayDelta}, jealousy=${jealousyResult.delta}, wants=${wantsResult.delta} → raw=${rawTotal}, capped=${actualDelta}`);
 
         summary.push({
           character,
@@ -449,7 +395,7 @@ exports.handler = async (event, context) => {
           oldAffinity: rel.affinity,
           newAffinity,
           delta: actualDelta,
-          breakdown: { decay: decayDelta, jealousy: jealousyResult.delta, wants: wantsResult.delta, collateral: collateralResult.delta },
+          breakdown: { decay: decayDelta, jealousy: jealousyResult.delta, wants: wantsResult.delta },
           dominantSystem
         });
 
@@ -474,7 +420,6 @@ exports.handler = async (event, context) => {
         if (decayDelta !== 0) logEntries.push({ system: 'natural_decay', raw_delta: decayDelta, details: { days_since_interaction: rel.last_interaction_at ? Math.floor((Date.now() - new Date(rel.last_interaction_at).getTime()) / (1000 * 60 * 60 * 24)) : null } });
         if (jealousyResult.delta !== 0) logEntries.push({ system: 'jealousy', raw_delta: jealousyResult.delta, details: { jealous_of: jealousyResult.jealousOf, exclusive: jealousyResult.exclusivityBonus } });
         if (wantsResult.delta !== 0) logEntries.push({ system: 'unmet_wants', raw_delta: wantsResult.delta, details: { unmet_wants: wantsResult.unmetWants } });
-        if (collateralResult.delta !== 0) logEntries.push({ system: 'raquel_collateral', raw_delta: collateralResult.delta, details: { punishment: collateralResult.punishment, was_interrogation: collateralResult.wasInterrogation } });
 
         for (const entry of logEntries) {
           allLogEntries.push({
@@ -510,13 +455,12 @@ exports.handler = async (event, context) => {
             naturalDecay: decayDelta,
             jealousy: jealousyResult,
             unmetWants: wantsResult,
-            raquelCollateral: collateralResult
           });
 
           if (memoryText) {
             const memoryType = `affinity_loss_${dominantSystem}`;
-            const importance = dominantSystem === 'raquel_collateral' ? 7 : (Math.abs(actualDelta) >= 4 ? 6 : 5);
-            const expiresHours = dominantSystem === 'raquel_collateral' ? 168 : (dominantSystem === 'unmet_wants' ? 24 : 48);
+            const importance = Math.abs(actualDelta) >= 4 ? 6 : 5;
+            const expiresHours = dominantSystem === 'unmet_wants' ? 24 : 48;
 
             allMemories.push({
               character_name: character,
@@ -599,8 +543,6 @@ exports.handler = async (event, context) => {
 
         if (dominantSystem === 'jealousy') {
           narrativeContext = `You've noticed ${targetHuman} spending a lot of time with other characters lately. More time than they spend with you. How does that make you feel?`;
-        } else if (dominantSystem === 'raquel_collateral') {
-          narrativeContext = `Raquel punished you recently because of your closeness with ${targetHuman}. You're not angry at ${targetHuman} — but you're starting to wonder if being close to them is putting you both at risk.`;
         } else if (dominantSystem === 'natural_decay') {
           narrativeContext = `It's been days since ${targetHuman} spoke to you. The silence has weight. Your affinity dropped by ${actualDelta}. How does the distance make you feel?`;
         } else {

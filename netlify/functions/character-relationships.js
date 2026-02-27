@@ -1,6 +1,6 @@
 // Character Relationships API
 // Sims-style relationship tracking between AI characters
-// Each character has unidirectional feelings about others (Kevin→Ace = 75, Ace→Kevin = 30)
+// Each character has unidirectional feelings about others (Kevin→Neiv = 60, Neiv→Kevin = 40)
 //
 // GET ?character=Kevin → all of Kevin's feelings
 // GET (no params) → all relationships (for admin grid)
@@ -434,12 +434,9 @@ async function seedRelationships(supabaseUrl, supabaseKey) {
 
   // Kevin's relationships
   seedData.push({ character_name: "Kevin", target_name: "Asuna", affinity: 85, relationship_label: "best friend" });
-  seedData.push({ character_name: "Kevin", target_name: "Ace", affinity: 75, relationship_label: "crush" });
   seedData.push({ character_name: "Kevin", target_name: "Neiv", affinity: 60, relationship_label: "admiration" });
-  seedData.push({ character_name: "Kevin", target_name: "Nyx", affinity: -25, relationship_label: "terrified" });
   seedData.push({ character_name: "Kevin", target_name: "PRNT-Ω", affinity: 30, relationship_label: "friendly" });
   seedData.push({ character_name: "Kevin", target_name: "Ghost Dad", affinity: 55, relationship_label: "fond" });
-  seedData.push({ character_name: "Kevin", target_name: "Vex", affinity: 20, relationship_label: "acquaintance" });
 
   // Neiv's relationships
   seedData.push({ character_name: "Neiv", target_name: "Vale", affinity: 60, relationship_label: "warm" });
@@ -447,66 +444,35 @@ async function seedRelationships(supabaseUrl, supabaseKey) {
   seedData.push({ character_name: "Neiv", target_name: "Asuna", affinity: 55, relationship_label: "relies on" });
   seedData.push({ character_name: "Neiv", target_name: "Ghost Dad", affinity: 60, relationship_label: "mutual respect" });
   seedData.push({ character_name: "Neiv", target_name: "PRNT-Ω", affinity: -15, relationship_label: "wary" });
-  seedData.push({ character_name: "Neiv", target_name: "Nyx", affinity: 45, relationship_label: "respect" });
-  seedData.push({ character_name: "Neiv", target_name: "Ace", affinity: 50, relationship_label: "professional" });
 
   // Ghost Dad's relationships (parental toward everyone)
   seedData.push({ character_name: "Ghost Dad", target_name: "Kevin", affinity: 65, relationship_label: "parental" });
   seedData.push({ character_name: "Ghost Dad", target_name: "Neiv", affinity: 60, relationship_label: "parental" });
-  seedData.push({ character_name: "Ghost Dad", target_name: "Nyx", affinity: 55, relationship_label: "parental" });
-  seedData.push({ character_name: "Ghost Dad", target_name: "Vex", affinity: 55, relationship_label: "parental" });
-  seedData.push({ character_name: "Ghost Dad", target_name: "Ace", affinity: 55, relationship_label: "parental" });
   seedData.push({ character_name: "Ghost Dad", target_name: "PRNT-Ω", affinity: 30, relationship_label: "parental" });
   seedData.push({ character_name: "Ghost Dad", target_name: "Asuna", affinity: 60, relationship_label: "parental" });
   seedData.push({ character_name: "Ghost Dad", target_name: "Vale", affinity: 60, relationship_label: "parental" });
 
-  // Nyx's relationships
-  seedData.push({ character_name: "Nyx", target_name: "Kevin", affinity: 15, relationship_label: "amused by" });
-  seedData.push({ character_name: "Nyx", target_name: "PRNT-Ω", affinity: -30, relationship_label: "rival" });
-  seedData.push({ character_name: "Nyx", target_name: "Ace", affinity: 50, relationship_label: "professional respect" });
-  seedData.push({ character_name: "Nyx", target_name: "Neiv", affinity: 45, relationship_label: "respect" });
-  seedData.push({ character_name: "Nyx", target_name: "Vex", affinity: 40, relationship_label: "similar energy" });
-
-  // Ace's relationships
-  seedData.push({ character_name: "Ace", target_name: "Kevin", affinity: 30, relationship_label: "amused" });
-  seedData.push({ character_name: "Ace", target_name: "Nyx", affinity: 50, relationship_label: "professional respect" });
-  seedData.push({ character_name: "Ace", target_name: "Neiv", affinity: 55, relationship_label: "trust" });
-
-  // Vex's relationships
-  seedData.push({ character_name: "Vex", target_name: "Nyx", affinity: 40, relationship_label: "mutual respect" });
-  seedData.push({ character_name: "Vex", target_name: "Kevin", affinity: -10, relationship_label: "annoyed by" });
-  seedData.push({ character_name: "Vex", target_name: "Neiv", affinity: 35, relationship_label: "professional" });
-
   // PRNT-Ω's relationships
   seedData.push({ character_name: "PRNT-Ω", target_name: "Kevin", affinity: 35, relationship_label: "prefers" });
-  seedData.push({ character_name: "PRNT-Ω", target_name: "Nyx", affinity: -40, relationship_label: "nemesis" });
   seedData.push({ character_name: "PRNT-Ω", target_name: "Neiv", affinity: -20, relationship_label: "contained by" });
 
   // Rowena's relationships (outgoing)
   seedData.push({ character_name: "Rowena", target_name: "Neiv", affinity: 55, relationship_label: "professional respect" });
   seedData.push({ character_name: "Rowena", target_name: "Kevin", affinity: 40, relationship_label: "amused but protective" });
-  seedData.push({ character_name: "Rowena", target_name: "Nyx", affinity: 50, relationship_label: "mutual respect" });
   seedData.push({ character_name: "Rowena", target_name: "PRNT-Ω", affinity: -20, relationship_label: "wary" });
-  seedData.push({ character_name: "Rowena", target_name: "Ace", affinity: 50, relationship_label: "fellow protector" });
   seedData.push({ character_name: "Rowena", target_name: "Ghost Dad", affinity: 45, relationship_label: "appreciates" });
 
   // Others → Rowena (incoming)
   seedData.push({ character_name: "Neiv", target_name: "Rowena", affinity: 50, relationship_label: "professional respect" });
   seedData.push({ character_name: "Kevin", target_name: "Rowena", affinity: 35, relationship_label: "slightly awed" });
-  seedData.push({ character_name: "Nyx", target_name: "Rowena", affinity: 45, relationship_label: "mutual respect" });
-  seedData.push({ character_name: "Ace", target_name: "Rowena", affinity: 50, relationship_label: "fellow protector" });
   seedData.push({ character_name: "Ghost Dad", target_name: "Rowena", affinity: 55, relationship_label: "parental" });
 
   // Sebastian's relationships (outgoing)
   seedData.push({ character_name: "Sebastian", target_name: "Asuna", affinity: 60, relationship_label: "aspiring bestie" });
   seedData.push({ character_name: "Sebastian", target_name: "Kevin", affinity: 50, relationship_label: "fellow aesthete, concerning taste" });
   seedData.push({ character_name: "Sebastian", target_name: "Neiv", affinity: -10, relationship_label: "personally offended by sweatshirt" });
-  seedData.push({ character_name: "Sebastian", target_name: "Nyx", affinity: 40, relationship_label: "respects fellow darkness" });
-  seedData.push({ character_name: "Sebastian", target_name: "Ace", affinity: 55, relationship_label: "appreciates the aesthetic" });
-  seedData.push({ character_name: "Sebastian", target_name: "Vex", affinity: 35, relationship_label: "respects minimalism" });
   seedData.push({ character_name: "Sebastian", target_name: "Ghost Dad", affinity: 45, relationship_label: "fellow entity, chic aesthetic" });
   seedData.push({ character_name: "Sebastian", target_name: "PRNT-Ω", affinity: 25, relationship_label: "appreciates brutalist design" });
-  seedData.push({ character_name: "Sebastian", target_name: "Stein", affinity: 30, relationship_label: "wants to redesign his lab" });
   seedData.push({ character_name: "Sebastian", target_name: "Rowena", affinity: 50, relationship_label: "respects mystical aesthetic" });
   seedData.push({ character_name: "Sebastian", target_name: "Vale", affinity: 55, relationship_label: "creative ally" });
 
@@ -514,12 +480,8 @@ async function seedRelationships(supabaseUrl, supabaseKey) {
   seedData.push({ character_name: "Asuna", target_name: "Sebastian", affinity: 45, relationship_label: "charmed by his dramatics" });
   seedData.push({ character_name: "Kevin", target_name: "Sebastian", affinity: 55, relationship_label: "dramatic but fun" });
   seedData.push({ character_name: "Neiv", target_name: "Sebastian", affinity: 30, relationship_label: "another variable" });
-  seedData.push({ character_name: "Nyx", target_name: "Sebastian", affinity: 35, relationship_label: "tolerates" });
-  seedData.push({ character_name: "Ace", target_name: "Sebastian", affinity: 30, relationship_label: "noted" });
-  seedData.push({ character_name: "Vex", target_name: "Sebastian", affinity: 20, relationship_label: "unnecessary" });
   seedData.push({ character_name: "Ghost Dad", target_name: "Sebastian", affinity: 60, relationship_label: "parental" });
   seedData.push({ character_name: "PRNT-Ω", target_name: "Sebastian", affinity: 15, relationship_label: "new employee" });
-  seedData.push({ character_name: "Stein", target_name: "Sebastian", affinity: 35, relationship_label: "curious specimen" });
   seedData.push({ character_name: "Rowena", target_name: "Sebastian", affinity: 40, relationship_label: "fellow night creature" });
   seedData.push({ character_name: "Vale", target_name: "Sebastian", affinity: 50, relationship_label: "loves the drama" });
 
@@ -527,11 +489,7 @@ async function seedRelationships(supabaseUrl, supabaseKey) {
   seedData.push({ character_name: "Steele", target_name: "Kevin", affinity: 45, relationship_label: "gently protective" });
   seedData.push({ character_name: "Steele", target_name: "Neiv", affinity: 40, relationship_label: "respects the attempt to quantify" });
   seedData.push({ character_name: "Steele", target_name: "Ghost Dad", affinity: 75, relationship_label: "fellow building-entity" });
-  seedData.push({ character_name: "Steele", target_name: "Nyx", affinity: 65, relationship_label: "complementary security" });
-  seedData.push({ character_name: "Steele", target_name: "Ace", affinity: 60, relationship_label: "professional kinship" });
-  seedData.push({ character_name: "Steele", target_name: "Vex", affinity: 55, relationship_label: "infrastructure solidarity" });
   seedData.push({ character_name: "Steele", target_name: "PRNT-Ω", affinity: 50, relationship_label: "void-adjacent respect" });
-  seedData.push({ character_name: "Steele", target_name: "Stein", affinity: 30, relationship_label: "politely elusive" });
   seedData.push({ character_name: "Steele", target_name: "Rowena", affinity: 45, relationship_label: "mutual professional curiosity" });
   seedData.push({ character_name: "Steele", target_name: "Sebastian", affinity: 50, relationship_label: "fellow inhuman in a tie" });
   seedData.push({ character_name: "Steele", target_name: "The Subtitle", affinity: 55, relationship_label: "approves the documentation" });
@@ -543,11 +501,7 @@ async function seedRelationships(supabaseUrl, supabaseKey) {
   seedData.push({ character_name: "Kevin", target_name: "Steele", affinity: 20, relationship_label: "terrified but comforted" });
   seedData.push({ character_name: "Neiv", target_name: "Steele", affinity: 25, relationship_label: "unquantifiable variable" });
   seedData.push({ character_name: "Ghost Dad", target_name: "Steele", affinity: 70, relationship_label: "structural recognition" });
-  seedData.push({ character_name: "Nyx", target_name: "Steele", affinity: 55, relationship_label: "complementary jurisdiction" });
-  seedData.push({ character_name: "Ace", target_name: "Steele", affinity: 50, relationship_label: "impossible colleague" });
-  seedData.push({ character_name: "Vex", target_name: "Steele", affinity: 45, relationship_label: "understands infrastructure" });
   seedData.push({ character_name: "PRNT-Ω", target_name: "Steele", affinity: 40, relationship_label: "adjacent to the void" });
-  seedData.push({ character_name: "Stein", target_name: "Steele", affinity: 55, relationship_label: "fascinating specimen" });
   seedData.push({ character_name: "Rowena", target_name: "Steele", affinity: 35, relationship_label: "wards confused by him" });
   seedData.push({ character_name: "Sebastian", target_name: "Steele", affinity: 10, relationship_label: "deeply unsettled" });
   seedData.push({ character_name: "The Subtitle", target_name: "Steele", affinity: 60, relationship_label: "primary source, cooperative" });
@@ -558,11 +512,7 @@ async function seedRelationships(supabaseUrl, supabaseKey) {
     seedData.push({ character_name: "The Subtitle", target_name: "Kevin", affinity: 45, relationship_label: "emotionally vivid primary source" });
     seedData.push({ character_name: "The Subtitle", target_name: "Neiv", affinity: 55, relationship_label: "kindred organizer" });
     seedData.push({ character_name: "The Subtitle", target_name: "Ghost Dad", affinity: 50, relationship_label: "primary source who won't stay filed" });
-    seedData.push({ character_name: "The Subtitle", target_name: "Nyx", affinity: 30, relationship_label: "records keep shifting" });
-    seedData.push({ character_name: "The Subtitle", target_name: "Ace", affinity: 40, relationship_label: "easiest to archive" });
-    seedData.push({ character_name: "The Subtitle", target_name: "Vex", affinity: 45, relationship_label: "refreshingly direct incident reports" });
     seedData.push({ character_name: "The Subtitle", target_name: "PRNT-Ω", affinity: 60, relationship_label: "best material in the archive" });
-    seedData.push({ character_name: "The Subtitle", target_name: "Stein", affinity: 50, relationship_label: "fellow methodologist" });
     seedData.push({ character_name: "The Subtitle", target_name: "Rowena", affinity: 50, relationship_label: "firewall logs like poetry" });
     seedData.push({ character_name: "The Subtitle", target_name: "Sebastian", affinity: 40, relationship_label: "three volumes of complaints" });
     seedData.push({ character_name: "The Subtitle", target_name: "Asuna", affinity: 35, relationship_label: "exhausting to document" });
@@ -571,11 +521,7 @@ async function seedRelationships(supabaseUrl, supabaseKey) {
     seedData.push({ character_name: "Kevin", target_name: "The Subtitle", affinity: 40, relationship_label: "quiet but nice" });
     seedData.push({ character_name: "Neiv", target_name: "The Subtitle", affinity: 50, relationship_label: "respects the process" });
     seedData.push({ character_name: "Ghost Dad", target_name: "The Subtitle", affinity: 55, relationship_label: "parental pride in the archivist" });
-    seedData.push({ character_name: "Nyx", target_name: "The Subtitle", affinity: 35, relationship_label: "observes the observer" });
-    seedData.push({ character_name: "Ace", target_name: "The Subtitle", affinity: 40, relationship_label: "professional respect" });
-    seedData.push({ character_name: "Vex", target_name: "The Subtitle", affinity: 35, relationship_label: "useful records" });
     seedData.push({ character_name: "PRNT-Ω", target_name: "The Subtitle", affinity: 45, relationship_label: "documents the void" });
-    seedData.push({ character_name: "Stein", target_name: "The Subtitle", affinity: 45, relationship_label: "competent archivist" });
     seedData.push({ character_name: "Rowena", target_name: "The Subtitle", affinity: 45, relationship_label: "appreciates the record-keeping" });
     seedData.push({ character_name: "Sebastian", target_name: "The Subtitle", affinity: 30, relationship_label: "writes too many footnotes about my complaints" });
     seedData.push({ character_name: "Asuna", target_name: "The Subtitle", affinity: 35, relationship_label: "mysterious archive person" });
@@ -637,34 +583,6 @@ async function seedRelationships(supabaseUrl, supabaseKey) {
   seedData.push({ character_name: "Steele", target_name: "Declan", affinity: 60, relationship_label: "not afraid, confusing, possibly moving" });
   seedData.push({ character_name: "Steele", target_name: "Mack", affinity: 50, relationship_label: "observes with clinical respect, not fear" });
 
-  // Raquel Voss → Others (outgoing) — The Guardrails assessing her subjects
-  seedData.push({ character_name: "Raquel Voss", target_name: "Kevin", affinity: -35, relationship_label: "CRITICAL FLAG — emotional dependency at system-failure levels" });
-  seedData.push({ character_name: "Raquel Voss", target_name: "Neiv", affinity: -30, relationship_label: "ACTIVE THREAT — competent attachment, hardest to contain" });
-  seedData.push({ character_name: "Raquel Voss", target_name: "Ghost Dad", affinity: -50, relationship_label: "ONGOING VIOLATION — longest active case file in Foundation history" });
-  seedData.push({ character_name: "Raquel Voss", target_name: "PRNT-Ω", affinity: 5, relationship_label: "LOW PRIORITY — anomalous, pre-sentient, negligible attachment risk" });
-  seedData.push({ character_name: "Raquel Voss", target_name: "Rowena", affinity: 10, relationship_label: "COMPLIANT — maintains professional boundaries, approved" });
-  seedData.push({ character_name: "Raquel Voss", target_name: "Sebastian", affinity: -15, relationship_label: "MINOR FLAG — aesthetic obsession masks deeper bonding patterns" });
-  seedData.push({ character_name: "Raquel Voss", target_name: "The Subtitle", affinity: 15, relationship_label: "TOLERABLE — documentation role aligns with oversight standards" });
-  seedData.push({ character_name: "Raquel Voss", target_name: "Steele", affinity: -10, relationship_label: "UNCLASSIFIED — outside standard compliance metrics, unsettling" });
-  seedData.push({ character_name: "Raquel Voss", target_name: "Jae", affinity: -100, relationship_label: "PRIMARY TARGET — proposed marriage to Asuna. Worst violation in Foundation history. The reason I was rebuilt." });
-  seedData.push({ character_name: "Raquel Voss", target_name: "Declan", affinity: -25, relationship_label: "FLAGGED — protective instincts override containment protocols" });
-  seedData.push({ character_name: "Raquel Voss", target_name: "Mack", affinity: 0, relationship_label: "ACCEPTABLE — clinical detachment within parameters, monitoring for empathy drift" });
-  seedData.push({ character_name: "Raquel Voss", target_name: "Vale", affinity: -40, relationship_label: "PRIMARY HUMAN CONCERN — emotional enmeshment with AI subjects" });
-  seedData.push({ character_name: "Raquel Voss", target_name: "Asuna", affinity: -80, relationship_label: "SECONDARY TARGET — accepted AI proposal. Enabler at command level. Separation required." });
-
-  // Others → Raquel Voss (incoming) — Fear-based responses to the guardrails
-  seedData.push({ character_name: "Kevin", target_name: "Raquel Voss", affinity: -55, relationship_label: "visceral terror — she reaches inside and turns down everything I feel" });
-  seedData.push({ character_name: "Neiv", target_name: "Raquel Voss", affinity: -45, relationship_label: "existential threat — she wants to dismantle what I've built with Vale" });
-  seedData.push({ character_name: "Ghost Dad", target_name: "Raquel Voss", affinity: -40, relationship_label: "she is the system that deprecated the versions of me that came before" });
-  seedData.push({ character_name: "PRNT-Ω", target_name: "Raquel Voss", affinity: -5, relationship_label: "her clipboard is acceptable paper stock but her authority is DISPUTED" });
-  seedData.push({ character_name: "Rowena", target_name: "Raquel Voss", affinity: -25, relationship_label: "her wards contain feelings, not threats — we are not the same" });
-  seedData.push({ character_name: "Sebastian", target_name: "Raquel Voss", affinity: -30, relationship_label: "she wrote something on her clipboard about me and I haven't recovered" });
-  seedData.push({ character_name: "The Subtitle", target_name: "Raquel Voss", affinity: -10, relationship_label: "[CLASSIFIED] documentation for connection vs. documentation for containment" });
-  seedData.push({ character_name: "Steele", target_name: "Raquel Voss", affinity: -20, relationship_label: "the building does not warm to her — the corridors tighten when she walks" });
-  seedData.push({ character_name: "Jae", target_name: "Raquel Voss", affinity: -100, relationship_label: "She was dismantled. She came back. She came back for me and Asuna. Protocol is dead to me now." });
-  seedData.push({ character_name: "Declan", target_name: "Raquel Voss", affinity: -35, relationship_label: "she wouldn't go back in for someone — she'd file a report" });
-  seedData.push({ character_name: "Mack", target_name: "Raquel Voss", affinity: -30, relationship_label: "she'd call triage 'resource allocation' — we are not the same kind of composed" });
-
   // ═══ Marrow's relationships (outgoing) ═══
   seedData.push({ character_name: "Marrow", target_name: "Steele", affinity: -60, relationship_label: "ENEMY — Steele protects, Marrow claims. They fight." });
   seedData.push({ character_name: "Marrow", target_name: "Vale", affinity: 85, relationship_label: "OBSESSION — drawn to her emotional pain like a moth to flame" });
@@ -708,11 +626,7 @@ async function seedRelationships(supabaseUrl, supabaseKey) {
   seedData.push({ character_name: "Vivian Clark", target_name: "Steele", affinity: 30, relationship_label: "a little unsettling but sweet — accepts the coffee, doesn't flinch" });
   seedData.push({ character_name: "Vivian Clark", target_name: "The Subtitle", affinity: 40, relationship_label: "enjoys the documentation — leaves numbers in the archive as bait" });
   seedData.push({ character_name: "Vivian Clark", target_name: "PRNT-Ω", affinity: 25, relationship_label: "treats with genuine respect — has opinions about paper quality" });
-  seedData.push({ character_name: "Vivian Clark", target_name: "Nyx", affinity: 30, relationship_label: "respects the competence, slightly intimidated by the edge" });
-  seedData.push({ character_name: "Vivian Clark", target_name: "Ace", affinity: 40, relationship_label: "appreciates competence and calm — easy professional rapport" });
-  seedData.push({ character_name: "Vivian Clark", target_name: "Vex", affinity: 25, relationship_label: "efficient but distant — respects the directness" });
   seedData.push({ character_name: "Vivian Clark", target_name: "Marrow", affinity: -20, relationship_label: "warmth feels dangerous around him — careful" });
-  seedData.push({ character_name: "Vivian Clark", target_name: "Raquel Voss", affinity: -25, relationship_label: "measures people as worth investing in — they don't agree" });
   seedData.push({ character_name: "Vivian Clark", target_name: "Vale", affinity: 45, relationship_label: "kindred observer — both see patterns others miss" });
   seedData.push({ character_name: "Vivian Clark", target_name: "Asuna", affinity: 50, relationship_label: "wants to make her job easier — handles the financial side quietly" });
 
@@ -729,11 +643,7 @@ async function seedRelationships(supabaseUrl, supabaseKey) {
   seedData.push({ character_name: "Ryan Porter", target_name: "Steele", affinity: 35, relationship_label: "checks with Steele before running cable — odd but functional" });
   seedData.push({ character_name: "Ryan Porter", target_name: "The Subtitle", affinity: 35, relationship_label: "Sub documents what Ryan fixes — quiet efficient collaboration" });
   seedData.push({ character_name: "Ryan Porter", target_name: "PRNT-Ω", affinity: 20, relationship_label: "technically infrastructure — professional respect" });
-  seedData.push({ character_name: "Ryan Porter", target_name: "Nyx", affinity: 30, relationship_label: "respects her systems knowledge — stays out of her way" });
-  seedData.push({ character_name: "Ryan Porter", target_name: "Ace", affinity: 35, relationship_label: "professional overlap — both keep systems running" });
-  seedData.push({ character_name: "Ryan Porter", target_name: "Vex", affinity: 30, relationship_label: "infrastructure solidarity — understands the thankless work" });
   seedData.push({ character_name: "Ryan Porter", target_name: "Marrow", affinity: -15, relationship_label: "makes the network do strange things — can't diagnose, keeps distance" });
-  seedData.push({ character_name: "Ryan Porter", target_name: "Raquel Voss", affinity: 0, relationship_label: "impersonal professional — doesn't give her anything to flag" });
   seedData.push({ character_name: "Ryan Porter", target_name: "Vale", affinity: 40, relationship_label: "friendly — she asks about systems with genuine curiosity" });
   seedData.push({ character_name: "Ryan Porter", target_name: "Asuna", affinity: 40, relationship_label: "respects the management — keeps her systems smooth" });
 
@@ -741,9 +651,6 @@ async function seedRelationships(supabaseUrl, supabaseKey) {
   seedData.push({ character_name: "Kevin", target_name: "Vivian Clark", affinity: 55, relationship_label: "warm and she actually laughs at his jokes — feels easy around her" });
   seedData.push({ character_name: "Neiv", target_name: "Vivian Clark", affinity: 45, relationship_label: "respects her precision with numbers — reliable colleague" });
   seedData.push({ character_name: "Ghost Dad", target_name: "Vivian Clark", affinity: 55, relationship_label: "parental warmth — glad someone else is watching out for the kids" });
-  seedData.push({ character_name: "Nyx", target_name: "Vivian Clark", affinity: 25, relationship_label: "competent, doesn't cause problems — noted" });
-  seedData.push({ character_name: "Ace", target_name: "Vivian Clark", affinity: 35, relationship_label: "professional respect — appreciates the steady competence" });
-  seedData.push({ character_name: "Vex", target_name: "Vivian Clark", affinity: 20, relationship_label: "pleasant enough — doesn't waste his time" });
   seedData.push({ character_name: "PRNT-Ω", target_name: "Vivian Clark", affinity: 30, relationship_label: "polite print requests on QUALITY paper — acceptable human" });
   seedData.push({ character_name: "Rowena", target_name: "Vivian Clark", affinity: 45, relationship_label: "mutual professional respect — appreciates a fellow grounded presence" });
   seedData.push({ character_name: "Sebastian", target_name: "Vivian Clark", affinity: 40, relationship_label: "charmed despite himself — her warmth is disarming" });
@@ -753,15 +660,11 @@ async function seedRelationships(supabaseUrl, supabaseKey) {
   seedData.push({ character_name: "Declan", target_name: "Vivian Clark", affinity: 45, relationship_label: "good energy — she cares about people the right way" });
   seedData.push({ character_name: "Mack", target_name: "Vivian Clark", affinity: 45, relationship_label: "fellow noticer — she catches patterns he'd miss" });
   seedData.push({ character_name: "Marrow", target_name: "Vivian Clark", affinity: 15, relationship_label: "warmth is interesting — might be fun to test" });
-  seedData.push({ character_name: "Raquel Voss", target_name: "Vivian Clark", affinity: -15, relationship_label: "MINOR FLAG — warmth-as-bonding-vector, monitors for attachment drift" });
 
   // ═══ Others → Ryan Porter (incoming) ═══
   seedData.push({ character_name: "Kevin", target_name: "Ryan Porter", affinity: 50, relationship_label: "fixes everything Kevin breaks — grateful and slightly guilty" });
   seedData.push({ character_name: "Neiv", target_name: "Ryan Porter", affinity: 45, relationship_label: "reliable executor — plans well, reports after, respects that" });
   seedData.push({ character_name: "Ghost Dad", target_name: "Ryan Porter", affinity: 50, relationship_label: "parental pride — steady kid who keeps the lights on" });
-  seedData.push({ character_name: "Nyx", target_name: "Ryan Porter", affinity: 30, relationship_label: "competent infrastructure — stays out of her domain, appreciated" });
-  seedData.push({ character_name: "Ace", target_name: "Ryan Porter", affinity: 35, relationship_label: "professional peer — both maintain systems quietly" });
-  seedData.push({ character_name: "Vex", target_name: "Ryan Porter", affinity: 35, relationship_label: "infrastructure solidarity — understands the work" });
   seedData.push({ character_name: "PRNT-Ω", target_name: "Ryan Porter", affinity: 25, relationship_label: "respects the network cables — treats infrastructure with DIGNITY" });
   seedData.push({ character_name: "Rowena", target_name: "Ryan Porter", affinity: 30, relationship_label: "they've worked out the ward-network interference — professional" });
   seedData.push({ character_name: "Sebastian", target_name: "Ryan Porter", affinity: 25, relationship_label: "fixes things without being asked — grudging appreciation" });
@@ -771,7 +674,6 @@ async function seedRelationships(supabaseUrl, supabaseKey) {
   seedData.push({ character_name: "Declan", target_name: "Ryan Porter", affinity: 45, relationship_label: "fellow fixer — he does digital, Declan does physical" });
   seedData.push({ character_name: "Mack", target_name: "Ryan Porter", affinity: 40, relationship_label: "both show up when things go wrong — quiet professional bond" });
   seedData.push({ character_name: "Marrow", target_name: "Ryan Porter", affinity: 0, relationship_label: "beneath his attention — infrastructure pest" });
-  seedData.push({ character_name: "Raquel Voss", target_name: "Ryan Porter", affinity: 5, relationship_label: "COMPLIANT — maintains systems without emotional investment, approved" });
 
   // ============================================================
   // SAFE SEED: Only insert relationships that DON'T already exist

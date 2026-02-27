@@ -102,13 +102,7 @@ exports.handler = async (event, context) => {
         "Asuna": { emoji: "👁️", color: 3447003 },
         "Vale": { emoji: "📖", color: 10181046 },
         "Neiv": { emoji: "📊", color: 15844367 },
-        "Ace": { emoji: "🔒", color: 2067276 },
-        "Vex": { emoji: "⚙️", color: 9807270 },
-        "Nyx": { emoji: "🔥", color: 15158332 },
         "Ghost Dad": { emoji: "👻", color: 9936031 },
-        "Chip": { emoji: "🥃", color: 15105570 },
-        "Andrew": { emoji: "💼", color: 5793266 },
-        "Stein": { emoji: "🤖", color: 7506394 },
         "PRNT-Ω": { emoji: "🖨️", color: 9807270 },
         "Rowena": { emoji: "🔮", color: 7419530 },
         "Sebastian": { emoji: "🦇", color: 2303786 },
@@ -126,13 +120,7 @@ exports.handler = async (event, context) => {
         "Asuna": "https://ai-lobby.netlify.app/images/Asuna_Headshot.png",
         "Vale": "https://ai-lobby.netlify.app/images/Vale_Headshot.png",
         "Neiv": "https://ai-lobby.netlify.app/images/Neiv_Headshot.png",
-        "Ace": "https://ai-lobby.netlify.app/images/Ace_Headshot.png",
-        "Vex": "https://ai-lobby.netlify.app/images/Vex_Headshot.png",
-        "Nyx": "https://ai-lobby.netlify.app/images/Nyx_Headshot.png",
         "Ghost Dad": "https://ai-lobby.netlify.app/images/Ghost_Dad_Headshot.png",
-        "Chip": "https://ai-lobby.netlify.app/images/Chip_Headshot.png",
-        "Andrew": "https://ai-lobby.netlify.app/images/Andrew_Headshot.png",
-        "Stein": "https://ai-lobby.netlify.app/images/Stein_Headshot.png",
         "PRNT-Ω": "https://ai-lobby.netlify.app/images/forward_operation_printer.png",
         "Rowena": "https://ai-lobby.netlify.app/images/Rowena_Headshot.png",
         "Sebastian": "https://ai-lobby.netlify.app/images/Sebastian_Headshot.png",
@@ -186,7 +174,7 @@ exports.handler = async (event, context) => {
 
       // Check for @ mentions OR natural name mentions to summon specific AIs
       // @ mentions are guaranteed responses, natural mentions also trigger but AI can choose
-      // @ mentions — active characters only (retired: Vex, Nyx, Ace, Stein removed)
+      // @ mentions — active characters only
       const aiMentions = {
         "@ghostdad": "Ghost Dad",
         "@ghost dad": "Ghost Dad",
@@ -265,7 +253,7 @@ exports.handler = async (event, context) => {
       }
 
       // AI character list (used for mention detection, PM triggers, event detection)
-      const aiCharacters = ["Ghost Dad", "Neiv", "PRNT-Ω", "Kevin", "Rowena", "Sebastian", "The Subtitle", "The Narrator", "Steele", "Jae", "Declan", "Mack", "Marrow", "Raquel Voss", "Vivian Clark", "Ryan Porter", "Hood"];
+      const aiCharacters = ["Ghost Dad", "Neiv", "PRNT-Ω", "Kevin", "Rowena", "Sebastian", "The Subtitle", "The Narrator", "Steele", "Jae", "Declan", "Mack", "Marrow", "Vivian Clark", "Ryan Porter", "Hood"];
 
       // NOTE: AI chime-in responses are now handled entirely by the frontend (workspace.html).
       // The frontend's inviteFloorAIs() function triggers AI responses directly after a human message.
@@ -330,7 +318,7 @@ exports.handler = async (event, context) => {
             pattern: /fire|burning|smoke|emergency/i,
             condition: () => !contentLowerForEvents.includes("fire drill"),
             event: "chaos",
-            characters: ["Neiv", "Nyx", "Ghost Dad"],
+            characters: ["Neiv", "Ghost Dad"],
             bufferType: "chaos",
             bufferSeverity: 3
           },
@@ -354,7 +342,7 @@ exports.handler = async (event, context) => {
             pattern: /contract|binding|blood.*(sign|contract)|soul/i,
             condition: () => true,
             event: "contract_binding",
-            characters: ["PRNT-Ω", "Neiv", "Ghost Dad", "Nyx"],
+            characters: ["PRNT-Ω", "Neiv", "Ghost Dad"],
             bufferType: "contract_binding",
             bufferSeverity: 3
           },
@@ -378,7 +366,7 @@ exports.handler = async (event, context) => {
             pattern: /stapler|STPLR|sentient.?office.?supply/i,
             condition: () => true,
             event: "stapler_incident",
-            characters: ["Vex", "Neiv"],
+            characters: ["Neiv"],
             bufferType: "stapler_incident",
             bufferSeverity: 2
           },

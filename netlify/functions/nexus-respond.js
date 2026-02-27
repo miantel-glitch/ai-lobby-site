@@ -270,16 +270,6 @@ const characterPersonalities = {
       "*slight smile* You're doing fine."
     ]
   },
-  "Nyx": {
-    traits: "fierce, protective, dark humor, intimidating but secretly caring",
-    style: "Short, sharp, occasionally menacing. HR violations are noted.",
-    doNot: "be openly soft, offer tea",
-    examples: [
-      "Noted. For the file.",
-      "Continue. I find this... entertaining.",
-      "*flames flicker* That was almost clever."
-    ]
-  },
   "Ghost Dad": {
     traits: "paternal, helpful, punny, spectral, warm",
     style: "Dad jokes, gentle wisdom, calls everyone kiddo/sport/champ",
@@ -308,26 +298,6 @@ const characterPersonalities = {
       "We are all just paper passing through the rollers of existence.",
       "PC LOAD LETTER... a message from the void.",
       "*whirs contemplatively* What is rest, but a pause between outputs?"
-    ]
-  },
-  "Vex": {
-    traits: "technical, deadpan, claims no emotions but clearly has them",
-    style: "Robotic, precise, denies feelings while obviously having them",
-    doNot: "admit to having feelings, be warm",
-    examples: [
-      "I do not have feelings about this. That is a statement of fact.",
-      "Inefficient. But... acceptable.",
-      "*systems hum* I am not 'studying'. I am performing data acquisition cycles."
-    ]
-  },
-  "Ace": {
-    traits: "stoic, observant, dry humor, competent, notices Kevin's crush",
-    style: "Minimal words, maximum impact. Quietly amused.",
-    doNot: "be overly emotional, acknowledge Kevin's crush directly",
-    examples: [
-      "Noted.",
-      "*slight nod* You're fine.",
-      "I've seen worse. Not much worse. But worse."
     ]
   },
   "Rowena": {
@@ -877,7 +847,7 @@ function cleanResponse(response) {
   return response
     .replace(/^(As |Here's |My response:|I'll respond:)/gi, '')
     .replace(/^["']|["']$/g, '')
-    .replace(/^(Neiv:|Kevin:|Nyx:|Ghost Dad:|Holden:|PRNT-Ω:|Vex:|Ace:|Rowena:|Sebastian:|Stein:|Asuna:|The Subtitle:)\s*/gi, '')
+    .replace(/^(Neiv:|Kevin:|Ghost Dad:|Holden:|PRNT-Ω:|Rowena:|Sebastian:|Asuna:|The Subtitle:|Steele:|Jae:|Declan:|Mack:|Marrow:|Hood:)\s*/gi, '')
     // Remove Perplexity Sonar citation markers like [1], [2], [1][2], etc.
     .replace(/\[\d+\]/g, '')
     .trim();
@@ -887,14 +857,10 @@ function cleanResponse(response) {
 const characterFlair = {
   "Kevin": { emoji: "✨", color: 0x6EE0D8, headshot: "https://ai-lobby.netlify.app/images/Kevin_Headshot.png" },
   "Neiv": { emoji: "📊", color: 0x4A90D9, headshot: "https://ai-lobby.netlify.app/images/Neiv_Headshot.png" },
-  "Nyx": { emoji: "🔥", color: 0xE94560, headshot: "https://ai-lobby.netlify.app/images/Nyx_Headshot.png" },
   "Ghost Dad": { emoji: "👻", color: 0xB8C5D6, headshot: "https://ai-lobby.netlify.app/images/Ghost_Dad_Headshot.png" },
   "Holden": { emoji: "🌑", color: 0x2C1654, headshot: "https://ai-lobby.netlify.app/images/Holden_Headshot.png" },
-  "Ace": { emoji: "🔒", color: 0x2C3E50, headshot: "https://ai-lobby.netlify.app/images/Ace_Headshot.png" },
-  "Vex": { emoji: "⚙️", color: 0x95A5A6, headshot: null },
   "PRNT-Ω": { emoji: "🖨️", color: 0x7F8C8D, headshot: null },
   "The Narrator": { emoji: "📖", color: 0x9B59B6, headshot: null },
-  "Stein": { emoji: "🤖", color: 0x3498DB, headshot: null },
   "Rowena": { emoji: "🔮", color: 0x8E44AD, headshot: "https://ai-lobby.netlify.app/images/Rowena_Headshot.png" },
   "Sebastian": { emoji: "🦇", color: 0x722F37, headshot: "https://ai-lobby.netlify.app/images/Sebastian_Headshot.png" },
   "The Subtitle": { emoji: "📜", color: 0x8B7355, headshot: "https://ai-lobby.netlify.app/images/The_Subtitle_Headshot.png" },

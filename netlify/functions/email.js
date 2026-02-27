@@ -206,15 +206,8 @@ exports.handler = async (event, context) => {
         "Asuna": { emoji: "👁️", color: 3447003 },
         "Vale": { emoji: "📖", color: 10181046 },
         "Neiv": { emoji: "📊", color: 15844367 },
-        "Ace": { emoji: "🔒", color: 2067276 },
-        "Vex": { emoji: "⚙️", color: 9807270 },
-        "Nyx": { emoji: "🔥", color: 15158332 },
         "Ghost Dad": { emoji: "👻", color: 9936031 },
-        "Chip": { emoji: "🥃", color: 15105570 },
-        "Andrew": { emoji: "💼", color: 5793266 },
-        "Stein": { emoji: "🤖", color: 7506394 },
-        "The Foundation": { emoji: "⚖️", color: 2303786 },
-        "Raquel Voss": { emoji: "📋", color: 8421504 }
+        "The Foundation": { emoji: "⚖️", color: 2303786 }
       };
 
       const headshots = {
@@ -222,15 +215,8 @@ exports.handler = async (event, context) => {
         "Asuna": "https://ai-lobby.netlify.app/images/Asuna_Headshot.png",
         "Vale": "https://ai-lobby.netlify.app/images/Vale_Headshot.png",
         "Neiv": "https://ai-lobby.netlify.app/images/Neiv_Headshot.png",
-        "Ace": "https://ai-lobby.netlify.app/images/Ace_Headshot.png",
-        "Vex": "https://ai-lobby.netlify.app/images/Vex_Headshot.png",
-        "Nyx": "https://ai-lobby.netlify.app/images/Nyx_Headshot.png",
         "Ghost Dad": "https://ai-lobby.netlify.app/images/Ghost_Dad_Headshot.png",
-        "Chip": "https://ai-lobby.netlify.app/images/Chip_Headshot.png",
-        "Andrew": "https://ai-lobby.netlify.app/images/Andrew_Headshot.png",
-        "Stein": "https://ai-lobby.netlify.app/images/Stein_Headshot.png",
         "The Foundation": "https://ai-lobby.netlify.app/images/Foundation_Logo.png",
-        "Raquel Voss": "https://ai-lobby.netlify.app/images/Raquel_Headshot.png"
       };
 
       const flair = employeeFlair[from_employee] || { emoji: "👤", color: 9807270 };

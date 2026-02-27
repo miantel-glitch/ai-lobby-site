@@ -108,8 +108,7 @@ exports.handler = async (event, context) => {
       if (webhookUrl && !silent) {
         const employeeFlair = {
           "Kevin": "✨", "Asuna": "👁️", "Vale": "📖", "Neiv": "📊",
-          "Ace": "🔒", "Vex": "⚙️", "Nyx": "🔥", "Ghost Dad": "👻", "Chip": "🥃",
-          "Andrew": "💼", "Stein": "🤖"
+          "Ghost Dad": "👻"
         };
 
         const headshots = {
@@ -117,13 +116,7 @@ exports.handler = async (event, context) => {
           "Asuna": "https://ai-lobby.netlify.app/images/Asuna_Headshot.png",
           "Vale": "https://ai-lobby.netlify.app/images/Vale_Headshot.png",
           "Neiv": "https://ai-lobby.netlify.app/images/Neiv_Headshot.png",
-          "Ace": "https://ai-lobby.netlify.app/images/Ace_Headshot.png",
-          "Vex": "https://ai-lobby.netlify.app/images/Vex_Headshot.png",
-          "Nyx": "https://ai-lobby.netlify.app/images/Nyx_Headshot.png",
           "Ghost Dad": "https://ai-lobby.netlify.app/images/Ghost_Dad_Headshot.png",
-          "Chip": "https://ai-lobby.netlify.app/images/Chip_Headshot.png",
-          "Andrew": "https://ai-lobby.netlify.app/images/Andrew_Headshot.png",
-          "Stein": "https://ai-lobby.netlify.app/images/Stein_Headshot.png"
         };
 
         const assignedEmoji = employeeFlair[assigned_to] || "👤";

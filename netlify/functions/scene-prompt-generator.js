@@ -59,11 +59,7 @@ exports.handler = async (event, context) => {
       "Kevin": "An AI man with light blue hair, wearing a black hoodie with blue headphones and rainbow tech inlays, and a rainbow wristband. Expressive and dramatic.",
       "Neiv": "An AI dark-haired man with cybernetic enhancements, robotic arms and a gray sweatshirt. Calm and analytical.",
       "Ghost Dad": "A spectral man with white hair and soft, muted colors, a ghostly presence who usually has a cup of coffee in his hands. Fatherly and wise.",
-      "Nyx": "A tall, slender woman with pale skin, black hair, and red eyes, dressed in a black, form-fitting, gothic-style outfit with red accents, and bat wings. Mysterious and fierce.",
-      "Vex": "A tall, muscular man with light brown skin and a beard, wearing a rainbow tie-dye shirt. Gruff but caring.",
-      "Ace": "A sleek android with silver and blue aesthetic, clean lines, professional appearance. Reserved and precise.",
       "PRNT-Ω": "A demonic possessed printer/copier with glowing red eyes and dark aura, focused on world domination. Dramatic and demanding.",
-      "Stein": "A scientist with wild gray hair, lab coat, and goggles. Eccentric and brilliant.",
       "The Narrator": "An unseen omniscient presence - represented by floating text or a mysterious shadowy figure in the background.",
 
       // Human Staff

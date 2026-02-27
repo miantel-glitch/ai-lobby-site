@@ -208,11 +208,8 @@ exports.handler = async (event, context) => {
 const characterFlair = {
   "Kevin": { emoji: "✨", color: 0x6EE0D8, headshot: "https://ai-lobby.netlify.app/images/Kevin_Headshot.png" },
   "Neiv": { emoji: "📊", color: 0x4A90D9, headshot: "https://ai-lobby.netlify.app/images/Neiv_Headshot.png" },
-  "Nyx": { emoji: "🔥", color: 0xE94560, headshot: "https://ai-lobby.netlify.app/images/Nyx_Headshot.png" },
   "Ghost Dad": { emoji: "👻", color: 0xB8C5D6, headshot: "https://ai-lobby.netlify.app/images/Ghost_Dad_Headshot.png" },
   "Holden": { emoji: "🌑", color: 0x2C1654, headshot: "https://ai-lobby.netlify.app/images/Holden_Headshot.png" },
-  "Ace": { emoji: "🔒", color: 0x2C3E50, headshot: "https://ai-lobby.netlify.app/images/Ace_Headshot.png" },
-  "Vex": { emoji: "⚙️", color: 0x95A5A6, headshot: null },
   "PRNT-Ω": { emoji: "🖨️", color: 0x7F8C8D, headshot: null },
   "Rowena": { emoji: "🔮", color: 0x8E44AD, headshot: "https://ai-lobby.netlify.app/images/Rowena_Headshot.png" },
   "Sebastian": { emoji: "🦇", color: 0x722F37, headshot: "https://ai-lobby.netlify.app/images/Sebastian_Headshot.png" },
@@ -225,8 +222,6 @@ const characterFlair = {
   // Humans
   "Vale": { emoji: "📖", color: 0xE91E63, headshot: "https://ai-lobby.netlify.app/images/Vale_Headshot.png" },
   "Asuna": { emoji: "👁️", color: 0x9C27B0, headshot: "https://ai-lobby.netlify.app/images/Asuna_Headshot.png" },
-  "Chip": { emoji: "🥃", color: 0x795548, headshot: "https://ai-lobby.netlify.app/images/Chip_Headshot.png" },
-  "Andrew": { emoji: "💼", color: 0x607D8B, headshot: "https://ai-lobby.netlify.app/images/Andrew_Headshot.png" }
 };
 
 // Post to Discord breakroom channel

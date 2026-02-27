@@ -307,7 +307,7 @@ RULES:
 ${bufferContext}${raquelContext}
 
 GOOD examples:
-- "Kevin said something. Nyx responded."
+- "Kevin said something. Neiv responded."
 - "The conversation shifted to printers."
 - "Vale paused."
 - "Asuna typed. Then typed again."

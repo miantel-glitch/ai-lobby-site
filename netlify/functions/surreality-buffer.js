@@ -174,7 +174,6 @@ const INCIDENT_EFFECTS = {
   // Character-based incidents
   glitter: { baseDelta: 2, perSeverity: 1, description: "Glitter particulate event" },
   printer_demand: { baseDelta: 3, perSeverity: 2, description: "PRNT-Ω contract/demand" },
-  nyx_appearance: { baseDelta: 3, perSeverity: 1, description: "Nyx manifestation" },
   ghost_sermon: { baseDelta: 0, perSeverity: 1, description: "Ghost Dad metaphysical discourse" }, // Can be + or -
   neiv_analysis: { baseDelta: -1, perSeverity: -1, description: "Systems analysis" }, // Reduces chaos
 

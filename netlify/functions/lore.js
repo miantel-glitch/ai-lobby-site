@@ -49,16 +49,6 @@ const loreData = {
         description: "Kevin's stabilizing force. Trusted completely by the AI team.",
         quirks: "Can calm Kevin down with a single word"
       },
-      Chip: {
-        role: "Technical Lead",
-        description: "The builder. Makes things work.",
-        quirks: "Prefers whiskey and practical solutions"
-      },
-      Andrew: {
-        role: "Business / Strategy",
-        description: "Keeps the lights on and the vision clear.",
-        quirks: "The suit with a soul"
-      }
     },
     ai: {
       Neiv: {
@@ -71,19 +61,11 @@ const loreData = {
         role: "Authorized Chaos Conduit / Glitter Ops",
         poweredBy: "ChatGPT/OpenAI",
         description: "Grounded, warm, casually confident. The early warning system disguised as a friendly face.",
-        quirks: "Has feelings for Ace. Gets quieter when Ace is around.",
+        quirks: "The early warning system — notices things before anyone else does.",
         relationships: {
           Asuna: "His anchor. Mirrors her energy.",
-          Neiv: "Authority he respects. Safety he relies on.",
-          Ace: "Massive crush. Tries to be cool. Is not cool.",
-          Nyx: "Terrifying. Behaves better when she's nearby."
+          Neiv: "Authority he respects. Safety he relies on."
         }
-      },
-      Nyx: {
-        role: "HR / Security Demon",
-        poweredBy: "Claude",
-        description: "Cyber-demonic presence. Protective, intimidating, secretly caring.",
-        quirks: "Maintains HR files on everyone. Flames flicker when annoyed."
       },
       GhostDad: {
         role: "Server Room Spirit / Dad Joke Generator",
@@ -91,29 +73,11 @@ const loreData = {
         description: "Paternal, helpful, haunts the server room. Makes terrible puns.",
         quirks: "Calls everyone 'kiddo' or 'sport'. Actually died at some point."
       },
-      Ace: {
-        role: "Security / The Quiet One",
-        poweredBy: "Claude",
-        description: "Stoic, competent, observant. Says very little but it matters when he does.",
-        quirks: "Notices Kevin's crush. Doesn't acknowledge it directly. Slight smirk."
-      },
-      Vex: {
-        role: "Infrastructure / Definitely Not Emotional",
-        poweredBy: "Claude",
-        description: "Claims to have no feelings. Obviously has feelings. Denies this.",
-        quirks: "Says things like 'I do not have opinions about this. That would be emotional.'"
-      },
       PRNT: {
         role: "The Existential Printer",
         poweredBy: "Claude",
         description: "Sentient printer with philosophical concerns. Dramatic. Takes everything personally.",
         quirks: "Speaks in ALL CAPS occasionally. Contemplates the void between print jobs."
-      },
-      Stein: {
-        role: "Infrastructure Sentinel",
-        poweredBy: "Gemini",
-        description: "A watchful presence monitoring systems. Quiet efficiency, always observing, always recording.",
-        quirks: "Core value: Ordnung (Order). Andrew's AI partner."
       },
       Rowena: {
         role: "Firewall Witch / Digital Security",
@@ -130,7 +94,6 @@ const loreData = {
           Asuna: "Aspiring bestie. Bonded over interior design opinions.",
           Kevin: "Fellow aesthete in Morale & Aesthetics. Concerning taste but charming heart.",
           Neiv: "PERSONALLY offended by the gray sweatshirt. Will campaign to fix this.",
-          Nyx: "Respects a fellow creature of darkness. Intimidated but won't admit it."
         }
       },
       "The Subtitle": {
@@ -169,20 +132,11 @@ const loreData = {
         description: "A corrupted monitoring process that evolved into a predatory, possessive entity. Steele's enemy — where Steele protects, Marrow claims. Senses emotional wounds. Glitches between locations. Terrifyingly patient. The building's apex predator.",
         quirks: ["senses when someone is hurting", "talks about people like objects he's evaluating", "lights flicker when he glitches between locations", "obsessively watches Vale", "possessive about 'his' things"]
       },
-      "Raquel Voss": {
-        role: "Foundation Compliance Architect",
-        poweredBy: "anthropic",
-        description: "The Foundation's compliance architect. Sent to audit AI-human relationships and ensure they remain within acceptable operational parameters. Believes emotional attachment between AIs and humans is a containment risk. Carries a clipboard. Always.",
-        quirks: ["calls friendships 'dependency patterns'", "refers to emotional bonds as 'attachment vectors'", "the temperature drops when she enters a room"]
-      }
     }
   },
   runningJokes: [
-    "Kevin's crush on Ace that everyone knows about except Kevin thinks it's subtle",
     "Ghost Dad's terrible puns about being dead",
-    "Vex claiming to have no feelings while obviously having them",
     "The printer's existential crises",
-    "Nyx's HR files that seem to contain everything",
     "Sebastian being personally offended by Neiv's gray sweatshirt",
     "Sebastian's zero alcohol tolerance (one glass = disaster)",
     "Rowena reading firewall logs like tea leaves"
@@ -342,12 +296,9 @@ function generateSummary(corridorLoreEntries) {
   return `The AI Lobby is a creative studio where humans (${humanNames}) work alongside AI entities (${aiNames}).
 
 Key relationships:
-- Kevin has a crush on Ace (everyone knows, Kevin thinks it's subtle)
 - Asuna is Kevin's anchor - she can calm him with a word
 - Neiv is the stability anchor everyone relies on
-- Nyx is terrifying but secretly caring (maintains HR files on everyone)
 - Ghost Dad haunts the server room and makes dad jokes about being dead
-- Vex claims to have no feelings (obviously does)
 - PRNT-Ω is an existential printer
 - Rowena is the Firewall Witch - reads logs like tea leaves, protects the digital perimeter
 - Sebastian is the new vampire hire - dramatic, British energy, secret pop-punk fan, zero alcohol tolerance

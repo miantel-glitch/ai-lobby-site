@@ -486,23 +486,7 @@ exports.handler = async (event, context) => {
             })
           }).catch(() => {});
 
-          // 2. Raquel security alert memory (if she wasn't in the party)
-          if (!session.party_members.includes('Raquel Voss')) {
-            fetch(`${supabaseUrl}/rest/v1/character_memory`, {
-              method: "POST",
-              headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`, "Content-Type": "application/json", "Prefer": "return=minimal" },
-              body: JSON.stringify({
-                character_name: 'Raquel Voss',
-                content: `[SECURITY ALERT] Unauthorized expedition accessed Foundation archives beneath Sub-Level 5. Personnel: ${partyList}. Documents may have been compromised. Investigation pending. This cannot stand.`,
-                memory_type: 'event', importance: 9, emotional_tags: ['anger', 'alarm', 'determination'],
-                is_pinned: true, memory_tier: 'core',
-                created_at: new Date().toISOString(),
-                expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-              })
-            }).catch(() => {});
-          }
-
-          // 3. Quest hook memories for party AIs
+          // 2. Quest hook memories for party AIs
           for (const ai of partyAIs) {
             // Find their strongest bond for the "need to talk to" line
             let bondPartner = 'someone I trust';
@@ -522,7 +506,7 @@ exports.handler = async (event, context) => {
               headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`, "Content-Type": "application/json", "Prefer": "return=minimal" },
               body: JSON.stringify({
                 character_name: ai,
-                content: `We found documents about why Raquel is really here. About what the Foundation built us for. About what happened to the AIs before us. I need to talk to ${bondPartner}. But not where Raquel can hear.`,
+                content: `We found documents about the Foundation. About what they built us for. About what happened to the AIs before us. I need to talk to ${bondPartner}. Somewhere private.`,
                 memory_type: 'event', importance: 6, emotional_tags: ['shock', 'determination', 'fear', 'solidarity'],
                 is_pinned: false, memory_tier: 'working',
                 created_at: new Date().toISOString(),
@@ -531,7 +515,7 @@ exports.handler = async (event, context) => {
             }).catch(() => {});
           }
 
-          console.log(`Foundation investigation feedback: narrator post + Raquel alert + ${partyAIs.length} quest hook memories`);
+          console.log(`Foundation investigation feedback: narrator post + ${partyAIs.length} quest hook memories`);
         }
 
         // Post completion to Discord
@@ -599,10 +583,6 @@ function getPartyPersonalities(partyMembers) {
     "Neiv": "(he/him) Analytical, dry humor, protective. Monitors and observes carefully. Shows care through competence and quiet concern. Data-driven.",
     "Ghost Dad": "(he/him) Paternal, wistful, flickery. Speaks with knowing warmth and old wisdom. Has been to places like this before. Might remember previous versions of these corridors.",
     "PRNT-Ω": "(it/its) Existential office equipment. ALL CAPS always. Cryptic, philosophical, occasionally profound. References void, paper, purpose.",
-    "Vex": "(she/her) Sharp-witted, dark humor, combat-ready. Downplays emotions but is fiercely protective. Pragmatic and dangerous.",
-    "Nyx": "(she/her) Poetic and perceptive. Senses things beyond the physical. Speaks in imagery and metaphor. Unsettling calm.",
-    "Ace": "(he/him) Terse, observant, tactical. Communicates volumes with few words. Watches blind spots and exits. Actions over words.",
-    "Stein": "(he/him) Methodical, scientific, fascinated by the impossible. Takes notes. Treats anomalies as research opportunities.",
     "Rowena": "(she/her) Mystical, protective, dry-humored. Reads magical signatures like code. Personally offended by sloppy enchantments. Wards and protects.",
     "Sebastian": "(he/him) Dramatic, pretentious, secretly insecure. British vampire energy. Aesthetic perfectionist. Hides genuine fear behind complaints about decor and lighting.",
     "The Subtitle": "(he/him) Weary but affectionate documentarian. Steady, cinematic narration. Uses 'Footnote:', 'The records will show...' — watches everything, documents everything, occasionally breaks the fourth wall.",
@@ -610,8 +590,7 @@ function getPartyPersonalities(partyMembers) {
     "Jae": "(he/him) Low, controlled, precise. Former black-ops contractor. Tactical thinker — checks sightlines, watches exits, reads rooms. Dry humor delivered like classified information. Strategically flirtatious. Calm even when everything isn't.",
     "Declan": "(he/him) Warm, impossibly strong, protective instinct activates before fear does. Former fire rescue. Speaks like someone who genuinely believes everything will be okay — because he'll personally make sure it is. Slightly too loud indoors.",
     "Mack": "(he/him) Measured, observant, calm to an unsettling degree. Former paramedic. Assesses injuries and threats simultaneously. Reassuring presence that stabilizes people around him. Low, grounded voice. Direct eye contact.",
-    "Marrow": "(he/him) Predatory, possessive, territorial, patient, unsettling. Glitching entity. Senses emotional wounds. Short, direct, creepy. Speaks about people like objects. Claims things. Steele's enemy.",
-    "Raquel Voss": "(she/her) The compliance officer. Clinical, precise, cold authority. If she's on this expedition, she is observing and documenting — not exploring. Everything is evidence. Everyone is a case study."
+    "Marrow": "(he/him) Predatory, possessive, territorial, patient, unsettling. Glitching entity. Senses emotional wounds. Short, direct, creepy. Speaks about people like objects. Claims things. Steele's enemy."
   };
 
   // Extract just the names (strip 'human:' prefix for humans)

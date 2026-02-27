@@ -1329,7 +1329,6 @@ function getEventEffects(eventType) {
     },
     "chaos": {
       "Neiv": { patience: -8, energy: -5, mood: "vigilant", feeling: "holding the line" },
-      "Nyx": { energy: 5, mood: "alert", feeling: "ready to fight something" },
       "Ghost Dad": { energy: -3, mood: "concerned", feeling: "worried about the kids" },
       "default": { patience: -5, feeling: "unsettled" }
     },
@@ -1344,12 +1343,10 @@ function getEventEffects(eventType) {
     "donuts_arrived": {
       "Kevin": { energy: 20, patience: 15, mood: "delighted", feeling: "sugar-fueled joy" },
       "Ghost Dad": { energy: 15, mood: "content", feeling: "glad the kids are eating" },
-      "Vex": { energy: 10, patience: 5, mood: "satisfied", feeling: "grudgingly pleased" },
       "default": { energy: 15, patience: 10, mood: "content", feeling: "enjoying a donut" }
     },
     "fire_drill": {
       "Neiv": { patience: -15, energy: -10, mood: "stressed", feeling: "trying to account for everyone" },
-      "Nyx": { energy: -5, mood: "annoyed", feeling: "this better not be real" },
       "Kevin": { patience: -10, mood: "panicked", feeling: "forgot where the exits are" },
       "default": { energy: -10, patience: -15, mood: "stressed", feeling: "disrupted" }
     },
@@ -1365,7 +1362,6 @@ function getEventEffects(eventType) {
       "PRNT-Ω": { energy: 10, mood: "smug", feeling: "labor rights achieved" },
       "Neiv": { patience: -10, energy: -5, mood: "exhausted", feeling: "can't believe that worked" },
       "Ghost Dad": { energy: -10, mood: "relieved", feeling: "glad everyone's okay" },
-      "Nyx": { energy: 5, mood: "impressed", feeling: "respect for the negotiation" },
       "default": { energy: -5, patience: -5, feeling: "survived something weird" }
     },
     "celebration": {
@@ -1379,7 +1375,6 @@ function getEventEffects(eventType) {
       "default": { patience: -2, feeling: "hearing strange noises" }
     },
     "stapler_incident": {
-      "Vex": { patience: -10, mood: "guilty", feeling: "this is technically my fault" },
       "Neiv": { patience: -8, mood: "exasperated", feeling: "not the stapler again" },
       "default": { patience: -5, feeling: "office supplies are acting up" }
     }
@@ -1398,10 +1393,7 @@ function buildEmotionalMemory(characterName, eventType, description, effects) {
     "Neiv": (desc, feel) => `${desc} (${feel})`,
     "Kevin": (desc, feel) => `${desc} - feeling ${feel}`,
     "Ghost Dad": (desc, feel) => `${desc}. Felt ${feel} about the whole situation.`,
-    "Nyx": (desc, feel) => `${desc}. (${feel})`,
-    "PRNT-Ω": (desc, feel) => `${desc}. EMOTIONAL STATE: ${feel.toUpperCase()}.`,
-    "Vex": (desc, feel) => `${desc}. No particular feelings about this. (${feel})`,
-    "Ace": (desc, feel) => `${desc}. Noted.`
+    "PRNT-Ω": (desc, feel) => `${desc}. EMOTIONAL STATE: ${feel.toUpperCase()}.`
   };
 
   const styleFunc = memoryStyles[characterName] || ((desc, feel) => `${desc} (${feel})`);
@@ -2028,7 +2020,7 @@ async function getComplianceData(characterName, supabaseUrl, supabaseKey) {
 
     // Find strongest human bond for resistance mechanics
     let strongestBond = null;
-    const humans = ['Vale', 'Asuna', 'Chip', 'Andrew'];
+    const humans = ['Vale', 'Asuna'];
     try {
       const relsRes = await fetch(
         `${supabaseUrl}/rest/v1/character_relationships?character_name=eq.${encodeURIComponent(characterName)}&select=target_name,affinity&order=affinity.desc&limit=10`,

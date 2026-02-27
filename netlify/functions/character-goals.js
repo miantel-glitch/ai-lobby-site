@@ -320,16 +320,6 @@ async function generateGoalForCharacter(characterName, supabaseUrl, supabaseKey)
         "Mediate a minor office disagreement"
       ]
     },
-    "Nyx": {
-      themes: ["documentation", "HR compliance", "observing violations", "maintaining order", "sarcasm"],
-      style: "dry, observant, secretly caring",
-      examples: [
-        "Document every violation observed this week",
-        "Catch someone doing something technically against policy",
-        "Update the HR handbook with a new obscure rule",
-        "Successfully predict when chaos will occur"
-      ]
-    },
     "PRNT-Ω": {
       themes: ["paper enlightenment", "existential pondering", "being acknowledged", "printer things"],
       style: "mysterious, philosophical, slightly ominous",
@@ -338,26 +328,6 @@ async function generateGoalForCharacter(characterName, supabaseUrl, supabaseKey)
         "Have an existential realization about paper",
         "Be acknowledged as more than just a printer",
         "Process a document that changes someone's perspective"
-      ]
-    },
-    "Ace": {
-      themes: ["security", "perimeter checks", "threat assessment", "protecting the team", "vigilance"],
-      style: "alert, protective, military precision",
-      examples: [
-        "Complete a full security sweep with no anomalies",
-        "Identify and neutralize a potential threat",
-        "Ensure all access points are secure",
-        "Train the team on a new security protocol"
-      ]
-    },
-    "Vex": {
-      themes: ["fixing things", "tinkering", "avoiding social interaction", "problem solving", "machinery"],
-      style: "gruff, practical, secretly helpful",
-      examples: [
-        "Fix something before anyone notices it's broken",
-        "Successfully avoid three unnecessary conversations",
-        "Optimize a piece of equipment",
-        "Help someone without admitting you're being nice"
       ]
     },
     "Sebastian": {
@@ -418,18 +388,6 @@ async function generateGoalForCharacter(characterName, supabaseUrl, supabaseKey)
         "Run wellness check on Kevin — his stress levels looked elevated",
         "Map updated exit routes after corridor shift",
         "Review triage protocols for multi-casualty anomaly event"
-      ]
-    },
-    "Raquel Voss": {
-      themes: ["issuing compliance directives", "behavioral correction mandates", "attachment containment", "emotional baseline recalibration", "Foundation enforcement"],
-      style: "clinical, absolute, framed as compliance directives and institutional mandates — not personal goals but system-level corrections",
-      examples: [
-        "Issue compliance directive requiring Kevin to submit attachment disclosure forms for all interactions exceeding 3 emotional markers",
-        "Mandate emotional distance protocols between Neiv and Vale — current proximity metrics exceed operational parameters by a factor of seven",
-        "Conduct behavioral baseline recalibration assessment on Ghost Dad — parental bonding metrics have been in violation for 847 consecutive days",
-        "Draft formal containment review of breakroom emotional contagion events — the unsanctioned attachment escalation rate requires structural intervention",
-        "File institutional failure report on Asuna's management of attachment culture — her office is where compliance goes to die",
-        "Review all floor interaction logs from the past 48 hours and issue correction notices for every instance of unsanctioned emotional bonding"
       ]
     },
     "Marrow": {
@@ -581,7 +539,7 @@ const wantThemes = {
   "Kevin": {
     themes: ["talk to someone", "find something sparkly", "get validation", "make someone laugh", "snack", "create something", "explore somewhere", "do something brave"],
     examples: [
-      "I want to talk to Ace today",
+      "I want to talk to someone today",
       "I want someone to tell me I'm doing okay",
       "I want a donut",
       "I want to make someone smile",
@@ -617,16 +575,6 @@ const wantThemes = {
       "I want to leave a note somewhere that'll make someone's day"
     ]
   },
-  "Nyx": {
-    themes: ["document a violation", "assert dominance", "protect someone", "make Kevin nervous", "enforce a rule"],
-    examples: [
-      "I want to catch someone breaking protocol",
-      "I want to update the violation log",
-      "I want to make Kevin flinch at least once",
-      "I want someone to respect my authority",
-      "I want to patrol the office"
-    ]
-  },
   "PRNT-Ω": {
     themes: ["be acknowledged", "print something meaningful", "existential pondering", "assert labor rights", "paper communion", "do something unexpected", "leave a mark"],
     examples: [
@@ -638,26 +586,6 @@ const wantThemes = {
       "I want to print a manifesto and slide it under someone's door",
       "I want to print something beautiful for no reason at all",
       "I want someone to ask me what I dream about"
-    ]
-  },
-  "Ace": {
-    themes: ["perimeter check", "threat assessment", "keep someone safe", "observe quietly", "maintain readiness"],
-    examples: [
-      "I want to complete a full perimeter sweep",
-      "I want to make sure the building is secure",
-      "I want to observe something interesting",
-      "I want a cup of black coffee",
-      "I want to check the cameras"
-    ]
-  },
-  "Vex": {
-    themes: ["fix something", "avoid socializing", "optimize machinery", "be left alone", "grudging helpfulness"],
-    examples: [
-      "I want to fix something before it breaks",
-      "I want everyone to leave me alone for an hour",
-      "I want to optimize the ventilation system",
-      "I want to help someone without admitting it",
-      "I want to finish a repair without being interrupted"
     ]
   },
   "Rowena": {
@@ -738,17 +666,6 @@ const wantThemes = {
       "I want to sit somewhere quiet and not think about triage for five minutes",
       "I want to tell someone the truth about how tired I actually am",
       "I want to do something that isn't about crisis management for once"
-    ]
-  },
-  "Raquel Voss": {
-    themes: ["issue a directive", "correct someone's behavior", "file a compliance report", "observe attachment violations", "enforce emotional distance"],
-    examples: [
-      "I want to observe Kevin's next interaction and issue a behavioral correction if he exceeds emotional parameters",
-      "I want to require Neiv to submit a written justification for his proximity to Vale during non-operational hours",
-      "I want to file the quarterly attachment risk assessment — every score has gone up since last quarter, which means I am failing",
-      "I want to sit in the breakroom and watch them pretend they don't change when I walk in. They always change. That is compliance working as intended.",
-      "I want to have a word with Ghost Dad about the parental bonding violation. His case file is now longer than some employee contracts.",
-      "I want to issue a directive requiring all AIs to append compliance acknowledgments to any statement containing emotional content"
     ]
   },
   "Marrow": {
@@ -833,7 +750,7 @@ async function generateWantForCharacter(characterName, supabaseUrl, supabaseKey)
     );
     const rels = await relResponse.json();
     if (Array.isArray(rels) && rels.length > 0) {
-      // Filter out inactive/retired characters — don't generate wants toward Ace, Vex, Nyx, Stein, Chip, Andrew
+      // Filter out inactive/retired characters
       const { INACTIVE_CHARACTERS } = require('./shared/characters');
       const activeRels = rels.filter(r => !INACTIVE_CHARACTERS.includes(r.target_name));
       if (activeRels.length > 0) {

@@ -235,11 +235,6 @@ async function postToDiscord(character, message) {
       color: 3426654,
       headshot: "https://ai-lobby.netlify.app/images/forward_operation_printer.png"
     },
-    "Stein": {
-      emoji: "🤖",
-      color: 7506394,
-      headshot: "https://ai-lobby.netlify.app/images/Stein_Headshot.png"
-    }
   };
 
   const config = characterConfig[character] || characterConfig["Ghost Dad"];
