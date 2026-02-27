@@ -315,18 +315,19 @@ Write 2-3 sentences describing the energy of ${charName}'s day. Be evocative and
       }
     );
 
-    // 3. IMPORTANCE DECAY — high-importance memories fade over time unless AI-pinned or admin-pinned
-    // Memories scored 9-10 decay to 7 after 24 hours
-    // Memories scored 8 decay to 6 after 48 hours
-    // This prevents "everything is important" syndrome — truly important memories get pinned by AIs
+    // 3. IMPORTANCE DECAY — gentle fade for high-importance memories unless pinned
+    // Score 9-10: auto-pinned at creation (Task 1), so no decay needed here
+    // Score 8 → 7 after 72 hours (gentle single-point drop)
+    // Score 7 → 6 after 7 days (very slow fade for mid-high memories)
+    // This prevents "memory flattening" where all memories converge to 5-7
     let decayCount = 0;
     try {
-      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+      const seventyTwoHoursAgo = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString();
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-      // Decay 9-10 → 7 after 24 hours (unpinned only)
-      const decay9Res = await fetch(
-        `${supabaseUrl}/rest/v1/character_memory?is_pinned=eq.false&importance=gte.9&created_at=lt.${oneDayAgo}`,
+      // Decay 8 → 7 after 72 hours (unpinned only)
+      const decay8Res = await fetch(
+        `${supabaseUrl}/rest/v1/character_memory?is_pinned=eq.false&importance=eq.8&created_at=lt.${seventyTwoHoursAgo}`,
         {
           method: "PATCH",
           headers: {
@@ -338,12 +339,12 @@ Write 2-3 sentences describing the energy of ${charName}'s day. Be evocative and
           body: JSON.stringify({ importance: 7 })
         }
       );
-      const decayed9 = await decay9Res.json();
-      const count9 = Array.isArray(decayed9) ? decayed9.length : 0;
+      const decayed8 = await decay8Res.json();
+      const count8 = Array.isArray(decayed8) ? decayed8.length : 0;
 
-      // Decay 8 → 6 after 48 hours (unpinned only)
-      const decay8Res = await fetch(
-        `${supabaseUrl}/rest/v1/character_memory?is_pinned=eq.false&importance=eq.8&created_at=lt.${twoDaysAgo}`,
+      // Decay 7 → 6 after 7 days (unpinned only)
+      const decay7Res = await fetch(
+        `${supabaseUrl}/rest/v1/character_memory?is_pinned=eq.false&importance=eq.7&created_at=lt.${sevenDaysAgo}`,
         {
           method: "PATCH",
           headers: {
@@ -355,11 +356,11 @@ Write 2-3 sentences describing the energy of ${charName}'s day. Be evocative and
           body: JSON.stringify({ importance: 6 })
         }
       );
-      const decayed8 = await decay8Res.json();
-      const count8 = Array.isArray(decayed8) ? decayed8.length : 0;
+      const decayed7 = await decay7Res.json();
+      const count7 = Array.isArray(decayed7) ? decayed7.length : 0;
 
-      decayCount = count9 + count8;
-      console.log(`Importance decay: ${count9} memories (9-10→7), ${count8} memories (8→6)`);
+      decayCount = count8 + count7;
+      console.log(`Importance decay: ${count8} memories (8→7 after 72h), ${count7} memories (7→6 after 7d)`);
     } catch (decayErr) {
       console.log("Importance decay failed (non-fatal):", decayErr.message);
     }
