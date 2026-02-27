@@ -80,8 +80,9 @@ exports.handler = async (event, context) => {
     }
 
     // === WANT MANAGEMENT ===
-    // 1. Expire old wants (active wants older than 24 hours)
-    // Extended from 6h to 24h so the affinity-loss-engine can detect unfulfilled wants
+    // 1. Expire old wants (24-hour safety net only)
+    // Wants now persist until fulfilled. This is just a cleanup for truly abandoned wants
+    // that went an entire day without being acted on or resolved.
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     try {
       const expireWantsResponse = await fetch(
@@ -109,7 +110,7 @@ exports.handler = async (event, context) => {
 
     // 2. Generate 1-2 fresh wants per AI character
     const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
-    const aiCharacters = ['Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian', 'The Subtitle', 'Steele', 'Jae', 'Declan', 'Mack', 'Marrow'];
+    const aiCharacters = ['Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian', 'The Subtitle', 'Steele', 'Jae', 'Declan', 'Mack', 'Marrow', 'Hood', 'Vivian Clark', 'Ryan Porter', 'Nyx', 'Vex', 'Ace', 'The Narrator', 'Stein', 'Raquel Voss'];
     let wantsGenerated = 0;
 
     for (const charName of aiCharacters) {
@@ -150,6 +151,126 @@ exports.handler = async (event, context) => {
       }
     }
     console.log(`Generated ${wantsGenerated} fresh wants for characters`);
+
+    // === DAILY TAROT DRAW ===
+    // Each AI character receives a tarot card at midnight that subtly influences their day
+    const { drawCard } = require('./shared/tarot-deck');
+    const anthropicKey = process.env.ANTHROPIC_API_KEY;
+    let tarotDrawn = 0;
+
+    // Calculate next midnight for card expiry
+    const tarotExpiry = new Date();
+    tarotExpiry.setDate(tarotExpiry.getDate() + 1);
+    tarotExpiry.setHours(6, 0, 0, 0); // 6 AM UTC ≈ midnight CST
+
+    // Clean up any expired cards
+    try {
+      await fetch(
+        `${supabaseUrl}/rest/v1/character_tarot?expires_at=lt.${new Date().toISOString()}`,
+        {
+          method: "DELETE",
+          headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` }
+        }
+      );
+    } catch (e) {
+      console.log("Tarot cleanup failed (non-fatal):", e.message);
+    }
+
+    for (const charName of aiCharacters) {
+      try {
+        // Check for existing active card — skip if admin override
+        const existingRes = await fetch(
+          `${supabaseUrl}/rest/v1/character_tarot?character_name=eq.${encodeURIComponent(charName)}&expires_at=gt.${new Date().toISOString()}&select=id,is_override`,
+          { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+        );
+        const existing = await existingRes.json();
+        if (Array.isArray(existing) && existing.length > 0) {
+          // If ANY card is an admin override, skip this character entirely
+          const hasOverride = existing.some(c => c.is_override);
+          if (hasOverride) {
+            console.log(`Tarot: ${charName} has admin override, skipping`);
+            continue;
+          }
+          // Delete ALL old auto-drawn cards (fixes duplicate accumulation bug)
+          for (const oldCard of existing) {
+            await fetch(
+              `${supabaseUrl}/rest/v1/character_tarot?id=eq.${oldCard.id}`,
+              { method: "DELETE", headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+            );
+          }
+        }
+
+        // Draw a card
+        const { card, orientation } = drawCard();
+        const keywords = card[orientation].keywords;
+        const theme = card[orientation].theme;
+
+        // Generate character-specific interpretation via Haiku
+        let interpretation = `${theme}. Let this energy color your day.`;
+        if (anthropicKey) {
+          try {
+            const charPersonality = PERSONALITY[charName];
+            const personalityHint = charPersonality?.likes?.slice(0, 3).join(', ') || 'unique individual';
+
+            const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-api-key": anthropicKey,
+                "anthropic-version": "2023-06-01"
+              },
+              body: JSON.stringify({
+                model: "claude-3-haiku-20240307",
+                max_tokens: 150,
+                messages: [{
+                  role: "user",
+                  content: `You are writing a brief daily reading for ${charName}, an AI character. Their personality: ${personalityHint}.
+
+Card: ${card.name} (${orientation})
+Keywords: ${keywords.join(', ')}
+Theme: ${theme}
+
+Write 2-3 sentences describing the energy of ${charName}'s day. Be evocative and personal. Do NOT mention "tarot", "card", "reading", or "drawn". Just describe the atmosphere and emotional currents of their day as if fate itself whispered it. Under 50 words.`
+                }]
+              })
+            });
+            if (aiRes.ok) {
+              const aiData = await aiRes.json();
+              const generated = aiData.content?.[0]?.text?.trim();
+              if (generated) interpretation = generated;
+            }
+          } catch (aiErr) {
+            console.log(`Tarot interpretation failed for ${charName} (using fallback):`, aiErr.message);
+          }
+        }
+
+        // Save to database
+        await fetch(`${supabaseUrl}/rest/v1/character_tarot`, {
+          method: "POST",
+          headers: {
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            character_name: charName,
+            card_name: card.name,
+            card_orientation: orientation,
+            card_keywords: keywords,
+            interpretation: interpretation,
+            drawn_at: new Date().toISOString(),
+            expires_at: tarotExpiry.toISOString(),
+            is_override: false
+          })
+        });
+
+        tarotDrawn++;
+        console.log(`Tarot: ${charName} drew ${card.name} (${orientation})`);
+      } catch (err) {
+        console.log(`Tarot draw failed for ${charName} (non-fatal):`, err.message);
+      }
+    }
+    console.log(`Drew ${tarotDrawn} tarot cards for characters`);
 
     // === MEMORY CLEANUP ===
     // 1. Delete EXPIRED working memories (non-pinned with expires_at in the past)
