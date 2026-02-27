@@ -262,10 +262,12 @@ exports.handler = async (event, context) => {
               const prompt = stateData.statePrompt || '';
               // Extract just the relationship and memory parts (skip energy/mood)
               const relMatch = prompt.match(/--- HOW YOU FEEL ABOUT PEOPLE ---[\s\S]*?(?=---|$)/);
-              const memMatch = prompt.match(/--- MEMORIES ---[\s\S]*?(?=---|$)/);
+              const coreMemMatch = prompt.match(/--- YOUR CORE MEMORIES[^-]*---[\s\S]*?(?=---|$)/);
+              const recentMemMatch = prompt.match(/--- RECENT MEMORIES ---[\s\S]*?(?=---|$)/);
               let relevant = '';
               if (relMatch) relevant += relMatch[0].trim() + '\n';
-              if (memMatch) relevant += memMatch[0].trim() + '\n';
+              if (coreMemMatch) relevant += coreMemMatch[0].trim() + '\n';
+              if (recentMemMatch) relevant += recentMemMatch[0].trim() + '\n';
               return relevant ? `${name}'s inner context:\n${relevant}` : '';
             }
           } catch (e) { /* non-fatal */ }
