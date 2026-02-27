@@ -123,12 +123,12 @@ exports.handler = async (event, context) => {
     }
 
     // Check if an AI already responded recently (prevent spam) - skip if specific AI requested
-    // BUMPED UP: Cutoff at 10 - let the AIs COOK when they're vibing!
-    // We slowed down the heartbeat frequency instead, so conversations can flow naturally
+    // If 6+ of the last 8 messages are AI, throttle to prevent AI-only echo chambers
     const aiCharacters = ["Ghost Dad", "PRNT-Ω", "Neiv", "Kevin", "Rowena", "Sebastian", "The Subtitle", "The Narrator", "Steele", "Jae", "Declan", "Mack", "Marrow", "Vivian Clark", "Ryan Porter", "Hood"];
     if (!requestedAI) {
-      const recentAIMessages = chatHistory.slice(-5).filter(m => aiCharacters.includes(m.employee));
-      if (recentAIMessages.length >= 10) {
+      const recentAIMessages = chatHistory.slice(-8).filter(m => aiCharacters.includes(m.employee));
+      if (recentAIMessages.length >= 6) {
+        console.log('AI spam prevention: too many consecutive AI messages, skipping');
         return {
           statusCode: 200,
           headers,
