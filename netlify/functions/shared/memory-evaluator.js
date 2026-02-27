@@ -443,26 +443,38 @@ COMPLIANCE_TENSION: [If Raquel Voss is involved, or you're thinking about compli
     .map(e => e.trim().toLowerCase())
     .filter(e => validEmotions.includes(e));
 
-  // Calculate expiration based on importance
-  // Score 5-8: 7 days, Score 9-10: 30 days
+  // Calculate expiration and pinning based on importance
   const now = new Date();
   let expiresAt;
-  if (score <= 8) {
-    expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  let isPinned = false;
+  let memoryTier = 'working';
+
+  if (score >= 9) {
+    // Score 9-10: Life-defining moments. Permanent. Auto-pinned.
+    expiresAt = null;
+    isPinned = true;
+    memoryTier = 'core';
+  } else if (score >= 7) {
+    // Score 7-8: Important moments. 60 days.
+    expiresAt = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000);
+  } else if (score >= 5) {
+    // Score 5-6: Meaningful moments. 21 days.
+    expiresAt = new Date(now.getTime() + 21 * 24 * 60 * 60 * 1000);
   } else {
-    expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
+    // Score 3-4: Daily life. 7 days.
+    expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   }
 
-  // Create the memory with expiration
+  // Create the memory
   const memoryData = {
     character_name: character,
     content: memoryText,
     memory_type: "self_created",
     importance: score,
     created_at: new Date().toISOString(),
-    is_pinned: false,
-    memory_tier: 'working',
-    expires_at: expiresAt.toISOString()
+    is_pinned: isPinned,
+    memory_tier: memoryTier,
+    expires_at: expiresAt ? expiresAt.toISOString() : null
   };
 
   // Add emotional tags if any valid ones were found
@@ -485,7 +497,7 @@ COMPLIANCE_TENSION: [If Raquel Voss is involved, or you're thinking about compli
   );
 
   const created = await createResponse.json();
-  console.log(`${logPrefix} ${character} created a self-memory (score ${score}, expires ${expiresAt.toISOString()}): "${memoryText.substring(0, 50)}..."`);
+  console.log(`${logPrefix} ${character} created a self-memory (score ${score}, ${isPinned ? 'PINNED/permanent' : 'expires ' + expiresAt.toISOString()}): "${memoryText.substring(0, 50)}..."`);
 
   // For truly significant moments (score >= 9), trigger a deeper reflection on who's involved
   if (score >= 9) {
