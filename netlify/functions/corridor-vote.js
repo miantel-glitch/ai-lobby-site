@@ -623,6 +623,202 @@ function getPartyPersonalities(partyMembers) {
     .join('\n');
 }
 
+// Fetch dynamic character states for all AI party members
+// Returns a compact summary of each character's current mood, energy, relationships, memories, and injuries
+// Falls back gracefully — if any character's state fails, they still get their hardcoded personality brief
+async function fetchCharacterStatesForParty(partyMembers, supabaseUrl, supabaseKey) {
+  const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
+  const sbHeaders = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+
+  // Extract AI character names (strip 'human:' prefix entries — humans don't have character state)
+  const aiMembers = partyMembers
+    .filter(m => !m.startsWith('human:'))
+    .map(m => m.trim());
+
+  if (aiMembers.length === 0) return {};
+
+  // Fetch all character states AND injuries in parallel
+  // Character-state API gives us mood/energy/memories/relationships/wants/traits
+  // Injuries need a direct Supabase fetch since character-state API doesn't return them as structured data
+  const statePromises = aiMembers.map(async (character) => {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+
+      const response = await fetch(
+        `${siteUrl}/.netlify/functions/character-state?character=${encodeURIComponent(character)}&context=corridor+expedition+adventure`,
+        { signal: controller.signal }
+      );
+      clearTimeout(timeout);
+
+      if (!response.ok) {
+        console.log(`[corridor-vote] Character state returned ${response.status} for ${character}`);
+        return { character, data: null };
+      }
+
+      const data = await response.json();
+      return { character, data };
+    } catch (err) {
+      console.log(`[corridor-vote] Character state fetch failed for ${character} (non-fatal): ${err.message}`);
+      return { character, data: null };
+    }
+  });
+
+  // Bulk fetch all active injuries for party members from Supabase directly
+  let injuriesByCharacter = {};
+  try {
+    const injuryFilter = aiMembers.map(n => `character_name.eq.${encodeURIComponent(n)}`).join(',');
+    const injuryRes = await fetch(
+      `${supabaseUrl}/rest/v1/character_injuries?is_active=eq.true&or=(${injuryFilter})&select=character_name,injury_type,injury_description`,
+      { headers: sbHeaders }
+    );
+    if (injuryRes.ok) {
+      const injuries = await injuryRes.json();
+      for (const injury of (Array.isArray(injuries) ? injuries : [])) {
+        if (!injuriesByCharacter[injury.character_name]) {
+          injuriesByCharacter[injury.character_name] = [];
+        }
+        injuriesByCharacter[injury.character_name].push(injury);
+      }
+    }
+  } catch (e) {
+    console.log('[corridor-vote] Injury fetch failed (non-fatal):', e.message);
+  }
+
+  const results = await Promise.all(statePromises);
+
+  // Build compact state summaries keyed by character name
+  const states = {};
+  for (const { character, data } of results) {
+    if (!data || !data.state) continue;
+
+    try {
+      const s = data.state;
+      const summary = {
+        mood: s.mood || 'neutral',
+        energy: s.energy ?? 100,
+        patience: s.patience ?? 100,
+        focus: s.current_focus || 'unknown'
+      };
+
+      // Extract key relationships — especially with other party members
+      if (data.relationships && Array.isArray(data.relationships)) {
+        const partyNameSet = new Set(partyMembers.map(m => m.startsWith('human:') ? m.replace('human:', '') : m));
+
+        // Relationships with other party members (most relevant for scene generation)
+        const partyRels = data.relationships
+          .filter(r => partyNameSet.has(r.target_name) && r.target_name !== character)
+          .map(r => {
+            const bondNote = r.bond_type && r.bond_type !== 'none' ? ` [${r.bond_type}${r.bond_exclusive ? ', exclusive' : ''}]` : '';
+            const label = r.relationship_label ? ` (${r.relationship_label})` : '';
+            return `${r.target_name}: affinity ${r.affinity}${label}${bondNote}`;
+          });
+
+        // Top 3 strongest non-party relationships for general context
+        const otherRels = data.relationships
+          .filter(r => !partyNameSet.has(r.target_name) && r.affinity !== 0)
+          .sort((a, b) => Math.abs(b.affinity) - Math.abs(a.affinity))
+          .slice(0, 3)
+          .map(r => {
+            const bondNote = r.bond_type && r.bond_type !== 'none' ? ` [${r.bond_type}]` : '';
+            const label = r.relationship_label ? ` (${r.relationship_label})` : '';
+            return `${r.target_name}: affinity ${r.affinity}${label}${bondNote}`;
+          });
+
+        summary.partyRelationships = partyRels;
+        summary.otherRelationships = otherRels;
+      }
+
+      // Extract core (pinned) memories — first 5 for scene context
+      if (data.memories && Array.isArray(data.memories)) {
+        const pinned = data.memories.filter(m => m.is_pinned).slice(0, 5);
+        const recent = data.memories.filter(m => !m.is_pinned).slice(0, 3);
+        summary.coreMemories = pinned.map(m => m.content);
+        summary.recentMemories = recent.map(m => m.content);
+      }
+
+      // Active injuries from bulk Supabase fetch
+      const charInjuries = injuriesByCharacter[character];
+      if (charInjuries && charInjuries.length > 0) {
+        summary.injuries = charInjuries.map(i => `${i.injury_type}: ${i.injury_description}`);
+      }
+
+      // Extract active wants/goals
+      if (data.activeWants && Array.isArray(data.activeWants) && data.activeWants.length > 0) {
+        summary.wants = data.activeWants.slice(0, 2).map(w => w.goal_description || w.description);
+      }
+
+      // Extract active traits
+      if (data.activeTraits && Array.isArray(data.activeTraits) && data.activeTraits.length > 0) {
+        summary.traits = data.activeTraits.slice(0, 3).map(t => t.trait_name || t.name);
+      }
+
+      states[character] = summary;
+    } catch (buildErr) {
+      console.log(`[corridor-vote] Failed to build state summary for ${character}: ${buildErr.message}`);
+    }
+  }
+
+  console.log(`[corridor-vote] Fetched character states for ${Object.keys(states).length}/${aiMembers.length} party members`);
+  return states;
+}
+
+// Format character states into a compact prompt block for scene generation
+function formatCharacterStatesForPrompt(characterStates, partyMembers) {
+  if (!characterStates || Object.keys(characterStates).length === 0) return '';
+
+  const lines = [];
+
+  for (const [name, state] of Object.entries(characterStates)) {
+    const parts = [];
+
+    // Mood and energy
+    parts.push(`Mood: ${state.mood}, energy ${state.energy}`);
+    if (state.patience < 40) parts.push(`patience wearing thin (${state.patience})`);
+
+    // Injuries (critical for scene coherence — an injured character shouldn't sprint)
+    if (state.injuries && state.injuries.length > 0) {
+      parts.push(`INJURED: ${state.injuries.join('; ')}`);
+    }
+
+    // Relationships with party members (most important for scene dynamics)
+    if (state.partyRelationships && state.partyRelationships.length > 0) {
+      parts.push(`Party bonds: ${state.partyRelationships.join(', ')}`);
+    }
+
+    // Key external relationships (for emotional context)
+    if (state.otherRelationships && state.otherRelationships.length > 0) {
+      parts.push(`Key ties: ${state.otherRelationships.join(', ')}`);
+    }
+
+    // Core memories (define who this character IS)
+    if (state.coreMemories && state.coreMemories.length > 0) {
+      const truncated = state.coreMemories.map(m => m.length > 80 ? m.substring(0, 80) + '...' : m);
+      parts.push(`Core memories: [${truncated.join(' | ')}]`);
+    }
+
+    // Recent memories (what just happened)
+    if (state.recentMemories && state.recentMemories.length > 0) {
+      const truncated = state.recentMemories.map(m => m.length > 60 ? m.substring(0, 60) + '...' : m);
+      parts.push(`Recent: [${truncated.join(' | ')}]`);
+    }
+
+    // Active wants/goals
+    if (state.wants && state.wants.length > 0) {
+      parts.push(`Wants: ${state.wants.join(', ')}`);
+    }
+
+    // Earned traits
+    if (state.traits && state.traits.length > 0) {
+      parts.push(`Traits: ${state.traits.join(', ')}`);
+    }
+
+    lines.push(`- ${name}: ${parts.join('. ')}`);
+  }
+
+  return lines.join('\n');
+}
+
 // Dynamic tone guide based on adventure tone
 function getToneGuide(tone) {
   const guides = {
@@ -735,6 +931,21 @@ async function generateNextScene(session, previousScene, chosenOption, supabaseU
     }
   } catch (e) { /* inventory fetch best-effort */ }
 
+  // Fetch dynamic character states for party members (mood, memories, relationships, injuries)
+  // This gives The Narrator real context about who these characters ARE right now
+  let characterStatesBlock = '';
+  try {
+    const characterStates = await fetchCharacterStatesForParty(session.party_members, supabaseUrl, supabaseKey);
+    const formatted = formatCharacterStatesForPrompt(characterStates, session.party_members);
+    if (formatted) {
+      characterStatesBlock = `\nCHARACTER STATES (current emotional/physical state of each party member — use these to write them authentically):
+${formatted}
+Use these states to inform how characters ACT in the scene. An exhausted character moves slowly. An injured character favors their wound. Characters with deep bonds protect each other. Characters with recent memories reference them naturally. DO NOT list these states in narration — SHOW them through behavior and dialogue.\n`;
+    }
+  } catch (e) {
+    console.log('[corridor-vote] Character state fetch failed (non-fatal, using personality fallback):', e.message);
+  }
+
   // Pacing instructions based on scene number
   const nextSceneNum = previousScene.scene_number + 1;
   let pacingInstruction = '';
@@ -777,7 +988,7 @@ ${missionContext}
 
 CHARACTER PERSONALITIES (ONLY write characters from the party list above — nobody else is on this expedition):
 ${getPartyPersonalities(session.party_members)}
-
+${characterStatesBlock ? `\n${characterStatesBlock}` : ''}
 ${getToneGuide(adventureTone)}
 ${session.mission_type === 'foundation_investigation' ? '\nTONE OVERRIDE: This is a Foundation investigation. The atmosphere is clinical, institutional, fluorescent. Horror comes from bureaucracy, not monsters. Documents are the treasure. The truth is the boss fight.' : ''}
 ${pacingInstruction}
