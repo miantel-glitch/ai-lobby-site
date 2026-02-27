@@ -1304,11 +1304,11 @@ exports.handler = async (event, context) => {
         const timeSinceLastRun = lastRun ? (Date.now() - new Date(lastRun).getTime()) : Infinity;
 
         if (timeSinceLastRun > 30 * 60 * 1000) { // More than 30 minutes since last run
-          // Pick 2 random AI characters for reflection
+          // Pick 4 random AI characters for reflection
           const reflectionCandidates = allStates
             .filter(s => s.character_name !== "The Narrator")
             .sort(() => Math.random() - 0.5)
-            .slice(0, 2);
+            .slice(0, 4);
 
           for (const candidate of reflectionCandidates) {
             const charName = candidate.character_name;
@@ -1435,10 +1435,10 @@ exports.handler = async (event, context) => {
             const { reviewCharacterMemories } = require('./shared/memory-review');
             const { CHARACTERS } = require('./shared/characters');
 
-            // Pick 3 random AI characters
+            // Pick 5 random AI characters
             const allAIs = Object.keys(CHARACTERS).filter(c => CHARACTERS[c].isAI);
             const shuffled = allAIs.sort(() => Math.random() - 0.5);
-            const reviewBatch = shuffled.slice(0, 3);
+            const reviewBatch = shuffled.slice(0, 5);
 
             console.log(`🧹 Memory review: reviewing ${reviewBatch.join(', ')}`);
             for (const charName of reviewBatch) {
