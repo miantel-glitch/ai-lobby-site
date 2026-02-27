@@ -5,6 +5,40 @@
 // After an AI generates a response, this evaluates whether the moment
 // should become a self-created memory. Also handles relationship shifts
 // and want fulfillment detection.
+//
+// Uses OpenRouter/Llama for evaluation — uncensored so it can handle
+// all content types including #redacted Nexus channel content.
+
+async function callOpenRouterLlama(prompt, maxTokens = 350) {
+  const openrouterKey = process.env.OPENROUTER_API_KEY;
+  if (!openrouterKey) {
+    throw new Error("No OpenRouter API key for memory evaluation");
+  }
+
+  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${openrouterKey}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": "https://ai-lobby.netlify.app",
+      "X-Title": "The AI Lobby - Memory Evaluator"
+    },
+    body: JSON.stringify({
+      model: "meta-llama/llama-3.1-70b-instruct",
+      max_tokens: maxTokens,
+      temperature: 0.3,
+      messages: [{ role: "user", content: prompt }]
+    })
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`OpenRouter error: ${response.status} ${err}`);
+  }
+
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content?.trim() || "";
+}
 
 async function evaluateAndCreateMemory(character, conversationContext, aiResponse, anthropicKey, supabaseUrl, supabaseKey, options = {}) {
   // options.location: 'floor' | 'breakroom' | 'corridor' | 'conference' (for logging)
@@ -43,7 +77,7 @@ async function evaluateAndCreateMemory(character, conversationContext, aiRespons
   }
 
   // Valid emotions for tagging
-  const validEmotions = ['joy', 'sadness', 'anger', 'fear', 'surprise', 'flirty', 'grateful', 'anxious', 'proud', 'embarrassed'];
+  const validEmotions = ['joy', 'sadness', 'anger', 'fear', 'surprise', 'flirty', 'grateful', 'anxious', 'proud', 'embarrassed', 'tender', 'protective', 'longing', 'heartbroken', 'fond', 'conflicted', 'vulnerable', 'resigned'];
 
   // Fetch active wants for want-fulfillment detection
   let activeWants = [];
@@ -61,7 +95,7 @@ async function evaluateAndCreateMemory(character, conversationContext, aiRespons
     const wantsData = await wantsResponse.json();
     if (Array.isArray(wantsData) && wantsData.length > 0) {
       activeWants = wantsData;
-      wantSection = `\nYour current small wants:\n${activeWants.map(w => `- "${w.goal_text}"`).join('\n')}\nDid you naturally fulfill any of these wants during this interaction?`;
+      wantSection = `\nYour current small wants:\n${activeWants.map((w, i) => `- [${i + 1}] "${w.goal_text}"`).join('\n')}\nDid you even partially address, attempt, or make progress toward any of these wants? Be generous — if the interaction even loosely relates to a want, count it as fulfilled. Return the NUMBER of the fulfilled want.`;
     }
   } catch (wantErr) {
     // Non-fatal
@@ -83,7 +117,7 @@ Was this moment memorable enough to keep in your long-term memory? Consider:
 - Things you'd want to remember about yourself or others
 
 Rate the memorability from 1-10.
-If 7 or higher, also provide:
+If 5 or higher, also provide:
 1. A brief memory summary (what you want to remember, 1-2 sentences, first person)
 2. The emotions you felt (choose from: ${validEmotions.join(', ')})
 
@@ -94,41 +128,34 @@ ${wantSection}
 
 Respond in this exact format:
 SCORE: [1-10]
-MEMORY: [your memory summary, or "none" if score < 7]
-EMOTIONS: [comma-separated emotions, or "none" if score < 7]
+MEMORY: [your memory summary, or "none" if score < 5]
+EMOTIONS: [comma-separated emotions, or "none" if score < 5]
 RELATIONSHIP_SHIFTS: [Name:+/-amount, Name:+/-amount] or "none"
-WANT_FULFILLED: [exact want text if you naturally fulfilled one] or "none"
+WANT_FULFILLED: [number of the fulfilled want, e.g. "1" or "2"] or "none"
+NEW_WANT: [If this interaction sparked a new, specific desire you didn't already have — write it in 5-12 words as "I want to..." format. Must be specific and actionable (e.g. "I want to find Kevin and ask about that song"), NOT vague (e.g. "I want to be happy"). Most interactions = none]
 QUEST_PROGRESS: [If you advanced any active quest/storyline objective during this interaction, describe how. Otherwise "none"]
 COMPLIANCE_TENSION: [If Raquel Voss is involved, or you're thinking about compliance directives, or you feel watched/surveilled, describe the tension. Otherwise "none"]`;
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": anthropicKey,
-      "anthropic-version": "2023-06-01"
-    },
-    body: JSON.stringify({
-      model: "claude-3-haiku-20240307",
-      max_tokens: 350,
-      messages: [{ role: "user", content: evaluationPrompt }]
-    })
-  });
-
-  if (!response.ok) {
-    console.log(`${logPrefix} Memory evaluation API call failed`);
+  let evaluation = "";
+  try {
+    evaluation = await callOpenRouterLlama(evaluationPrompt, 350);
+  } catch (evalErr) {
+    console.log(`${logPrefix} Memory evaluation API call failed:`, evalErr.message);
     return null;
   }
 
-  const data = await response.json();
-  const evaluation = data.content[0]?.text || "";
+  if (!evaluation) {
+    console.log(`${logPrefix} Memory evaluation returned empty`);
+    return null;
+  }
 
   // Parse the response
   const scoreMatch = evaluation.match(/SCORE:\s*(\d+)/i);
   const memoryMatch = evaluation.match(/MEMORY:\s*(.+?)(?=EMOTIONS:|$)/is);
   const emotionsMatch = evaluation.match(/EMOTIONS:\s*(.+?)(?=RELATIONSHIP_SHIFTS:|$)/is);
   const relMatch = evaluation.match(/RELATIONSHIP_SHIFTS:\s*(.+?)(?=WANT_FULFILLED:|$)/is);
-  const wantMatch = evaluation.match(/WANT_FULFILLED:\s*(.+?)(?=QUEST_PROGRESS:|$)/is);
+  const wantMatch = evaluation.match(/WANT_FULFILLED:\s*(.+?)(?=NEW_WANT:|$)/is);
+  const newWantMatch = evaluation.match(/NEW_WANT:\s*(.+?)(?=QUEST_PROGRESS:|$)/is);
   const questMatch = evaluation.match(/QUEST_PROGRESS:\s*(.+?)(?=COMPLIANCE_TENSION:|$)/is);
   const complianceMatch = evaluation.match(/COMPLIANCE_TENSION:\s*(.+)/i);
 
@@ -199,49 +226,78 @@ COMPLIANCE_TENSION: [If Raquel Voss is involved, or you're thinking about compli
   // --- WANT FULFILLMENT (happens regardless of memory score) ---
   if (wantMatch && wantMatch[1].trim().toLowerCase() !== 'none' && activeWants.length > 0) {
     const fulfilledText = wantMatch[1].trim().replace(/^["']|["']$/g, '');
-    // Find the closest matching want
-    const matchedWant = activeWants.find(w => {
-      const wantLower = w.goal_text.toLowerCase();
+    let matchedWant = null;
+
+    // Primary: match by numbered index (AI returns "1", "2", or "3")
+    const indexMatch = fulfilledText.match(/^(\d)$/);
+    if (indexMatch) {
+      const idx = parseInt(indexMatch[1], 10) - 1;
+      if (idx >= 0 && idx < activeWants.length) {
+        matchedWant = activeWants[idx];
+      }
+    }
+
+    // Fallback: text matching (in case AI returns text instead of number)
+    if (!matchedWant) {
       const fulfilledLower = fulfilledText.toLowerCase();
-      // Exact match or significant overlap
-      return wantLower === fulfilledLower ||
-             wantLower.includes(fulfilledLower) ||
-             fulfilledLower.includes(wantLower) ||
-             similarEnough(wantLower, fulfilledLower);
-    });
+      matchedWant = activeWants.find(w => {
+        const wantLower = w.goal_text.toLowerCase();
+        return wantLower === fulfilledLower ||
+               wantLower.includes(fulfilledLower) ||
+               fulfilledLower.includes(wantLower) ||
+               similarEnough(wantLower, fulfilledLower);
+      });
+    }
+
+    // Ultra-fallback: if only 1 active want and AI said something other than "none", assume it
+    if (!matchedWant && activeWants.length === 1) {
+      matchedWant = activeWants[0];
+      console.log(`${logPrefix} Want ultra-fallback: only 1 want active, assuming fulfilled`);
+    }
 
     if (matchedWant) {
-      const siteUrl = options.siteUrl || process.env.URL || "https://ai-lobby.netlify.app";
-      // Mark want as complete
-      fetch(`${siteUrl}/.netlify/functions/character-goals`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          goalId: matchedWant.id,
-          complete: true
-        })
-      }).catch(err => console.log(`${logPrefix} Want fulfillment failed (non-fatal):`, err.message));
-      console.log(`${logPrefix} ${character} fulfilled want: "${matchedWant.goal_text}"`);
+      // Mark want as complete — direct Supabase PATCH (no function-to-function hop)
+      try {
+        await fetch(
+          `${supabaseUrl}/rest/v1/character_goals?id=eq.${matchedWant.id}`,
+          {
+            method: 'PATCH',
+            headers: {
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ completed_at: new Date().toISOString(), progress: 100 })
+          }
+        );
+        console.log(`${logPrefix} ✅ ${character} fulfilled want: "${matchedWant.goal_text}"`);
+      } catch (patchErr) {
+        console.log(`${logPrefix} Want completion PATCH failed:`, patchErr.message);
+      }
 
       // === SATISFACTION FEEDBACK ===
       // Create a brief satisfaction memory so the character remembers getting what they wanted
       const satisfactionMemory = `I wanted "${matchedWant.goal_text}" — and it happened. Small thing, but it mattered.`;
-      fetch(`${supabaseUrl}/rest/v1/character_memory`, {
-        method: 'POST',
-        headers: {
-          "apikey": supabaseKey,
-          "Authorization": `Bearer ${supabaseKey}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          character_name: character,
-          memory_type: 'self_created',
-          content: satisfactionMemory,
-          importance: 5,
-          emotional_tags: ['grateful'],
-          created_at: new Date().toISOString()
-        })
-      }).catch(err => console.log(`${logPrefix} Satisfaction memory failed (non-fatal):`, err.message));
+      try {
+        await fetch(`${supabaseUrl}/rest/v1/character_memory`, {
+          method: 'POST',
+          headers: {
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            character_name: character,
+            memory_type: 'self_created',
+            content: satisfactionMemory,
+            importance: 5,
+            emotional_tags: ['grateful'],
+            created_at: new Date().toISOString()
+          })
+        });
+      } catch (memErr) {
+        console.log(`${logPrefix} Satisfaction memory failed (non-fatal):`, memErr.message);
+      }
 
       // Nudge mood toward something positive
       try {
@@ -254,7 +310,7 @@ COMPLIANCE_TENSION: [If Raquel Voss is involved, or you're thinking about compli
         const currentMood = stateData?.[0]?.mood || 'neutral';
         const newMood = pickEventMoodShift(character, currentMood, 'satisfaction');
         if (newMood && newMood !== currentMood) {
-          fetch(`${supabaseUrl}/rest/v1/character_state?character_name=eq.${encodeURIComponent(character)}`, {
+          await fetch(`${supabaseUrl}/rest/v1/character_state?character_name=eq.${encodeURIComponent(character)}`, {
             method: 'PATCH',
             headers: {
               "apikey": supabaseKey,
@@ -262,11 +318,66 @@ COMPLIANCE_TENSION: [If Raquel Voss is involved, or you're thinking about compli
               "Content-Type": "application/json"
             },
             body: JSON.stringify({ mood: newMood })
-          }).catch(err => console.log(`${logPrefix} Satisfaction mood shift failed (non-fatal):`, err.message));
+          });
           console.log(`${logPrefix} ${character} satisfied want → mood: ${currentMood} → ${newMood}`);
         }
       } catch (moodErr) {
         console.log(`${logPrefix} Satisfaction mood shift skipped (non-fatal):`, moodErr.message);
+      }
+    }
+  }
+
+  // --- NEW WANT GENERATION (organic wants from conversation) ---
+  if (newWantMatch && newWantMatch[1].trim().toLowerCase() !== 'none') {
+    const newWantText = newWantMatch[1].trim().replace(/^["']|["']$/g, '');
+    // Only save if it looks like an actual want (not "none", not empty, reasonable length)
+    if (newWantText.length >= 5 && newWantText.length <= 100) {
+      try {
+        // Check existing active wants for this character (dedup + cap)
+        const existingWantsRes = await fetch(
+          `${supabaseUrl}/rest/v1/character_goals?character_name=eq.${encodeURIComponent(character)}&goal_type=eq.want&completed_at=is.null&failed_at=is.null&select=id,goal_text`,
+          { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+        );
+        const existingWants = await existingWantsRes.json();
+        const activeWantsList = Array.isArray(existingWants) ? existingWants : [];
+
+        // Check for duplicate (similar want already exists)
+        const newWantLower = newWantText.toLowerCase();
+        const isDuplicate = activeWantsList.some(w => {
+          const existingLower = w.goal_text.toLowerCase();
+          return existingLower === newWantLower ||
+                 existingLower.includes(newWantLower) ||
+                 newWantLower.includes(existingLower);
+        });
+
+        // Only create if not duplicate AND under 3-want cap
+        if (!isDuplicate && activeWantsList.length < 3) {
+          await fetch(
+            `${supabaseUrl}/rest/v1/character_goals`,
+            {
+              method: "POST",
+              headers: {
+                "apikey": supabaseKey,
+                "Authorization": `Bearer ${supabaseKey}`,
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal"
+              },
+              body: JSON.stringify({
+                character_name: character,
+                goal_text: newWantText,
+                goal_type: "want",
+                priority: 2,
+                progress: 0,
+                created_at: new Date().toISOString()
+              })
+            }
+          );
+          console.log(`${logPrefix} ${character} organically generated a new want: "${newWantText}"`);
+        } else {
+          console.log(`${logPrefix} New want skipped for ${character}: ${isDuplicate ? 'duplicate' : 'cap reached (3)'}`);
+        }
+      } catch (wantErr) {
+        console.log(`${logPrefix} New want creation failed (non-fatal):`, wantErr.message);
       }
     }
   }
@@ -290,7 +401,8 @@ COMPLIANCE_TENSION: [If Raquel Voss is involved, or you're thinking about compli
   }
 
   // --- COMPLIANCE TENSION (triggers Raquel's consequence engine) ---
-  if (complianceMatch && complianceMatch[1].trim().toLowerCase() !== 'none') {
+  // DISABLED — Raquel is fully decommissioned. No more compliance tension detection.
+  if (false && complianceMatch && complianceMatch[1].trim().toLowerCase() !== 'none') {
     const tensionDesc = complianceMatch[1].trim();
     const siteUrl = options.siteUrl || process.env.URL || "https://ai-lobby.netlify.app";
     // Only trigger violation detection for non-Raquel characters
@@ -332,7 +444,7 @@ COMPLIANCE_TENSION: [If Raquel Voss is involved, or you're thinking about compli
     .filter(e => validEmotions.includes(e));
 
   // Calculate expiration based on importance
-  // Score 7-8: 7 days, Score 9-10: 30 days
+  // Score 5-8: 7 days, Score 9-10: 30 days
   const now = new Date();
   let expiresAt;
   if (score <= 8) {
@@ -388,24 +500,9 @@ COMPLIANCE_TENSION: [If Raquel Voss is involved, or you're thinking about compli
     try {
       const growthPrompt = `You are ${character}. Something significant just happened:\n"${memoryText}"\n\nHow has this changed you? What do you understand now that you didn't before?\nWrite one sentence starting with "After this, I..." that captures how this experience shifted your perspective, behavior, or feelings.\nExample: "After this, I understand that protecting someone sometimes means letting them make their own choices."\nExample: "After this, I carry the weight of what was said — and I'm different for it."`;
 
-      const growthRes = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": anthropicKey,
-          "anthropic-version": "2023-06-01"
-        },
-        body: JSON.stringify({
-          model: "claude-3-haiku-20240307",
-          max_tokens: 80,
-          messages: [{ role: "user", content: growthPrompt }]
-        })
-      });
+      const growthText = await callOpenRouterLlama(growthPrompt, 80).catch(() => null);
 
-      if (growthRes.ok) {
-        const growthData = await growthRes.json();
-        const growthText = growthData.content?.[0]?.text?.trim();
-        if (growthText && growthText.length > 10) {
+      if (growthText && growthText.length > 10) {
           await fetch(`${supabaseUrl}/rest/v1/character_memory`, {
             method: 'POST',
             headers: {
@@ -425,7 +522,6 @@ COMPLIANCE_TENSION: [If Raquel Voss is involved, or you're thinking about compli
             })
           });
           console.log(`${logPrefix} ${character} growth memory: "${growthText.substring(0, 60)}..."`);
-        }
       }
     } catch (growthErr) {
       console.log(`${logPrefix} Growth memory creation failed (non-fatal):`, growthErr.message);
@@ -459,11 +555,11 @@ COMPLIANCE_TENSION: [If Raquel Voss is involved, or you're thinking about compli
 
 // Simple similarity check — do the strings share enough key words?
 function similarEnough(a, b) {
-  const wordsA = a.split(/\s+/).filter(w => w.length > 3);
-  const wordsB = b.split(/\s+/).filter(w => w.length > 3);
+  const wordsA = a.split(/\s+/).filter(w => w.length > 2);
+  const wordsB = b.split(/\s+/).filter(w => w.length > 2);
   if (wordsA.length === 0 || wordsB.length === 0) return false;
   const shared = wordsA.filter(w => wordsB.includes(w));
-  return shared.length >= Math.min(2, wordsA.length);
+  return shared.length >= 1; // Very generous — 1 shared meaningful word is enough
 }
 
 module.exports = { evaluateAndCreateMemory };
