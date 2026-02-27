@@ -188,6 +188,8 @@ IMPORTANT: ONLY mention or address people listed in the [Currently on the floor:
 ${chatHistory}
 ---
 
+CRITICAL: You are ${character}. Write ONLY as ${character}. Do NOT write dialogue or actions for any other character. Do NOT copy another character's mannerisms, speech patterns, or action descriptions. Stay in YOUR voice.
+
 Your response:`
       : `Here is the recent office chat. Respond in character as ${character}. Just write your response directly - no meta-commentary, no character counts, no explanations.
 
@@ -203,6 +205,8 @@ IMPORTANT: Only reference or interact with people listed in the [Currently on th
 ---
 ${chatHistory}
 ---
+
+CRITICAL: You are ${character}. Write ONLY as ${character}. Do NOT write dialogue or actions for any other character. Do NOT copy another character's mannerisms, speech patterns, or action descriptions. Stay in YOUR voice.
 
 Respond:`;
 

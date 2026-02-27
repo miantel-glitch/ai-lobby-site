@@ -138,11 +138,12 @@ Keep it natural (2-3 sentences). ONE emote action max — then talk. No stacking
 Respond in character. Say [PASS] if ${character} would genuinely stay quiet.
 
 IMPORTANT: ONLY mention or address people listed in the [Currently on the floor: ...] header — if someone isn't listed, they're not here.
-You are ONLY ${character}. NEVER write dialogue or actions for other characters. Never produce lines like "OtherCharacter: ..." or narrate what others say/do.
 
 ---
 ${chatHistory}
 ---
+
+CRITICAL: You are ${character}. Write ONLY as ${character}. Do NOT write dialogue or actions for any other character. Do NOT copy another character's mannerisms, speech patterns, or action descriptions. Stay in YOUR voice.
 
 Your response:`
       : `Here is the recent office chat. Respond in character as ${character}. Just write your response directly - no meta-commentary, no character counts, no explanations.
@@ -156,11 +157,11 @@ Keep it natural (2-3 sentences). ONE emote action max — then talk. No stacking
 
 IMPORTANT: Only reference or interact with people listed in the [Currently on the floor: ...] header at the top of the chat history. If someone isn't listed there, they are not present — do NOT mention, glance at, or react to them.
 
-CRITICAL: You are ${character} and ONLY ${character}. Write ONLY your own words and actions. NEVER write dialogue or actions for other characters. Never produce lines like "OtherCharacter: ..." or narrate what other characters say or do. You are one person in this conversation, not the author.
-
 ---
 ${chatHistory}
 ---
+
+CRITICAL: You are ${character}. Write ONLY as ${character}. Do NOT write dialogue or actions for any other character. Do NOT copy another character's mannerisms, speech patterns, or action descriptions. Stay in YOUR voice.
 
 Respond:`;
 
