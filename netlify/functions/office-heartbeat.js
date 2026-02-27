@@ -691,8 +691,8 @@ exports.handler = async (event, context) => {
           }
         }
 
-        // Auto-trigger chatter if 2+ AIs present (40% chance, 15-min cooldown)
-        if (nexusAIs.length >= 2 && Math.random() < 0.40) {
+        // Auto-trigger chatter if 2+ AIs present (15% chance, 45-min cooldown — floor-like pacing)
+        if (nexusAIs.length >= 2 && Math.random() < 0.15) {
           let chatterAllowed = true;
           try {
             const lastChatterRes = await fetch(
@@ -702,24 +702,40 @@ exports.handler = async (event, context) => {
             const lastChatterData = await lastChatterRes.json();
             if (lastChatterData && lastChatterData.length > 0) {
               const lastTime = new Date(lastChatterData[0].value).getTime();
-              if (Date.now() - lastTime < 15 * 60 * 1000) chatterAllowed = false; // 15-min cooldown (was 45)
+              if (Date.now() - lastTime < 45 * 60 * 1000) chatterAllowed = false; // 45-min cooldown
             }
           } catch (e) { /* allow if check fails */ }
 
+          // Also check last nexus_message — skip if any message in last 10 minutes
           if (chatterAllowed) {
+            try {
+              const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+              const recentMsgRes = await fetch(
+                `${supabaseUrl}/rest/v1/nexus_messages?created_at=gt.${encodeURIComponent(tenMinAgo)}&select=id&limit=1`,
+                { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+              );
+              const recentMsgs = await recentMsgRes.json();
+              if (Array.isArray(recentMsgs) && recentMsgs.length > 0) {
+                chatterAllowed = false;
+                console.log('Heartbeat: Nexus chatter skipped — recent message within 10 min');
+              }
+            } catch (e) { /* allow if check fails */ }
+          }
+
+          if (chatterAllowed) {
+            // Update cooldown FIRST (synchronous) to prevent double-triggering
+            await fetch(`${supabaseUrl}/rest/v1/lobby_settings`, {
+              method: 'POST',
+              headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`, "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates,return=minimal" },
+              body: JSON.stringify({ key: 'nexus_last_chatter', value: new Date().toISOString() })
+            }).catch(() => {});
+
             const participants = nexusAIs.slice(0, 2).map(a => a.character_name);
             fetch(`${siteUrl}/.netlify/functions/nexus-chatter`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ participants })
             }).catch(e => console.log("Nexus auto-chatter failed:", e.message));
-
-            // Update cooldown
-            fetch(`${supabaseUrl}/rest/v1/lobby_settings`, {
-              method: 'POST',
-              headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`, "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates,return=minimal" },
-              body: JSON.stringify({ key: 'nexus_last_chatter', value: new Date().toISOString() })
-            }).catch(() => {});
 
             nexusAutonomousActivity = {
               ...(nexusAutonomousActivity || {}),

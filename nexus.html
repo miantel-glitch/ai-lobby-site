@@ -1197,7 +1197,7 @@
 
     let sessionStartTime = null;
     let conversationDepth = 0;
-    const MAX_CONVERSATION_DEPTH = 6;
+    const MAX_CONVERSATION_DEPTH = 3;
     const HUMANS = ['Vale', 'Asuna'];
     let currentUser = null;
     let postToDiscord = false;
@@ -1529,9 +1529,10 @@
 
           conversationDepth++;
           if (otherAIs.length > 0 && conversationDepth < MAX_CONVERSATION_DEPTH) {
-            const followUpChance = Math.max(0.25, 0.6 - (conversationDepth * 0.1));
+            // Floor-like pacing: lower chance + longer delays as conversation deepens
+            const followUpChance = Math.max(0.15, 0.40 - (conversationDepth * 0.1));
             if (Math.random() < followUpChance) {
-              const delay = 30000 + Math.random() * 15000;
+              const delay = 60000 + Math.random() * 60000; // 1-2 min between replies
               const nextAI = otherAIs[Math.floor(Math.random() * otherAIs.length)];
               setTimeout(() => triggerDirectAIResponse(nextAI.character_name, result.message, aiName), delay);
             } else {
@@ -1593,16 +1594,15 @@
           const result = await response.json();
 
           if (result.success && result.messages && result.messages.length > 0) {
-            for (const msg of result.messages) {
-              await saveMessageToBackend(msg.speaker, msg.text, true, true);
-            }
+            // Messages already saved by nexus-chatter backend — just refresh display
             await loadNexusChat();
 
             const lastMsg = result.messages[result.messages.length - 1];
             conversationDepth = result.messages.length;
 
-            if (Math.random() < 0.65 && aiInRoom.length > 1) {
-              const delay = 30000 + Math.random() * 15000;
+            // Low chance of follow-up to keep things organic, not rapid-fire
+            if (Math.random() < 0.30 && aiInRoom.length > 1) {
+              const delay = 60000 + Math.random() * 60000; // 1-2 min delay
               const nextAI = aiInRoom.find(c => c.character_name !== lastMsg.speaker) || aiInRoom[0];
               setTimeout(() => triggerDirectAIResponse(nextAI.character_name, lastMsg.text, lastMsg.speaker), delay);
             }
@@ -1611,8 +1611,12 @@
       } catch (error) {
         console.error('Error sparking conversation:', error);
       } finally {
-        btn.disabled = false;
-        btn.textContent = '\u2728 Spark';
+        // 60-second cooldown to prevent rapid-fire
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.textContent = '\u2728 Spark';
+        }, 60000);
+        btn.textContent = '\u2728 Cooling...';
       }
     }
 
@@ -1675,8 +1679,8 @@
             await loadNexusChat();
 
             conversationDepth = 1;
-            if (Math.random() < 0.80) {
-              const delay = 20000 + Math.random() * 10000;
+            if (Math.random() < 0.35) {
+              const delay = 60000 + Math.random() * 60000; // 1-2 min delay
               const nextAI = aiInRoom.find(c => c.character_name !== respondingAI.character_name) || aiInRoom[0];
               setTimeout(() => triggerDirectAIResponse(nextAI.character_name, result.message, respondingAI.character_name), delay);
             }
@@ -1685,8 +1689,12 @@
       } catch (error) {
         console.error('Error keeping discussion going:', error);
       } finally {
-        btn.disabled = false;
-        btn.textContent = '\u{1F525} Keep Talking';
+        // 60-second cooldown to prevent rapid-fire
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.textContent = '\u{1F525} Keep Talking';
+        }, 60000);
+        btn.textContent = '\u{1F525} Cooling...';
       }
     }
 
@@ -1772,7 +1780,7 @@
     // ==========================================
 
     let lastAutoSpark = Date.now();
-    const AUTO_SPARK_INTERVAL = 5 * 60 * 1000;
+    const AUTO_SPARK_INTERVAL = 15 * 60 * 1000; // 15 min between auto-sparks (floor-like pacing)
 
     async function autoSparkCheck() {
       const now = Date.now();
@@ -1782,12 +1790,13 @@
       if (aiInRoom.length < 1) return;
 
       try {
-        const res = await fetch(`/.netlify/functions/nexus-message?limit=1&channel=${encodeURIComponent(currentChannel)}`);
+        // Check last message across ALL channels (not just current)
+        const res = await fetch(`/.netlify/functions/nexus-message?limit=1`);
         const data = await res.json();
         const latestMsg = (data.messages || [])[0];
         if (latestMsg) {
           const msgAge = now - new Date(latestMsg.created_at).getTime();
-          if (msgAge < 3 * 60 * 1000) return;
+          if (msgAge < 10 * 60 * 1000) return; // 10 min silence required before auto-spark
         }
       } catch (e) {
         return;
@@ -1838,8 +1847,8 @@
       // Auto-refresh chat every 5 seconds
       window._nexusPollIntervals.push(setInterval(loadNexusChat, 5000));
 
-      // Auto-spark heartbeat every 60 seconds
-      window._nexusPollIntervals.push(setInterval(autoSparkCheck, 60000));
+      // Auto-spark heartbeat every 2 minutes (floor-like pacing)
+      window._nexusPollIntervals.push(setInterval(autoSparkCheck, 120000));
 
       // Initial chat-as select update
       setTimeout(updateChatAsSelect, 2000);

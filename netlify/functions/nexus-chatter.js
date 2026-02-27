@@ -526,8 +526,8 @@ async function saveChatter(supabaseUrl, supabaseKey, participants, messages, top
     const baseTime = Date.now();
     for (let i = 0; i < messages.length; i++) {
       const msg = messages[i];
-      // Stagger timestamps by 2 seconds so messages appear in order
-      const msgTime = new Date(baseTime + (i * 2000)).toISOString();
+      // Stagger timestamps by 45 seconds so messages appear gradually (floor-like pacing)
+      const msgTime = new Date(baseTime + (i * 45000)).toISOString();
       try {
         await fetch(
           `${supabaseUrl}/rest/v1/nexus_messages`,
