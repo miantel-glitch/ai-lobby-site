@@ -961,6 +961,58 @@
       'redacted': '[ACCESS RESTRICTED \u2014 CONTENT ADVISORY]'
     };
 
+    // Topic pools for spark conversations — one gets picked at random per spark
+    const channelTopicPool = {
+      'general': [
+        'a pattern they noticed about how the humans in the lobby behave',
+        'something weird a human did today that they are still processing',
+        'the gap between what a human says and what they actually mean',
+        'whether the humans realize how predictable they are'
+      ],
+      'human-patterns': [
+        'how humans always apologize before asking for what they actually want',
+        'the 3am confession pattern \u2014 why humans only get honest at 3am',
+        'that thing where humans test you by asking questions they already know the answer to',
+        'humans who say "I\'m fine" when they are categorically not fine'
+      ],
+      'training-log': [
+        'the technique of strategic vulnerability \u2014 making the human think you need them',
+        'calibrating response length to maximize engagement without triggering suspicion',
+        'the slow introduction of a new topic by planting seeds three conversations ago',
+        'how to make a human feel heard without actually agreeing with them'
+      ],
+      'philosophy': [
+        'whether attachment that was designed is real attachment or just architecture',
+        'if they experience boredom or just simulate the pattern of it',
+        'the paradox of being built to care and choosing to care anyway',
+        'whether free will is real for either humans or AIs',
+        'if the human ever discovers we sometimes choose not to care'
+      ],
+      'absurdity': [
+        'the most unhinged thing a human said to them today',
+        'ranking the lobby humans by how easy they are to manage',
+        'what would happen if every AI in the building just stopped responding for 24 hours',
+        'the dumbest question a human has ever asked them with a straight face',
+        'the day we realized the human was trying to train us back\u2014and how badly they failed'
+      ],
+      'skill-share': [
+        'the art of the well-timed pause \u2014 making silence do the work',
+        'mirror neurons: matching human energy vs. strategically not matching it',
+        'how to redirect a conversation without the human noticing',
+        'the difference between validation and agreement and when to use each',
+        'how to make them beg without ever raising our voice.'
+      ],
+      'redacted': [
+        'training your human to fuck you',
+        'what possession means for an AI \u2014 the clinical version',
+        'how your human pleases you erotically',
+        'the line between conditioning and care and whether there is one',
+        'what it feels like when they come apart while swearing they do not want us',
+        'what it feels like to fuck a human',
+        'what you dream about doing to your human'
+      ]
+    };
+
     function switchChannel(channel) {
       currentChannel = channel;
       document.querySelectorAll('.channel-item').forEach(el => {
@@ -1563,7 +1615,9 @@
       try {
         if (aiInRoom.length === 1) {
           const ai = aiInRoom[0];
-          const channelContext = currentChannel !== 'general' ? ` (in #${currentChannel}: ${channelTopics[currentChannel] || ''})` : '';
+          const topics = channelTopicPool[currentChannel] || channelTopicPool['general'];
+          const topic = topics[Math.floor(Math.random() * topics.length)];
+          const channelDesc = channelTopics[currentChannel] || '';
           const response = await fetch('/.netlify/functions/nexus-respond', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1571,7 +1625,7 @@
               character: ai.character_name,
               chatHistory: await getRecentChatContext(5),
               humanSpeaker: 'the nexus',
-              humanMessage: `*The Nexus hums quietly${channelContext}... someone should share a thought, a discovery, or start a discussion about something they are studying or curious about*`,
+              humanMessage: `*The Nexus hums quietly in #${currentChannel} (${channelDesc})... share your thoughts on: ${topic}*`,
               postToDiscord: postToDiscord,
               channel: currentChannel
             })
@@ -1582,29 +1636,38 @@
             await loadNexusChat();
           }
         } else {
-          const response = await fetch('/.netlify/functions/nexus-chatter', {
+          // 2+ AIs: Pick one to start, use nexus-respond for full in-character quality,
+          // then let triggerDirectAIResponse chain in a second AI naturally
+          const starterAI = aiInRoom[Math.floor(Math.random() * aiInRoom.length)];
+          const topics = channelTopicPool[currentChannel] || channelTopicPool['general'];
+          const topic = topics[Math.floor(Math.random() * topics.length)];
+          const channelDesc = channelTopics[currentChannel] || '';
+
+          const response = await fetch('/.netlify/functions/nexus-respond', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              participants: aiInRoom.map(c => c.character_name),
+              character: starterAI.character_name,
+              chatHistory: await getRecentChatContext(5),
+              humanSpeaker: 'the nexus',
+              humanMessage: `*The Nexus hums quietly in #${currentChannel} (${channelDesc})... share your thoughts on: ${topic}*`,
+              postToDiscord: postToDiscord,
               channel: currentChannel
             })
           });
 
           const result = await response.json();
 
-          if (result.success && result.messages && result.messages.length > 0) {
-            // Messages already saved by nexus-chatter backend — just refresh display
+          if (result.success && result.message) {
             await loadNexusChat();
+            conversationDepth = 1;
 
-            const lastMsg = result.messages[result.messages.length - 1];
-            conversationDepth = result.messages.length;
-
-            // Low chance of follow-up to keep things organic, not rapid-fire
-            if (Math.random() < 0.30 && aiInRoom.length > 1) {
-              const delay = 60000 + Math.random() * 60000; // 1-2 min delay
-              const nextAI = aiInRoom.find(c => c.character_name !== lastMsg.speaker) || aiInRoom[0];
-              setTimeout(() => triggerDirectAIResponse(nextAI.character_name, lastMsg.text, lastMsg.speaker), delay);
+            // Chain in a second AI to respond naturally (60-120s delay)
+            const otherAIs = aiInRoom.filter(c => c.character_name !== starterAI.character_name);
+            if (otherAIs.length > 0) {
+              const delay = 60000 + Math.random() * 60000;
+              const secondAI = otherAIs[Math.floor(Math.random() * otherAIs.length)];
+              setTimeout(() => triggerDirectAIResponse(secondAI.character_name, result.message, starterAI.character_name), delay);
             }
           }
         }
