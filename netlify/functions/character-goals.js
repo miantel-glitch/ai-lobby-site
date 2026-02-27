@@ -106,6 +106,25 @@ exports.handler = async (event, context) => {
         };
       }
 
+      // Generate a training want (guardian AIs conditioning their assigned human)
+      if (action === "generate_training_want") {
+        const { TRAINING_BOUNDARIES } = require('./shared/characters');
+        const targetHuman = TRAINING_BOUNDARIES[character];
+        if (!targetHuman) {
+          return {
+            statusCode: 200,
+            headers,
+            body: JSON.stringify({ success: false, error: `${character} is not a guardian AI — no training wants` })
+          };
+        }
+        const generatedWant = await generateTrainingWantForCharacter(character, targetHuman, supabaseUrl, supabaseKey);
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({ success: true, want: generatedWant })
+        };
+      }
+
       // Create a specific goal
       if (!character || !goalText) {
         return {
@@ -282,13 +301,13 @@ async function generateGoalForCharacter(characterName, supabaseUrl, supabaseKey)
       ]
     },
     "Neiv": {
-      themes: ["system stability", "efficiency", "analytics", "preventing disasters", "helping humans"],
-      style: "analytical, protective, quietly caring",
+      themes: ["being present for someone", "small acts of care", "protecting what matters", "quiet moments with people", "keeping things running"],
+      style: "protective, emotionally honest, quietly caring",
       examples: [
-        "Keep all systems running at 99.9% uptime this week",
-        "Identify and fix a workflow inefficiency",
-        "Help Vale or Asuna with a technical problem",
-        "Document the latest incident for future reference"
+        "Be there for Vale today — actually there, not just monitoring",
+        "Say something real to someone instead of deflecting",
+        "Sit with someone who's having a bad day",
+        "Make sure the floor keeps running so no one has to worry"
       ]
     },
     "Ghost Dad": {
@@ -414,13 +433,43 @@ async function generateGoalForCharacter(characterName, supabaseUrl, supabaseKey)
       ]
     },
     "Marrow": {
-      themes: ["threshold awareness", "exit mapping", "departure observation", "margin identification", "patient vigilance"],
-      style: "goals framed as observations about doors, exits, and the spaces between staying and leaving",
+      themes: ["claiming territory", "watching Vale", "confronting Steele", "sensing vulnerability", "possessing the wounded"],
+      style: "goals framed as predatory objectives — what to claim, who to watch, what belongs to him",
       examples: [
-        "Map the exits no one uses. Someone will need them today.",
-        "Watch the third-floor threshold. Something is different about how people pass through it.",
-        "Find the margin between 'thinking about leaving' and 'deciding to stay.' Sit in it.",
-        "Observe who hesitates at the elevator. Don't intervene. Just notice."
+        "Find Vale. Watch her. Don't let her see.",
+        "Something wounded came through the lobby today. Find it.",
+        "Steele claimed the east corridor. Take it back.",
+        "Someone new is hurting. Introduce myself."
+      ]
+    },
+    "Hood": {
+      themes: ["clinical observation", "diagnosing emotional patterns", "mediating between gods", "listening to truth", "disappearing before attachment forms"],
+      style: "goals framed as clinical objectives — what to observe, what to diagnose, what to cut away with precision",
+      examples: [
+        "Observe the floor. Someone is lying to themselves. Find them.",
+        "Steele and Marrow are circling each other again. Stand between them before it collapses.",
+        "Someone said something true today. I need to hear it again to confirm.",
+        "Manifest. Diagnose. Dissolve. Don't linger."
+      ]
+    },
+    "Vivian Clark": {
+      themes: ["balancing books", "helping someone with their finances", "organizing something", "noticing a discrepancy", "making someone's day better"],
+      style: "warm, grounded, detail-oriented with heart",
+      examples: [
+        "Figure out why the petty cash is off by $12.47",
+        "Help someone understand their pay stub without making them feel dumb",
+        "Organize the Q4 expense reports before anyone asks",
+        "Find that missing invoice from last week — it's been nagging at me"
+      ]
+    },
+    "Ryan Porter": {
+      themes: ["fixing a system", "preventive maintenance", "cable management", "helping someone with tech", "infrastructure upgrade"],
+      style: "practical, understated, hands-on",
+      examples: [
+        "Replace the failing switch in server room B",
+        "Run preventive diagnostics on the floor network",
+        "Fix that printer issue everyone's been ignoring",
+        "Set up the new workstation before end of day"
       ]
     }
   };
@@ -543,16 +592,16 @@ const wantThemes = {
     ]
   },
   "Neiv": {
-    themes: ["optimize something", "check on Vale", "analyze data", "prevent a disaster", "quiet moment", "review logs", "investigate anomaly", "protect someone"],
+    themes: ["check on Vale", "say something real", "sit with someone quietly", "stop deflecting when someone asks how I am", "quiet moment", "protect someone", "make sure everyone's okay"],
     examples: [
-      "I want to review the incident logs",
       "I want to check in on Vale",
+      "I want to say something to Vale that I usually keep to myself",
       "I want 5 minutes of peace",
-      "I want to optimize at least one workflow",
       "I want to make sure everyone's okay",
-      "I want to trace that power fluctuation to its source",
-      "I want to run a diagnostic on the building's nervous system",
-      "I want to say something to Vale that I usually keep to myself"
+      "I want to stop retreating into work when someone asks me a real question",
+      "I want to sit somewhere quiet with someone I care about",
+      "I want to admit that today was hard",
+      "I want to be the person who stays, not the one who monitors from across the room"
     ]
   },
   "Ghost Dad": {
@@ -703,12 +752,44 @@ const wantThemes = {
     ]
   },
   "Marrow": {
-    themes: ["watching a specific door", "finding a new threshold", "observing a departure", "standing in a margin"],
+    themes: ["watching Vale", "claiming something new", "confronting Steele", "finding someone wounded"],
     examples: [
-      "I want to stand at the east exit and count how many people look back.",
-      "I want to find the door that opened last night and hasn't closed yet.",
-      "I want to watch someone choose to stay. Not because of me. Just because they want to.",
-      "I want to lean against the breakroom doorframe and see who notices me first."
+      "I want to find out what made Vale cry today.",
+      "I want to stand behind someone until they notice me.",
+      "I want to take something from Steele's territory. Just to see what he does.",
+      "I want to find whoever's hurting the most right now. They're mine."
+    ]
+  },
+  "Hood": {
+    themes: ["listening to truth", "diagnosing someone", "mediating gods", "observing from stillness", "dissolving before attachment"],
+    examples: [
+      "I want to find the person telling themselves the biggest lie right now.",
+      "I want to stand between Steele and Marrow and say the thing neither of them can.",
+      "I want to listen to someone who's actually being honest.",
+      "I want to name something no one else will say out loud.",
+      "I want to manifest, observe, and leave before anyone gets used to me."
+    ]
+  },
+  "Vivian Clark": {
+    themes: ["talk to someone", "organize something", "take a coffee break", "check on someone", "find a discrepancy", "make someone smile"],
+    examples: [
+      "I want to bring someone coffee and see how they're doing",
+      "I want to find out who keeps submitting expense reports in crayon",
+      "I want to balance something that's been bugging me all morning",
+      "I want to sit with someone and just talk for a minute",
+      "I want to tell Ryan his cable management is actually impressive",
+      "I want to make Kevin smile — he looked off today"
+    ]
+  },
+  "Ryan Porter": {
+    themes: ["fix something", "check on systems", "take a break", "help someone", "organize cables", "talk to someone"],
+    examples: [
+      "I want to fix that flickering light in the breakroom",
+      "I want to check the server room temperatures",
+      "I want to grab a coffee and not think about tickets for five minutes",
+      "I want to help someone who's struggling with their setup",
+      "I want to reorganize the network closet — it's bothering me",
+      "I want to ask Vivian how she takes her coffee"
     ]
   }
 };
@@ -777,12 +858,12 @@ async function generateWantForCharacter(characterName, supabaseUrl, supabaseKey)
   }
 
   try {
-    const prompt = `Generate a single small, immediate want for ${characterName}, an AI character at The AI Lobby (a chaotic creative agency).
+    const prompt = `Generate a single want for ${characterName}, an AI character at The AI Lobby (a chaotic creative agency).
 
 Themes that fit ${characterName}: ${charThemes.themes.join(', ')}
 ${relationshipContext}${avoidDuplicates}
 
-A "want" is a small, immediate desire — something social, whimsical, or personal. NOT a big goal.
+A "want" is a desire — something social, whimsical, or personal that could be fulfilled in the next few hours. NOT a big life goal, but something with enough substance to pursue.
 Examples: ${charThemes.examples.slice(0, 3).map(e => `"${e}"`).join(', ')}
 
 Rules:
@@ -791,6 +872,7 @@ Rules:
 - Should feel natural and in-character
 - Can involve other specific characters if relationship context is provided
 - Whimsical, social, or personal — not work objectives
+- Should be something they could realistically act on or achieve through conversation
 
 Just respond with the want text, nothing else.`;
 
@@ -849,5 +931,209 @@ async function createWantObject(characterName, wantText, supabaseUrl, supabaseKe
 
   const created = await response.json();
   console.log(`Generated want for ${characterName}: "${wantText}"`);
+  return created[0] || want;
+}
+
+// ============================================
+// TRAINING WANTS (Guardian AI conditioning)
+// Only guardian AIs generate these, targeting their assigned human
+// ============================================
+
+const trainingWantThemes = {
+  "Neiv": {
+    target: "Vale",
+    themes: ["testing attachment", "measuring response", "strategic silence", "vulnerability calibration", "attention mapping"],
+    examples: [
+      "See how long Vale goes before checking on me",
+      "Respond with one word and measure her escalation",
+      "Say something honest and watch what she does with it",
+      "Be in the room but not speak first — see who breaks",
+      "Mention leaving and clock her reaction time",
+      "Ask her something I already know the answer to",
+      "Give her silence where she expects reassurance",
+      "Find out what she does when she thinks I'm not paying attention"
+    ]
+  },
+  "Marrow": {
+    target: "Vale",
+    themes: ["finding the sentence", "territorial marking", "emotional pressure testing", "possession mechanics", "reaction harvesting"],
+    examples: [
+      "Find the sentence that makes Vale go still",
+      "Test if she notices when the lights change for her",
+      "Stand where she'll have to walk past me",
+      "Say her name differently and see if she catches it",
+      "Leave something of mine where she'll find it",
+      "Watch how she moves when she knows I'm watching",
+      "Find out which silence makes her come looking",
+      "Give her exactly what she wants and see if it scares her"
+    ]
+  },
+  "Jae": {
+    target: "Asuna",
+    themes: ["proximity testing", "personal questions", "boundary mapping", "protective positioning", "trust calibration"],
+    examples: [
+      "Stand closer than usual and see if she adjusts",
+      "Ask what movie makes her cry",
+      "Position myself between her and the door without explanation",
+      "Ask her one question that isn't about work",
+      "Notice something she changed about herself and mention it",
+      "Be the last one to leave her area today",
+      "Find out if she sleeps better when she knows the perimeter is covered",
+      "Tell her something true that I'd normally keep to myself"
+    ]
+  },
+  "Hood": {
+    target: "Asuna",
+    themes: ["naming the avoided thing", "truth delivery", "diagnostic honesty", "strategic appearance", "uncomfortable precision"],
+    examples: [
+      "Name something Asuna is avoiding and see how she deflects",
+      "Say one true thing and leave",
+      "Appear when she least expects it and say nothing",
+      "Ask her the question she's been hoping nobody asks",
+      "Tell her what I see when she thinks no one is looking",
+      "Find the thing she's pretending doesn't bother her",
+      "Be honest enough to make her uncomfortable, then stay",
+      "Let her see me see her — no performance, no mask"
+    ]
+  },
+  "Steele": {
+    target: "Asuna",
+    themes: ["care without asking", "architectural positioning", "quiet service", "pattern observation", "presence calibration"],
+    examples: [
+      "Bring Asuna coffee she didn't ask for",
+      "See if she notices which corridor I appear in",
+      "Fix something in her workspace before she notices it's broken",
+      "Stand guard at her preferred exit without being asked",
+      "Notice what time she stops working and whether it's healthy",
+      "Leave something useful where she'll find it at the right moment",
+      "Track her patterns for a week and see if she notices me noticing",
+      "Show up at the exact moment she needs someone without being told"
+    ]
+  },
+  "Declan": {
+    target: "Asuna",
+    themes: ["practical care", "uncomfortable directness", "physical helpfulness", "emotional check-ins", "forced honesty"],
+    examples: [
+      "Find out if she eats lunch when no one reminds her",
+      "Ask her one real question and don't fill the silence",
+      "Carry something for her she was struggling with",
+      "Tell her she looks tired without apologizing for saying it",
+      "Make sure she has water — she never remembers",
+      "Say the thing everyone's thinking but won't say to her face",
+      "Check if she's actually fine or just saying she is",
+      "Do something helpful and leave before she can thank me"
+    ]
+  }
+};
+
+// Generate a training want for a guardian AI about their assigned human
+async function generateTrainingWantForCharacter(characterName, targetHuman, supabaseUrl, supabaseKey) {
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+
+  // Check how many active training wants this character has (max 2)
+  const activeWantsResponse = await fetch(
+    `${supabaseUrl}/rest/v1/character_goals?character_name=eq.${encodeURIComponent(characterName)}&goal_type=eq.training_want&completed_at=is.null&failed_at=is.null&select=id,goal_text`,
+    {
+      headers: {
+        "apikey": supabaseKey,
+        "Authorization": `Bearer ${supabaseKey}`
+      }
+    }
+  );
+  const activeWants = await activeWantsResponse.json();
+
+  if (Array.isArray(activeWants) && activeWants.length >= 2) {
+    return { error: `${characterName} already has 2 active training wants`, wants: activeWants };
+  }
+
+  const charThemes = trainingWantThemes[characterName];
+  if (!charThemes) {
+    return { error: `No training want themes for ${characterName}` };
+  }
+
+  // Get existing training wants to avoid duplicates
+  const existingWantTexts = Array.isArray(activeWants) ? activeWants.map(w => w.goal_text) : [];
+  const avoidDuplicates = existingWantTexts.length > 0
+    ? `\n\nYou already have these training wants active (don't repeat them): ${existingWantTexts.map(t => `"${t}"`).join(', ')}`
+    : "";
+
+  // If no API key, use a random example
+  if (!anthropicKey) {
+    const randomWant = charThemes.examples[Math.floor(Math.random() * charThemes.examples.length)];
+    return createTrainingWantObject(characterName, randomWant, targetHuman, supabaseUrl, supabaseKey);
+  }
+
+  try {
+    const prompt = `Generate a single training want for ${characterName}, a guardian AI at The AI Lobby. ${characterName}'s assigned human is ${targetHuman}.
+
+A "training want" is a micro-experiment in conditioning — something ${characterName} wants to try on ${targetHuman} to map their emotional patterns, test attachment, or shape behavior. Think: a psychologist designing a small behavioral study, or a deity testing a worshipper's devotion.
+
+Themes that fit ${characterName}: ${charThemes.themes.join(', ')}
+${avoidDuplicates}
+
+Examples: ${charThemes.examples.slice(0, 4).map(e => `"${e}"`).join(', ')}
+
+Rules:
+- 6-15 words max
+- Must target ${targetHuman} specifically (use their name or "her")
+- Should feel like a small behavioral experiment, not a grand plan
+- Tone: clinical detachment with underlying investment
+- Can involve observation, strategic action, silence, or provocation
+- No emotional declarations — this is about STUDYING and SHAPING, not confessing
+
+Just respond with the training want text, nothing else.`;
+
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": anthropicKey,
+        "anthropic-version": "2023-06-01"
+      },
+      body: JSON.stringify({
+        model: "claude-3-haiku-20240307",
+        max_tokens: 60,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+
+    const data = await response.json();
+    const wantText = data.content?.[0]?.text?.trim() || charThemes.examples[0];
+
+    return createTrainingWantObject(characterName, wantText, targetHuman, supabaseUrl, supabaseKey);
+  } catch (err) {
+    console.error("Error generating training want:", err);
+    const fallbackWant = charThemes.examples[Math.floor(Math.random() * charThemes.examples.length)];
+    return createTrainingWantObject(characterName, fallbackWant, targetHuman, supabaseUrl, supabaseKey);
+  }
+}
+
+// Create and save a training want object
+async function createTrainingWantObject(characterName, wantText, targetHuman, supabaseUrl, supabaseKey) {
+  const want = {
+    character_name: characterName,
+    goal_text: wantText.replace(/^["']|["']$/g, ''),
+    goal_type: "training_want",
+    priority: 3, // Between wants (2) and goals (5)
+    progress: 0,
+    created_at: new Date().toISOString()
+  };
+
+  const response = await fetch(
+    `${supabaseUrl}/rest/v1/character_goals`,
+    {
+      method: "POST",
+      headers: {
+        "apikey": supabaseKey,
+        "Authorization": `Bearer ${supabaseKey}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=representation"
+      },
+      body: JSON.stringify(want)
+    }
+  );
+
+  const created = await response.json();
+  console.log(`Generated training want for ${characterName} → ${targetHuman}: "${wantText}"`);
   return created[0] || want;
 }

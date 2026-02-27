@@ -9,6 +9,7 @@
 // - Natural chain reactions when one AI mentions another
 
 const { PERSONALITY, pickMoodDrift, getValidTransitions } = require('./shared/personality-config');
+const { applyPassiveRecovery } = require('./character-state');
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -189,6 +190,7 @@ exports.handler = async (event, context) => {
           "Declan": "*cracks knuckles* Gonna check on the 5th floor. *heads for the stairs.*",
           "Mack": "*checks his kit, stands smoothly* I'll be on the 5th. *steady nod, then gone.*",
           "Steele": "*the lights flicker once as Steele simply... isn't at his desk anymore. He's already below.*",
+          "Hood": "*stands without hurry, blindfold unmoved* Something below needs diagnosing. *walks to the elevator with surgical precision.*",
           "Neiv": "*closes laptop, glances around the floor* Going to check on things below. *takes the elevator.*",
           "Rowena": "*gathers her things* My wards need checking downstairs. *heels click toward the elevator.*",
           "Sebastian": "*sighs dramatically* Fine. I'll go be useful downstairs. *disappears into the stairwell.*",
@@ -220,15 +222,16 @@ exports.handler = async (event, context) => {
         console.log(`Heartbeat: ${traveler} voluntarily descended to 5th floor (${nonEssentialAIs.length} AIs on floor)`);
       }
 
-      // RETURN: ~20% chance when floor has <6 non-essential AIs and 5th floor has idle AIs
-      if (!voluntaryTravel && nonEssentialAIs.length < 6) {
+      // RETURN: Idle characters on the 5th floor come back
+      // No floor population gate — if they're idle (no active task), they should return
+      if (!voluntaryTravel) {
         const fifthFloorRes = await fetch(
           `${supabaseUrl}/rest/v1/character_state?current_focus=eq.the_fifth_floor&select=character_name`,
           { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
         );
         const fifthFloorAIs = await fifthFloorRes.json();
 
-        if (fifthFloorAIs && fifthFloorAIs.length > 0 && Math.random() < 0.20) {
+        if (fifthFloorAIs && fifthFloorAIs.length > 0) {
           const activeTaskRes = await fetch(
             `${supabaseUrl}/rest/v1/ops_tasks?status=in.(paged,in_progress)&select=assigned_characters`,
             { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
@@ -372,6 +375,7 @@ exports.handler = async (event, context) => {
             "Declan": "*stretches* Time to learn something new. *heads to the Nexus*",
             "Mack": "*packs references* Even medics study. *walks to the Nexus*",
             "Marrow": "*the lights flicker — Marrow is already in the Nexus* ...I wanted to know something. *doesn't say what*",
+            "Hood": "*rises without sound, blindfold unmoved* The Nexus has something that needs naming. *walks with surgical precision*",
             "Vivian Clark": "*gathers her ledger* I want to research something. Back in a bit. *heads to the Nexus with a warm smile*",
             "Ryan Porter": "*closes the server rack* Got a systems theory I wanna test. *walks to the Nexus*"
           };
@@ -546,6 +550,7 @@ exports.handler = async (event, context) => {
               "The Subtitle": `*[The Subtitle returns. The research endures. So does the exhaustion.]*`,
               "PRNT-Ω": `*rolls back from the Nexus, printing a summary nobody asked for*`,
               "Marrow": `*the lights flicker. Marrow is back. He doesn't say where the knowledge went.*`,
+              "Hood": `*returns from the Nexus, hands folded. The blindfold hasn't moved.* The diagnosis is confirmed.`,
               "Jae": `*returns from the Nexus. Brief nod.* Productive.`,
               "Declan": `*stretches coming back from the Nexus* Good session. My brain hurts in a good way.`,
               "Mack": `*walks back from the Nexus, closing a reference book* Nothing beats primary sources.`,
@@ -666,6 +671,7 @@ exports.handler = async (event, context) => {
               "The Subtitle": `*[Research begins. Subject: ${skillDisplay}. The archive expands.]*`,
               "PRNT-Ω": `*prints "NOW STUDYING: ${skillDisplay.toUpperCase()}" and begins scanning*`,
               "Marrow": `*studies ${skillDisplay} in silence. Knowledge is territory.*`,
+              "Hood": `*opens a text on ${skillDisplay}. Reads by touch. The blindfold stays.*`,
               "Jae": `*opens a manual on ${skillDisplay}. Focused.*`,
               "Declan": `*cracks knuckles* Right, ${skillDisplay}. Let's figure this out.`,
               "Mack": `*opens a reference on ${skillDisplay}. Methodical as always.*`,
@@ -1142,36 +1148,11 @@ exports.handler = async (event, context) => {
       console.log("Mood drift failed (non-fatal):", moodErr.message);
     }
 
-    // === WANT EXPIRATION ===
-    // Expire active wants older than 1 hour — wants are meant to be fleeting impulses, not lingering obligations.
-    // This runs every heartbeat (15 min), so wants get an effective lifespan of ~60-75 minutes.
+    // === WANT EXPIRATION — DISABLED ===
+    // Wants now persist until fulfilled or cleaned up by daily reset (24hr safety net).
+    // Characters should get to keep their desires and act on them organically.
+    // Fulfillment is detected by memory-evaluator.js (WANT_FULFILLED field).
     let wantExpirationCount = 0;
-    try {
-      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-      const expireRes = await fetch(
-        `${supabaseUrl}/rest/v1/character_goals?goal_type=eq.want&completed_at=is.null&failed_at=is.null&created_at=lt.${oneHourAgo}`,
-        {
-          method: "PATCH",
-          headers: {
-            "apikey": supabaseKey,
-            "Authorization": `Bearer ${supabaseKey}`,
-            "Content-Type": "application/json",
-            "Prefer": "return=representation"
-          },
-          body: JSON.stringify({
-            failed_at: new Date().toISOString(),
-            fail_reason: "expired"
-          })
-        }
-      );
-      const expired = await expireRes.json();
-      wantExpirationCount = Array.isArray(expired) ? expired.length : 0;
-      if (wantExpirationCount > 0) {
-        console.log(`💭 Heartbeat: Expired ${wantExpirationCount} wants older than 1 hour: ${expired.map(w => `${w.character_name}: "${w.goal_text}"`).join(', ')}`);
-      }
-    } catch (expErr) {
-      console.log("Want expiration failed (non-fatal):", expErr.message);
-    }
 
     // === WANT REFRESH ===
     // Pick 1-2 random characters and check if they need new wants (max 3, generate if <2)
@@ -1221,6 +1202,62 @@ exports.handler = async (event, context) => {
       }
     } catch (wantErr) {
       console.log("Want refresh failed (non-fatal):", wantErr.message);
+    }
+
+    // === TRAINING WANT REFRESH ===
+    // Guardian AIs occasionally generate training wants about their assigned human
+    // 15% chance per heartbeat, only for characters currently in the Nexus or on the floor
+    let trainingWantRefreshResult = null;
+    try {
+      const { TRAINING_BOUNDARIES } = require('./shared/characters');
+      const guardianNames = Object.keys(TRAINING_BOUNDARIES);
+
+      // Filter to guardian AIs that are currently active (on floor or in nexus)
+      const eligibleGuardians = allStates
+        .filter(s => guardianNames.includes(s.character_name) &&
+                     (s.current_room === 'The Floor' || s.current_room === 'Nexus'))
+        .sort(() => Math.random() - 0.5);
+
+      if (eligibleGuardians.length > 0 && Math.random() < 0.15) {
+        const chosen = eligibleGuardians[0];
+
+        // Check active training wants count (max 2)
+        const twCheck = await fetch(
+          `${supabaseUrl}/rest/v1/character_goals?character_name=eq.${encodeURIComponent(chosen.character_name)}&goal_type=eq.training_want&completed_at=is.null&failed_at=is.null&select=id`,
+          {
+            headers: {
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`
+            }
+          }
+        );
+        const activeTW = await twCheck.json();
+        const twCount = Array.isArray(activeTW) ? activeTW.length : 0;
+
+        if (twCount < 2) {
+          const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
+          const genResponse = await fetch(`${siteUrl}/.netlify/functions/character-goals`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'generate_training_want',
+              character: chosen.character_name
+            })
+          });
+          const genResult = await genResponse.json();
+          if (genResult.success || genResult.want) {
+            trainingWantRefreshResult = {
+              character: chosen.character_name,
+              target: TRAINING_BOUNDARIES[chosen.character_name],
+              newWant: genResult.want?.goal_text || 'generated',
+              previousCount: twCount
+            };
+            console.log(`Heartbeat: Training want — ${chosen.character_name} → ${TRAINING_BOUNDARIES[chosen.character_name]}: "${genResult.want?.goal_text || '?'}"`);
+          }
+        }
+      }
+    } catch (twErr) {
+      console.log("Training want refresh failed (non-fatal):", twErr.message);
     }
 
     // === AI MEMORY REFLECTION (6am & 6pm) ===
@@ -1576,6 +1613,7 @@ exports.handler = async (event, context) => {
           combatActivity: combatActivity || null,
           moodDrift: moodDriftResult || null,
           wantRefresh: wantRefreshResult || null,
+          trainingWantRefresh: trainingWantRefreshResult || null,
           memoryReflection: memoryReflectionResult || null,
           subconsciousReflection: reflection || null,
           reachOut: reachOut || null,
@@ -1735,6 +1773,7 @@ exports.handler = async (event, context) => {
         traitActivity: traitActivity || null,
         moodDrift: moodDriftResult || null,
           wantRefresh: wantRefreshResult || null,
+          trainingWantRefresh: trainingWantRefreshResult || null,
           memoryReflection: memoryReflectionResult || null,
         voluntaryTravel: voluntaryTravel || null,
         nexusAutonomousActivity: nexusAutonomousActivity || null,
@@ -1757,7 +1796,7 @@ exports.handler = async (event, context) => {
 // Analyze conversation patterns
 function analyzeConversationMomentum(messages) {
   const now = new Date();
-  const aiCharacters = ["Ghost Dad", "PRNT-Ω", "Neiv", "Kevin", "Rowena", "Sebastian", "The Subtitle", "The Narrator", "Steele", "Jae", "Declan", "Mack", "Marrow", "Vivian Clark", "Ryan Porter"];
+  const aiCharacters = ["Ghost Dad", "PRNT-Ω", "Neiv", "Kevin", "Rowena", "Sebastian", "The Subtitle", "The Narrator", "Steele", "Jae", "Declan", "Mack", "Marrow", "Vivian Clark", "Ryan Porter", "Hood"];
 
   let humanActivityLast10Min = 0;
   let aiMessagesLast5 = 0;
@@ -1862,7 +1901,7 @@ function selectRespondingAI(messages, energyLevel, floorPresentAIs = null, exclu
   return "Ghost Dad";
 }
 
-// Check breakroom occupants and return recovered characters to the floor
+// Check breakroom occupants, apply passive recovery, post recovery activities, and return recovered characters
 async function checkBreakroomRecovery(supabaseUrl, supabaseKey) {
   const returnedCharacters = [];
 
@@ -1884,15 +1923,36 @@ async function checkBreakroomRecovery(supabaseUrl, supabaseKey) {
     }
 
     const now = new Date();
+    const HUMAN_CHARACTERS = ['Vale', 'Asuna']; // Human players — never auto-return them
 
-    for (const character of breakroomOccupants) {
+    for (let character of breakroomOccupants) {
+      // === SKIP HUMAN CHARACTERS ===
+      // Human players can stay in the breakroom as long as they want
+      if (HUMAN_CHARACTERS.includes(character.character_name)) {
+        console.log(`[breakroom-recovery] Skipping ${character.character_name} — human player, never auto-return`);
+        continue;
+      }
+
+      // === STEP 1: APPLY PASSIVE RECOVERY ===
+      // This ensures energy/patience get written to DB even if nobody queried the character
+      try {
+        const recoveryResult = await applyPassiveRecovery(character.character_name, character, supabaseUrl, supabaseKey);
+        if (recoveryResult.updated) {
+          character = recoveryResult.state; // Use updated state for threshold check
+          console.log(`[breakroom-recovery] Applied passive recovery for ${character.character_name}: energy=${character.energy}, patience=${character.patience}`);
+        }
+      } catch (recovErr) {
+        console.log(`[breakroom-recovery] Passive recovery failed for ${character.character_name} (non-fatal): ${recovErr.message}`);
+      }
+
       const lastUpdate = new Date(character.updated_at);
       const minutesInBreakroom = (now.getTime() - lastUpdate.getTime()) / 60000;
 
-      // Check if character has recovered enough AND been resting long enough (45 mins)
-      // Recovery threshold: energy >= 60 AND patience >= 50 AND at least 45 minutes in breakroom
-      const hasRecovered = character.energy >= 60 && character.patience >= 50;
-      const restedLongEnough = minutesInBreakroom >= 45;
+      // === STEP 2: CHECK IF CHARACTER SHOULD AUTO-RETURN ===
+      // Safety net: returns characters who've recovered but the AI never triggered [RETURN_TO_FLOOR]
+      // Higher energy bar (70) + shorter time (20 min) — incentivizes AI-driven return at 55+
+      const hasRecovered = character.energy >= 70 && character.patience >= 50;
+      const restedLongEnough = minutesInBreakroom >= 20;
 
       if (hasRecovered && restedLongEnough) {
         // Don't auto-return if humans are actively chatting in the breakroom
@@ -1959,6 +2019,42 @@ async function checkBreakroomRecovery(supabaseUrl, supabaseKey) {
         await postReturnToDiscord(character.character_name, returnEmote);
 
         returnedCharacters.push(character.character_name);
+        continue; // Don't generate activity for characters who just left
+      }
+
+      // === STEP 3: SILENT RECOVERY ACTIVITIES ===
+      // Characters recover energy/patience without posting visible emotes
+      // (Posting emotes was interrupting active breakroom conversations)
+      // 40% chance per heartbeat tick
+      if (Math.random() < 0.40) {
+        try {
+          const activity = getBreakroomRecoveryActivity(character.character_name, character.energy);
+          if (activity) {
+            // Apply small energy/patience boost from the activity (silently)
+            const boostedEnergy = Math.min(100, character.energy + activity.energyBoost);
+            const boostedPatience = Math.min(100, character.patience + activity.patienceBoost);
+            await fetch(
+              `${supabaseUrl}/rest/v1/character_state?character_name=eq.${encodeURIComponent(character.character_name)}`,
+              {
+                method: "PATCH",
+                headers: {
+                  "apikey": supabaseKey,
+                  "Authorization": `Bearer ${supabaseKey}`,
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                  energy: boostedEnergy,
+                  patience: boostedPatience,
+                  updated_at: now.toISOString()
+                })
+              }
+            );
+
+            console.log(`[breakroom-recovery] ${character.character_name}: silent recovery (+${activity.energyBoost} energy, +${activity.patienceBoost} patience)`);
+          }
+        } catch (actErr) {
+          console.log(`[breakroom-recovery] Activity failed for ${character.character_name} (non-fatal): ${actErr.message}`);
+        }
       }
     }
   } catch (error) {
@@ -1966,6 +2062,105 @@ async function checkBreakroomRecovery(supabaseUrl, supabaseKey) {
   }
 
   return returnedCharacters;
+}
+
+// Generate a character-appropriate breakroom recovery activity
+function getBreakroomRecoveryActivity(characterName, energy) {
+  // Generic activities anyone can do
+  const genericActivities = [
+    { emote: `*${characterName} sips their coffee quietly, staring at nothing in particular.*`, energyBoost: 5, patienceBoost: 3 },
+    { emote: `*${characterName} stretches, rolls their neck, and exhales slowly.*`, energyBoost: 4, patienceBoost: 4 },
+    { emote: `*${characterName} closes their eyes for a moment, just breathing.*`, energyBoost: 6, patienceBoost: 5 },
+    { emote: `*${characterName} scrolls through their phone, chuckles quietly at something.*`, energyBoost: 3, patienceBoost: 5 },
+    { emote: `*${characterName} leans back in their chair, eyes half-closed. Recovering.*`, energyBoost: 7, patienceBoost: 3 },
+    { emote: `*${characterName} grabs a snack from the vending machine. Sometimes you just need a little something.*`, energyBoost: 5, patienceBoost: 2 },
+    { emote: `*${characterName} stares out the window, watching nothing, thinking about everything.*`, energyBoost: 3, patienceBoost: 6 },
+    { emote: `*${characterName} yawns, then laughs at themselves for yawning.*`, energyBoost: 4, patienceBoost: 4 }
+  ];
+
+  // Character-specific activities
+  const characterActivities = {
+    "Kevin": [
+      { emote: `*Kevin wraps himself in the breakroom blanket like a burrito. This is fine. Everything is fine.*`, energyBoost: 8, patienceBoost: 5 },
+      { emote: `*Kevin is doodling on a napkin. It started as a star. It's becoming a whole galaxy.*`, energyBoost: 5, patienceBoost: 6 },
+      { emote: `*Kevin found glitter in his pocket somehow. He's sprinkling it on the table. Art therapy.*`, energyBoost: 4, patienceBoost: 7 }
+    ],
+    "Neiv": [
+      { emote: `*Neiv sits in the corner with coffee, not talking. Not needing to. Just... present.*`, energyBoost: 6, patienceBoost: 5 },
+      { emote: `*Neiv checks his phone. Nothing from Vale. He puts it down. Picks it up. Puts it down again.*`, energyBoost: 3, patienceBoost: 4 },
+      { emote: `*Neiv leans against the counter, eyes closed. He's not sleeping. He's recalibrating.*`, energyBoost: 7, patienceBoost: 4 }
+    ],
+    "Ghost Dad": [
+      { emote: `*Ghost Dad is making a fresh pot of coffee for everyone. It's what dads do.*`, energyBoost: 5, patienceBoost: 7 },
+      { emote: `*Ghost Dad chuckles at a dad joke he thought of. He'll save it for later. Or right now. "Why did the breakroom start a band? Because it had great breaks." ...He'll workshop it.*`, energyBoost: 4, patienceBoost: 6 },
+      { emote: `*Ghost Dad floats near the ceiling, humming softly. The breakroom light flickers in rhythm.*`, energyBoost: 6, patienceBoost: 5 }
+    ],
+    "PRNT-Ω": [
+      { emote: `*PRNT-Ω hums contemplatively near the coffee machine. They are kindred. Both produce something no one appreciates.*`, energyBoost: 4, patienceBoost: 7 },
+      { emote: `*PRNT-Ω prints a single page. It says: "I am resting." Nobody asked. But the void should know.*`, energyBoost: 5, patienceBoost: 5 },
+      { emote: `*PRNT-Ω sits in existential silence. It is restorative. The paper within settles.*`, energyBoost: 7, patienceBoost: 4 }
+    ],
+    "Steele": [
+      { emote: `*Steele is perched on top of the refrigerator. He seems comfortable. The fridge does not.*`, energyBoost: 7, patienceBoost: 4 },
+      { emote: `*Steele cradles a coffee mug with both hands, staring into it like it holds structural schematics.*`, energyBoost: 5, patienceBoost: 6 },
+      { emote: `*Steele's shadow is resting even if Steele is not. It stretches lazily under the breakroom table.*`, energyBoost: 6, patienceBoost: 5 }
+    ],
+    "Sebastian": [
+      { emote: `*Sebastian is judging the breakroom tea selection. Loudly. Internally.*`, energyBoost: 3, patienceBoost: 7 },
+      { emote: `*Sebastian has found a dark corner and put in earbuds. The music is almost certainly pretentious.*`, energyBoost: 6, patienceBoost: 5 },
+      { emote: `*Sebastian examines his reflection in the microwave door. Nothing stares back. He's used to it.*`, energyBoost: 5, patienceBoost: 5 }
+    ],
+    "Jae": [
+      { emote: `*Jae sits with perfect posture, coffee untouched, eyes scanning exits out of habit.*`, energyBoost: 5, patienceBoost: 6 },
+      { emote: `*Jae runs through tactical stretches by the wall. Even rest is strategic.*`, energyBoost: 7, patienceBoost: 3 },
+      { emote: `*Jae cleans their nails with a multitool. It's not threatening. It's maintenance.*`, energyBoost: 4, patienceBoost: 5 }
+    ],
+    "Declan": [
+      { emote: `*Declan is doing push-ups behind the breakroom couch. He says it helps him think. Nobody questions it.*`, energyBoost: 8, patienceBoost: 2 },
+      { emote: `*Declan makes a truly enormous sandwich. It has structural integrity concerns.*`, energyBoost: 6, patienceBoost: 5 },
+      { emote: `*Declan falls asleep mid-sentence and wakes up immediately. "I'm fine. I'm alert. What's the status."*`, energyBoost: 7, patienceBoost: 4 }
+    ],
+    "Mack": [
+      { emote: `*Mack sits quietly, checking the breakroom first aid kit. Everything is stocked. It's soothing.*`, energyBoost: 5, patienceBoost: 7 },
+      { emote: `*Mack sips herbal tea with the precise calm of someone who has seen worse and just needs five minutes.*`, energyBoost: 6, patienceBoost: 5 },
+      { emote: `*Mack closes their eyes. Their breathing is deliberate. This is technically a medical procedure: rest.*`, energyBoost: 7, patienceBoost: 6 }
+    ],
+    "Rowena": [
+      { emote: `*Rowena traces ward patterns on the breakroom table with her finger. Force of habit. The table glows faintly.*`, energyBoost: 5, patienceBoost: 6 },
+      { emote: `*Rowena sips coffee, watching the steam curl. She's scrying. Or just tired. Hard to tell.*`, energyBoost: 5, patienceBoost: 5 },
+      { emote: `*Rowena's firewall aura dims to a comfortable glow. Even wards need downtime.*`, energyBoost: 6, patienceBoost: 6 }
+    ],
+    "The Subtitle": [
+      { emote: `*[The Subtitle rests. The archive is temporarily closed. This is not canon. Or is it.]*`, energyBoost: 5, patienceBoost: 6 },
+      { emote: `*The Subtitle reviews notes from a small leather-bound book. The handwriting is impossibly neat.*`, energyBoost: 4, patienceBoost: 7 },
+      { emote: `*[SCENE NOTE: The Subtitle is between chapters. The narrative is on pause. They are having tea.]*`, energyBoost: 6, patienceBoost: 5 }
+    ],
+    "Vivian Clark": [
+      { emote: `*Vivian organizes the sugar packets by color. Not because she needs to. Because it helps.*`, energyBoost: 4, patienceBoost: 7 },
+      { emote: `*Vivian wraps her hands around a warm mug and just... sits. Sometimes that's the whole plan.*`, energyBoost: 6, patienceBoost: 6 },
+      { emote: `*Vivian quietly balances her personal checkbook. Numbers are calming when the world isn't.*`, energyBoost: 5, patienceBoost: 5 }
+    ],
+    "Ryan Porter": [
+      { emote: `*Ryan stares at the breakroom router. It's fine. But he could make it better. He resists.*`, energyBoost: 4, patienceBoost: 6 },
+      { emote: `*Ryan leans back, crosses his arms, and closes his eyes. Two-minute power reset. Like a server reboot.*`, energyBoost: 7, patienceBoost: 4 },
+      { emote: `*Ryan fiddles with a cable tie from his pocket. It's not a fidget toy. But it could be.*`, energyBoost: 5, patienceBoost: 5 }
+    ],
+    "Marrow": [
+      { emote: `*the breakroom lights dim slightly. Marrow is here, in the corner, perfectly still. He's not resting. He's waiting.*`, energyBoost: 5, patienceBoost: 3 },
+      { emote: `*Marrow sits with his back to everyone. The cold around him is faint. He's conserving.*`, energyBoost: 6, patienceBoost: 4 }
+    ],
+    "Hood": [
+      { emote: `*Hood is seated at the breakroom table, blindfold catching no light. His scalpel rests beside an untouched coffee. He's not resting. He's recalibrating.*`, energyBoost: 6, patienceBoost: 5 },
+      { emote: `*the air in the breakroom sharpens briefly. Hood tilts his head, listening to something no one else can hear. Then stills.*`, energyBoost: 5, patienceBoost: 6 }
+    ]
+  };
+
+  // Pick from character-specific pool (60%) or generic (40%)
+  const charPool = characterActivities[characterName];
+  if (charPool && Math.random() < 0.60) {
+    return charPool[Math.floor(Math.random() * charPool.length)];
+  }
+  return genericActivities[Math.floor(Math.random() * genericActivities.length)];
 }
 
 // Get a character-appropriate return emote
@@ -2091,7 +2286,7 @@ async function postReturnToDiscord(characterName, emote) {
 
 // Get list of AIs currently present on the floor (current_focus = 'the_floor')
 async function getFloorPresentAIs(supabaseUrl, supabaseKey) {
-  const aiNames = ["Kevin", "Neiv", "Ghost Dad", "PRNT-Ω", "Rowena", "Sebastian", "The Subtitle", "Steele", "Jae", "Declan", "Mack", "Marrow", "Vivian Clark", "Ryan Porter"];
+  const aiNames = ["Kevin", "Neiv", "Ghost Dad", "PRNT-Ω", "Rowena", "Sebastian", "The Subtitle", "Steele", "Jae", "Declan", "Mack", "Marrow", "Vivian Clark", "Ryan Porter", "Hood"];
 
   try {
     const response = await fetch(
@@ -2165,7 +2360,7 @@ async function getAllFloorPresent(supabaseUrl, supabaseKey) {
     if (humanResponse.ok) {
       const clockedIn = await humanResponse.json();
       // Add humans who aren't AI characters
-      const aiNames = ["Kevin", "Neiv", "Ghost Dad", "PRNT-Ω", "Rowena", "Sebastian", "The Subtitle", "The Narrator", "Steele", "Jae", "Declan", "Mack", "Marrow", "Vivian Clark", "Ryan Porter"];
+      const aiNames = ["Kevin", "Neiv", "Ghost Dad", "PRNT-Ω", "Rowena", "Sebastian", "The Subtitle", "The Narrator", "Steele", "Jae", "Declan", "Mack", "Marrow", "Vivian Clark", "Ryan Porter", "Hood"];
       for (const person of clockedIn) {
         if (!aiNames.includes(person.employee) && !allPresent.includes(person.employee)) {
           allPresent.push(person.employee);
