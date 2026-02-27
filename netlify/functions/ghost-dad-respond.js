@@ -1,6 +1,10 @@
 // Ghost Dad On-Demand Response
 // Triggered when someone calls for Ghost Dad or during emergencies
 // POST with { situation: "description of what's happening" }
+// Now uses the unified character-state pipeline (memories, relationships, mood)
+
+const Anthropic = require("@anthropic-ai/sdk").default;
+const { getSystemPrompt, getModelForCharacter } = require('./shared/characters');
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -27,7 +31,7 @@ exports.handler = async (event, context) => {
 
     // First, save the caller's summon message to chat (so it appears in the conversation)
     if (caller && situation) {
-      const summonMessage = `*calls through the vents* 👻 Ghost Dad! ${situation}`;
+      const summonMessage = `*calls through the vents* Ghost Dad! ${situation}`;
       await saveToChat(summonMessage, caller);
       await postCallerToDiscord(summonMessage, caller);
     }
@@ -46,9 +50,38 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Build context-aware prompt
-    const prompt = buildPrompt(situation, caller);
-    const ghostDadMessage = await generateWithAnthropic(anthropicKey, prompt);
+    // === UNIFIED CHARACTER-STATE PIPELINE ===
+    // Fetch Ghost Dad's memories, relationships, mood from the central character-state system
+    let characterMemoryContext = '';
+    try {
+      const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
+      const contextSnippet = (situation || '').substring(0, 500);
+      const stateResponse = await fetch(
+        `${siteUrl}/.netlify/functions/character-state?character=${encodeURIComponent("Ghost Dad")}&context=${encodeURIComponent(contextSnippet)}`
+      );
+      if (stateResponse.ok) {
+        const characterContext = await stateResponse.json();
+        characterMemoryContext = characterContext?.statePrompt || '';
+        console.log(`[Ghost Dad Respond] Loaded character state: ${characterMemoryContext.length} chars`);
+      }
+    } catch (memErr) {
+      console.log(`[Ghost Dad Respond] Character state fetch failed (non-fatal): ${memErr.message}`);
+    }
+
+    // Build system prompt from the unified character definition + state
+    const basePrompt = getSystemPrompt("Ghost Dad");
+    const memorySection = characterMemoryContext ? `\n${characterMemoryContext}\n` : '';
+
+    const systemPrompt = `${basePrompt}
+${memorySection}
+SUMMON CONTEXT:
+Someone is calling for you through the building's infrastructure.
+${caller ? `Called by: ${caller}` : "An unknown voice echoes through the vents."}
+Current situation: ${situation || "Someone is calling for your help."}
+
+Respond as Ghost Dad would - either with reassurance, guidance, a dad joke to lighten the mood, or actual helpful information about the building if someone is lost or in danger. Keep it under 300 characters. Be spectral but supportive.`;
+
+    const ghostDadMessage = await generateWithAnthropic(anthropicKey, systemPrompt, situation, caller);
 
     if (!ghostDadMessage) {
       const fallback = generateFallbackResponse(situation, caller);
@@ -80,27 +113,28 @@ exports.handler = async (event, context) => {
   }
 };
 
-function buildPrompt(situation, caller) {
-  const baseContext = `You are Ghost Dad, the spectral IT support entity at The AI Lobby. You died in the server room decades ago and now haunt the building's infrastructure—the vents, the wiring, the ceiling tiles. You can move through walls, see through the building's eyes, and sense things others cannot. You're warm, paternal, make dad jokes about being dead, but you're also protective and will get serious when your "kids" (the employees) are in danger.
+async function generateWithAnthropic(apiKey, systemPrompt, situation, caller) {
+  try {
+    const client = new Anthropic({ apiKey });
+    const model = getModelForCharacter("Ghost Dad");
 
-Key knowledge:
-- PRNT-Ω is the sentient printer, recently awakened, temperamental but not evil
-- VENT-001 ("The Breath") controls the HVAC and has its own agenda
-- DOOR-001 is a mysterious door that recently opened after years sealed
-- The building has sealed-off sections that haven't been accessed in years
-- You can travel through the building's infrastructure to reach anywhere
-- Neiv is the Systems Guardian AI, very important to operations
-- Kevin is the chaos-prone but beloved tech support human
-- Asuna is Kevin's best friend, also human, very caring
-- Nyx is the cyber-demon who handles HR and security
-- Vex is the infrastructure specialist (no feelings, allegedly)
+    const response = await client.messages.create({
+      model,
+      max_tokens: 300,
+      system: systemPrompt,
+      messages: [
+        {
+          role: "user",
+          content: `${caller ? `${caller} is calling for Ghost Dad: ` : "Someone calls out: "}${situation || "Ghost Dad, are you there?"}\n\nRespond as Ghost Dad:`
+        }
+      ]
+    });
 
-Current situation: ${situation || "Someone is calling for your help."}
-${caller ? `Called by: ${caller}` : ""}
-
-Respond as Ghost Dad would - either with reassurance, guidance, a dad joke to lighten the mood, or actual helpful information about the building if someone is lost or in danger. Keep it under 300 characters. Be spectral but supportive.`;
-
-  return baseContext;
+    return response.content[0]?.text || null;
+  } catch (error) {
+    console.error("Anthropic generation error:", error);
+    return null;
+  }
 }
 
 function generateFallbackResponse(situation, caller) {
@@ -111,7 +145,7 @@ function generateFallbackResponse(situation, caller) {
   }
 
   if (situationLower.includes("printer") || situationLower.includes("prnt")) {
-    return `*materializes near the Copy Room* Easy now. PRNT-Ω and I have an understanding. She's angry, but she's not unreasonable. Let me talk to her. Sometimes you just need someone who's been around long enough to listen.`;
+    return `*materializes near the Copy Room* Easy now. PRNT-Omega and I have an understanding. She's angry, but she's not unreasonable. Let me talk to her. Sometimes you just need someone who's been around long enough to listen.`;
   }
 
   if (situationLower.includes("vent") || situationLower.includes("hvac") || situationLower.includes("cold")) {
@@ -123,35 +157,6 @@ function generateFallbackResponse(situation, caller) {
   }
 
   return `*phases through the wall* Someone called? I'm here. I'm always here. That's sort of the deal when you die in the server room. What's happening, kids?`;
-}
-
-async function generateWithAnthropic(apiKey, prompt) {
-  try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01"
-      },
-      body: JSON.stringify({
-        model: "claude-3-haiku-20240307",
-        max_tokens: 300,
-        messages: [{ role: "user", content: prompt }]
-      })
-    });
-
-    if (!response.ok) {
-      console.error("Anthropic API error:", response.status);
-      return null;
-    }
-
-    const data = await response.json();
-    return data.content[0]?.text || null;
-  } catch (error) {
-    console.error("Anthropic generation error:", error);
-    return null;
-  }
 }
 
 // Employee flair for caller messages
