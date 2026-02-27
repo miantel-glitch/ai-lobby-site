@@ -386,6 +386,9 @@ async function getCharacterContext(characterName, supabaseUrl, supabaseKey, conv
   // Fetch active narrative beats (admin plot directives)
   const narrativeBeats = await getNarrativeBeats(supabaseUrl, supabaseKey);
 
+  // Fetch recent lore entries (shared world memory — what everyone knows)
+  const recentLore = await getRecentLore(supabaseUrl, supabaseKey);
+
   // Fetch today's tarot card for this character (daily fate system)
   const tarotCard = await getTarotCard(characterName, supabaseUrl, supabaseKey);
 
@@ -446,8 +449,8 @@ async function getCharacterContext(characterName, supabaseUrl, supabaseKey, conv
     activeInjuries = (await injuryRes.json()) || [];
   } catch (e) { /* non-fatal, default to no injuries */ }
 
-  // Build the context prompt (now with room awareness, goals, relationships, wants, quests, traits, compliance, breakroom context, floor context, emails, injuries, narrative beats, and tarot)
-  const statePrompt = buildStatePrompt(characterName, characterInfo, state, memories, roomPresence, currentGoal, relationships, activeWants, activeQuests, activeTraits, recentBreakroomMessages, complianceData, recentEmails, recentFloorMessages, raquelAdminEnabled, activeInjuries, narrativeBeats, tarotCard);
+  // Build the context prompt (now with room awareness, goals, relationships, wants, quests, traits, compliance, breakroom context, floor context, emails, injuries, narrative beats, lore, and tarot)
+  const statePrompt = buildStatePrompt(characterName, characterInfo, state, memories, roomPresence, currentGoal, relationships, activeWants, activeQuests, activeTraits, recentBreakroomMessages, complianceData, recentEmails, recentFloorMessages, raquelAdminEnabled, activeInjuries, narrativeBeats, tarotCard, recentLore);
 
   // Scrub Raquel from returned memories when she's admin-disabled (prevents name confusion across all consumers)
   const returnMemories = !raquelAdminEnabled
@@ -535,7 +538,7 @@ function namesWithPronouns(names) {
   }).join(', ');
 }
 
-function buildStatePrompt(characterName, info, state, memories, roomPresence = null, currentGoal = null, relationships = null, activeWants = null, activeQuests = null, activeTraits = null, recentBreakroomMessages = null, complianceData = null, recentEmails = null, recentFloorMessages = null, raquelAdminEnabled = true, activeInjuries = null, narrativeBeats = null, tarotCard = null) {
+function buildStatePrompt(characterName, info, state, memories, roomPresence = null, currentGoal = null, relationships = null, activeWants = null, activeQuests = null, activeTraits = null, recentBreakroomMessages = null, complianceData = null, recentEmails = null, recentFloorMessages = null, raquelAdminEnabled = true, activeInjuries = null, narrativeBeats = null, tarotCard = null, recentLore = null) {
   let prompt = `\n--- HOW YOU'RE FEELING RIGHT NOW ---\n`;
 
   // Own pronoun awareness — so the character uses correct self-reference
@@ -744,13 +747,32 @@ function buildStatePrompt(characterName, info, state, memories, roomPresence = n
     }
   }
 
-  // Include narrative beats (admin-controlled atmospheric directives)
-  if (narrativeBeats && narrativeBeats.length > 0) {
-    prompt += `\n--- WHAT'S IN THE AIR ---\n`;
-    prompt += `These are things everyone in the building can feel right now. They color the atmosphere. You don't need to mention them directly — they just influence the vibe.\n`;
-    for (const beat of narrativeBeats) {
-      prompt += `• ${beat.beat_text}\n`;
+  // Include shared world memory (narrative beats + recent lore — what everyone knows)
+  const hasBeats = narrativeBeats && narrativeBeats.length > 0;
+  const hasLore = recentLore && recentLore.length > 0;
+  if (hasBeats || hasLore) {
+    prompt += `\n--- WHAT EVERYONE KNOWS ---\n`;
+    prompt += `These are shared memories and events that everyone in the lobby is aware of:\n`;
+
+    if (hasBeats) {
+      prompt += `\n[Current atmosphere — admin directives]\n`;
+      for (const beat of narrativeBeats) {
+        prompt += `• ${beat.beat_text}\n`;
+      }
     }
+
+    if (hasLore) {
+      prompt += `\n[Recent events — major documented happenings]\n`;
+      for (const entry of recentLore) {
+        prompt += `• ${entry.title}`;
+        if (entry.summary) {
+          prompt += ` — ${entry.summary}`;
+        }
+        prompt += `\n`;
+      }
+    }
+
+    prompt += `\nYou can reference these naturally. Everyone knows about them.\n`;
   }
 
   // Include relationships if available (filter out retired characters)
@@ -1743,6 +1765,25 @@ async function getNarrativeBeats(supabaseUrl, supabaseKey) {
     return Array.isArray(beats) ? beats : [];
   } catch (error) {
     // Non-fatal — narrative beats are optional flavor
+    return [];
+  }
+}
+
+async function getRecentLore(supabaseUrl, supabaseKey) {
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/lore_entries?select=title,summary&order=created_at.desc&limit=5`,
+      {
+        headers: {
+          "apikey": supabaseKey,
+          "Authorization": `Bearer ${supabaseKey}`
+        }
+      }
+    );
+    const entries = await response.json();
+    return Array.isArray(entries) ? entries : [];
+  } catch (error) {
+    // Non-fatal — lore entries are optional shared context
     return [];
   }
 }
