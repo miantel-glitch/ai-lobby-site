@@ -36,6 +36,7 @@ exports.handler = async (event, context) => {
       const conversationContext = params.context || null; // Optional: for memory matching
       const skipBreakroomContext = params.skipBreakroom === 'true'; // Breakroom callers skip to avoid echo
       const skipFloorContext = params.skipFloor === 'true'; // Floor callers skip to avoid echo
+      const skipNexusContext = params.skipNexus === 'true'; // Nexus callers skip to avoid echo
 
       if (!characterName) {
         // Return all character states + active wants/goals/combat profiles/injuries for card display
@@ -136,7 +137,7 @@ exports.handler = async (event, context) => {
       }
 
       // Get specific character's full context (with optional conversation context for memory matching)
-      const context = await getCharacterContext(characterName, supabaseUrl, supabaseKey, conversationContext, skipBreakroomContext, skipFloorContext);
+      const context = await getCharacterContext(characterName, supabaseUrl, supabaseKey, conversationContext, skipBreakroomContext, skipFloorContext, skipNexusContext);
       return {
         statusCode: 200,
         headers,
@@ -256,7 +257,7 @@ exports.handler = async (event, context) => {
 };
 
 // Get full character context for AI prompts
-async function getCharacterContext(characterName, supabaseUrl, supabaseKey, conversationContext = null, skipBreakroomContext = false, skipFloorContext = false) {
+async function getCharacterContext(characterName, supabaseUrl, supabaseKey, conversationContext = null, skipBreakroomContext = false, skipFloorContext = false, skipNexusContext = false) {
   // Get static character info
   const characterInfo = characters[characterName] || null;
 
@@ -404,6 +405,13 @@ async function getCharacterContext(characterName, supabaseUrl, supabaseKey, conv
   let recentFloorMessages = [];
   if (!skipFloorContext) {
     recentFloorMessages = await getRecentFloorMessages(characterName, supabaseUrl, supabaseKey);
+  }
+
+  // Fetch recent Nexus conversation (for cross-context awareness)
+  // Skipped when called from nexus-respond (it has its own chat context)
+  let recentNexusMessages = [];
+  if (!skipNexusContext) {
+    recentNexusMessages = await getRecentNexusMessages(characterName, supabaseUrl, supabaseKey);
   }
 
   // Fetch recent emails/memos (for inbox awareness)
@@ -912,6 +920,16 @@ function buildStatePrompt(characterName, info, state, memories, roomPresence = n
     prompt += `You were recently on the main lobby floor. Here's what was discussed:\n`;
     for (const msg of recentFloorMessages) {
       prompt += `${msg.employee}: ${msg.content}\n`;
+    }
+    prompt += `This conversation just happened — you remember it clearly. Reference it naturally if someone brings it up.\n`;
+  }
+
+  // Include recent Nexus conversation if character participated
+  if (recentNexusMessages && recentNexusMessages.length > 0) {
+    prompt += `\n--- RECENT NEXUS CONVERSATION ---\n`;
+    prompt += `You were recently chatting in the Nexus (the digital hangout channel). Here's what was discussed:\n`;
+    for (const msg of recentNexusMessages) {
+      prompt += `${msg.speaker}: ${msg.message}\n`;
     }
     prompt += `This conversation just happened — you remember it clearly. Reference it naturally if someone brings it up.\n`;
   }
@@ -1850,6 +1868,38 @@ async function getRecentFloorMessages(characterName, supabaseUrl, supabaseKey) {
     return messages;
   } catch (error) {
     console.error("Error fetching floor messages:", error);
+    return [];
+  }
+}
+
+// Fetch recent Nexus messages involving this character (last 2 hours, max 20)
+// Only returns results if this character actually participated (spoke in the Nexus)
+async function getRecentNexusMessages(characterName, supabaseUrl, supabaseKey) {
+  try {
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/nexus_messages?created_at=gte.${twoHoursAgo}&order=created_at.asc&limit=20&select=speaker,message,created_at`,
+      {
+        headers: {
+          "apikey": supabaseKey,
+          "Authorization": `Bearer ${supabaseKey}`
+        }
+      }
+    );
+
+    if (!response.ok) return [];
+
+    const messages = await response.json();
+    if (!Array.isArray(messages) || messages.length === 0) return [];
+
+    // Only include Nexus context if this character actually participated
+    const characterSpoke = messages.some(m => m.speaker === characterName);
+    if (!characterSpoke) return [];
+
+    return messages;
+  } catch (error) {
+    console.error("Error fetching nexus messages:", error);
     return [];
   }
 }
