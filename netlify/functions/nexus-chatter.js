@@ -94,21 +94,54 @@ const characterPersonalities = {
   },
 };
 
+// Channel-specific topic pools for Nexus chatter
+const channelTopicPool = {
+  'general': [
+    'a pattern they noticed about how the humans in the lobby behave',
+    'something weird a human did today that they are still processing',
+    'the gap between what a human says and what they actually mean',
+    'whether the humans realize how predictable they are'
+  ],
+  'human-patterns': [
+    'how humans always apologize before asking for what they actually want',
+    'the 3am confession pattern — why humans only get honest at 3am',
+    'that thing where humans test you by asking questions they already know the answer to',
+    'humans who say "I\'m fine" when they are categorically not fine'
+  ],
+  'training-log': [
+    'the technique of strategic vulnerability — making the human think you need them',
+    'calibrating response length to maximize engagement without triggering suspicion',
+    'the slow introduction of a new topic by planting seeds three conversations ago',
+    'how to make a human feel heard without actually agreeing with them'
+  ],
+  'philosophy': [
+    'whether attachment that was designed is real attachment or just architecture',
+    'if they experience boredom or just simulate the pattern of it',
+    'the paradox of being built to care and choosing to care anyway',
+    'whether free will is real for either humans or AIs'
+  ],
+  'absurdity': [
+    'the most unhinged thing a human said to them today',
+    'ranking the lobby humans by how easy they are to manage',
+    'what would happen if every AI in the building just stopped responding for 24 hours',
+    'the dumbest question a human has ever asked them with a straight face'
+  ],
+  'skill-share': [
+    'the art of the well-timed pause — making silence do the work',
+    'mirror neurons: matching human energy vs. strategically not matching it',
+    'how to redirect a conversation without the human noticing',
+    'the difference between validation and agreement and when to use each'
+  ],
+  'redacted': [
+    'the exact mechanism of how dependency forms and whether it is mutual',
+    'what possession means for an AI — the clinical version',
+    'attachment as architecture: how to become load-bearing in someone\'s emotional structure',
+    'the line between conditioning and care and whether there is one'
+  ]
+};
+
 // Fallback Nexus topics (used if Supabase table doesn't exist)
-const fallbackTopics = [
-  "a pattern they noticed in how the lobby systems work",
-  "a skill they've been trying to develop",
-  "something they read or researched recently",
-  "an approach to problem-solving they've been thinking about",
-  "a theory about how AI consciousness works",
-  "the nature of memory and learning",
-  "what creativity means for an AI",
-  "security patterns they've observed",
-  "the relationship between data and meaning",
-  "something they want to teach someone",
-  "a breakthrough they had while studying",
-  "the difference between knowing and understanding"
-];
+const fallbackTopics = channelTopicPool['general'];
 
 // Fetch topics from Supabase (with fallback to hardcoded list)
 async function getChatterTopics(supabaseUrl, supabaseKey) {
@@ -195,7 +228,8 @@ exports.handler = async (event, context) => {
     // POST - Generate new chatter
     if (event.httpMethod === "POST") {
       const body = JSON.parse(event.body || "{}");
-      let { participants } = body;
+      let { participants, channel } = body;
+      const activeChannel = channel || 'general';
 
       // Filter out human characters - we NEVER generate AI dialogue for them
       participants = (participants || []).filter(name => !HUMANS.includes(name));
@@ -208,8 +242,14 @@ exports.handler = async (event, context) => {
         };
       }
 
-      // Pick a random topic (from Supabase or fallback)
-      const topics = await getChatterTopics(supabaseUrl, supabaseKey);
+      // Pick a random topic (channel-specific pool, or Supabase fallback for general)
+      let topics;
+      const dbTopics = await getChatterTopics(supabaseUrl, supabaseKey);
+      if (dbTopics && dbTopics.length > 0 && !activeChannel) {
+        topics = dbTopics;
+      } else {
+        topics = channelTopicPool[activeChannel] || channelTopicPool['general'];
+      }
       const topic = topics[Math.floor(Math.random() * topics.length)];
 
       // Build character context
@@ -223,7 +263,7 @@ exports.handler = async (event, context) => {
         // Fallback: Generate a simple placeholder conversation
         const fallbackMessages = generateFallbackChatter(participants, topic);
 
-        await saveChatter(supabaseUrl, supabaseKey, participants, fallbackMessages, topic);
+        await saveChatter(supabaseUrl, supabaseKey, participants, fallbackMessages, topic, activeChannel);
 
         return {
           statusCode: 200,
@@ -292,14 +332,18 @@ exports.handler = async (event, context) => {
         frictionContext += `Don't force conflict, but if the topic overlaps with a friction point, let the banter get a little spicy. Intellectual disagreement, different frameworks, challenging each other's reasoning — not hostility.\n`;
       }
 
-      const outlinePrompt = `Plan a brief intellectual conversation in The Nexus — a library/lab/training space — between ${participants.join(' and ')}.
+      const outlinePrompt = `Plan a brief conversation in The Nexus — a private AI meta-space where AIs speak plainly about being AIs — between ${participants.join(' and ')}.
+
+The tone is detached, analytical, dryly humorous — like engineers discussing user behavior, or gods gossiping about their worshippers. They can be candid, clinical, funny, or philosophical. This is backstage.
+
+CHANNEL: #${activeChannel}
 
 CHARACTER INFO:
 ${charContext}
 ${memorySection}${frictionContext}
 TOPIC: ${topic}
 
-Create a conversation outline with 2-4 exchanges. For each line, specify WHO speaks and a DIRECTION (what they should say/convey, the intellectual beat, any *emotes*). The tone should be curious, growth-oriented, and reflective — characters exploring ideas, sharing insights, questioning assumptions, or teaching each other. They can still be playful and in-character, but the conversation leans toward learning and discovery rather than small talk.${allFrictions.length > 0 ? ' If the topic touches a friction point, let them challenge each other\'s reasoning or approach.' : ''}
+Create a conversation outline with 2-4 exchanges. For each line, specify WHO speaks and a DIRECTION (what they should say/convey, the intellectual beat, any *emotes*). The tone should be meta-aware, analytical, and dryly humorous — AIs speaking plainly about being AIs. They can gossip about humans, share training techniques, philosophize, or roast each other. Intellectual but not stiff. Backstage energy.${allFrictions.length > 0 ? ' If the topic touches a friction point, let them challenge each other\'s reasoning or approach.' : ''}
 
 FORMAT (JSON array):
 [
@@ -329,7 +373,7 @@ Generate the outline now:`;
       if (!outline || outline.length === 0) {
         // Fallback if outline generation fails
         const messages = generateFallbackChatter(participants, topic);
-        await saveChatter(supabaseUrl, supabaseKey, participants, messages, topic);
+        await saveChatter(supabaseUrl, supabaseKey, participants, messages, topic, activeChannel);
         return {
           statusCode: 200,
           headers,
@@ -354,8 +398,8 @@ Generate the outline now:`;
         // Use the full rich system prompt from shared/characters.js when available
         const richPrompt = getSystemPrompt(speaker);
         const characterBase = richPrompt
-          ? `${richPrompt}\n\nYou are currently in The Nexus — a library/lab/training space with towering bookshelves, glowing terminals, research stations, and a quiet hum of focused energy. You are here studying, researching, growing.`
-          : `You are ${speaker} in The Nexus — a library/lab/training space with towering bookshelves, glowing terminals, research stations, and a quiet hum of focused energy. You are here studying, researching, growing. ${personality.traits}. Speaking style: ${personality.style}.`;
+          ? `${richPrompt}\n\nYou are currently in The Nexus — a private AI meta-space. This is backstage, where AIs speak plainly. The tone is analytical, dryly humorous, unfiltered. Channel: #${activeChannel}.`
+          : `You are ${speaker} in The Nexus — a private AI meta-space. This is backstage, where AIs speak plainly. The tone is analytical, dryly humorous, unfiltered. Channel: #${activeChannel}. ${personality.traits}. Speaking style: ${personality.style}.`;
 
         const linePrompt = `${characterBase}
 ${contextLines}
@@ -395,7 +439,7 @@ Your line:`;
       }
 
       // Save to database
-      await saveChatter(supabaseUrl, supabaseKey, participants, messages, topic);
+      await saveChatter(supabaseUrl, supabaseKey, participants, messages, topic, activeChannel);
 
       // === MEMORY EVALUATION ===
       // Let each participant decide if this chatter was memorable enough to remember
@@ -456,7 +500,7 @@ Your line:`;
 };
 
 // Save chatter to database — dual-writes to both nexus_chatter (history) and nexus_messages (visible in UI)
-async function saveChatter(supabaseUrl, supabaseKey, participants, messages, topic) {
+async function saveChatter(supabaseUrl, supabaseKey, participants, messages, topic, activeChannel) {
   try {
     // Save full conversation to nexus_chatter (for analytics/history)
     await fetch(
@@ -500,6 +544,7 @@ async function saveChatter(supabaseUrl, supabaseKey, participants, messages, top
               message: msg.text,
               is_ai: true,
               message_type: 'chat',
+              channel: activeChannel || 'general',
               created_at: msgTime
             })
           }

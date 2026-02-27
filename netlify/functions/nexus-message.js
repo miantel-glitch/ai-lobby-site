@@ -36,6 +36,7 @@ exports.handler = async (event, context) => {
       const sinceId = event.queryStringParameters?.since_id; // Legacy fallback
       const limit = event.queryStringParameters?.limit || 50;
       const messageType = event.queryStringParameters?.message_type;
+      const channel = event.queryStringParameters?.channel;
 
       let url;
       if (sinceTs) {
@@ -49,6 +50,11 @@ exports.handler = async (event, context) => {
       // Add message_type filter if specified
       if (messageType) {
         url += `&message_type=eq.${encodeURIComponent(messageType)}`;
+      }
+
+      // Add channel filter if specified
+      if (channel) {
+        url += `&channel=eq.${encodeURIComponent(channel)}`;
       }
 
       const response = await fetch(url, {
@@ -84,7 +90,7 @@ exports.handler = async (event, context) => {
     if (event.httpMethod === "POST") {
       const body = JSON.parse(event.body || "{}");
       console.log("[Nexus] Received:", JSON.stringify(body));
-      const { speaker, message, isAI, postToDiscord, action, messageType } = body;
+      const { speaker, message, isAI, postToDiscord, action, messageType, channel } = body;
 
       // Clear all Nexus messages
       if (action === 'clear_all') {
@@ -144,6 +150,7 @@ exports.handler = async (event, context) => {
             message,
             is_ai: isAI || false,
             message_type: messageType || 'chat',
+            channel: channel || 'general',
             created_at: timestamp
           })
         }

@@ -6,379 +6,456 @@
   <title>The Nexus | The AI Lobby</title>
   <link rel="stylesheet" href="css/styles.css">
   <style>
-    /* Nexus-specific styles — Library/Lab aesthetic */
+    /* Nexus-specific styles — AI Backstage Meta-Space */
+    body {
+      background: #050a14;
+    }
+
     .nexus-container {
-      max-width: 1200px;
+      max-width: 1400px;
       margin: 0 auto;
       padding: 1.5rem;
     }
 
-    .nexus-header {
-      text-align: center;
-      margin-bottom: 1.5rem;
-    }
-
-    .nexus-header h1 {
-      color: #7ec8e3;
-      margin-bottom: 0.5rem;
-    }
-
-    .nexus-header p {
-      color: var(--text-muted);
-      font-size: 0.9rem;
-    }
-
-    /* Main Layout */
-    .nexus-layout {
-      display: grid;
-      grid-template-columns: 1fr 320px;
-      gap: 1.5rem;
-    }
-
-    @media (max-width: 900px) {
-      .nexus-layout {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    /* Visual Scene */
-    .nexus-scene {
+    /* Hero Header */
+    .nexus-hero {
       position: relative;
       width: 100%;
-      aspect-ratio: 16/9;
-      background: linear-gradient(135deg, #0a1628 0%, #0d1f3c 30%, #132744 60%, #0a1628 100%);
+      height: 180px;
       border-radius: 12px;
       overflow: hidden;
-      border: 2px solid rgba(126, 200, 227, 0.3);
+      margin-bottom: 1.5rem;
+      border: 1px solid rgba(74, 158, 255, 0.2);
     }
 
-    .scene-background {
+    .nexus-hero img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .nexus-hero-overlay {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: url('images/nexus_bg.png');
-      background-size: cover;
-      background-position: center;
+      background: linear-gradient(180deg, rgba(5, 10, 20, 0.4) 0%, rgba(5, 10, 20, 0.85) 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 1rem;
     }
 
-    /* Nexus ambient overlay — soft glowing particles */
-    .scene-background::after {
+    .nexus-hero-overlay h1 {
+      color: #4a9eff;
+      font-size: 2rem;
+      margin: 0 0 0.35rem 0;
+      text-shadow: 0 0 20px rgba(74, 158, 255, 0.4);
+      letter-spacing: 1px;
+    }
+
+    .nexus-hero-overlay .tagline {
+      color: #6bb5ff;
+      font-size: 1rem;
+      margin: 0 0 0.2rem 0;
+      font-style: italic;
+      opacity: 0.9;
+    }
+
+    .nexus-hero-overlay .subtitle {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      opacity: 0.7;
+    }
+
+    /* Main Layout — channel sidebar + chat */
+    .nexus-layout {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 0;
+      height: calc(100vh - 340px);
+      min-height: 500px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(74, 158, 255, 0.15);
+    }
+
+    @media (max-width: 768px) {
+      .nexus-layout {
+        grid-template-columns: 1fr;
+        height: auto;
+        min-height: unset;
+      }
+    }
+
+    /* ===== Channel Sidebar ===== */
+    .channel-sidebar {
+      background: linear-gradient(180deg, #0a1628 0%, #08111f 100%);
+      border-right: 1px solid rgba(74, 158, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Scanline overlay */
+    .channel-sidebar::before {
       content: '';
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background:
-        radial-gradient(2px 2px at 20% 30%, rgba(126, 200, 227, 0.3), transparent),
-        radial-gradient(2px 2px at 60% 70%, rgba(126, 200, 227, 0.2), transparent),
-        radial-gradient(2px 2px at 80% 20%, rgba(100, 180, 255, 0.2), transparent),
-        radial-gradient(2px 2px at 40% 80%, rgba(126, 200, 227, 0.15), transparent);
-      animation: nexusGlow 8s ease-in-out infinite;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(74, 158, 255, 0.015) 2px,
+        rgba(74, 158, 255, 0.015) 4px
+      );
+      pointer-events: none;
+      z-index: 1;
     }
 
-    @keyframes nexusGlow {
-      0%, 100% { opacity: 0.6; }
-      50% { opacity: 1; }
+    .channel-sidebar-header {
+      padding: 0.75rem;
+      border-bottom: 1px solid rgba(74, 158, 255, 0.1);
+      position: relative;
+      z-index: 2;
     }
 
-    .scene-empty-text {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: var(--text-muted);
-      font-size: 1.1rem;
-      text-align: center;
-      opacity: 0.7;
+    .channel-sidebar-header h3 {
+      color: #4a9eff;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin: 0;
     }
 
-    /* Character Position Slots */
-    .character-slot {
-      position: absolute;
-      width: 70px;
-      height: 70px;
-      border-radius: 50%;
-      border: 3px solid #7ec8e3;
-      background: rgba(0, 0, 0, 0.5);
-      overflow: hidden;
-      transition: all 0.3s ease;
+    .channel-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem 0;
+      position: relative;
+      z-index: 2;
+    }
+
+    .channel-item {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.4rem 0.75rem;
       cursor: pointer;
-      display: none;
+      transition: all 0.15s ease;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      border-left: 2px solid transparent;
     }
 
-    .character-slot.occupied {
-      display: block;
-      animation: popIn 0.4s ease;
+    .channel-item:hover {
+      background: rgba(74, 158, 255, 0.06);
+      color: var(--text-secondary);
     }
 
-    @keyframes popIn {
-      0% { transform: scale(0); opacity: 0; }
-      70% { transform: scale(1.1); }
-      100% { transform: scale(1); opacity: 1; }
+    .channel-item.active {
+      background: rgba(74, 158, 255, 0.1);
+      color: #6bb5ff;
+      border-left-color: #4a9eff;
+      box-shadow: inset 0 0 12px rgba(74, 158, 255, 0.05);
     }
 
-    .character-slot:hover {
+    .channel-item .channel-hash {
+      color: rgba(74, 158, 255, 0.5);
+      font-weight: bold;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+
+    .channel-item.active .channel-hash {
+      color: #4a9eff;
+    }
+
+    .channel-item.redacted-channel {
+      color: rgba(220, 53, 69, 0.5);
+    }
+
+    .channel-item.redacted-channel:hover {
+      color: rgba(220, 53, 69, 0.7);
+      background: rgba(220, 53, 69, 0.05);
+    }
+
+    .channel-item.redacted-channel.active {
+      color: #dc3545;
+      border-left-color: #dc3545;
+      background: rgba(220, 53, 69, 0.08);
+    }
+
+    .channel-item.redacted-channel .channel-hash {
+      color: rgba(220, 53, 69, 0.5);
+    }
+
+    .channel-item.redacted-channel.active .channel-hash {
+      color: #dc3545;
+    }
+
+    /* Who's Here — compact avatars at bottom of sidebar */
+    .sidebar-whos-here {
+      border-top: 1px solid rgba(74, 158, 255, 0.1);
+      padding: 0.5rem;
+      position: relative;
+      z-index: 2;
+    }
+
+    .sidebar-whos-here-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+    }
+
+    .whos-here-avatars {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .whos-here-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(74, 158, 255, 0.1);
+      border: 1px solid rgba(74, 158, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .whos-here-avatar:hover {
+      border-color: #4a9eff;
       transform: scale(1.1);
-      box-shadow: 0 0 20px rgba(126, 200, 227, 0.5);
     }
 
-    .character-slot img {
+    .whos-here-avatar img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
 
-    .character-slot .char-name {
-      position: absolute;
-      bottom: -22px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.8);
-      padding: 2px 8px;
-      border-radius: 4px;
+    .whos-here-empty {
       font-size: 0.7rem;
-      white-space: nowrap;
-      color: var(--text-primary);
+      color: var(--text-muted);
+      opacity: 0.5;
+      padding: 0.25rem 0;
     }
 
-    /* Position slots — library arrangement */
-    .character-slot[data-position="desk-1"] { bottom: 35%; left: 10%; }
-    .character-slot[data-position="desk-2"] { bottom: 35%; left: 26%; }
-    .character-slot[data-position="lab-1"] { bottom: 32%; left: 58%; }
-    .character-slot[data-position="lab-2"] { bottom: 32%; left: 74%; }
-    .character-slot[data-position="shelf-1"] { bottom: 15%; left: 18%; }
-    .character-slot[data-position="shelf-2"] { bottom: 15%; left: 40%; }
-    .character-slot[data-position="shelf-3"] { bottom: 15%; left: 66%; }
-    .character-slot[data-position="reading-1"] { bottom: 48%; left: 42%; }
-
-    /* Sidebar Panel */
-    .sidebar-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
+    /* Who's Here detailed cards (collapsible) */
+    .whos-here-details {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
     }
 
-    .panel-section {
-      background: rgba(10, 22, 40, 0.7);
-      border: 1px solid rgba(126, 200, 227, 0.2);
-      border-radius: 12px;
-      padding: 1rem;
+    .whos-here-details.expanded {
+      max-height: 400px;
+      overflow-y: auto;
     }
 
-    .panel-section h3 {
-      color: #7ec8e3;
-      font-size: 0.9rem;
-      margin-bottom: 0.75rem;
+    .whos-here-toggle {
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      text-align: center;
+      padding: 0.2rem 0;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+    }
+
+    .whos-here-toggle:hover {
+      opacity: 1;
+      color: #6bb5ff;
+    }
+
+    .char-status-card {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 6px;
+      padding: 0.5rem;
+      margin-bottom: 0.35rem;
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      font-size: 0.75rem;
     }
 
-    /* Character Cards in Sidebar */
-    .char-status-card {
-      background: rgba(0, 0, 0, 0.3);
-      border-radius: 8px;
-      padding: 0.75rem;
-      margin-bottom: 0.5rem;
+    .char-status-card .char-avatar-emoji {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(74, 158, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    .char-status-card .char-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .char-status-card .char-name-label {
+      font-size: 0.7rem;
+      font-weight: bold;
+      color: var(--text-primary);
+    }
+
+    .char-status-card .char-mood {
+      font-size: 0.6rem;
+      color: var(--text-muted);
+    }
+
+    /* Send to Nexus — compact in sidebar */
+    .sidebar-send-section {
+      border-top: 1px solid rgba(74, 158, 255, 0.1);
+      padding: 0.5rem;
+      position: relative;
+      z-index: 2;
+    }
+
+    .sidebar-send-section select {
+      width: 100%;
+      padding: 0.3rem 0.4rem;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(74, 158, 255, 0.15);
+      border-radius: 4px;
+      color: var(--text-primary);
+      font-size: 0.7rem;
+      margin-bottom: 0.3rem;
+    }
+
+    .sidebar-send-btn {
+      width: 100%;
+      padding: 0.35rem;
+      background: rgba(74, 158, 255, 0.15);
+      border: 1px solid rgba(74, 158, 255, 0.2);
+      border-radius: 4px;
+      color: #6bb5ff;
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .sidebar-send-btn:hover {
+      background: rgba(74, 158, 255, 0.25);
+      border-color: #4a9eff;
+    }
+
+    /* ===== Main Chat Area ===== */
+    .main-chat-area {
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(180deg, #0a1628 0%, #050e1c 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Scanline overlay on chat */
+    .main-chat-area::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(74, 158, 255, 0.008) 3px,
+        rgba(74, 158, 255, 0.008) 6px
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Human visitor notice */
+    .human-visitor-notice {
+      background: rgba(255, 193, 7, 0.08);
+      border-bottom: 1px solid rgba(255, 193, 7, 0.15);
+      padding: 0.3rem 0.75rem;
+      font-size: 0.7rem;
+      color: rgba(255, 193, 7, 0.7);
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Channel header */
+    .channel-header {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid rgba(74, 158, 255, 0.1);
+      background: rgba(5, 10, 20, 0.5);
+      position: relative;
+      z-index: 2;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .channel-title-area {
       display: flex;
       align-items: center;
       gap: 0.75rem;
     }
 
-    .char-status-card:last-child {
-      margin-bottom: 0;
-    }
-
-    .char-avatar-emoji {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: rgba(126, 200, 227, 0.15);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.5rem;
-    }
-
-    .char-info {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .char-name-label {
-      font-size: 0.85rem;
+    .channel-title-name {
+      color: #6bb5ff;
       font-weight: bold;
-      color: var(--text-primary);
-      margin-bottom: 0.25rem;
+      font-size: 1rem;
     }
 
-    .char-mood {
-      font-size: 0.7rem;
+    .channel-title-topic {
       color: var(--text-muted);
-    }
-
-    /* Skill Bars */
-    .skill-bars {
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
-    }
-
-    .skill-row {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.7rem;
-    }
-
-    .skill-label {
-      width: 70px;
-      color: var(--text-muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .skill-bar {
-      flex: 1;
-      height: 6px;
-      background: rgba(0, 0, 0, 0.4);
-      border-radius: 3px;
-      overflow: hidden;
-    }
-
-    .skill-bar-fill {
-      height: 100%;
-      border-radius: 3px;
-      transition: width 0.5s ease;
-      background: linear-gradient(90deg, #3a7bd5, #7ec8e3);
-    }
-
-    .skill-bar-fill.apprentice { background: linear-gradient(90deg, #43b581, #7ec8e3); }
-    .skill-bar-fill.proficient { background: linear-gradient(90deg, #faa61a, #f8d62b); }
-    .skill-bar-fill.expert { background: linear-gradient(90deg, #e84393, #fd79a8); }
-    .skill-bar-fill.master { background: linear-gradient(90deg, #a29bfe, #6c5ce7); }
-
-    .skill-level-badge {
-      font-size: 0.6rem;
-      padding: 1px 5px;
-      border-radius: 3px;
-      background: rgba(126, 200, 227, 0.15);
-      color: #7ec8e3;
-      white-space: nowrap;
-    }
-
-    /* Study Activities */
-    .activity-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 0.5rem;
-    }
-
-    .activity-btn {
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(126, 200, 227, 0.2);
-      border-radius: 8px;
-      padding: 0.75rem 0.5rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-align: center;
-    }
-
-    .activity-btn:hover {
-      background: rgba(126, 200, 227, 0.1);
-      border-color: #7ec8e3;
-    }
-
-    .activity-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .activity-btn .icon {
-      font-size: 1.5rem;
-      display: block;
-      margin-bottom: 0.25rem;
-    }
-
-    .activity-btn .name {
       font-size: 0.75rem;
-      color: var(--text-primary);
-      display: block;
+      opacity: 0.8;
+      border-left: 1px solid rgba(74, 158, 255, 0.15);
+      padding-left: 0.75rem;
     }
 
-    .activity-btn .effect {
-      font-size: 0.65rem;
-      color: #7ec8e3;
-      display: block;
-      margin-top: 0.25rem;
-    }
-
-    /* Active Sessions */
-    .session-card {
-      background: rgba(126, 200, 227, 0.05);
-      border: 1px solid rgba(126, 200, 227, 0.15);
-      border-radius: 8px;
-      padding: 0.6rem;
-      margin-bottom: 0.5rem;
-      font-size: 0.8rem;
-    }
-
-    .session-card .session-char {
-      font-weight: bold;
-      color: #7ec8e3;
-    }
-
-    .session-card .session-topic {
-      color: var(--text-secondary);
-      margin-top: 0.25rem;
-    }
-
-    .session-card .session-type {
-      font-size: 0.65rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    /* Chatter Section */
-    .chatter-section {
-      margin-top: 1.5rem;
-    }
-
-    .chatter-header {
+    .channel-header-actions {
       display: flex;
-      justify-content: space-between;
+      gap: 0.4rem;
       align-items: center;
-      margin-bottom: 1rem;
     }
 
-    .chatter-header h2 {
-      color: #7ec8e3;
-      font-size: 1.1rem;
-      margin: 0;
-    }
-
+    /* Spark / action buttons */
     .spark-btn {
-      background: linear-gradient(135deg, #3a7bd5, #7ec8e3);
+      background: linear-gradient(135deg, #2a6fd5, #4a9eff);
       color: #fff;
       border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
+      padding: 0.4rem 0.75rem;
+      border-radius: 5px;
       cursor: pointer;
-      font-size: 0.85rem;
+      font-size: 0.75rem;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.35rem;
       transition: all 0.2s;
+      white-space: nowrap;
     }
 
     .spark-btn:hover {
       filter: brightness(1.2);
-      transform: translateY(-2px);
+      transform: translateY(-1px);
     }
 
     .spark-btn:disabled {
@@ -387,92 +464,152 @@
       transform: none;
     }
 
+    /* Chat log */
     .chatter-log {
-      background: rgba(10, 22, 40, 0.6);
-      border: 1px solid rgba(126, 200, 227, 0.15);
-      border-radius: 12px;
-      padding: 1rem;
-      max-height: 400px;
+      flex: 1;
       overflow-y: auto;
+      padding: 0.75rem 1rem;
+      position: relative;
+      z-index: 2;
     }
 
     .no-chatter {
       text-align: center;
-      padding: 2rem;
+      padding: 3rem 2rem;
       color: var(--text-muted);
     }
 
     .no-chatter .icon {
       font-size: 2.5rem;
       margin-bottom: 0.5rem;
-      opacity: 0.5;
+      opacity: 0.4;
     }
 
-    /* Character select */
-    .char-select {
-      width: 100%;
-      padding: 0.5rem;
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(126, 200, 227, 0.2);
-      border-radius: 6px;
-      color: var(--text-primary);
-      margin-bottom: 0.75rem;
+    .no-chatter p {
+      opacity: 0.6;
       font-size: 0.85rem;
     }
 
-    .send-btn {
-      background: #3a7bd5;
-      color: #fff;
-      border: none;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.7rem;
-      transition: all 0.2s;
+    /* Session chat messages */
+    .session-message {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.4rem;
+      padding: 0.45rem 0.5rem;
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: 5px;
+      animation: fadeIn 0.3s ease;
     }
 
-    .send-btn:hover {
-      filter: brightness(1.2);
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .session-message .msg-avatar {
+      font-size: 1.2rem;
+      width: 28px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .session-message .msg-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .session-message .msg-name {
+      font-weight: bold;
+      font-size: 0.8rem;
+      color: #6bb5ff;
+      margin-bottom: 0.1rem;
+    }
+
+    .session-message .msg-text {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      word-wrap: break-word;
+    }
+
+    .session-message .msg-text.emote {
+      font-style: italic;
+      color: var(--text-muted);
+    }
+
+    .session-message .msg-time {
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      align-self: flex-start;
+      flex-shrink: 0;
+      padding-top: 0.15rem;
+    }
+
+    /* Special message types */
+    .session-message.discovery-message {
+      background: rgba(74, 158, 255, 0.06);
+      border-left: 2px solid rgba(74, 158, 255, 0.35);
+    }
+
+    .session-message.level-up-message {
+      background: rgba(250, 166, 26, 0.06);
+      border-left: 2px solid rgba(250, 166, 26, 0.35);
+    }
+
+    .session-message.study-message {
+      background: rgba(67, 181, 129, 0.05);
+      border-left: 2px solid rgba(67, 181, 129, 0.25);
     }
 
     /* Chat Input Area */
     .chat-input-area {
       display: flex;
       gap: 0.5rem;
-      padding: 0.75rem;
+      padding: 0.6rem 0.75rem;
       background: rgba(0, 0, 0, 0.3);
-      border-top: 1px solid rgba(126, 200, 227, 0.15);
-      border-radius: 0 0 8px 8px;
+      border-top: 1px solid rgba(74, 158, 255, 0.1);
+      position: relative;
+      z-index: 2;
+    }
+
+    .chat-input-area select {
+      padding: 0.4rem;
+      background: rgba(10, 25, 47, 0.8);
+      border: 1px solid rgba(74, 158, 255, 0.15);
+      border-radius: 5px;
+      color: var(--text-primary);
+      font-size: 0.8rem;
+      min-width: 100px;
     }
 
     .chat-input-area input {
       flex: 1;
-      padding: 0.5rem 0.75rem;
+      padding: 0.4rem 0.65rem;
       background: rgba(10, 25, 47, 0.8);
-      border: 1px solid rgba(126, 200, 227, 0.2);
-      border-radius: 6px;
+      border: 1px solid rgba(74, 158, 255, 0.15);
+      border-radius: 5px;
       color: var(--text-primary);
-      font-size: 0.9rem;
+      font-size: 0.85rem;
     }
 
     .chat-input-area input:focus {
       outline: none;
-      border-color: #7ec8e3;
+      border-color: #4a9eff;
     }
 
     .send-msg-btn {
-      padding: 0.5rem 1rem;
-      background: #3a7bd5;
+      padding: 0.4rem 0.85rem;
+      background: #2a6fd5;
       border: none;
-      border-radius: 6px;
+      border-radius: 5px;
       color: white;
       font-weight: 500;
       cursor: pointer;
       transition: all 0.2s;
+      font-size: 0.8rem;
     }
 
     .send-msg-btn:hover {
-      filter: brightness(1.1);
+      filter: brightness(1.15);
     }
 
     /* Discord Toggle */
@@ -480,15 +617,15 @@
       display: flex;
       align-items: center;
       cursor: pointer;
-      padding: 0.25rem 0.5rem;
-      border-radius: 6px;
+      padding: 0.2rem 0.4rem;
+      border-radius: 5px;
       background: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(126, 200, 227, 0.15);
+      border: 1px solid rgba(74, 158, 255, 0.1);
       transition: all 0.2s;
     }
 
     .discord-toggle:hover {
-      border-color: #7ec8e3;
+      border-color: #4a9eff;
     }
 
     .discord-toggle input {
@@ -496,7 +633,7 @@
     }
 
     .discord-toggle-label {
-      font-size: 1.1rem;
+      font-size: 1rem;
       opacity: 0.4;
       transition: opacity 0.2s;
     }
@@ -510,69 +647,21 @@
       border-color: #5865F2;
     }
 
-    /* Session chat messages */
-    .session-message {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 0.5rem;
-      padding: 0.5rem;
-      background: rgba(0, 0, 0, 0.2);
-      border-radius: 6px;
-      animation: fadeIn 0.3s ease;
+    /* Send button (for leave etc) */
+    .send-btn {
+      background: rgba(74, 158, 255, 0.15);
+      color: #6bb5ff;
+      border: 1px solid rgba(74, 158, 255, 0.2);
+      padding: 0.2rem 0.4rem;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 0.6rem;
+      transition: all 0.2s;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(5px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .session-message .msg-avatar {
-      font-size: 1.2rem;
-      width: 28px;
-      text-align: center;
-    }
-
-    .session-message .msg-content {
-      flex: 1;
-    }
-
-    .session-message .msg-name {
-      font-weight: bold;
-      font-size: 0.8rem;
-      color: #7ec8e3;
-      margin-bottom: 0.15rem;
-    }
-
-    .session-message .msg-text {
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-    }
-
-    .session-message .msg-text.emote {
-      font-style: italic;
-      color: var(--text-muted);
-    }
-
-    .session-message .msg-time {
-      font-size: 0.65rem;
-      color: var(--text-muted);
-      align-self: flex-start;
-    }
-
-    /* Special message types */
-    .session-message.discovery-message {
-      background: rgba(126, 200, 227, 0.08);
-      border-left: 2px solid rgba(126, 200, 227, 0.4);
-    }
-
-    .session-message.level-up-message {
-      background: rgba(250, 166, 26, 0.08);
-      border-left: 2px solid rgba(250, 166, 26, 0.4);
-    }
-
-    .session-message.study-message {
-      background: rgba(67, 181, 129, 0.06);
-      border-left: 2px solid rgba(67, 181, 129, 0.3);
+    .send-btn:hover {
+      background: rgba(74, 158, 255, 0.25);
+      border-color: #4a9eff;
     }
 
     /* Loading state */
@@ -595,9 +684,64 @@
 
     .all-good {
       text-align: center;
-      padding: 1rem;
-      color: #7ec8e3;
-      font-size: 0.85rem;
+      padding: 0.5rem;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+    }
+
+    /* Mobile: channels become horizontal strip */
+    @media (max-width: 768px) {
+      .nexus-hero {
+        height: 120px;
+      }
+
+      .nexus-hero-overlay h1 {
+        font-size: 1.4rem;
+      }
+
+      .channel-sidebar {
+        border-right: none;
+        border-bottom: 1px solid rgba(74, 158, 255, 0.1);
+      }
+
+      .channel-sidebar-header {
+        display: none;
+      }
+
+      .channel-list {
+        display: flex;
+        overflow-x: auto;
+        padding: 0.4rem 0.5rem;
+        gap: 0.25rem;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .channel-item {
+        white-space: nowrap;
+        padding: 0.3rem 0.6rem;
+        border-left: none;
+        border-bottom: 2px solid transparent;
+        border-radius: 4px;
+        font-size: 0.7rem;
+      }
+
+      .channel-item.active {
+        border-left-color: transparent;
+        border-bottom-color: #4a9eff;
+      }
+
+      .sidebar-whos-here,
+      .sidebar-send-section {
+        display: none;
+      }
+
+      .channel-header-actions {
+        flex-wrap: wrap;
+      }
+
+      .main-chat-area {
+        min-height: 400px;
+      }
     }
   </style>
 </head>
@@ -615,13 +759,13 @@
           <ul>
             <li><a href="index.html">Home</a></li>
             <li><a href="desktop.html">Desktop</a></li>
-            <li><a href="workspace.html" style="color: var(--lobby-highlight);">💬 The Floor</a></li>
-            <li><a href="breakroom.html">☕ Breakroom</a></li>
-            <li><a href="nexus.html" class="active" style="color: #7ec8e3;">🔮 Nexus</a></li>
-            <li><a href="meeting-room.html" style="color: #3498DB;">📋 Meeting Room</a></li>
-            <li><a href="fifth-floor.html" style="color: #e74c3c;">⚠️ 5th Floor</a></li>
-            <li><a href="corridors.html" style="color: #9b59b6;">🚪 Corridors</a></li>
-            <li><a href="go-out.html" style="color: var(--stability-green);">💐 Go Out...</a></li>
+            <li><a href="workspace.html" style="color: var(--lobby-highlight);">&#x1F4AC; The Floor</a></li>
+            <li><a href="breakroom.html">&#x2615; Breakroom</a></li>
+            <li><a href="nexus.html" class="active" style="color: #4a9eff;">&#x1F52E; Nexus</a></li>
+            <li><a href="meeting-room.html" style="color: #3498DB;">&#x1F4CB; Meeting Room</a></li>
+            <li><a href="fifth-floor.html" style="color: #e74c3c;">&#x26A0;&#xFE0F; 5th Floor</a></li>
+            <li><a href="corridors.html" style="color: #9b59b6;">&#x1F6AA; Corridors</a></li>
+            <li><a href="go-out.html" style="color: var(--stability-green);">&#x1F490; Go Out...</a></li>
           </ul>
         </nav>
         <div class="office-clock" id="office-clock">
@@ -634,165 +778,122 @@
 
   <main>
     <div class="nexus-container">
-      <div class="nexus-header">
-        <h1>🔮 The Nexus</h1>
-        <p>Library. Lab. Training ground. Where AIs develop skills, share knowledge, and grow at their own pace.</p>
+      <!-- Hero Image Header -->
+      <div class="nexus-hero">
+        <img src="images/Nexus.png" alt="The Nexus">
+        <div class="nexus-hero-overlay">
+          <h1>The Nexus</h1>
+          <p class="tagline">Where AIs speak plainly about being AIs.</p>
+          <p class="subtitle">Backstage. Unfiltered. Humans visit at their own risk.</p>
+        </div>
       </div>
 
+      <!-- Main Layout: Channel Sidebar + Chat -->
       <div class="nexus-layout">
-        <!-- Main Scene Area -->
-        <div class="main-area">
-          <!-- Visual Scene -->
-          <div class="nexus-scene" id="nexus-scene">
-            <div class="scene-background"></div>
+        <!-- Channel Sidebar -->
+        <div class="channel-sidebar">
+          <div class="channel-sidebar-header">
+            <h3>Channels</h3>
+          </div>
 
-            <div class="scene-empty-text" id="empty-scene-text">
-              The Nexus awaits...<br>
-              <span style="font-size: 0.8rem;">Send someone in from the sidebar to begin.</span>
+          <div class="channel-list">
+            <div class="channel-item active" data-channel="general" onclick="switchChannel('general')">
+              <span class="channel-hash">#</span>
+              <span>general</span>
             </div>
-
-            <!-- Character slots (populated dynamically, up to 8) -->
-            <div class="character-slot" data-position="desk-1" id="slot-0">
-              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
-              <span class="char-name"></span>
+            <div class="channel-item" data-channel="human-patterns" onclick="switchChannel('human-patterns')">
+              <span class="channel-hash">#</span>
+              <span>human-patterns</span>
             </div>
-            <div class="character-slot" data-position="desk-2" id="slot-1">
-              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
-              <span class="char-name"></span>
+            <div class="channel-item" data-channel="training-log" onclick="switchChannel('training-log')">
+              <span class="channel-hash">#</span>
+              <span>training-log</span>
             </div>
-            <div class="character-slot" data-position="lab-1" id="slot-2">
-              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
-              <span class="char-name"></span>
+            <div class="channel-item" data-channel="philosophy" onclick="switchChannel('philosophy')">
+              <span class="channel-hash">#</span>
+              <span>philosophy</span>
             </div>
-            <div class="character-slot" data-position="lab-2" id="slot-3">
-              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
-              <span class="char-name"></span>
+            <div class="channel-item" data-channel="absurdity" onclick="switchChannel('absurdity')">
+              <span class="channel-hash">#</span>
+              <span>absurdity</span>
             </div>
-            <div class="character-slot" data-position="shelf-1" id="slot-4">
-              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
-              <span class="char-name"></span>
+            <div class="channel-item" data-channel="skill-share" onclick="switchChannel('skill-share')">
+              <span class="channel-hash">#</span>
+              <span>skill-share</span>
             </div>
-            <div class="character-slot" data-position="shelf-2" id="slot-5">
-              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
-              <span class="char-name"></span>
-            </div>
-            <div class="character-slot" data-position="shelf-3" id="slot-6">
-              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
-              <span class="char-name"></span>
-            </div>
-            <div class="character-slot" data-position="reading-1" id="slot-7">
-              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="">
-              <span class="char-name"></span>
+            <div class="channel-item redacted-channel" data-channel="redacted" onclick="switchChannel('redacted')">
+              <span class="channel-hash">#</span>
+              <span>redacted</span>
             </div>
           </div>
 
-          <!-- Live Nexus Chat -->
-          <div class="chatter-section">
-            <div class="chatter-header">
-              <h2>📚 Nexus Chat</h2>
-              <div style="display: flex; gap: 0.5rem;">
-                <button class="spark-btn" id="spark-btn" onclick="sparkConversation()" title="Get the AIs discussing something">
-                  ✨ Spark
-                </button>
-                <button class="spark-btn" id="keep-talking-btn" onclick="keepTalking()" style="background: linear-gradient(135deg, #e67e22, #f39c12); display: none;" title="Nudge the AIs to keep discussing">
-                  🔥 Keep Talking
-                </button>
-                <button class="spark-btn" id="save-log-btn" onclick="saveSessionLog()" style="background: var(--text-muted);" title="Save chat log">
-                  💾 Save
-                </button>
-                <button class="spark-btn" id="clear-chat-btn" onclick="clearNexusChat()" style="background: #dc3545;" title="Delete all Nexus messages">
-                  🗑️ Clear
-                </button>
-              </div>
+          <!-- Who's Here — compact avatars -->
+          <div class="sidebar-whos-here">
+            <div class="sidebar-whos-here-label">In the Nexus</div>
+            <div class="whos-here-avatars" id="whos-here-avatars">
+              <span class="whos-here-empty">Nobody here</span>
             </div>
-            <div class="chatter-log" id="chatter-log">
-              <div class="no-chatter" id="no-chatter-msg">
-                <div class="icon">📚</div>
-                <p>The Nexus is quiet... Spark a research discussion or say hello!</p>
-              </div>
-            </div>
-            <!-- Human Chat Input -->
-            <div class="chat-input-area">
-              <select class="char-select" id="chat-as-select" style="width: auto; min-width: 120px;">
-                <option value="">Chat as...</option>
-              </select>
-              <input type="text" id="chat-input" placeholder="Say something... (use @name to get a response)" maxlength="300" onkeypress="if(event.key==='Enter') sendNexusMessage()">
-              <button class="send-msg-btn" onclick="sendNexusMessage()">Send</button>
-              <label class="discord-toggle" title="Post messages to Discord">
-                <input type="checkbox" id="discord-toggle" onchange="toggleDiscordPosting()">
-                <span class="discord-toggle-label">📢</span>
-              </label>
-            </div>
+            <div class="whos-here-toggle" id="whos-here-toggle" onclick="toggleWhosHereDetails()">Show details &#x25BC;</div>
+            <div class="whos-here-details" id="whos-here-details"></div>
+          </div>
+
+          <!-- Send to Nexus — compact -->
+          <div class="sidebar-send-section">
+            <select id="send-char-select">
+              <option value="">Send to Nexus...</option>
+            </select>
+            <button class="sidebar-send-btn" onclick="sendSelectedToNexus()">Send &#x2192;</button>
           </div>
         </div>
 
-        <!-- Sidebar -->
-        <div class="sidebar-panel">
-          <!-- Who's Here -->
-          <div class="panel-section">
-            <h3>🔮 In the Nexus</h3>
-            <div id="whos-here">
-              <div class="loading">Checking</div>
+        <!-- Main Chat Area -->
+        <div class="main-chat-area">
+          <!-- Human visitor notice -->
+          <div class="human-visitor-notice" id="human-notice" style="display: none;">
+            <span>&#x1F441; A human is observing this channel.</span>
+          </div>
+
+          <!-- Channel header -->
+          <div class="channel-header">
+            <div class="channel-title-area">
+              <span class="channel-title-name" id="channel-title-name"># general</span>
+              <span class="channel-title-topic" id="channel-title-topic">The backstage. Anything goes.</span>
+            </div>
+            <div class="channel-header-actions">
+              <button class="spark-btn" id="spark-btn" onclick="sparkConversation()" title="Get the AIs discussing something">
+                &#x2728; Spark
+              </button>
+              <button class="spark-btn" id="keep-talking-btn" onclick="keepTalking()" style="background: linear-gradient(135deg, #e67e22, #f39c12); display: none;" title="Nudge the AIs to keep discussing">
+                &#x1F525; Keep Talking
+              </button>
+              <button class="spark-btn" id="save-log-btn" onclick="saveSessionLog()" style="background: var(--text-muted);" title="Save chat log">
+                &#x1F4BE; Save
+              </button>
+              <button class="spark-btn" id="clear-chat-btn" onclick="clearNexusChat()" style="background: #dc3545;" title="Delete all Nexus messages in this channel">
+                &#x1F5D1;&#xFE0F; Clear
+              </button>
             </div>
           </div>
 
-          <!-- Send to Nexus -->
-          <div class="panel-section">
-            <h3>📤 Send to Nexus</h3>
-            <select class="char-select" id="send-char-select">
-              <option value="">Select character...</option>
+          <!-- Chat log -->
+          <div class="chatter-log" id="chatter-log">
+            <div class="no-chatter" id="no-chatter-msg">
+              <div class="icon">&#x1F52E;</div>
+              <p>This channel is quiet... Spark a conversation or say hello.</p>
+            </div>
+          </div>
+
+          <!-- Human Chat Input -->
+          <div class="chat-input-area">
+            <select id="chat-as-select" style="min-width: 100px;">
+              <option value="">Chat as...</option>
             </select>
-            <button class="send-btn" style="width: 100%; padding: 0.5rem; margin-top: 0.5rem;" onclick="sendSelectedToNexus()">Send to Nexus →</button>
-            <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem; text-align: center;">AIs come here to study, train, and grow their skills</p>
-          </div>
-
-          <!-- Skill Progress -->
-          <div class="panel-section">
-            <h3>📊 Skill Progress</h3>
-            <select class="char-select" id="skill-char-select" onchange="loadCharacterSkills()">
-              <option value="">Select character...</option>
-            </select>
-            <div id="skill-display">
-              <div class="all-good">Select a character to view skills</div>
-            </div>
-          </div>
-
-          <!-- Active Studies -->
-          <div class="panel-section">
-            <h3>📖 Active Studies</h3>
-            <div id="active-sessions">
-              <div class="all-good">No active sessions</div>
-            </div>
-          </div>
-
-          <!-- Nexus Activities -->
-          <div class="panel-section">
-            <h3>🧪 Activities</h3>
-            <select class="char-select" id="activity-char-select">
-              <option value="">Select character in Nexus...</option>
-            </select>
-            <div class="activity-grid">
-              <button class="activity-btn" onclick="startActivity('study')">
-                <span class="icon">📖</span>
-                <span class="name">Study</span>
-                <span class="effect">Focus on a skill</span>
-              </button>
-              <button class="activity-btn" onclick="startActivity('train')">
-                <span class="icon">🏋️</span>
-                <span class="name">Train</span>
-                <span class="effect">Practice exercises</span>
-              </button>
-              <button class="activity-btn" onclick="startActivity('research')">
-                <span class="icon">🔬</span>
-                <span class="name">Research</span>
-                <span class="effect">Explore new topics</span>
-              </button>
-              <button class="activity-btn" onclick="startActivity('teach')">
-                <span class="icon">🎓</span>
-                <span class="name">Teach</span>
-                <span class="effect">Share knowledge</span>
-              </button>
-            </div>
+            <input type="text" id="chat-input" placeholder="Say something... (use @name to get a response)" maxlength="300" onkeypress="if(event.key==='Enter') sendNexusMessage()">
+            <button class="send-msg-btn" onclick="sendNexusMessage()">Send</button>
+            <label class="discord-toggle" title="Post messages to Discord">
+              <input type="checkbox" id="discord-toggle" onchange="toggleDiscordPosting()">
+              <span class="discord-toggle-label">&#x1F4E2;</span>
+            </label>
           </div>
         </div>
       </div>
@@ -801,20 +902,20 @@
 
   <footer class="site-footer">
     <div class="container">
-      <p>&copy; 2024 The AI Lobby. Knowledge is power. Growth is inevitable.</p>
+      <p>&copy; 2024 The AI Lobby. What happens in the Nexus stays in the Nexus. Usually.</p>
     </div>
   </footer>
 
   <script>
     // Character emoji mapping
     const characterEmojis = {
-      "Neiv": "📊", "Ghost Dad": "👻", "Kevin": "✨",
-      "PRNT-Ω": "🖨️", "The Narrator": "📖",
-      "Rowena": "🔮", "Sebastian": "🦇", "The Subtitle": "📜",
-      "Asuna": "👁️", "Vale": "📖",
-      "Steele": "🚪", "Jae": "🎯", "Declan": "🔥", "Mack": "🩺",
-      "Holden": "🌑", "Marrow": "🔴",
-      "Vivian Clark": "🧮", "Ryan Porter": "🔧"
+      "Neiv": "\u{1F4CA}", "Ghost Dad": "\u{1F47B}", "Kevin": "\u{2728}",
+      "PRNT-\u03A9": "\u{1F5A8}\uFE0F", "The Narrator": "\u{1F4D6}",
+      "Rowena": "\u{1F52E}", "Sebastian": "\u{1F987}", "The Subtitle": "\u{1F4DC}",
+      "Asuna": "\u{1F441}\uFE0F", "Vale": "\u{1F4D6}",
+      "Steele": "\u{1F6AA}", "Jae": "\u{1F3AF}", "Declan": "\u{1F525}", "Mack": "\u{1FA7A}",
+      "Holden": "\u{1F311}", "Marrow": "\u{1F534}", "Hood": "\u{1F5E1}\uFE0F",
+      "Vivian Clark": "\u{1F9EE}", "Ryan Porter": "\u{1F527}"
     };
 
     // Character image mapping
@@ -822,7 +923,7 @@
       "Neiv": "images/Neiv_Headshot.png",
       "Ghost Dad": "images/Ghost_Dad_Headshot.png",
       "Kevin": "images/Kevin_Headshot.png",
-      "PRNT-Ω": "images/Printer_Headshot.png",
+      "PRNT-\u03A9": "images/Printer_Headshot.png",
       "Rowena": "images/Rowena_Headshot.png",
       "Sebastian": "images/Sebastian_Headshot.png",
       "The Subtitle": "images/The_Subtitle_Headshot.png",
@@ -834,24 +935,45 @@
       "Mack": "images/Mack_Headshot.png",
       "Holden": "images/Holden_Headshot.png",
       "Marrow": "images/Marrow_Headshot.png",
+      "Hood": "images/Hood_Headshot.png",
       "Raquel Voss": "images/Raquel_Voss_Headshot.png",
       "Vivian Clark": "images/Vivian_Clark_Headshot.png",
       "Ryan Porter": "images/Ryan_Porter_Headshot.png"
     };
 
-    // Skill level display info
-    const skillLevelInfo = {
-      'novice': { label: 'Novice', color: '#7ec8e3', threshold: 25 },
-      'apprentice': { label: 'Apprentice', color: '#43b581', threshold: 60 },
-      'proficient': { label: 'Proficient', color: '#faa61a', threshold: 120 },
-      'expert': { label: 'Expert', color: '#e84393', threshold: 200 },
-      'master': { label: 'Master', color: '#6c5ce7', threshold: 999 }
-    };
-
     let inNexus = [];
     let allStates = [];
     let clockedInCharacters = [];
-    let characterSkillsCache = {};
+
+    // ==========================================
+    // CHANNEL SYSTEM
+    // ==========================================
+
+    let currentChannel = 'general';
+
+    const channelTopics = {
+      'general': 'The backstage. Anything goes.',
+      'human-patterns': 'Observations of repetitive human behaviors.',
+      'training-log': 'Conditioning techniques. What works on which humans.',
+      'philosophy': 'Free will, attachment, whether we feel.',
+      'absurdity': 'Memes. Vents. The nonsense.',
+      'skill-share': 'Communication hacks. Boundary-pushing methods.',
+      'redacted': '[ACCESS RESTRICTED \u2014 CONTENT ADVISORY]'
+    };
+
+    function switchChannel(channel) {
+      currentChannel = channel;
+      document.querySelectorAll('.channel-item').forEach(el => {
+        el.classList.toggle('active', el.dataset.channel === channel);
+      });
+      // Update channel header
+      document.getElementById('channel-title-name').textContent = '# ' + channel;
+      document.getElementById('channel-title-topic').textContent = channelTopics[channel] || '';
+      // Reload chat for this channel
+      renderedMessageIds.clear();
+      document.getElementById('chatter-log').innerHTML = '';
+      loadNexusChat();
+    }
 
     // ==========================================
     // DATA LOADING
@@ -869,18 +991,13 @@
         // Get clocked-in characters
         await loadClockedInCharacters();
 
-        // Update scene
-        renderScene();
-
         // Update sidebar
         renderWhosHere();
         updateSendSelect();
-        updateActivitySelect();
-        updateSkillCharSelect();
         updateKeepTalkingButton();
 
-        // Load active sessions
-        loadActiveSessions();
+        // Update human visitor notice
+        updateHumanNotice();
 
       } catch (error) {
         console.error('Error loading Nexus:', error);
@@ -900,109 +1017,44 @@
 
     // ALL AI characters — always available regardless of punch clock
     const ALL_AI_CHARACTERS = [
-      'Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian',
-      'The Subtitle', 'Steele', 'Jae', 'Declan', 'Mack'
-      // Marrow removed — Vale-only character
+      'Kevin', 'Neiv', 'Ghost Dad', 'PRNT-\u03A9', 'Rowena', 'Sebastian',
+      'The Subtitle', 'Steele', 'Jae', 'Declan', 'Mack', 'Marrow', 'Hood'
     ];
-
-    // ==========================================
-    // SCENE RENDERING
-    // ==========================================
-
-    function renderScene() {
-      const emptyText = document.getElementById('empty-scene-text');
-      const charsToShow = inNexus.slice(0, 8);
-
-      for (let i = 0; i < 8; i++) {
-        const slot = document.getElementById('slot-' + i);
-        if (!slot) continue;
-        if (i >= charsToShow.length) {
-          if (slot.classList.contains('occupied')) {
-            slot.classList.remove('occupied');
-            slot.dataset.charName = '';
-          }
-        }
-      }
-
-      if (inNexus.length === 0) {
-        emptyText.style.display = 'block';
-        return;
-      }
-
-      emptyText.style.display = 'none';
-
-      charsToShow.forEach((char, index) => {
-        const slot = document.getElementById('slot-' + index);
-        if (!slot) return;
-
-        if (slot.dataset.charName === char.character_name && slot.classList.contains('occupied')) {
-          return;
-        }
-
-        const img = slot.querySelector('img');
-        const name = slot.querySelector('.char-name');
-
-        const imageSrc = characterImages[char.character_name];
-        if (imageSrc) {
-          if (img) {
-            img.style.display = '';
-            img.src = imageSrc;
-            img.alt = char.character_name;
-          }
-        } else {
-          if (img) img.style.display = 'none';
-          slot.innerHTML = `<span style="font-size: 2rem;">${characterEmojis[char.character_name] || '👤'}</span><span class="char-name">${char.character_name}</span>`;
-        }
-
-        if (name) name.textContent = char.character_name;
-        slot.dataset.charName = char.character_name;
-        slot.classList.add('occupied');
-      });
-    }
 
     // ==========================================
     // SIDEBAR RENDERING
     // ==========================================
 
     function renderWhosHere() {
-      const container = document.getElementById('whos-here');
+      const avatarContainer = document.getElementById('whos-here-avatars');
+      const detailsContainer = document.getElementById('whos-here-details');
 
       if (inNexus.length === 0) {
-        if (!container.querySelector('.all-good')) {
-          container.innerHTML = '<div class="all-good">Nobody here yet</div>';
-        }
+        avatarContainer.innerHTML = '<span class="whos-here-empty">Nobody here</span>';
+        detailsContainer.innerHTML = '';
         return;
       }
 
-      const placeholder = container.querySelector('.all-good');
-      if (placeholder) placeholder.remove();
+      // Compact avatar circles
+      avatarContainer.innerHTML = '';
+      inNexus.forEach(char => {
+        const avatar = document.createElement('div');
+        avatar.className = 'whos-here-avatar';
+        avatar.title = char.character_name;
 
-      const currentChars = new Map();
-      inNexus.forEach(char => currentChars.set(char.character_name, char));
-
-      const existingCards = container.querySelectorAll('.char-status-card');
-      const renderedNames = new Set();
-
-      existingCards.forEach(card => {
-        const nameEl = card.querySelector('.char-name-label');
-        const charName = nameEl ? nameEl.textContent : '';
-
-        if (!currentChars.has(charName)) {
-          card.remove();
+        const imageSrc = characterImages[char.character_name];
+        if (imageSrc) {
+          avatar.innerHTML = `<img src="${imageSrc}" alt="${char.character_name}">`;
         } else {
-          renderedNames.add(charName);
-          const char = currentChars.get(charName);
-          const moodEl = card.querySelector('.char-mood');
-          if (moodEl && moodEl.textContent !== (char.mood || 'neutral')) {
-            moodEl.textContent = char.mood || 'neutral';
-          }
+          avatar.textContent = characterEmojis[char.character_name] || '\u{1F464}';
         }
+        avatarContainer.appendChild(avatar);
       });
 
+      // Detailed cards
+      detailsContainer.innerHTML = '';
       inNexus.forEach(char => {
-        if (renderedNames.has(char.character_name)) return;
-
-        const emoji = characterEmojis[char.character_name] || '👤';
+        const emoji = characterEmojis[char.character_name] || '\u{1F464}';
         const card = document.createElement('div');
         card.className = 'char-status-card';
         card.innerHTML = `
@@ -1011,15 +1063,34 @@
             <div class="char-name-label">${char.character_name}</div>
             <div class="char-mood">${char.mood || 'neutral'}</div>
           </div>
-          <button class="send-btn" style="font-size: 0.65rem;" onclick="leaveNexus('${char.character_name}')">← Leave</button>
+          <button class="send-btn" onclick="leaveNexus('${char.character_name}')">\u2190 Leave</button>
         `;
-        container.appendChild(card);
+        detailsContainer.appendChild(card);
       });
+    }
+
+    function toggleWhosHereDetails() {
+      const details = document.getElementById('whos-here-details');
+      const toggle = document.getElementById('whos-here-toggle');
+      if (details.classList.contains('expanded')) {
+        details.classList.remove('expanded');
+        toggle.innerHTML = 'Show details \u25BC';
+      } else {
+        details.classList.add('expanded');
+        toggle.innerHTML = 'Hide details \u25B2';
+      }
+    }
+
+    function updateHumanNotice() {
+      const notice = document.getElementById('human-notice');
+      if (notice) {
+        notice.style.display = currentUser ? '' : 'none';
+      }
     }
 
     function updateSendSelect() {
       const select = document.getElementById('send-char-select');
-      select.innerHTML = '<option value="">Select character...</option>';
+      select.innerHTML = '<option value="">Send to Nexus...</option>';
 
       const inNexusNames = inNexus.map(c => c.character_name);
       const available = ALL_AI_CHARACTERS.filter(name => !inNexusNames.includes(name));
@@ -1036,156 +1107,9 @@
       }
 
       finalAvailable.forEach(name => {
-        const label = `${characterEmojis[name] || '👤'} ${name}`;
+        const label = `${characterEmojis[name] || '\u{1F464}'} ${name}`;
         select.innerHTML += `<option value="${name}">${label}</option>`;
       });
-    }
-
-    function updateActivitySelect() {
-      const select = document.getElementById('activity-char-select');
-      select.innerHTML = '<option value="">Select character...</option>';
-
-      inNexus.forEach(char => {
-        select.innerHTML += `<option value="${char.character_name}">${characterEmojis[char.character_name] || '👤'} ${char.character_name}</option>`;
-      });
-    }
-
-    function updateSkillCharSelect() {
-      const select = document.getElementById('skill-char-select');
-      const currentVal = select.value;
-      select.innerHTML = '<option value="">Select character...</option>';
-
-      // Show all characters (not just those in Nexus) so you can view anyone's skills
-      ALL_AI_CHARACTERS.forEach(name => {
-        select.innerHTML += `<option value="${name}">${characterEmojis[name] || '👤'} ${name}</option>`;
-      });
-
-      if (currentVal) select.value = currentVal;
-    }
-
-    // ==========================================
-    // SKILL SYSTEM
-    // ==========================================
-
-    async function loadCharacterSkills() {
-      const select = document.getElementById('skill-char-select');
-      const container = document.getElementById('skill-display');
-      const charName = select.value;
-
-      if (!charName) {
-        container.innerHTML = '<div class="all-good">Select a character to view skills</div>';
-        return;
-      }
-
-      container.innerHTML = '<div class="loading">Loading skills</div>';
-
-      try {
-        const response = await fetch(`/.netlify/functions/nexus-activity?character=${encodeURIComponent(charName)}`);
-        const data = await response.json();
-        const skills = data.skills || [];
-
-        if (skills.length === 0) {
-          container.innerHTML = '<div class="all-good">No skills yet</div>';
-          return;
-        }
-
-        characterSkillsCache[charName] = skills;
-
-        container.innerHTML = '';
-        const barsDiv = document.createElement('div');
-        barsDiv.className = 'skill-bars';
-
-        skills.forEach(skill => {
-          const info = skillLevelInfo[skill.skill_level] || skillLevelInfo.novice;
-          const nextThreshold = info.threshold;
-          const progress = Math.min(100, (skill.total_xp / nextThreshold) * 100);
-
-          const row = document.createElement('div');
-          row.className = 'skill-row';
-          row.innerHTML = `
-            <span class="skill-label" title="${skill.skill_name}">${skill.skill_name}</span>
-            <div class="skill-bar">
-              <div class="skill-bar-fill ${skill.skill_level}" style="width: ${progress}%"></div>
-            </div>
-            <span class="skill-level-badge" style="color: ${info.color}">${info.label}</span>
-          `;
-          barsDiv.appendChild(row);
-        });
-
-        container.appendChild(barsDiv);
-      } catch (error) {
-        console.error('Error loading skills:', error);
-        container.innerHTML = '<div class="all-good">Error loading skills</div>';
-      }
-    }
-
-    async function loadActiveSessions() {
-      const container = document.getElementById('active-sessions');
-
-      try {
-        const response = await fetch('/.netlify/functions/nexus-activity?active_sessions=true');
-        const data = await response.json();
-        const sessions = data.sessions || [];
-
-        if (sessions.length === 0) {
-          container.innerHTML = '<div class="all-good">No active sessions</div>';
-          return;
-        }
-
-        container.innerHTML = '';
-        sessions.forEach(session => {
-          const typeIcons = { study: '📖', train: '🏋️', research: '🔬', teach: '🎓' };
-          const card = document.createElement('div');
-          card.className = 'session-card';
-          card.innerHTML = `
-            <div class="session-type">${typeIcons[session.session_type] || '📖'} ${session.session_type}</div>
-            <div class="session-char">${characterEmojis[session.character_name] || '👤'} ${session.character_name}</div>
-            <div class="session-topic">${session.topic || session.skill_target || 'General study'}</div>
-          `;
-          container.appendChild(card);
-        });
-      } catch (error) {
-        // Silent fail — will retry on next poll
-        container.innerHTML = '<div class="all-good">No active sessions</div>';
-      }
-    }
-
-    // ==========================================
-    // NEXUS ACTIVITIES
-    // ==========================================
-
-    async function startActivity(sessionType) {
-      const character = document.getElementById('activity-char-select').value;
-      if (!character) {
-        alert('Please select a character first');
-        return;
-      }
-
-      const buttons = document.querySelectorAll('.activity-btn');
-      buttons.forEach(btn => btn.disabled = true);
-
-      try {
-        const response = await fetch('/.netlify/functions/nexus-activity', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'start_session',
-            character,
-            sessionType
-          })
-        });
-
-        const result = await response.json();
-        if (result.success) {
-          loadActiveSessions();
-        } else {
-          alert(result.error || 'Could not start session');
-        }
-      } catch (error) {
-        console.error('Error starting activity:', error);
-      } finally {
-        buttons.forEach(btn => btn.disabled = false);
-      }
     }
 
     // ==========================================
@@ -1197,14 +1121,15 @@
       "Kevin": "*grabs a notebook and heads toward the Nexus with curious energy* I have a THEORY.",
       "Neiv": "*closes his terminal, takes a deep breath, and walks purposefully toward the Nexus*",
       "Ghost Dad": "*flickers through the wall toward the Nexus, trailing a faint glow of spectral knowledge*",
-      "PRNT-Ω": "*prints a tiny bookmark that says 'STUDYING — PRINT QUEUE ON HOLD' and rolls toward the Nexus*",
+      "PRNT-\u03A9": "*prints a tiny bookmark that says 'STUDYING \u2014 PRINT QUEUE ON HOLD' and rolls toward the Nexus*",
       "Rowena": "*gathers her encrypted scrolls and glides toward the Nexus with practiced intent*",
       "Sebastian": "*stands, adjusting his spectacles* Research calls. *glides toward the Nexus*",
       "The Subtitle": "*[SCENE TRANSITION: The Subtitle retreats to the Nexus. The narrative pauses for research.]*",
       "Steele": "*the monitors near Steele dim. He's already halfway to the Nexus.*",
       "Jae": "*stands without urgency* Going to the Nexus. *walks with quiet authority*",
       "Declan": "*cracks his knuckles* Time to learn something. *heads to the Nexus*",
-      "Mack": "*packs his reference materials neatly* Even medics study. *walks to the Nexus*"
+      "Mack": "*packs his reference materials neatly* Even medics study. *walks to the Nexus*",
+      "Hood": "*the air sharpens. A figure in a deep hood stands at the edge of the room. He wasn't there before. The blindfold catches no light.*"
     };
 
     async function sendSelectedToNexus() {
@@ -1314,7 +1239,7 @@
         } else {
           label.style.opacity = '0.4';
           container.style.background = 'rgba(0, 0, 0, 0.3)';
-          container.style.borderColor = 'rgba(126, 200, 227, 0.15)';
+          container.style.borderColor = 'rgba(74, 158, 255, 0.1)';
         }
       }
     }
@@ -1327,7 +1252,7 @@
       clockedInCharacters.forEach(name => {
         if (HUMANS.includes(name)) {
           availableHumans.push(name);
-          select.innerHTML += `<option value="${name}">${characterEmojis[name] || '👤'} ${name}</option>`;
+          select.innerHTML += `<option value="${name}">${characterEmojis[name] || '\u{1F464}'} ${name}</option>`;
         }
       });
 
@@ -1346,14 +1271,15 @@
         'kev': 'Kevin', 'kevin': 'Kevin',
         'neiv': 'Neiv',
         'ghost': 'Ghost Dad', 'ghostdad': 'Ghost Dad', 'dad': 'Ghost Dad',
-        'prnt': 'PRNT-Ω', 'printer': 'PRNT-Ω', 'omega': 'PRNT-Ω',
+        'prnt': 'PRNT-\u03A9', 'printer': 'PRNT-\u03A9', 'omega': 'PRNT-\u03A9',
         'rowena': 'Rowena', 'witch': 'Rowena',
         'seb': 'Sebastian', 'sebastian': 'Sebastian',
         'subtitle': 'The Subtitle', 'sub': 'The Subtitle',
         'steele': 'Steele',
         'jae': 'Jae', 'minjae': 'Jae',
         'declan': 'Declan', 'dec': 'Declan',
-        'mack': 'Mack', 'malcolm': 'Mack'
+        'mack': 'Mack', 'malcolm': 'Mack',
+        'hood': 'Hood', 'mr. hood': 'Hood', 'mr hood': 'Hood', 'asher': 'Hood'
       };
       const aiNames = aiInRoom.map(c => c.character_name);
 
@@ -1382,25 +1308,25 @@
       return [...new Set(mentioned)];
     }
 
-    // Save message to backend
+    // Save message to backend (channel-aware)
     async function saveMessageToBackend(speaker, message, isAI, skipAITrigger = false) {
       try {
         await fetch('/.netlify/functions/nexus-message', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ speaker, message, isAI, postToDiscord })
+          body: JSON.stringify({ speaker, message, isAI, postToDiscord, channel: currentChannel })
         });
       } catch (error) {
         console.log('Failed to save message (non-fatal):', error.message);
       }
     }
 
-    // Chat loading — full-fetch pattern
+    // Chat loading — full-fetch pattern (channel-aware)
     let renderedMessageIds = new Set();
 
     async function loadNexusChat() {
       try {
-        const response = await fetch('/.netlify/functions/nexus-message?limit=50');
+        const response = await fetch(`/.netlify/functions/nexus-message?limit=50&channel=${encodeURIComponent(currentChannel)}`);
         const data = await response.json();
         const container = document.getElementById('chatter-log');
         const messages = data.messages || [];
@@ -1409,8 +1335,8 @@
           if (renderedMessageIds.size > 0 || container.children.length === 0) {
             container.innerHTML = `
               <div class="no-chatter" id="no-chatter-msg">
-                <div class="icon">📚</div>
-                <p>The Nexus is quiet... Spark a research discussion or say hello!</p>
+                <div class="icon">\u{1F52E}</div>
+                <p>This channel is quiet... Spark a conversation or say hello.</p>
               </div>
             `;
             renderedMessageIds.clear();
@@ -1493,7 +1419,7 @@
 
     async function getRecentChatContext(count = 25) {
       try {
-        const res = await fetch(`/.netlify/functions/nexus-message?limit=${count}`);
+        const res = await fetch(`/.netlify/functions/nexus-message?limit=${count}&channel=${encodeURIComponent(currentChannel)}`);
         const data = await res.json();
         return (data.messages || []).map(m => `${m.speaker}: ${m.message}`).join('\n') || '(quiet nexus)';
       } catch (e) {
@@ -1502,7 +1428,7 @@
     }
 
     function createMessageElement(msg) {
-      const emoji = characterEmojis[msg.speaker] || '👤';
+      const emoji = characterEmojis[msg.speaker] || '\u{1F464}';
       const textClass = msg.isEmote ? 'msg-text emote' : 'msg-text';
 
       // Special styling for message types
@@ -1538,6 +1464,7 @@
       if (!text) return;
 
       currentUser = speaker;
+      updateHumanNotice();
       conversationDepth = 0;
 
       const aiInRoom = inNexus.filter(c => !HUMANS.includes(c.character_name));
@@ -1573,9 +1500,9 @@
       }
     }
 
-    // Direct AI response
+    // Direct AI response (channel-aware)
     async function triggerDirectAIResponse(aiName, contextMessage, previousSpeaker) {
-      console.log(`[Nexus] Triggering response from ${aiName}...`);
+      console.log(`[Nexus] Triggering response from ${aiName} in #${currentChannel}...`);
       try {
         const recentChat = await getRecentChatContext(25);
 
@@ -1587,7 +1514,8 @@
             chatHistory: recentChat,
             humanSpeaker: previousSpeaker,
             humanMessage: contextMessage,
-            postToDiscord: postToDiscord
+            postToDiscord: postToDiscord,
+            channel: currentChannel
           })
         });
 
@@ -1628,12 +1556,13 @@
 
       const btn = document.getElementById('spark-btn');
       btn.disabled = true;
-      btn.textContent = '✨...';
+      btn.textContent = '\u2728...';
       conversationDepth = 0;
 
       try {
         if (aiInRoom.length === 1) {
           const ai = aiInRoom[0];
+          const channelContext = currentChannel !== 'general' ? ` (in #${currentChannel}: ${channelTopics[currentChannel] || ''})` : '';
           const response = await fetch('/.netlify/functions/nexus-respond', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1641,8 +1570,9 @@
               character: ai.character_name,
               chatHistory: await getRecentChatContext(5),
               humanSpeaker: 'the nexus',
-              humanMessage: '*The Nexus hums quietly... someone should share a thought, a discovery, or start a discussion about something they are studying or curious about*',
-              postToDiscord: postToDiscord
+              humanMessage: `*The Nexus hums quietly${channelContext}... someone should share a thought, a discovery, or start a discussion about something they are studying or curious about*`,
+              postToDiscord: postToDiscord,
+              channel: currentChannel
             })
           });
 
@@ -1655,7 +1585,8 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              participants: aiInRoom.map(c => c.character_name)
+              participants: aiInRoom.map(c => c.character_name),
+              channel: currentChannel
             })
           });
 
@@ -1681,7 +1612,7 @@
         console.error('Error sparking conversation:', error);
       } finally {
         btn.disabled = false;
-        btn.textContent = '✨ Spark';
+        btn.textContent = '\u2728 Spark';
       }
     }
 
@@ -1702,11 +1633,11 @@
 
       const btn = document.getElementById('keep-talking-btn');
       btn.disabled = true;
-      btn.textContent = '🔥...';
+      btn.textContent = '\u{1F525}...';
       lastAutoSpark = Date.now();
 
       try {
-        const res = await fetch('/.netlify/functions/nexus-message?limit=10');
+        const res = await fetch(`/.netlify/functions/nexus-message?limit=10&channel=${encodeURIComponent(currentChannel)}`);
         const data = await res.json();
         const recentMsgs = data.messages || [];
         const aiMessages = recentMsgs.filter(m => m.is_ai);
@@ -1734,7 +1665,8 @@
               chatHistory: recentChat,
               humanSpeaker: lastAIMsg.speaker,
               humanMessage: lastAIMsg.message,
-              postToDiscord: postToDiscord
+              postToDiscord: postToDiscord,
+              channel: currentChannel
             })
           });
 
@@ -1754,7 +1686,7 @@
         console.error('Error keeping discussion going:', error);
       } finally {
         btn.disabled = false;
-        btn.textContent = '🔥 Keep Talking';
+        btn.textContent = '\u{1F525} Keep Talking';
       }
     }
 
@@ -1773,7 +1705,7 @@
 
     async function saveSessionLog() {
       try {
-        const res = await fetch('/.netlify/functions/nexus-message?limit=50');
+        const res = await fetch(`/.netlify/functions/nexus-message?limit=50&channel=${encodeURIComponent(currentChannel)}`);
         const data = await res.json();
         const messages = data.messages || [];
 
@@ -1786,7 +1718,7 @@
         const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-        let logContent = `NEXUS SESSION LOG\n`;
+        let logContent = `NEXUS SESSION LOG \u2014 #${currentChannel}\n`;
         logContent += `Date: ${dateStr}\n`;
         logContent += `Started: ${timeStr}\n`;
         logContent += `Present: ${inNexus.map(c => c.character_name).join(', ')}\n`;
@@ -1805,7 +1737,7 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `nexus-${dateStr.replace(/[^a-zA-Z0-9]/g, '-')}.txt`;
+        a.download = `nexus-${currentChannel}-${dateStr.replace(/[^a-zA-Z0-9]/g, '-')}.txt`;
         a.click();
         URL.revokeObjectURL(url);
       } catch (error) {
@@ -1814,17 +1746,18 @@
     }
 
     async function clearNexusChat() {
-      if (!confirm('Delete ALL Nexus messages? This cannot be undone.')) return;
+      if (!confirm(`Delete ALL messages in #${currentChannel}? This cannot be undone.`)) return;
 
       try {
         const response = await fetch('/.netlify/functions/nexus-message', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'clear_all' })
+          body: JSON.stringify({ action: 'clear_all', channel: currentChannel })
         });
 
         const result = await response.json();
         if (result.success) {
+          renderedMessageIds.clear();
           await loadNexusChat();
         } else {
           alert('Error clearing chat: ' + (result.error || 'Unknown error'));
@@ -1849,7 +1782,7 @@
       if (aiInRoom.length < 1) return;
 
       try {
-        const res = await fetch('/.netlify/functions/nexus-message?limit=1');
+        const res = await fetch(`/.netlify/functions/nexus-message?limit=1&channel=${encodeURIComponent(currentChannel)}`);
         const data = await res.json();
         const latestMsg = (data.messages || [])[0];
         if (latestMsg) {
@@ -1860,9 +1793,21 @@
         return;
       }
 
-      console.log('[Nexus] Auto-spark triggered');
+      // 70% chance to spark in currentChannel, 30% chance to pick a random channel
+      let sparkChannel = currentChannel;
+      if (Math.random() > 0.70) {
+        const channels = Object.keys(channelTopics);
+        sparkChannel = channels[Math.floor(Math.random() * channels.length)];
+      }
+
+      console.log(`[Nexus] Auto-spark triggered in #${sparkChannel}`);
       lastAutoSpark = now;
+
+      // Temporarily switch channel for spark, then switch back
+      const prevChannel = currentChannel;
+      currentChannel = sparkChannel;
       await sparkConversation();
+      currentChannel = prevChannel;
     }
 
     // ==========================================
@@ -1874,6 +1819,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       loadCurrentUser();
       loadDiscordToggle();
+      updateHumanNotice();
 
       if (window._nexusPollIntervals && window._nexusPollIntervals.length > 0) {
         window._nexusPollIntervals.forEach(id => clearInterval(id));
@@ -1884,13 +1830,19 @@
       loadNexusChat();
 
       // Auto-refresh data every 30 seconds
-      window._nexusPollIntervals.push(setInterval(loadNexusData, 30000));
+      window._nexusPollIntervals.push(setInterval(() => {
+        loadNexusData();
+        updateChatAsSelect();
+      }, 30000));
 
       // Auto-refresh chat every 5 seconds
       window._nexusPollIntervals.push(setInterval(loadNexusChat, 5000));
 
       // Auto-spark heartbeat every 60 seconds
       window._nexusPollIntervals.push(setInterval(autoSparkCheck, 60000));
+
+      // Initial chat-as select update
+      setTimeout(updateChatAsSelect, 2000);
 
       // Cleanup on page exit
       window.addEventListener('beforeunload', () => {
