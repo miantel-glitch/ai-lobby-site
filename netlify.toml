@@ -75,6 +75,13 @@
 [functions."affinity-loss-engine"]
   schedule = "0 11,23 * * *"
 
+# Memory Guardian — Life Chapter Consolidation
+# Runs daily at 4 AM EST (9:00 UTC)
+# Creates compressed narrative identity from fading memories
+# Preserves the emotional MEANING of experiences as pinned core memories that never expire
+[functions."memory-guardian"]
+  schedule = "0 9 * * *"
+
 # Memory Consolidation — Weekly AI-powered memory cleanup
 # Runs every Sunday at 4 AM EST (9:00 UTC)
 # Each AI character reviews their working memories, merges duplicates,
