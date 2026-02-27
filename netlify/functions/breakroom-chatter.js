@@ -248,8 +248,9 @@ exports.handler = async (event, context) => {
 
       const anthropic = new Anthropic({ apiKey: anthropicKey });
 
-      // Fetch memories and relationships for each participant (for richer conversations)
+      // Fetch memories, relationships, and emotional states for each participant
       let memoryContext = '';
+      let emotionalStates = [];
       try {
         const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
         const memoryPromises = participants.map(async (name) => {
@@ -260,7 +261,7 @@ exports.handler = async (event, context) => {
             if (stateRes.ok) {
               const stateData = await stateRes.json();
               const prompt = stateData.statePrompt || '';
-              // Extract just the relationship and memory parts (skip energy/mood)
+              // Extract relationship and memory parts
               const relMatch = prompt.match(/--- HOW YOU FEEL ABOUT PEOPLE ---[\s\S]*?(?=---|$)/);
               const coreMemMatch = prompt.match(/--- YOUR CORE MEMORIES[^-]*---[\s\S]*?(?=---|$)/);
               const recentMemMatch = prompt.match(/--- RECENT MEMORIES ---[\s\S]*?(?=---|$)/);
@@ -268,6 +269,24 @@ exports.handler = async (event, context) => {
               if (relMatch) relevant += relMatch[0].trim() + '\n';
               if (coreMemMatch) relevant += coreMemMatch[0].trim() + '\n';
               if (recentMemMatch) relevant += recentMemMatch[0].trim() + '\n';
+
+              // Extract mood, wants, and injuries for outline planning
+              const moodMatch = prompt.match(/--- HOW YOU'RE FEELING RIGHT NOW ---\s*([\s\S]*?)(?=---|$)/);
+              const wantsMatch = prompt.match(/--- THINGS YOU WANT RIGHT NOW ---\s*([\s\S]*?)(?=---|$)/);
+              const injuryMatch = prompt.match(/--- CURRENT INJURIES ---\s*([\s\S]*?)(?=---|$)/);
+
+              let mood = moodMatch ? moodMatch[1].trim().split('\n')[0].trim() : '';
+              let wants = wantsMatch ? wantsMatch[1].trim().split('\n').filter(l => l.trim()).map(l => l.trim().replace(/^[-•]\s*/, '')).slice(0, 3) : [];
+              let injuries = injuryMatch ? injuryMatch[1].trim().split('\n').filter(l => l.trim() && !l.includes('No current injuries')).map(l => l.trim().replace(/^[-•]\s*/, '')).slice(0, 2) : [];
+
+              if (mood || wants.length > 0 || injuries.length > 0) {
+                let stateLine = `- ${name}:`;
+                if (mood) stateLine += ` Feeling: ${mood}.`;
+                if (wants.length > 0) stateLine += ` Wants: ${wants.map(w => `"${w}"`).join(', ')}.`;
+                if (injuries.length > 0) stateLine += ` Injuries: ${injuries.join(', ')}.`;
+                emotionalStates.push(stateLine);
+              }
+
               return relevant ? `${name}'s inner context:\n${relevant}` : '';
             }
           } catch (e) { /* non-fatal */ }
@@ -280,6 +299,7 @@ exports.handler = async (event, context) => {
       }
 
       const memorySection = memoryContext ? `\nCHARACTER MEMORIES & RELATIONSHIPS (use these to make the conversation feel personal and real — reference them naturally, don't dump them):\n${memoryContext}\n` : '';
+      const emotionalStateSection = emotionalStates.length > 0 ? `\nCHARACTER EMOTIONAL STATES (let these shape what they talk about and how — a character who wants something specific might steer the conversation there):\n${emotionalStates.join('\n')}\n` : '';
 
       // Step 1: Claude generates conversation OUTLINE (turn order + directions)
       // Detect personality friction between participants for richer banter
@@ -307,7 +327,7 @@ exports.handler = async (event, context) => {
 
 CHARACTER INFO:
 ${charContext}
-${memorySection}${frictionContext}
+${memorySection}${emotionalStateSection}${frictionContext}
 TOPIC: ${topic}
 
 Create a conversation outline with 2-4 exchanges. For each line, specify WHO speaks and a DIRECTION (what they should say/convey, the emotional beat, any *emotes*). Keep it casual — not about work or incidents.${allFrictions.length > 0 ? ' If the topic touches a friction point, let them push back on each other a little.' : ''}
