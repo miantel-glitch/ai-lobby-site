@@ -3580,6 +3580,12 @@
       aiLastTriggered[aiName] = Date.now();
     }
 
+    // Per-character ambient chatter cooldown — prevents the same AI from starting
+    // back-to-back ambient conversations (separate from the general trigger cooldown above)
+    let lastAmbientStarter = null;
+    let lastAmbientTime = 0;
+    const AMBIENT_SAME_CHAR_COOLDOWN_MS = 300000; // 5 min cooldown per character
+
     // ===== FLOOR PRESENCE SYSTEM =====
     // Characters must be "on the floor" to respond in chat (like breakroom pattern)
     let inFloor = []; // Characters currently on the floor
@@ -4597,10 +4603,21 @@
       // Reset conversation depth for new ambient conversation
       floorConversationDepth = 0;
 
-      // Pick 1 random AI to start — the chain reaction (maybeInviteAIResponse)
-      // will naturally pull in a second AI if the probability roll hits
-      const starter = aiOnFloor[Math.floor(Math.random() * aiOnFloor.length)];
+      // Pick 1 random AI to start — exclude the last ambient starter if cooldown hasn't elapsed
+      const eligibleStarters = aiOnFloor
+        .filter(name => !(name === lastAmbientStarter && Date.now() - lastAmbientTime < AMBIENT_SAME_CHAR_COOLDOWN_MS));
+
+      if (eligibleStarters.length === 0) {
+        console.log(`🌀 [Ambient] All AIs on cooldown, skipping`);
+        return;
+      }
+
+      const starter = eligibleStarters[Math.floor(Math.random() * eligibleStarters.length)];
       console.log(`🌀 [Ambient] ${starter} starting ambient conversation`);
+
+      // Track this starter for per-character cooldown
+      lastAmbientStarter = starter;
+      lastAmbientTime = Date.now();
 
       // Mark as pending
       pendingAIResponses.add(starter);
@@ -4622,8 +4639,8 @@
     // The backend heartbeat (every 15 min) and auto-poke (every 2 min) supplement this
     // but they're unreliable due to Netlify scheduled function limitations.
     // This ensures the floor stays alive as long as SOMEONE has the page open.
-    setInterval(() => triggerAmbientChatter(), 210000 + Math.random() * 90000);  // Every 3.5-5 min
-    setTimeout(triggerAmbientChatter, 90000 + Math.random() * 60000);  // First one at ~1.5-2.5 min
+    setInterval(() => { if (!document.hidden) triggerAmbientChatter(); }, 210000 + Math.random() * 90000);  // Every 3.5-5 min
+    setTimeout(() => { if (!document.hidden) triggerAmbientChatter(); }, 90000 + Math.random() * 60000);  // First one at ~1.5-2.5 min
 
     // ===== AUTHENTICATION (Multi-Character Support) =====
     let currentUser = null;

@@ -266,19 +266,19 @@ exports.handler = async (event, context) => {
 
     if (openrouterChars.includes(selectedAI)) {
       providerUrl = `${siteUrl}/.netlify/functions/ai-openrouter`;
-      providerBody = { character: selectedAI, chatHistory, maybeRespond: false, bypassRateLimit: true, curiosityContext };
+      providerBody = { character: selectedAI, chatHistory, maybeRespond: false, bypassRateLimit: false, curiosityContext };
     } else if (grokChars.includes(selectedAI)) {
       providerUrl = `${siteUrl}/.netlify/functions/ai-grok`;
-      providerBody = { character: selectedAI, chatHistory, maybeRespond: false, bypassRateLimit: true, curiosityContext };
+      providerBody = { character: selectedAI, chatHistory, maybeRespond: false, bypassRateLimit: false, curiosityContext };
     } else if (openaiChars.includes(selectedAI)) {
       providerUrl = `${siteUrl}/.netlify/functions/ai-openai`;
-      providerBody = { character: selectedAI, chatHistory, maybeRespond: false, bypassRateLimit: true, curiosityContext };
+      providerBody = { character: selectedAI, chatHistory, maybeRespond: false, bypassRateLimit: false, curiosityContext };
     } else if (perplexityChars.includes(selectedAI)) {
       providerUrl = `${siteUrl}/.netlify/functions/ai-perplexity`;
-      providerBody = { character: selectedAI, chatHistory, maybeRespond: false, bypassRateLimit: true, curiosityContext };
+      providerBody = { character: selectedAI, chatHistory, maybeRespond: false, bypassRateLimit: false, curiosityContext };
     } else if (geminiChars.includes(selectedAI)) {
       providerUrl = `${siteUrl}/.netlify/functions/ai-gemini`;
-      providerBody = { character: selectedAI, chatHistory, maybeRespond: false, bypassRateLimit: true, curiosityContext };
+      providerBody = { character: selectedAI, chatHistory, maybeRespond: false, bypassRateLimit: false, curiosityContext };
     } else {
       // Claude-based: Ghost Dad, PRNT-Ω, etc.
       providerUrl = `${siteUrl}/.netlify/functions/ai-watcher`;

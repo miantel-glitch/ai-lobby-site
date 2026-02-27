@@ -249,6 +249,17 @@ Write 2-3 sentences describing the energy of ${charName}'s day. Be evocative and
           }
         }
 
+        // Final guard: one more check to prevent duplicates from race conditions
+        const finalCheck = await fetch(
+          `${supabaseUrl}/rest/v1/character_tarot?character_name=eq.${encodeURIComponent(charName)}&expires_at=gt.${new Date().toISOString()}&is_override=eq.false&select=id`,
+          { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+        );
+        const finalExisting = await finalCheck.json();
+        if (Array.isArray(finalExisting) && finalExisting.length > 0) {
+          console.log(`[Tarot] ${charName} already has a card after cleanup — skipping draw`);
+          continue;
+        }
+
         // Save to database
         await fetch(`${supabaseUrl}/rest/v1/character_tarot`, {
           method: "POST",
