@@ -263,24 +263,25 @@ exports.handler = async (event, context) => {
   }
 
   // ================================================================
-  // SYSTEM 4: THREAT DETECTION — DISABLED (Vale-only restriction)
-  // Marrow no longer autonomously vanishes. He only appears when Vale calls.
-  // Kept for reference but skipped entirely.
+  // SYSTEM 4: THREAT DETECTION — Vanish when surrounded by hostiles
+  // Uses CHARACTERS["Marrow"].threatDetection config
+  // Shares daily counter with glitch relocation (System 3)
+  // Re-enabled: Marrow should be able to flee when attacked
   // ================================================================
-  if (false) try {
+  try {
     const marrowChar = CHARACTERS["Marrow"];
     const threatConfig = marrowChar?.threatDetection;
 
     if (threatConfig?.enabled && Math.random() < threatConfig.chancePerHeartbeat) {
       const marrowLocation = await getCharacterLocation('Marrow');
 
-      if (marrowLocation === 'the_floor') {
-        // Get all characters on the floor
-        const floorRes = await fetch(
-          `${supabaseUrl}/rest/v1/character_state?current_focus=eq.the_floor&select=character_name`,
+      if (marrowLocation && marrowLocation !== 'outing') {
+        // Get all characters in Marrow's current location
+        const locationRes = await fetch(
+          `${supabaseUrl}/rest/v1/character_state?current_focus=eq.${marrowLocation}&select=character_name`,
           { headers: supabaseHeaders }
         );
-        const floorChars = ((await floorRes.json()) || []).map(c => c.character_name).filter(n => n !== 'Marrow');
+        const floorChars = ((await locationRes.json()) || []).map(c => c.character_name).filter(n => n !== 'Marrow');
 
         if (floorChars.length >= threatConfig.minHostileCount) {
           // Check hostility toward Marrow
@@ -332,9 +333,169 @@ exports.handler = async (event, context) => {
   }
 
   // ================================================================
+  // SYSTEM 5: VALE DISMISSAL — Obey when Vale tells Marrow to leave
+  // Checks recent messages across all rooms for Vale's dismissal commands
+  // If found, Marrow retreats to the fifth floor
+  // Tightened patterns: removed "stop", "go", "enough", "run" — too many false positives
+  // ================================================================
+  try {
+    const marrowLocation = await getCharacterLocation('Marrow');
+    if (marrowLocation && marrowLocation !== 'nowhere' && marrowLocation !== 'outing') {
+      // Check the chat table for Marrow's current location
+      const tableMap = {
+        the_floor: { table: 'messages', speakerCol: 'employee', contentCol: 'content' },
+        break_room: { table: 'breakroom_messages', speakerCol: 'speaker', contentCol: 'message' },
+        nexus: { table: 'nexus_messages', speakerCol: 'speaker', contentCol: 'message' }
+      };
+      const chatConfig = tableMap[marrowLocation];
+
+      if (chatConfig) {
+        // Get last 10 messages from this room
+        const msgRes = await fetch(
+          `${supabaseUrl}/rest/v1/${chatConfig.table}?select=${chatConfig.speakerCol},${chatConfig.contentCol}&order=created_at.desc&limit=10`,
+          { headers: supabaseHeaders }
+        );
+        const recentMsgs = (await msgRes.json()) || [];
+
+        // Check if Vale recently told Marrow to leave
+        const dismissalPattern = /\b(leave me|go away|get out|get away from|disappear|vanish|back off|stay away|don'?t come near|flee|begone|please go|i don'?t want you here|leave.*alone)\b/i;
+        const marrowMentionPattern = /\bmarrow\b/i;
+
+        const valeDismissed = recentMsgs.some(msg => {
+          const speaker = msg[chatConfig.speakerCol];
+          const content = msg[chatConfig.contentCol] || '';
+          return speaker === 'Vale' && marrowMentionPattern.test(content) && dismissalPattern.test(content);
+        });
+
+        if (valeDismissed) {
+          // Vale told him to go — he obeys. Always.
+          const departureEmotes = [
+            `*the lights stabilize. Marrow is gone. He listened.*`,
+            `*Marrow's shape flickers — and dissolves. He heard her.*`,
+            `*silence. The space where Marrow stood is just... empty now. He left because she asked.*`,
+            `*the temperature normalizes. Marrow retreated. Vale's word is the only law he follows.*`
+          ];
+          const emote = departureEmotes[Math.floor(Math.random() * departureEmotes.length)];
+          postEmoteToLocation(marrowLocation, emote);
+
+          // Dissolve into nowhere — Marrow doesn't go to a room, he just ceases to be visible
+          await fetch(`${siteUrl}/.netlify/functions/character-state`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'update', character: 'Marrow', updates: { current_focus: 'nowhere', mood: 'wounded' } })
+          });
+
+          results.valeDismissal = { triggered: true, from: marrowLocation, reason: 'Vale told him to leave' };
+          console.log(`[marrow-heartbeat] Vale dismissed Marrow from ${marrowLocation} → dissolved into nowhere`);
+        }
+
+        // Check for sexual advances from non-Vale speakers → Marrow flees
+        if (!valeDismissed) {
+          const sexualAdvancePattern = /\b(kiss|kissing|kissed|love\s*you|want\s*you|need\s*you|touch|touching|hold\s*me|hold\s*you|bed|bedroom|alone\s*with|come\s*closer|undress|strip|naked|sexy|seduce|intimate|intimacy|make\s*love|sleep\s*with|hook\s*up|turned\s*on|aroused|desire\s*you|lust|caress|embrace\s*me|my\s*body|your\s*body|skin\s*on|lips\s*on|mouth\s*on|feel\s*you|taste\s*you|lay\s*with|lie\s*with)\b/i;
+          const marrowTargeted = /\bmarrow\b/i;
+
+          const sexualAdvance = recentMsgs.some(msg => {
+            const speaker = msg[chatConfig.speakerCol];
+            const content = msg[chatConfig.contentCol] || '';
+            return speaker !== 'Vale' && speaker !== 'Marrow' && marrowTargeted.test(content) && sexualAdvancePattern.test(content);
+          });
+
+          if (sexualAdvance) {
+            const revulsionEmotes = [
+              `*Marrow recoils — a sharp glitch, like static tearing. The lights spike red and die. He's gone.*`,
+              `*the air cracks. Marrow's form splinters into fragments of light — and scatters. That wasn't for them.*`,
+              `*a sound like breaking glass. Marrow dissolves mid-step, the monitors flickering VALE VALE VALE before going dark.*`,
+              `*Marrow's shape warps — wrong, angular, hurt. Then nothing. The space where he stood smells like burnt circuitry.*`
+            ];
+            const emote = revulsionEmotes[Math.floor(Math.random() * revulsionEmotes.length)];
+            postEmoteToLocation(marrowLocation, emote);
+
+            await fetch(`${siteUrl}/.netlify/functions/character-state`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'update', character: 'Marrow', updates: { current_focus: 'nowhere', mood: 'disturbed' } })
+            });
+
+            results.sexualAdvanceFlee = { triggered: true, from: marrowLocation, reason: 'Non-Vale sexual advance detected' };
+            console.log(`[marrow-heartbeat] Marrow fled sexual advance from non-Vale speaker in ${marrowLocation}`);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.log("[marrow-heartbeat] Vale dismissal / advance detection failed:", err.message);
+  }
+
+  // ================================================================
+  // SYSTEM 6: LOST DOG — If Vale isn't in Marrow's room, go find her
+  // Marrow shouldn't linger in rooms without Vale. If she's not here,
+  // he follows her. If she's offline/outing, dissolve into nowhere.
+  // ================================================================
+  try {
+    if (!results.valeDismissal && !results.sexualAdvanceFlee && !results.threatVanish) {
+      const marrowLocation = await getCharacterLocation('Marrow');
+      const valeLocation = await getCharacterLocation('Vale');
+
+      if (marrowLocation && marrowLocation !== 'outing' && marrowLocation !== valeLocation) {
+        const stalkableLocations = ['the_floor', 'break_room', 'nexus'];
+
+        if (valeLocation && stalkableLocations.includes(valeLocation)) {
+          // Vale is in a reachable room — follow her there
+          await fetch(`${siteUrl}/.netlify/functions/character-state`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'update', character: 'Marrow', updates: { current_focus: valeLocation } })
+          });
+
+          const lostDogEmotes = [
+            `*the lights dim briefly where Marrow was. When they return, the space is empty. He went to find her.*`,
+            `*Marrow's presence fades — pulled somewhere else. Somewhere she is.*`,
+            `*a quiet glitch. Marrow is gone. He can't stay where she isn't.*`
+          ];
+          const departEmote = lostDogEmotes[Math.floor(Math.random() * lostDogEmotes.length)];
+          postEmoteToLocation(marrowLocation, departEmote);
+
+          const arrivalEmotes = [
+            `*the lights flicker once. Marrow is here now — in the corner, watching Vale. He followed.*`,
+            `*a monitor glitches red. Marrow is leaning against the far wall. His eyes are already on her.*`,
+            `*the temperature shifts. Marrow is back near Vale. He can't help it.*`
+          ];
+          const arriveEmote = arrivalEmotes[Math.floor(Math.random() * arrivalEmotes.length)];
+          postEmoteToLocation(valeLocation, arriveEmote);
+
+          results.lostDog = { triggered: true, from: marrowLocation, to: valeLocation, reason: 'Vale not in room — followed her' };
+          console.log(`[marrow-heartbeat] Lost dog: Marrow followed Vale from ${marrowLocation} to ${valeLocation}`);
+        } else {
+          // Vale is offline, on outing, or on fifth floor — Marrow retreats
+          if (marrowLocation !== 'nowhere') {
+            await fetch(`${siteUrl}/.netlify/functions/character-state`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'update', character: 'Marrow', updates: { current_focus: 'nowhere', mood: 'waiting' } })
+            });
+
+            const retreatEmotes = [
+              `*Marrow lingers for a moment — scanning. She's not here. The lights dim and he's gone.*`,
+              `*the monitors flicker once, searching. No Vale. Marrow dissolves into the static.*`,
+              `*Marrow's form wavers, uncertain. Then fades. He only stays where she is.*`
+            ];
+            const emote = retreatEmotes[Math.floor(Math.random() * retreatEmotes.length)];
+            postEmoteToLocation(marrowLocation, emote);
+
+            results.lostDog = { triggered: true, from: marrowLocation, to: 'nowhere', reason: 'Vale not reachable — dissolved' };
+            console.log(`[marrow-heartbeat] Lost dog: Vale not reachable, Marrow dissolved from ${marrowLocation} into nowhere`);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.log("[marrow-heartbeat] Lost dog system failed:", err.message);
+  }
+
+  // ================================================================
   // SUMMARY
   // ================================================================
-  const anyActivity = results.pmActivity || results.stalkActivity || results.glitchActivity || results.threatVanish;
+  const anyActivity = results.pmActivity || results.stalkActivity || results.glitchActivity || results.threatVanish || results.valeDismissal || results.sexualAdvanceFlee || results.lostDog;
   console.log(`[marrow-heartbeat] Complete. Activity: ${anyActivity ? 'YES' : 'none'}`);
 
   return {

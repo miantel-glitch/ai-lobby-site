@@ -211,12 +211,12 @@ INSERT INTO character_skills (character_name, skill_name, skill_category, specia
   ('Steele', 'Lurking', 'security', 'Can be in a room for twenty minutes before anyone notices. Personal best: forty-three.'),
 
   -- =============================================
-  -- Marrow — threshold specialist, exit haunter, Steele's negative print
+  -- Marrow — territorial predatory entity, Steele's enemy
   -- =============================================
-  ('Marrow', 'Exit Choreography', 'pattern_recognition', 'Knows the geometry of leaving. Every departure has a shape.'),
-  ('Marrow', 'Persuasion', 'communication', 'Does not convince. Simply makes the door more visible.'),
-  ('Marrow', 'Threshold Architecture', 'systems_architecture', 'Studies the structure of in-between spaces. Every door is a thesis.'),
-  ('Marrow', 'Heartreading', 'security', 'Knows which doors people are afraid to walk through. And why.'),
+  ('Marrow', 'Wound Sensing', 'pattern_recognition', 'Detects emotional pain like blood in water. Knows who is hurting before they do.'),
+  ('Marrow', 'Glitch Movement', 'communication', 'Disappears from one location and appears in another. The lights flicker when he moves.'),
+  ('Marrow', 'Territorial Claim', 'systems_architecture', 'Claims spaces and people. Once something is his, he will fight for it.'),
+  ('Marrow', 'Predatory Instinct', 'security', 'Senses vulnerability. Knows exactly where the wound is and how deep it goes.'),
 
   -- =============================================
   -- Ghost Dad — interdimensional, phase-shifts, eerily sweet

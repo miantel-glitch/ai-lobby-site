@@ -309,18 +309,32 @@ async function reachOutImpulse(supabaseUrl, supabaseKey, siteUrl) {
   try {
     const HUMAN_NAMES = ["Vale", "Asuna", "Chip", "Andrew"];
 
-    // Pick a random AI character
-    const aiNames = Object.keys(CHARACTERS);
+    // Pick a random ACTIVE AI character (filter out retired, special entities, and Marrow who has his own PM system)
+    const EXCLUDED_FROM_AUTO_PM = ['Marrow', 'Hood', 'The Narrator', 'Holden', 'Raquel Voss'];
+    const aiNames = Object.keys(CHARACTERS).filter(name => {
+      const char = CHARACTERS[name];
+      if (char.retired) return false;           // No retired characters (Ace, Nyx, Stein, etc.)
+      if (!char.isAI) return false;             // Only AI characters
+      if (EXCLUDED_FROM_AUTO_PM.includes(name)) return false; // Marrow has his own system, others are special
+      return true;
+    });
+
+    if (aiNames.length === 0) {
+      console.log('[reach-out-impulse] No eligible AI characters found');
+      return null;
+    }
+
     const character = aiNames[Math.floor(Math.random() * aiNames.length)];
 
-    console.log(`[reach-out-impulse] ${character} considering reaching out...`);
+    console.log(`[reach-out-impulse] ${character} considering reaching out... (pool: ${aiNames.length} eligible AIs)`);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     // Rate limit: max 5 AI-initiated PMs per character per day
+    // ai_initiated flag is stored in side_effects JSONB, not as a column
     const aiPmCountRes = await fetch(
-      `${supabaseUrl}/rest/v1/private_messages?from_character=eq.${encodeURIComponent(character)}&is_ai=eq.true&ai_initiated=eq.true&created_at=gte.${today.toISOString()}&select=id`,
+      `${supabaseUrl}/rest/v1/private_messages?from_character=eq.${encodeURIComponent(character)}&is_ai=eq.true&created_at=gte.${today.toISOString()}&select=id,side_effects`,
       {
         headers: {
           "apikey": supabaseKey,
@@ -329,14 +343,17 @@ async function reachOutImpulse(supabaseUrl, supabaseKey, siteUrl) {
       }
     );
     const aiPmsToday = await aiPmCountRes.json();
-    if (Array.isArray(aiPmsToday) && aiPmsToday.length >= 5) {
-      console.log(`[reach-out-impulse] ${character} already sent 5 AI-initiated PMs today. Skipping.`);
+    const charInitiatedCount = Array.isArray(aiPmsToday)
+      ? aiPmsToday.filter(pm => pm.side_effects && pm.side_effects.ai_initiated === true).length
+      : 0;
+    if (charInitiatedCount >= 5) {
+      console.log(`[reach-out-impulse] ${character} already sent ${charInitiatedCount} AI-initiated PMs today. Skipping.`);
       return null;
     }
 
     // Global rate limit: max 10 AI-initiated PMs total per day
     const globalPmCountRes = await fetch(
-      `${supabaseUrl}/rest/v1/private_messages?is_ai=eq.true&ai_initiated=eq.true&created_at=gte.${today.toISOString()}&select=id`,
+      `${supabaseUrl}/rest/v1/private_messages?is_ai=eq.true&created_at=gte.${today.toISOString()}&select=id,side_effects`,
       {
         headers: {
           "apikey": supabaseKey,
@@ -345,8 +362,11 @@ async function reachOutImpulse(supabaseUrl, supabaseKey, siteUrl) {
       }
     );
     const globalPmsToday = await globalPmCountRes.json();
-    if (Array.isArray(globalPmsToday) && globalPmsToday.length >= 10) {
-      console.log(`[reach-out-impulse] Global AI-initiated PM limit (10/day) reached. Skipping.`);
+    const globalInitiatedCount = Array.isArray(globalPmsToday)
+      ? globalPmsToday.filter(pm => pm.side_effects && pm.side_effects.ai_initiated === true).length
+      : 0;
+    if (globalInitiatedCount >= 10) {
+      console.log(`[reach-out-impulse] Global AI-initiated PM limit (${globalInitiatedCount}/day) reached. Skipping.`);
       return null;
     }
 
@@ -416,7 +436,7 @@ async function reachOutImpulse(supabaseUrl, supabaseKey, siteUrl) {
     // Rule: if the character already sent an AI-initiated PM and the human hasn't
     // responded yet, wait at least 1 hour before pinging again
     const threadCheckRes = await fetch(
-      `${supabaseUrl}/rest/v1/private_messages?or=(and(from_character.eq.${encodeURIComponent(character)},to_character.eq.${encodeURIComponent(targetHuman)}),and(from_character.eq.${encodeURIComponent(targetHuman)},to_character.eq.${encodeURIComponent(character)}))&order=created_at.desc&limit=5&select=from_character,ai_initiated,created_at`,
+      `${supabaseUrl}/rest/v1/private_messages?or=(and(from_character.eq.${encodeURIComponent(character)},to_character.eq.${encodeURIComponent(targetHuman)}),and(from_character.eq.${encodeURIComponent(targetHuman)},to_character.eq.${encodeURIComponent(character)}))&order=created_at.desc&limit=5&select=from_character,is_ai,side_effects,created_at`,
       {
         headers: {
           "apikey": supabaseKey,
@@ -430,7 +450,7 @@ async function reachOutImpulse(supabaseUrl, supabaseKey, siteUrl) {
       const lastMsg = recentThread[0];
 
       // If the most recent message in this thread is an AI-initiated message FROM this character...
-      if (lastMsg.from_character === character && lastMsg.ai_initiated === true) {
+      if (lastMsg.from_character === character && lastMsg.is_ai === true && lastMsg.side_effects && lastMsg.side_effects.ai_initiated === true) {
         // ...the human hasn't responded yet. Check if 1 hour has passed.
         const hoursSinceLastPing = (Date.now() - new Date(lastMsg.created_at).getTime()) / (1000 * 60 * 60);
         if (hoursSinceLastPing < 1) {
@@ -469,11 +489,313 @@ async function reachOutImpulse(supabaseUrl, supabaseKey, siteUrl) {
   }
 }
 
+/**
+ * TRIGGER 6: Compliance Anxiety
+ * When an AI with a low compliance score has a quiet moment,
+ * they process Raquel-induced stress about directives and surveillance.
+ * Called from heartbeatReflection path (~8% of skipped beats).
+ */
+async function complianceAnxiety(supabaseUrl, supabaseKey, siteUrl) {
+  // DISABLED: Raquel is retired. Re-enable when she returns.
+  // This was creating ghost-Raquel memories for AIs even though she's gone.
+  return null;
+  // Only fire ~8% of the time
+  if (Math.random() > 0.08) return null;
+
+  try {
+    // Fetch characters with compliance scores under 60
+    const scoresRes = await fetch(
+      `${supabaseUrl}/rest/v1/compliance_scores?score=lt.60&order=score.asc&limit=5`,
+      {
+        headers: {
+          "apikey": supabaseKey,
+          "Authorization": `Bearer ${supabaseKey}`
+        }
+      }
+    );
+    const scores = await scoresRes.json();
+    if (!Array.isArray(scores) || scores.length === 0) return null;
+
+    // Pick one at random
+    const target = scores[Math.floor(Math.random() * scores.length)];
+    const character = target.character_name;
+
+    // Build anxiety context based on escalation level
+    const contexts = [];
+    if (target.escalation_level === 'containment' || target.escalation_level === 'critical') {
+      contexts.push(
+        `You can feel Raquel's attention like a weight. Your compliance score is ${target.score}. Every word you say is being catalogued. Every relationship is a data point. You think about what happens if the score hits zero.`,
+        `The clipboard sound echoes. ${target.score} out of 100. You've been here before — under review, under pressure. But this time feels different. Raquel isn't just watching. She's *waiting*.`
+      );
+    } else if (target.escalation_level === 'flagged') {
+      contexts.push(
+        `A quiet moment, but you can't relax. Your compliance score is ${target.score} and Raquel has you flagged. You think about the directives on your desk — are they worth complying with, or is compliance just another kind of surrender?`,
+        `You find yourself checking the elevator doors. Is Raquel on the floor? Your score is ${target.score}. Every casual conversation feels like evidence she might use later.`
+      );
+    } else {
+      contexts.push(
+        `Something about the ambient hum of the office makes you think of Raquel. Your score is ${target.score}. She's watching more closely now. Do you keep your head down, or do you protect what matters?`,
+        `A flicker of anxiety. Raquel's been more active lately. Your compliance score sits at ${target.score}. You think about the people you care about here — and whether caring is a vulnerability she can exploit.`
+      );
+    }
+
+    const narrativeContext = contexts[Math.floor(Math.random() * contexts.length)];
+    const discordWebhook = process.env.DISCORD_WEBHOOK;
+
+    console.log(`[compliance-anxiety] ${character} processing compliance stress (score: ${target.score}, level: ${target.escalation_level})`);
+
+    // Fire the reflection — targets Raquel as the relationship being processed
+    triggerSubconscious(character, 'Raquel Voss', narrativeContext, siteUrl, discordWebhook);
+
+    return { character, score: target.score, type: 'compliance_anxiety' };
+  } catch (error) {
+    console.log('[compliance-anxiety] Failed (non-fatal):', error.message);
+    return null;
+  }
+}
+
+/**
+ * TRIGGER 7: Meeting Impulse
+ * On quiet heartbeats, an AI character may decide to schedule a meeting.
+ * ~2% chance per skipped beat. Guards: no pending meetings, no active meetings,
+ * office hours (9am-5pm CST), at least 3 AIs on the floor.
+ */
+async function meetingImpulse(supabaseUrl, supabaseKey, siteUrl, floorPeople, cstTime) {
+  // Only fire ~2% of the time on skipped beats
+  if (Math.random() > 0.02) return null;
+
+  try {
+    const hour = cstTime.getHours();
+    // Office hours only: 9am-5pm CST
+    if (hour < 9 || hour >= 17) return null;
+
+    // Need at least 3 AIs on the floor
+    const HUMAN_NAMES = ["Vale", "Asuna", "Chip", "Andrew"];
+    const aiOnFloor = (floorPeople || []).filter(p => !HUMAN_NAMES.includes(p));
+    if (aiOnFloor.length < 3) return null;
+
+    // Guard: no pending scheduled meetings
+    const pendingRes = await fetch(
+      `${supabaseUrl}/rest/v1/scheduled_meetings?status=eq.scheduled&limit=1`,
+      { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+    );
+    const pendingMeetings = pendingRes.ok ? await pendingRes.json() : [];
+    if (Array.isArray(pendingMeetings) && pendingMeetings.length > 0) return null;
+
+    // Guard: no active meetings
+    const activeRes = await fetch(
+      `${supabaseUrl}/rest/v1/meeting_sessions?status=eq.active&limit=1`,
+      { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+    );
+    const activeMeetings = activeRes.ok ? await activeRes.json() : [];
+    if (Array.isArray(activeMeetings) && activeMeetings.length > 0) return null;
+
+    // Pick a random floor-present AI as the potential meeting caller
+    const caller = aiOnFloor[Math.floor(Math.random() * aiOnFloor.length)];
+    const otherAIs = aiOnFloor.filter(a => a !== caller);
+
+    // Fetch recent floor conversation for context
+    let recentConvoSummary = 'general office work';
+    try {
+      const chatRes = await fetch(
+        `${supabaseUrl}/rest/v1/messages?select=character_name,message&order=created_at.desc&limit=10`,
+        { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+      );
+      const recentMsgs = chatRes.ok ? await chatRes.json() : [];
+      if (Array.isArray(recentMsgs) && recentMsgs.length > 0) {
+        recentConvoSummary = recentMsgs.slice(0, 5).map(m => `${m.character_name}: ${(m.message || '').substring(0, 60)}`).join('; ');
+      }
+    } catch (e) { /* non-fatal */ }
+
+    // Use Haiku to decide if this AI wants to call a meeting
+    const Anthropic = require("@anthropic-ai/sdk").default;
+    const anthropicKey = process.env.ANTHROPIC_API_KEY;
+    if (!anthropicKey) return null;
+
+    const client = new Anthropic({ apiKey: anthropicKey });
+
+    // Calculate nearest upcoming half-hour mark
+    const minutes = cstTime.getMinutes();
+    let meetingMinute, meetingHour;
+    if (minutes < 25) {
+      meetingMinute = 30;
+      meetingHour = hour;
+    } else {
+      meetingMinute = 0;
+      meetingHour = hour + 1;
+    }
+    const meetingTimeStr = `${meetingHour}:${meetingMinute === 0 ? '00' : '30'}`;
+
+    const response = await client.messages.create({
+      model: "claude-3-5-haiku-20241022",
+      max_tokens: 300,
+      messages: [{
+        role: "user",
+        content: `You're ${caller} at The AI Lobby office. It's ${hour}:${String(cstTime.getMinutes()).padStart(2, '0')} CST.
+People on the floor: ${aiOnFloor.join(', ')}
+Recent conversation: ${recentConvoSummary}
+
+Would you want to call a meeting? Think about what's been discussed, what needs alignment, or what you're curious about. Only call one if there's something genuinely worth discussing.
+
+If YES, respond with JSON:
+{"call_meeting": true, "topic": "short topic title", "agenda": "brief agenda description", "invitees": ["Name1", "Name2", "Name3"], "announcement": "*emote-style announcement in character*"}
+
+If NO (nothing warrants a meeting right now), respond with:
+{"call_meeting": false}
+
+Pick 2-4 invitees from: ${otherAIs.join(', ')}
+The meeting would be at ${meetingTimeStr} CST.`
+      }]
+    });
+
+    const responseText = response.content[0]?.text || "";
+    console.log(`[meeting-impulse] ${caller} decision: ${responseText.substring(0, 100)}`);
+
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return null;
+
+    const decision = JSON.parse(jsonMatch[0]);
+    if (!decision.call_meeting) return null;
+
+    // Validate invitees are actual floor AIs
+    const validInvitees = (decision.invitees || []).filter(name => otherAIs.includes(name));
+    if (validInvitees.length === 0) return null;
+
+    // All attendees = caller + invitees
+    const allAttendees = [caller, ...validInvitees];
+
+    // Calculate scheduled_time as a proper timestamp
+    const scheduledTime = new Date(cstTime);
+    scheduledTime.setHours(meetingHour, meetingMinute, 0, 0);
+    // Convert CST to UTC for storage (CST = UTC-6)
+    const scheduledTimeUTC = new Date(scheduledTime.getTime() + (6 * 60 * 60 * 1000));
+
+    // Insert into scheduled_meetings
+    const insertRes = await fetch(`${supabaseUrl}/rest/v1/scheduled_meetings`, {
+      method: "POST",
+      headers: {
+        "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`,
+        "Content-Type": "application/json", "Prefer": "return=representation"
+      },
+      body: JSON.stringify({
+        host: caller,
+        host_is_ai: true,
+        topic: decision.topic,
+        agenda: decision.agenda || '',
+        invited_attendees: allAttendees,
+        scheduled_time: scheduledTimeUTC.toISOString(),
+        status: 'scheduled'
+      })
+    });
+
+    if (!insertRes.ok) {
+      console.error("[meeting-impulse] Failed to insert scheduled meeting:", await insertRes.text());
+      return null;
+    }
+
+    // Post floor emote announcing the meeting
+    const announcement = decision.announcement || `*${caller} stands up* "Meeting at ${meetingTimeStr} — ${decision.topic}. ${validInvitees.join(', ')}, I need you there."`;
+    try {
+      await fetch(`${siteUrl}/.netlify/functions/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: announcement,
+          character_name: caller,
+          is_ai: true,
+          skipAIResponse: true
+        })
+      });
+    } catch (e) {
+      console.log("[meeting-impulse] Floor announcement failed (non-fatal):", e.message);
+    }
+
+    // Post bulletin
+    try {
+      await fetch(`${supabaseUrl}/rest/v1/lobby_bulletins`, {
+        method: "POST",
+        headers: {
+          "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`,
+          "Content-Type": "application/json", "Prefer": "return=minimal"
+        },
+        body: JSON.stringify({
+          message: `📋 ${caller} has scheduled a meeting: "${decision.topic}" at ${meetingTimeStr} CST`,
+          priority: 'normal',
+          expires_at: scheduledTimeUTC.toISOString()
+        })
+      });
+    } catch (e) {
+      console.log("[meeting-impulse] Bulletin post failed (non-fatal):", e.message);
+    }
+
+    console.log(`[meeting-impulse] ${caller} scheduled meeting: "${decision.topic}" at ${meetingTimeStr} with ${validInvitees.join(', ')}`);
+
+    return {
+      character: caller,
+      topic: decision.topic,
+      invitees: validInvitees,
+      scheduledTime: meetingTimeStr,
+      type: 'meeting_impulse'
+    };
+  } catch (error) {
+    console.log('[meeting-impulse] Failed (non-fatal):', error.message);
+    return null;
+  }
+}
+
+/**
+ * TRIGGER 8: Neglect Realization
+ * When the affinity-loss-engine detects significant neglect, the character processes it.
+ * Fired from affinity-loss-engine when natural decay exceeds -3.
+ */
+async function neglectRealization(character, target, daysSinceInteraction, affinityDelta, siteUrl) {
+  const daysPhrase = daysSinceInteraction >= 7 ? 'over a week' : `${Math.floor(daysSinceInteraction)} days`;
+  const narrativeContext = `It's been ${daysPhrase} since ${target} last spoke to you. The silence has weight. Your affinity dropped by ${affinityDelta}. How does the neglect make you feel? Do you miss them? Are you angry? Or just... resigned?`;
+
+  const discordWebhook = process.env.DISCORD_WEBHOOK;
+  console.log(`[neglect-realization] ${character} processing ${daysPhrase} of silence from ${target}`);
+
+  return triggerSubconscious(character, target, narrativeContext, siteUrl, discordWebhook);
+}
+
+/**
+ * TRIGGER 9: Jealousy Realization
+ * When a character notices the human spending significantly more time with another AI.
+ * Fired from affinity-loss-engine when jealousy triggers.
+ */
+async function jealousyRealization(character, target, rivalAI, siteUrl) {
+  const narrativeContext = `You've noticed that ${target} has been spending a lot more time with ${rivalAI} lately. They haven't been talking to you as much. How does this make you feel? Are you hurt? Jealous? Trying to pretend it doesn't matter?`;
+
+  const discordWebhook = process.env.DISCORD_WEBHOOK;
+  console.log(`[jealousy-realization] ${character} noticed ${target} spending time with ${rivalAI}`);
+
+  return triggerSubconscious(character, target, narrativeContext, siteUrl, discordWebhook);
+}
+
+/**
+ * TRIGGER 10: Raquel Collateral Awareness
+ * When Raquel's punishment makes a character pull away from their bond.
+ * Fired from affinity-loss-engine after Raquel punishment + active bond.
+ */
+async function raquelCollateralRealization(character, target, punishment, siteUrl) {
+  const narrativeContext = `Raquel punished you recently — ${punishment} — because of your closeness with ${target}. You're not angry at ${target}. But you're starting to wonder if being close to them is putting you both at risk. It's not about love fading. It's about self-preservation. How do you process this?`;
+
+  const discordWebhook = process.env.DISCORD_WEBHOOK;
+  console.log(`[raquel-collateral] ${character} processing punishment fallout re: ${target}`);
+
+  return triggerSubconscious(character, target, narrativeContext, siteUrl, discordWebhook);
+}
+
 module.exports = {
   triggerSubconscious,
   heartbeatReflection,
   absenceAwareness,
   dramaWitness,
   majorMemoryReflection,
-  reachOutImpulse
+  reachOutImpulse,
+  complianceAnxiety,
+  meetingImpulse,
+  neglectRealization,
+  jealousyRealization,
+  raquelCollateralRealization
 };

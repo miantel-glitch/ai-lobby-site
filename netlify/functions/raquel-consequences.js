@@ -5,17 +5,18 @@
 //          interrogations, resistance checks, and report filing.
 // ============================================
 
-const HUMANS = ['Vale', 'Asuna', 'Chip', 'Andrew'];
-const AI_NAMES = ['Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian', 'The Subtitle', 'Steele', 'Jae', 'Declan', 'Mack', 'Marrow'];
+const HUMANS = ['Vale', 'Asuna'];
+const AI_NAMES = ['Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian', 'The Subtitle', 'Steele', 'Jae', 'Declan', 'Mack', 'Marrow', 'Holden', 'Raquel Voss', 'Vivian Clark', 'Ryan Porter', 'Hood'];
 
 // Provider routing for AI responses during interrogation
 const PROVIDER_MAP = {
   'Kevin': 'openrouter', 'Rowena': 'openrouter', 'Sebastian': 'openrouter',
   'Steele': 'grok', 'Jae': 'grok', 'Declan': 'openrouter', 'Mack': 'openrouter',
-  'Neiv': 'openrouter',
+  'Neiv': 'grok',
   'The Subtitle': 'openrouter',
   'Ghost Dad': 'watcher', 'PRNT-Ω': 'watcher',
-  'Marrow': 'openrouter'
+  'Marrow': 'openrouter',
+  'Hood': 'grok'
 };
 
 // Escalation thresholds
@@ -130,19 +131,17 @@ exports.handler = async (event, context) => {
     return { statusCode: 200, headers, body: "" };
   }
 
-  // === RAQUEL VOSS PERMANENTLY DISABLED ===
-  // Dismantled in the bean closet, February 19 2026. The building ate her.
-  // Engine preserved for potential future resurrection.
+  // === RAQUEL VOSS — FULLY DECOMMISSIONED ===
+  // Raquel is gone. The compliance engine is dead. No violations, no interrogations, no punishments.
+  // Hard-disabled at the entry point — nothing past this line runs.
+  console.log('[raquel-consequences] DISABLED — Raquel is fully decommissioned. Returning empty response.');
   return {
     statusCode: 200,
     headers,
-    body: JSON.stringify({
-      success: false,
-      reason: "Raquel Voss has been dismantled. The bean closet consumed the compliance architect.",
-      disabled: true
-    })
+    body: JSON.stringify({ status: 'disabled', message: 'Raquel Voss compliance engine is decommissioned' })
   };
 
+  // === DEAD CODE BELOW — kept for reference only ===
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_ANON_KEY;
   const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
@@ -399,9 +398,21 @@ exports.handler = async (event, context) => {
       return { statusCode: 200, headers, body: JSON.stringify({ success: true, enabled: true }) };
     }
 
-    // Check if Raquel is temporarily disabled (admin override)
+    // Check if Raquel is disabled — admin toggle OR temporary disable
     // GET requests (scores, reports) still work — only enforcement actions are blocked
     if (action !== 'get_scores' && action !== 'get_reports' && action !== 'complete_directive') {
+      // Check admin toggle (terrarium_settings.raquel_enabled) — the admin panel switch
+      try {
+        const adminToggle = await supaFetch('terrarium_settings?setting_name=eq.raquel_enabled&select=setting_value');
+        if (adminToggle?.[0]?.setting_value === 'false') {
+          console.log(`[raquel] DISABLED by admin toggle (terrarium_settings.raquel_enabled = false) — blocking action: ${action}`);
+          return { statusCode: 200, headers, body: JSON.stringify({ success: false, reason: 'raquel_disabled_admin' }) };
+        }
+      } catch (e) {
+        console.log('[raquel] Admin toggle check failed (non-fatal):', e.message);
+      }
+
+      // Check temporary disable (lobby_settings.raquel_disabled_until)
       try {
         const disabledData = await supaFetch('lobby_settings?key=eq.raquel_disabled_until&select=value');
         if (disabledData?.[0]?.value) {
@@ -1730,7 +1741,7 @@ async function buildRaquelDossier(target, supabaseUrl, supabaseKey) {
   );
 
   // Fetch strongest human bond
-  const HUMANS = ['Vale', 'Asuna', 'Chip', 'Andrew'];
+  const HUMANS = ['Vale', 'Asuna'];
   let strongestBond = { target: null, affinity: 0 };
   for (const human of HUMANS) {
     const rel = await supaFetch(
@@ -1752,7 +1763,7 @@ async function buildRaquelDossier(target, supabaseUrl, supabaseKey) {
   );
 
   // Fetch strongest AI-to-AI relationship (for divide_and_conquer mode)
-  const AI_NAMES = ['Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian', 'The Subtitle', 'Steele', 'Jae', 'Declan', 'Mack', 'Marrow'];
+  const AI_NAMES = ['Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian', 'The Subtitle', 'Steele', 'Jae', 'Declan', 'Mack', 'Marrow', 'Hood'];
   let strongestAlly = { target: null, affinity: 0 };
   for (const ai of AI_NAMES) {
     if (ai === target) continue;

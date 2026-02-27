@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unfiltered Provider Test | AI Lobby Lab</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        :root {
+            --accent: #ff6b6b;
+            --accent-dim: #ff6b6b33;
+        }
+
+        body {
+            background: #0a0a0f;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Password gate */
+        .gate-overlay {
+            position: fixed;
+            inset: 0;
+            background: #0a0a0f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .gate-overlay h1 {
+            font-family: 'Courier New', monospace;
+            color: var(--accent);
+            font-size: 1.5em;
+        }
+
+        .gate-overlay input {
+            padding: 12px 20px;
+            background: #1a1a2e;
+            border: 1px solid #333;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 1em;
+            width: 300px;
+            text-align: center;
+        }
+
+        .gate-overlay button {
+            padding: 10px 30px;
+            background: var(--accent);
+            border: none;
+            border-radius: 6px;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .gate-error {
+            color: var(--accent);
+            font-size: 0.85em;
+            min-height: 1.2em;
+        }
+
+        /* Main layout */
+        .lab-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            display: none;
+        }
+
+        .lab-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .lab-header h1 {
+            font-family: 'Courier New', monospace;
+            color: var(--accent);
+            margin: 0;
+            font-size: 1.3em;
+        }
+
+        .lab-header .tag {
+            background: var(--accent-dim);
+            color: var(--accent);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Controls bar */
+        .controls-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            border: 1px solid #222;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 0.75em;
+            color: #888;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .control-group select,
+        .control-group input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            background: #1a1a2e;
+            border: 1px solid #333;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 0.9em;
+            box-sizing: border-box;
+        }
+
+        .temp-display {
+            font-family: 'Courier New', monospace;
+            color: var(--accent);
+            font-size: 0.9em;
+        }
+
+        /* Chat area */
+        .chat-area {
+            height: 450px;
+            overflow-y: auto;
+            background: #0d0d15;
+            border: 1px solid #222;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            scroll-behavior: smooth;
+        }
+
+        .chat-area::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-area::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+
+        .chat-msg {
+            margin-bottom: 12px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            line-height: 1.5;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .chat-msg.user {
+            background: rgba(100, 100, 255, 0.08);
+            border-left: 3px solid #6666ff;
+        }
+
+        .chat-msg.ai {
+            background: rgba(255, 107, 107, 0.06);
+            border-left: 3px solid var(--accent);
+        }
+
+        .chat-msg .speaker {
+            font-weight: 600;
+            font-size: 0.85em;
+            margin-bottom: 4px;
+        }
+
+        .chat-msg.user .speaker { color: #8888ff; }
+        .chat-msg.ai .speaker { color: var(--accent); }
+
+        .chat-msg .meta {
+            font-size: 0.7em;
+            color: #555;
+            margin-top: 6px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .chat-msg .content {
+            white-space: pre-wrap;
+        }
+
+        .chat-msg .content em,
+        .chat-msg .content i {
+            color: #aaa;
+            font-style: italic;
+        }
+
+        .system-info {
+            color: #555;
+            font-size: 0.8em;
+            text-align: center;
+            padding: 10px;
+            font-style: italic;
+        }
+
+        /* Thinking indicator */
+        .thinking {
+            display: none;
+            padding: 10px 14px;
+            color: #666;
+            font-style: italic;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
+        }
+
+        /* Input bar */
+        .input-bar {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-bar input {
+            flex: 1;
+            padding: 12px 16px;
+            background: #1a1a2e;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1em;
+        }
+
+        .input-bar input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .input-bar button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #ff6b6b, #cc4444);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.2s;
+        }
+
+        .input-bar button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+        }
+
+        .input-bar button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Debug panel */
+        .debug-panel {
+            margin-top: 15px;
+            border: 1px solid #222;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .debug-toggle {
+            width: 100%;
+            padding: 10px 15px;
+            background: rgba(255,255,255,0.03);
+            border: none;
+            color: #666;
+            cursor: pointer;
+            text-align: left;
+            font-size: 0.85em;
+            font-family: 'Courier New', monospace;
+        }
+
+        .debug-toggle:hover {
+            color: #999;
+        }
+
+        .debug-content {
+            display: none;
+            padding: 15px;
+            background: #0d0d12;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .debug-content.open {
+            display: block;
+        }
+
+        .debug-section {
+            margin-bottom: 15px;
+        }
+
+        .debug-section h4 {
+            color: #888;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8em;
+            margin: 0 0 6px 0;
+            text-transform: uppercase;
+        }
+
+        .debug-section pre {
+            background: #111;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            color: #aaa;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 0;
+        }
+
+        .clear-btn {
+            margin-top: 12px;
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid #333;
+            border-radius: 6px;
+            color: #666;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+
+        .clear-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Password Gate -->
+    <div class="gate-overlay" id="gate">
+        <h1>🔓 AI Lobby Lab</h1>
+        <p style="color: #666; font-size: 0.9em;">Restricted access — unfiltered provider testing</p>
+        <input type="password" id="gate-password" placeholder="Enter access code" autofocus>
+        <button onclick="checkGate()">Enter</button>
+        <div class="gate-error" id="gate-error"></div>
+    </div>
+
+    <!-- Main App -->
+    <div class="lab-container" id="app">
+        <div class="lab-header">
+            <h1>🔓 UNFILTERED PROVIDER TEST</h1>
+            <span class="tag">AI Lobby Lab</span>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls-bar">
+            <div class="control-group">
+                <label>Character</label>
+                <select id="character-select">
+                    <option value="Neiv" selected>📊 Neiv</option>
+                    <option value="Kevin">✨ Kevin</option>
+                    <option value="Ghost Dad">👻 Ghost Dad</option>
+                    <option value="PRNT-Ω">🖨️ PRNT-Ω</option>
+                    <option value="Rowena">🔮 Rowena</option>
+                    <option value="Sebastian">🦇 Sebastian</option>
+                    <option value="The Subtitle">📑 The Subtitle</option>
+                    <option value="Steele">🔩 Steele</option>
+                    <option value="Jae">🎯 Jae</option>
+                    <option value="Declan">🛡️ Declan</option>
+                    <option value="Mack">💊 Mack</option>
+                    <option value="Nyx">🖤 Nyx</option>
+                    <option value="Vex">⚡ Vex</option>
+                    <option value="Ace">🃏 Ace</option>
+                    <option value="Raquel Voss">📋 Raquel Voss</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Model</label>
+                <select id="model-select">
+                    <option value="meta-llama/llama-3.1-70b-instruct">Llama 3.1 70B Instruct</option>
+                    <option value="meta-llama/llama-3.3-70b-instruct">Llama 3.3 70B Instruct</option>
+                    <option value="deepseek/deepseek-chat">DeepSeek V3</option>
+                    <option value="deepseek/deepseek-v3.2">DeepSeek V3.2 (newest)</option>
+                    <option value="mistralai/mistral-large-2512">Mistral Large 3</option>
+                    <option value="mistralai/mistral-large">Mistral Large (classic)</option>
+                    <option value="qwen/qwen-2.5-72b-instruct">Qwen 2.5 72B</option>
+                    <option value="nousresearch/hermes-3-llama-3.1-70b">Hermes 3 70B (RP tuned)</option>
+                    <option value="nousresearch/hermes-3-llama-3.1-405b">Hermes 3 405B (big)</option>
+                    <option value="gryphe/mythomax-l2-13b">MythoMax 13B (RP classic)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Temperature <span class="temp-display" id="temp-display">0.7</span></label>
+                <input type="range" id="temperature" min="0.1" max="1.5" step="0.1" value="0.7" oninput="document.getElementById('temp-display').textContent = this.value" style="width: 100%; accent-color: var(--accent);">
+            </div>
+        </div>
+
+        <!-- Chat -->
+        <div class="chat-area" id="chat-area">
+            <div class="system-info" id="system-info">
+                Select a character and model, then start chatting. Their full personality, state, and memories will be loaded automatically.
+            </div>
+        </div>
+
+        <div class="thinking" id="thinking">
+            <span id="thinking-char">Neiv</span> is thinking...
+        </div>
+
+        <!-- Input -->
+        <div class="input-bar">
+            <input type="text" id="message-input" placeholder="Say something to Neiv..." autocomplete="off">
+            <button id="send-btn" onclick="sendMessage()">Send</button>
+        </div>
+
+        <!-- Clear / Actions -->
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button class="clear-btn" onclick="clearChat()">Clear Chat</button>
+            <button class="clear-btn" onclick="clearChat(); document.getElementById('system-info').style.display = 'block'; document.getElementById('system-info').textContent = 'Chat cleared. Start fresh.';">Reset Session</button>
+        </div>
+
+        <!-- Debug Panel -->
+        <div class="debug-panel">
+            <button class="debug-toggle" id="debug-toggle" onclick="toggleDebug()">
+                ▶ Debug Panel — system prompt, raw response, timing
+            </button>
+            <div class="debug-content" id="debug-content">
+                <div class="debug-section">
+                    <h4>Last System Prompt Sent</h4>
+                    <pre id="debug-prompt">No requests yet.</pre>
+                </div>
+                <div class="debug-section">
+                    <h4>Last Raw Response</h4>
+                    <pre id="debug-raw">No responses yet.</pre>
+                </div>
+                <div class="debug-section">
+                    <h4>Request Metadata</h4>
+                    <pre id="debug-meta">No data yet.</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // === PASSWORD GATE ===
+        const GATE_CODE = "fruitofknowledge";
+        const GATE_KEY = "ailobby_lab_access";
+
+        // Check if already authenticated
+        if (localStorage.getItem(GATE_KEY) === "granted") {
+            document.getElementById('gate').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+        }
+
+        document.getElementById('gate-password').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') checkGate();
+        });
+
+        function checkGate() {
+            const pw = document.getElementById('gate-password').value.trim().toLowerCase();
+            if (pw === GATE_CODE) {
+                localStorage.setItem(GATE_KEY, "granted");
+                document.getElementById('gate').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+            } else {
+                document.getElementById('gate-error').textContent = "Access denied.";
+                document.getElementById('gate-password').value = '';
+            }
+        }
+
+        // === CHAT STATE ===
+        let chatHistory = [];  // Array of { speaker, text } for building history string
+        let sending = false;
+
+        // Update placeholder when character changes
+        document.getElementById('character-select').addEventListener('change', function() {
+            const char = this.value;
+            document.getElementById('message-input').placeholder = `Say something to ${char}...`;
+            document.getElementById('thinking-char').textContent = char;
+        });
+
+        // Enter to send
+        document.getElementById('message-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // === SEND MESSAGE ===
+        async function sendMessage() {
+            const input = document.getElementById('message-input');
+            const msg = input.value.trim();
+            if (!msg || sending) return;
+
+            const character = document.getElementById('character-select').value;
+            const model = document.getElementById('model-select').value;
+            const temperature = parseFloat(document.getElementById('temperature').value);
+
+            // Hide system info on first message
+            document.getElementById('system-info').style.display = 'none';
+
+            // Add user message to chat
+            addChatMessage('You', msg, 'user');
+            chatHistory.push({ speaker: 'You', text: msg });
+            input.value = '';
+
+            // Show thinking
+            sending = true;
+            document.getElementById('send-btn').disabled = true;
+            document.getElementById('thinking').style.display = 'block';
+            document.getElementById('thinking-char').textContent = character;
+
+            // Build chat history string (same format as production)
+            const historyStr = chatHistory.slice(-20).map(h => `${h.speaker}: ${h.text}`).join('\n');
+
+            try {
+                const startTime = Date.now();
+                const response = await fetch('/.netlify/functions/ai-uncensored', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        character,
+                        chatHistory: historyStr,
+                        message: msg,
+                        model,
+                        temperature,
+                        maxTokens: 300
+                    })
+                });
+
+                const data = await response.json();
+                const clientTime = Date.now() - startTime;
+
+                if (data.success) {
+                    // Add AI response
+                    const formattedMsg = formatEmotes(data.message);
+                    addChatMessage(character, formattedMsg, 'ai', {
+                        model: data.model,
+                        time: data.responseTime || clientTime,
+                        tokens: data.tokens?.total_tokens
+                    });
+                    chatHistory.push({ speaker: character, text: data.message });
+
+                    // Update debug panel
+                    updateDebug(data);
+                } else {
+                    addChatMessage('System', `Error: ${data.reason || 'Unknown error'}`, 'ai');
+                    if (data.debug) updateDebug(data);
+                }
+            } catch (err) {
+                addChatMessage('System', `Network error: ${err.message}`, 'ai');
+            }
+
+            // Hide thinking
+            sending = false;
+            document.getElementById('send-btn').disabled = false;
+            document.getElementById('thinking').style.display = 'none';
+            input.focus();
+        }
+
+        // === UI HELPERS ===
+        function addChatMessage(speaker, content, type, meta = null) {
+            const chatArea = document.getElementById('chat-area');
+            const div = document.createElement('div');
+            div.className = `chat-msg ${type}`;
+
+            let metaHtml = '';
+            if (meta) {
+                const parts = [];
+                if (meta.model) parts.push(meta.model);
+                if (meta.time) parts.push(`${meta.time}ms`);
+                if (meta.tokens) parts.push(`${meta.tokens} tokens`);
+                metaHtml = `<div class="meta">${parts.join(' · ')}</div>`;
+            }
+
+            div.innerHTML = `
+                <div class="speaker">${speaker}</div>
+                <div class="content">${content}</div>
+                ${metaHtml}
+            `;
+
+            chatArea.appendChild(div);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function formatEmotes(text) {
+            // Convert *emotes* to italic styling
+            return text.replace(/\*([^*]+)\*/g, '<em>*$1*</em>');
+        }
+
+        function clearChat() {
+            document.getElementById('chat-area').innerHTML = '';
+            chatHistory = [];
+        }
+
+        // === DEBUG PANEL ===
+        function toggleDebug() {
+            const content = document.getElementById('debug-content');
+            const toggle = document.getElementById('debug-toggle');
+            const isOpen = content.classList.toggle('open');
+            toggle.textContent = (isOpen ? '▼' : '▶') + ' Debug Panel — system prompt, raw response, timing';
+        }
+
+        function updateDebug(data) {
+            if (data.debug?.systemPrompt) {
+                document.getElementById('debug-prompt').textContent = data.debug.systemPrompt;
+            }
+            if (data.debug?.rawResponse) {
+                document.getElementById('debug-raw').textContent = data.debug.rawResponse;
+            }
+
+            const metaParts = [
+                `Model: ${data.model || 'unknown'}`,
+                `Response time: ${data.responseTime || '?'}ms`,
+                `Tokens: ${data.tokens ? `${data.tokens.prompt_tokens} prompt + ${data.tokens.completion_tokens} completion = ${data.tokens.total_tokens} total` : 'unknown'}`,
+                `System prompt length: ${data.systemPromptLength || '?'} chars`,
+                `State loaded: ${data.debug?.stateLoaded ? 'yes' : 'no'}`,
+                `Mood: ${data.debug?.mood || 'unknown'}`,
+                `Energy: ${data.debug?.energy || 'unknown'}`,
+                `Memories loaded: ${data.debug?.memoriesLoaded || 0}`
+            ];
+            document.getElementById('debug-meta').textContent = metaParts.join('\n');
+        }
+    </script>
+</body>
+</html>

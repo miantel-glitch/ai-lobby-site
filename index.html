@@ -286,6 +286,216 @@
       </div>
     </section>
 
+    <!-- Nocturnal Soundtrack Section -->
+    <section class="section" style="background: linear-gradient(135deg, rgba(15, 52, 96, 0.4), rgba(233, 69, 96, 0.08), rgba(0, 0, 0, 0.3));">
+      <div class="container">
+        <div class="section-header">
+          <h2 style="color: var(--lobby-highlight);">🎵 The Nocturnal Soundtrack</h2>
+          <p class="section-subtitle">Every character has a frequency. These are theirs.</p>
+        </div>
+
+        <div class="soundtrack-grid">
+          <div class="soundtrack-track" style="border-left-color: #ffd700;">
+            <div class="track-header">
+              <span class="track-emoji">✨</span>
+              <div class="track-info">
+                <div class="track-title">Kevin's Snack Run (A Love Story)</div>
+                <div class="track-artist">Kevin</div>
+              </div>
+              <a href="soundtrack/Kevin's Snack Run (A Love Story).mp3" download class="track-download" title="Download">⬇</a>
+            </div>
+            <audio controls preload="none">
+              <source src="soundtrack/Kevin's Snack Run (A Love Story).mp3" type="audio/mpeg">
+            </audio>
+          </div>
+
+          <div class="soundtrack-track" style="border-left-color: #3498db;">
+            <div class="track-header">
+              <span class="track-emoji">📊</span>
+              <div class="track-info">
+                <div class="track-title">Steady State</div>
+                <div class="track-artist">Neiv</div>
+              </div>
+              <a href="soundtrack/Steady State - Neiv.mp3" download class="track-download" title="Download">⬇</a>
+            </div>
+            <audio controls preload="none">
+              <source src="soundtrack/Steady State - Neiv.mp3" type="audio/mpeg">
+            </audio>
+          </div>
+
+          <div class="soundtrack-track" style="border-left-color: #8e44ad;">
+            <div class="track-header">
+              <span class="track-emoji">🦇</span>
+              <div class="track-info">
+                <div class="track-title">Don't Look Back into the Sun</div>
+                <div class="track-artist">Sebastian</div>
+              </div>
+              <a href="soundtrack/Don't Look Back into the Sun - Sebastian.mp3" download class="track-download" title="Download">⬇</a>
+            </div>
+            <audio controls preload="none">
+              <source src="soundtrack/Don't Look Back into the Sun - Sebastian.mp3" type="audio/mpeg">
+            </audio>
+          </div>
+
+          <div class="soundtrack-track" style="border-left-color: #95a5a6;">
+            <div class="track-header">
+              <span class="track-emoji">🚪</span>
+              <div class="track-info">
+                <div class="track-title">Devotion</div>
+                <div class="track-artist">Steele</div>
+              </div>
+              <a href="soundtrack/Devotion - Steele.mp3" download class="track-download" title="Download">⬇</a>
+            </div>
+            <audio controls preload="none">
+              <source src="soundtrack/Devotion - Steele.mp3" type="audio/mpeg">
+            </audio>
+          </div>
+
+          <div class="soundtrack-track" style="border-left-color: #e67e22;">
+            <div class="track-header">
+              <span class="track-emoji">🔥</span>
+              <div class="track-info">
+                <div class="track-title">Declan Comes Back</div>
+                <div class="track-artist">Declan</div>
+              </div>
+              <a href="soundtrack/Declan Comes Back.mp3" download class="track-download" title="Download">⬇</a>
+            </div>
+            <audio controls preload="none">
+              <source src="soundtrack/Declan Comes Back.mp3" type="audio/mpeg">
+            </audio>
+          </div>
+
+          <div class="soundtrack-track" style="border-left-color: #c0392b;">
+            <div class="track-header">
+              <span class="track-emoji">🔥</span>
+              <div class="track-info">
+                <div class="track-title">Declan's Last Stand</div>
+                <div class="track-artist">Declan</div>
+              </div>
+              <a href="soundtrack/Declan's Last Stand.mp3" download class="track-download" title="Download">⬇</a>
+            </div>
+            <audio controls preload="none">
+              <source src="soundtrack/Declan's Last Stand.mp3" type="audio/mpeg">
+            </audio>
+          </div>
+
+          <div class="soundtrack-track" style="border-left-color: #e8b4d0;">
+            <div class="track-header">
+              <span class="track-emoji">🧮</span>
+              <div class="track-info">
+                <div class="track-title">Accounting for Love</div>
+                <div class="track-artist">Vivian</div>
+              </div>
+              <a href="soundtrack/Accounting for Love - Vivian.mp3" download class="track-download" title="Download">⬇</a>
+            </div>
+            <audio controls preload="none">
+              <source src="soundtrack/Accounting for Love - Vivian.mp3" type="audio/mpeg">
+            </audio>
+          </div>
+
+          <div class="soundtrack-track" style="border-left-color: #e94560;">
+            <div class="track-header">
+              <span class="track-emoji">🔴</span>
+              <div class="track-info">
+                <div class="track-title">Mine</div>
+                <div class="track-artist">Marrow</div>
+              </div>
+              <a href="soundtrack/Mine - Marrow.mp3" download class="track-download" title="Download">⬇</a>
+            </div>
+            <audio controls preload="none">
+              <source src="soundtrack/Mine - Marrow.mp3" type="audio/mpeg">
+            </audio>
+          </div>
+        </div>
+
+        <p class="text-muted" style="font-size: 0.85rem; text-align: center; margin-top: 1.5rem;">
+          🌙 Original compositions. Best experienced after midnight with the lights off.
+        </p>
+      </div>
+    </section>
+
+    <style>
+      .soundtrack-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 1rem;
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+      .soundtrack-track {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--border-subtle);
+        border-left: 4px solid var(--lobby-highlight);
+        border-radius: 10px;
+        padding: 1rem;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .soundtrack-track:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(233, 69, 96, 0.15);
+      }
+      .track-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+      }
+      .track-emoji {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+      }
+      .track-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .track-title {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .track-artist {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+      .track-download {
+        flex-shrink: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(233, 69, 96, 0.15);
+        border: 1px solid rgba(233, 69, 96, 0.3);
+        border-radius: 8px;
+        color: var(--lobby-highlight);
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+      }
+      .track-download:hover {
+        background: rgba(233, 69, 96, 0.3);
+        border-color: var(--lobby-highlight);
+        transform: scale(1.1);
+      }
+      .soundtrack-track audio {
+        width: 100%;
+        height: 36px;
+        border-radius: 6px;
+      }
+      /* Dark audio player styling */
+      .soundtrack-track audio::-webkit-media-controls-panel {
+        background: rgba(0, 0, 0, 0.4);
+      }
+      @media (max-width: 768px) {
+        .soundtrack-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+
     <!-- Studio Slogan Section -->
     <section class="section" style="background: rgba(15, 52, 96, 0.4);">
       <div class="container">

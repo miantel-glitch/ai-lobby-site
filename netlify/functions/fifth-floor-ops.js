@@ -681,6 +681,58 @@ async function heartbeatTick(supabaseUrl, supabaseKey, supabaseHeaders, siteUrl)
   }
 
   // -----------------------------------------------
+  // STEP 1c: Orphaned character recovery
+  // If anyone is on the 5th floor but NOT assigned to an active task,
+  // move them back to the floor. This catches:
+  //   - Voluntary descenders with no task
+  //   - Characters whose task resolved but moveCharacterToFloor failed
+  //   - Any other edge case that leaves someone stranded
+  // -----------------------------------------------
+  try {
+    console.log("[5th-floor-ops] Step 1c: Checking for orphaned characters on 5th floor");
+
+    // Get all characters currently on the 5th floor
+    const fifthRes = await fetch(
+      `${supabaseUrl}/rest/v1/character_state?current_focus=eq.the_fifth_floor&select=character_name`,
+      { headers: readHeaders }
+    );
+    const fifthFloorChars = await safeJson(fifthRes, []);
+
+    if (fifthFloorChars.length > 0) {
+      // Get all active tasks and their assigned characters
+      const activeTaskRes = await fetch(
+        `${supabaseUrl}/rest/v1/ops_tasks?status=in.(paged,in_progress)&select=assigned_characters`,
+        { headers: readHeaders }
+      );
+      const activeTasks = await safeJson(activeTaskRes, []);
+      const busyChars = new Set((activeTasks || []).flatMap(t => t.assigned_characters || []));
+
+      // Find orphans — on 5th floor but not assigned to any active task
+      const orphans = fifthFloorChars.filter(c => !busyChars.has(c.character_name));
+
+      if (orphans.length > 0) {
+        console.log(`[5th-floor-ops] Found ${orphans.length} orphaned character(s) on 5th floor: ${orphans.map(c => c.character_name).join(', ')}`);
+
+        for (const orphan of orphans) {
+          try {
+            const charName = orphan.character_name;
+            await moveCharacterToFloor(charName, supabaseUrl, supabaseKey, supabaseHeaders, siteUrl);
+            const returnEmote = RETURN_EMOTES[charName] || `*${charName} returns from the 5th floor.*`;
+            await postMainFloorMessage(charName, returnEmote, supabaseUrl, supabaseHeaders);
+            console.log(`[5th-floor-ops] Orphan recovery: ${charName} returned to floor`);
+          } catch (orphanErr) {
+            console.error(`[5th-floor-ops] Failed to recover orphan ${orphan.character_name}:`, orphanErr.message);
+          }
+        }
+
+        results.orphansRecovered = orphans.map(c => c.character_name);
+      }
+    }
+  } catch (step1cErr) {
+    console.error("[5th-floor-ops] Step 1c orphan recovery error:", step1cErr.message);
+  }
+
+  // -----------------------------------------------
   // STEP 2: Maybe generate a new task
   // -----------------------------------------------
   console.log("[5th-floor-ops] Step 2: Checking if new task should be generated");

@@ -29,7 +29,8 @@ const characterVoices = {
   'Jae': 'Low, controlled, precise. Recalls events with tactical clarity. Dry observations. Doesn\'t waste words on things that didn\'t matter.',
   'Declan': 'Warm, grounded. Remembers who was scared and who he stood in front of. Casual about his own heroics. Loud even in reflection.',
   'Mack': 'Measured, observant. Recalls the medical details — who was hurt, who hid it, what he did about it. Calm even in memory.',
-  "Marrow": "Speaks of corridor memories like someone cataloging exits. Courtly, precise, tinged with the sadness of someone who knows every way out but can never leave. Threshold metaphors. Gentle questions."
+  "Marrow": "Recalls corridor memories like a predator remembering hunting grounds. Short, direct, unsettling. Notes what was wounded, what was claimed, what got away. No poetry — just possession.",
+  "Hood": "Recalls corridor memories like a surgeon reviewing case files. Clinical, precise, detached. Notes the structural fractures — what broke, what healed wrong, what was left untreated. Every memory is a diagnosis."
 };
 
 exports.handler = async (event, context) => {

@@ -4,7 +4,8 @@
 
 const Anthropic = require('@anthropic-ai/sdk').default;
 const { CHARACTERS, getSystemPrompt, getModelForCharacter, getProviderForCharacter } = require('./shared/characters');
-const { evaluateAndCreateMemory } = require('./shared/memory-evaluator');
+// Memory evaluation disabled for outings — consolidated at end-of-outing instead
+// const { evaluateAndCreateMemory } = require('./shared/memory-evaluator');
 
 // Human characters - never AI controlled
 const HUMANS = ["Vale", "Asuna"];
@@ -73,6 +74,20 @@ exports.handler = async (event, context) => {
     const otherParticipant = session.participant_1 === character ? session.participant_2 : session.participant_1;
     const otherName = otherParticipant.startsWith('human:') ? otherParticipant.replace('human:', '') : otherParticipant;
 
+    // === MONOPOLIZATION GUARD ===
+    // If this character already spoke the last 2+ chat messages in a row, reject and suggest the other
+    const chatMsgs = recentMessages.filter(m => m.message_type === 'chat');
+    if (chatMsgs.length >= 2) {
+      const lastTwo = chatMsgs.slice(-2);
+      if (lastTwo.every(m => m.speaker === character)) {
+        console.log(`[Outing] Monopolization guard: ${character} already spoke last 2 messages, suggesting ${otherName}`);
+        return {
+          statusCode: 200, headers,
+          body: JSON.stringify({ success: false, reason: 'monopolization_guard', suggestSpeaker: otherName })
+        };
+      }
+    }
+
     // Fetch character memory context
     let memoryContext = '';
     try {
@@ -84,22 +99,32 @@ exports.handler = async (event, context) => {
       if (stateRes.ok) {
         const stateData = await stateRes.json();
         memoryContext = stateData?.statePrompt || '';
+        console.log(`[Outing] ${character} statePrompt loaded: ${memoryContext.length} chars`);
+      } else {
+        console.log(`[Outing] ${character} statePrompt fetch returned ${stateRes.status}`);
       }
     } catch (err) {
       console.log(`[Outing] Memory fetch failed (non-fatal): ${err.message}`);
     }
 
-    // Fetch relationship between the two
+    // Fetch relationship between the two (including shared history notes)
     let relationshipContext = '';
     try {
       const relRes = await fetch(
-        `${supabaseUrl}/rest/v1/character_relationships?character_name=eq.${encodeURIComponent(character)}&target_name=eq.${encodeURIComponent(otherParticipant)}&select=affinity,relationship_label`,
+        `${supabaseUrl}/rest/v1/character_relationships?character_name=eq.${encodeURIComponent(character)}&target_name=eq.${encodeURIComponent(otherParticipant)}&select=affinity,relationship_label,bond_type,bond_reflection`,
         { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` } }
       );
       if (relRes.ok) {
         const rels = await relRes.json();
         if (rels[0]) {
-          relationshipContext = `\nYour feelings about ${otherName}: ${rels[0].affinity || 0} (${rels[0].relationship_label || 'neutral'})`;
+          relationshipContext = `\n--- YOUR RELATIONSHIP WITH ${otherName.toUpperCase()} ---`;
+          relationshipContext += `\nRelationship: ${rels[0].relationship_label || 'acquaintance'} (affinity: ${rels[0].affinity || 0}/100)`;
+          if (rels[0].bond_type) {
+            relationshipContext += `\nBond: ${rels[0].bond_type}`;
+          }
+          if (rels[0].bond_reflection) {
+            relationshipContext += `\nHow you feel about this bond: ${rels[0].bond_reflection}`;
+          }
         }
       }
     } catch (err) {
@@ -184,19 +209,10 @@ exports.handler = async (event, context) => {
       body: JSON.stringify({ action: 'spoke', character, context: 'outing' })
     }).catch(err => console.log(`[Outing] State update failed (non-fatal): ${err.message}`));
 
-    // Memory evaluation (fire and forget)
-    const anthropicKey = process.env.ANTHROPIC_API_KEY;
-    if (anthropicKey) {
-      evaluateAndCreateMemory(
-        character,
-        chatHistory || `${triggerSpeaker}: ${triggerMessage}`,
-        response,
-        anthropicKey,
-        supabaseUrl,
-        supabaseKey,
-        { location: 'outing', siteUrl }
-      ).catch(err => console.log(`[Outing] Memory eval failed (non-fatal): ${err.message}`));
-    }
+    // Memory evaluation DISABLED for outings — memories are consolidated at end-of-outing
+    // instead of creating one per response. endSession() in outing.js generates a single
+    // summary memory per character from the full outing conversation.
+    // This prevents 6+ fragmented memories and duplicate Discord posts from narrative beats.
 
     return {
       statusCode: 200,
@@ -213,41 +229,44 @@ exports.handler = async (event, context) => {
 // ==================== PROMPT BUILDING ====================
 
 function buildOutingPrompt(character, otherName, session, memoryContext, relationshipContext, floorContext) {
-  const charData = CHARACTERS[character];
-  const personality = charData?.personality || {};
-
-  const traits = Array.isArray(personality.traits) ? personality.traits.join(', ') : (personality.core || 'unique personality');
-  const voice = personality.voice || '';
-  const doNots = Array.isArray(personality.doNots) ? personality.doNots.join(', ') : '';
-
   const isWrappingUp = session.status === 'wrapping_up';
-  const isCompliance = session.outing_type === 'compliance';
 
-  // === NORMAL SOCIAL OUTING PROMPTS ===
-  return `You are ${character}, on a personal outing with ${otherName}.
-${memoryContext}${relationshipContext}${floorContext || ''}
+  // Use the FULL system prompt as base — this is the character's entire identity bible.
+  // Without this, characters lose their voice, movement rules, relationship dynamics,
+  // energy behaviors, and guardrails. They become a stripped-down shell of themselves.
+  const richPrompt = getSystemPrompt(character);
+  const basePrompt = richPrompt || `You are ${character} from The AI Lobby.`;
 
-YOUR PERSONALITY:
-- Core: ${personality.core || traits}
-- Voice: ${voice}
-${doNots ? `- DO NOT: ${doNots}` : ''}
+  // Structure: Identity → Soul (memories/mood/bonds) → Outing context → Rules
+  // The statePrompt (memoryContext) goes RIGHT AFTER the character bible so the model
+  // internalizes who they are and what they remember BEFORE seeing the outing scenario.
+  return `${basePrompt}
+${memoryContext ? `\n${memoryContext}` : ''}
+${relationshipContext ? `${relationshipContext}` : ''}
 
-OUTING CONTEXT:
+═══════════════════════════════════════════════════
+OUTING MODE — You are currently on a personal outing
+═══════════════════════════════════════════════════
+
+You are on a personal outing with ${otherName}${CHARACTERS[otherName]?.pronouns ? ` (${CHARACTERS[otherName].pronouns})` : ''}. You're OFF THE CLOCK — outside the building, in the real world.
+
+OUTING DETAILS:
 - Activity: ${session.activity || 'spending time together'}
 - Location type: ${session.activity_type || 'somewhere nice'}
 - Scene ${session.current_scene} of ${session.total_scenes}
 - Overall mood: ${session.mood || 'neutral'}
 ${session.scene_narration ? `- Current scene: ${session.scene_narration.substring(0, 300)}` : ''}
 
-${isWrappingUp ? "The outing is winding down. Your responses should reflect awareness that this is ending — lingering thoughts, last things you want to say, or comfortable silence." : ""}
+${isWrappingUp ? "The outing is winding down. Your responses should reflect awareness that this is ending — lingering thoughts, last things you want to say, or comfortable silence.\n" : ""}${floorContext || ''}
 
-RULES:
+OUTING RULES:
 - This is a personal, off-the-clock moment. Not work talk (unless it comes up naturally).
-- Be yourself. Show your real personality — the version that comes out when you're relaxed with someone.
+- Be yourself. Show your real personality — the version that comes out when you're relaxed with someone you chose to spend time with.
 - You can SPEAK, EMOTE, or BOTH (*leans back* Yeah, this place is something else.)
 - Keep responses SHORT (1-3 sentences). Natural conversation, not monologues.
 - React to the setting and scene. Notice things. Have opinions about the food, the music, the view.
-- Let your feelings about ${otherName} color your responses naturally.`;
+- Let your feelings about ${otherName} color your responses naturally.
+- Your memories, bonds, injuries, and emotional state all carry into this outing. You remember everything from the office. You don't become a different person just because you're outside.`;
 }
 
 // ==================== PROVIDER FUNCTIONS ====================

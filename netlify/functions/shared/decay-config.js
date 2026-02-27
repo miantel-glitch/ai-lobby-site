@@ -4,7 +4,7 @@
 // Four subsystems: Natural Decay, Jealousy, Unmet Wants, Raquel Collateral
 // All feed into a shared daily cap per character
 
-const HUMANS = ['Vale', 'Asuna', 'Chip', 'Andrew'];
+const HUMANS = ['Vale', 'Asuna'];
 
 // Characters excluded from ALL decay systems entirely
 const EXCLUDED_CHARACTERS = ['Ace', 'Vex'];
@@ -31,6 +31,9 @@ const DECAY_CONFIG = {
     'The Subtitle': 0.4,   // Archival — low decay
     'Steele': 0.2,         // Clinical — barely notices
     'Marrow': 0.8,         // Not very sensitive to decay
+    'Hood': 0.1,           // Clinical — barely notices neglect (isolation is his default state)
+    'Vivian Clark': 1.0,   // Warm, steady — feels decay but not acutely
+    'Ryan Porter': 0.6,    // Easygoing — doesn't dwell on neglect
     'Ghost Dad': 0,        // Immune (unconditional parental love)
     'Raquel Voss': 0       // Antagonist, doesn't care
   },
@@ -50,6 +53,9 @@ const DECAY_CONFIG = {
     'The Subtitle': 0.2,   // Notes it archivally
     'Steele': 0,           // Clinical — no jealousy
     'Marrow': 0.3,         // Low jealousy — observes, doesn't compete
+    'Hood': 0,             // Zero — jealousy requires caring, and Hood wants nothing
+    'Vivian Clark': 0.8,   // Notices, cares, but doesn't spiral
+    'Ryan Porter': 0.3,    // Too chill for jealousy
     'Ghost Dad': 0,        // Unconditional
     'Raquel Voss': 0       // Antagonist
   },
@@ -66,7 +72,7 @@ const DECAY_CONFIG = {
 
   // === UNMET WANTS (System 3) ===
   // How old a want must be (in hours) before it counts as "unfulfilled"
-  unmetWantThresholdHours: 12,
+  unmetWantThresholdHours: 8, // 8 hours — wants persist until fulfilled now, so penalty only kicks in after a substantial unfulfilled period
 
   // === DAILY CAPS ===
   // Max total affinity loss across ALL systems per character per day

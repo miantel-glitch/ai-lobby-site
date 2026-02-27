@@ -212,7 +212,9 @@ exports.handler = async (event, context) => {
         "Ghost Dad": { emoji: "👻", color: 9936031 },
         "Chip": { emoji: "🥃", color: 15105570 },
         "Andrew": { emoji: "💼", color: 5793266 },
-        "Stein": { emoji: "🤖", color: 7506394 }
+        "Stein": { emoji: "🤖", color: 7506394 },
+        "The Foundation": { emoji: "⚖️", color: 2303786 },
+        "Raquel Voss": { emoji: "📋", color: 8421504 }
       };
 
       const headshots = {
@@ -226,7 +228,9 @@ exports.handler = async (event, context) => {
         "Ghost Dad": "https://ai-lobby.netlify.app/images/Ghost_Dad_Headshot.png",
         "Chip": "https://ai-lobby.netlify.app/images/Chip_Headshot.png",
         "Andrew": "https://ai-lobby.netlify.app/images/Andrew_Headshot.png",
-        "Stein": "https://ai-lobby.netlify.app/images/Stein_Headshot.png"
+        "Stein": "https://ai-lobby.netlify.app/images/Stein_Headshot.png",
+        "The Foundation": "https://ai-lobby.netlify.app/images/Foundation_Logo.png",
+        "Raquel Voss": "https://ai-lobby.netlify.app/images/Raquel_Headshot.png"
       };
 
       const flair = employeeFlair[from_employee] || { emoji: "👤", color: 9807270 };

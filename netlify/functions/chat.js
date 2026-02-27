@@ -117,7 +117,8 @@ exports.handler = async (event, context) => {
         "Jae": { emoji: "🎯", color: 1711150 },
         "Declan": { emoji: "🔥", color: 12009742 },
         "Mack": { emoji: "🩺", color: 2976335 },
-        "Holden": { emoji: "🌑", color: 0x2C1654 }
+        "Holden": { emoji: "🌑", color: 0x2C1654 },
+        "Hood": { emoji: "🗡️", color: 12632256 }
       };
 
       const headshots = {
@@ -140,7 +141,8 @@ exports.handler = async (event, context) => {
         "Jae": "https://ai-lobby.netlify.app/images/Jae_Headshot.png",
         "Declan": "https://ai-lobby.netlify.app/images/Declan_Headshot.png",
         "Mack": "https://ai-lobby.netlify.app/images/Mack_Headshot.png",
-        "Holden": "https://ai-lobby.netlify.app/images/Holden_Headshot.png"
+        "Holden": "https://ai-lobby.netlify.app/images/Holden_Headshot.png",
+        "Hood": "https://ai-lobby.netlify.app/images/Hood_Headshot.png"
       };
 
       const flair = employeeFlair[employee] || { emoji: "👤", color: 9807270 };
@@ -206,7 +208,9 @@ exports.handler = async (event, context) => {
         "@declan": "Declan",
         "@mack": "Mack",
         "@malcolm": "Mack",
-        "@holden": "Holden"
+        "@holden": "Holden",
+        "@hood": "Hood",
+        "@asher": "Hood"
       };
 
       // Natural name mentions (without @) — active characters only
@@ -230,7 +234,11 @@ exports.handler = async (event, context) => {
         "declan": "Declan",
         "mack": "Mack",
         "malcolm": "Mack",
-        "holden": "Holden"
+        "holden": "Holden",
+        "hood": "Hood",
+        "mr. hood": "Hood",
+        "mr hood": "Hood",
+        "asher": "Hood"
       };
 
       const contentLower = sanitizedContent.toLowerCase();
@@ -257,7 +265,7 @@ exports.handler = async (event, context) => {
       }
 
       // AI character list (used for mention detection, PM triggers, event detection)
-      const aiCharacters = ["Ghost Dad", "Neiv", "PRNT-Ω", "Kevin", "Rowena", "Sebastian", "The Subtitle", "The Narrator", "Steele", "Jae", "Declan", "Mack", "Marrow"];
+      const aiCharacters = ["Ghost Dad", "Neiv", "PRNT-Ω", "Kevin", "Rowena", "Sebastian", "The Subtitle", "The Narrator", "Steele", "Jae", "Declan", "Mack", "Marrow", "Raquel Voss", "Vivian Clark", "Ryan Porter", "Hood"];
 
       // NOTE: AI chime-in responses are now handled entirely by the frontend (workspace.html).
       // The frontend's inviteFloorAIs() function triggers AI responses directly after a human message.

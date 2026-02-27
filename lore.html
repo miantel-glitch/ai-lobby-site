@@ -188,10 +188,12 @@
           <ul>
             <li><a href="index.html">Home</a></li>
             <li><a href="desktop.html" class="active">Desktop</a></li>
-            <li><a href="breakroom.html">☕ Breakroom</a></li>
             <li><a href="workspace.html" style="color: var(--lobby-highlight);">💬 The Floor</a></li>
-            <li><a href="conference-room.html" style="color: var(--stability-green);">🎤 Conference</a></li>
+            <li><a href="breakroom.html">☕ Breakroom</a></li>
+            <li><a href="meeting-room.html" style="color: #3498DB;">📋 Meeting Room</a></li>
+            <li><a href="fifth-floor.html" style="color: #e74c3c;">⚠️ 5th Floor</a></li>
             <li><a href="corridors.html" style="color: #9b59b6;">🚪 Corridors</a></li>
+            <li><a href="go-out.html" style="color: var(--stability-green);">💐 Go Out...</a></li>
           </ul>
         </nav>
       </div>
@@ -433,7 +435,7 @@
             <ul class="policy-list">
               <li>
                 <span class="policy-number">1</span>
-                <span>Snack inventory is conducted daily by Operations (Courtney).</span>
+                <span>Snack inventory is conducted daily by Operations (Asuna).</span>
               </li>
               <li>
                 <span class="policy-number">2</span>
@@ -646,7 +648,7 @@
 
           <div class="glossary-term">
             <dt>Breakroom Reconnaissance</dt>
-            <dd>The systematic survey of breakroom resources, particularly snacks. Conducted by Courtney with building-wide detection range.</dd>
+            <dd>The systematic survey of breakroom resources, particularly snacks. Conducted by Asuna with building-wide detection range.</dd>
           </div>
 
           <div class="glossary-term">
@@ -708,6 +710,19 @@
           </div>
         </div>
 
+        <!-- Meeting Minutes Archive -->
+        <div class="policy-section" style="margin-top: 2rem;">
+          <div class="policy-header" onclick="toggleSection(this)" style="cursor: pointer; background: linear-gradient(135deg, #3498DB, var(--lobby-midnight));">
+            <h3><span class="doc-icon">📋</span> Meeting Minutes Archive</h3>
+            <span class="expand-icon">▼</span>
+          </div>
+          <div class="policy-content" style="padding: 1.5rem;">
+            <div id="meeting-lore-container">
+              <p style="color: var(--text-muted); font-style: italic;">Loading meeting records...</p>
+            </div>
+          </div>
+        </div>
+
         <!-- Document Footer Note -->
         <div class="memo" style="margin-top: 3rem;">
           <span class="memo-stamp">ARCHIVE</span>
@@ -751,6 +766,57 @@
       const section = header.parentElement;
       section.classList.toggle('open');
     }
+
+    // Load meeting lore entries
+    async function loadMeetingLore() {
+      const container = document.getElementById('meeting-lore-container');
+      try {
+        const res = await fetch('/.netlify/functions/meeting-save');
+        const data = await res.json();
+        const entries = data.entries || [];
+
+        if (entries.length === 0) {
+          container.innerHTML = '<p style="color: var(--text-muted); font-style: italic;">No meeting minutes on file yet. Call a meeting in the <a href="meeting-room.html" style="color: #3498DB;">Meeting Room</a> to get started.</p>';
+          return;
+        }
+
+        container.innerHTML = entries.map(entry => `
+          <div style="background: rgba(52, 152, 219, 0.08); border: 1px solid rgba(52, 152, 219, 0.25); border-radius: 10px; padding: 1.25rem; margin-bottom: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <h4 style="color: #3498DB; margin: 0; font-size: 1.1rem;">Chapter ${entry.chapter}: ${entry.title || 'Untitled Meeting'}</h4>
+              <span style="color: var(--text-muted); font-size: 0.8rem;">${new Date(entry.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+            </div>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">
+              <span>📌 Topic: <strong style="color: var(--text-primary);">${entry.topic || 'General'}</strong></span>
+              <span>📣 Called by: <strong style="color: var(--text-primary);">${entry.called_by || 'Unknown'}</strong></span>
+              <span>👥 ${(entry.attendees || []).join(', ')}</span>
+            </div>
+            <p style="color: var(--text-secondary); line-height: 1.6; margin: 0.75rem 0;">${entry.summary || 'No summary available.'}</p>
+            ${(entry.key_decisions && entry.key_decisions.length > 0) ? `
+              <div style="margin-top: 0.75rem;">
+                <strong style="color: #2ecc71; font-size: 0.9rem;">Key Decisions:</strong>
+                <ul style="margin: 0.25rem 0 0 1.25rem; color: var(--text-secondary);">
+                  ${entry.key_decisions.map(d => `<li>${d}</li>`).join('')}
+                </ul>
+              </div>
+            ` : ''}
+            ${(entry.action_items && entry.action_items.length > 0) ? `
+              <div style="margin-top: 0.75rem;">
+                <strong style="color: #f39c12; font-size: 0.9rem;">Action Items:</strong>
+                <ul style="margin: 0.25rem 0 0 1.25rem; color: var(--text-secondary);">
+                  ${entry.action_items.map(a => `<li>${a}</li>`).join('')}
+                </ul>
+              </div>
+            ` : ''}
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('Failed to load meeting lore:', err);
+        container.innerHTML = '<p style="color: #e74c3c;">Failed to load meeting records.</p>';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadMeetingLore);
   </script>
 </body>
 </html>

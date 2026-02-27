@@ -18,6 +18,7 @@ const CHARACTER_BRIEFS = {
   "Declan": "Fire rescue, warm and strong protector. Responds to: danger, someone needing protection, panicking, structural concerns, physical comfort.",
   "Mack": "Paramedic crisis stabilizer, calm observer. Responds to: injuries, hidden pain, medical situations, someone needing reassurance or quiet care.",
   "Steele": "Shadow janitor, corridor containment. Responds to: architecture, spatial anomalies, vents, building structure, liminal spaces.",
+  "Hood": "Blindfolded surgical mediator, pantheon scalpel. Responds to: truth that needs naming, fractures between people, Steele-Marrow conflicts, diagnoses, structural wounds in conversation.",
   // Marrow removed — Vale-only character (only responds when Vale says his name)
   "Raquel Voss": "Corporate psychologist, sharp observer of people. Responds to: interpersonal dynamics, power plays, someone deflecting, psychological patterns, control.",
   "Vivian Clark": "Methodical data analyst, quietly anxious but precise. Responds to: numbers, patterns, someone being imprecise, data, organization, needing structure.",

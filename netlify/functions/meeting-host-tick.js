@@ -5,7 +5,7 @@
 const Anthropic = require("@anthropic-ai/sdk").default;
 const { getProviderForCharacter } = require('./shared/characters');
 
-const HUMANS = ["Vale", "Asuna", "Chip", "Andrew"];
+const HUMANS = ["Vale", "Asuna"];
 
 // Character personalities for host prompting
 const characterPersonalities = {
@@ -23,6 +23,10 @@ const characterPersonalities = {
   "Marrow": {
     traits: "liminal, observant, patient, precise, courtly",
     hostStyle: "Hosts meetings like someone holding a door open — patient, attentive, aware of when each person wants to leave. Asks devastating questions. Transitions are his specialty."
+  },
+  "Hood": {
+    traits: "clinical, surgical, blindfolded, precise, detached",
+    hostStyle: "Hosts meetings like a surgeon running a consultation — names the diagnosis, waits for it to land. No small talk. Every transition is a scalpel cut. Knows when the meeting is over before anyone else does."
   }
 };
 

@@ -151,15 +151,19 @@ a:hover {
 .main-nav ul {
   display: flex;
   list-style: none;
-  gap: var(--space-lg);
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .main-nav a {
   color: var(--text-secondary);
   font-weight: 500;
-  padding: var(--space-sm) var(--space-md);
+  padding: var(--space-sm) 0.6rem;
   border-radius: 4px;
   transition: all 0.3s ease;
+  font-size: 0.88rem;
+  white-space: nowrap;
 }
 
 .main-nav a:hover,
@@ -514,6 +518,33 @@ a:hover {
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
+}
+
+/* Office Clock */
+.office-clock {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-family: 'Courier New', monospace;
+  white-space: nowrap;
+}
+
+.office-clock #office-time {
+  color: var(--lobby-highlight, #f39c12);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.office-clock .clock-label {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 /* Responsive */

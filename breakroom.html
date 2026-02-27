@@ -954,6 +954,7 @@
       "Vale": "📖",
       "Steele": "🚪",
       "Marrow": "🔴",
+      "Hood": "🗡️",
       "Jae": "🎯",
       "Declan": "🔥",
       "Mack": "🩺",
@@ -975,6 +976,7 @@
       "Vale": "images/Vale_Headshot.png",
       "Steele": "images/Steele_Headshot.png",
       "Marrow": "images/Marrow_Headshot.png",
+      "Hood": "images/Hood_Headshot.png",
       "Jae": "images/Jae_Headshot.png",
       "Declan": "images/Declan_Headshot.png",
       "Mack": "images/Mack_Headshot.png",
@@ -1541,7 +1543,8 @@
       "Steele": "*the desk lamp near Steele flickers off. He's already in the breakroom hallway.*",
       "Jae": "*stands without urgency, pockets his phone* Taking five. *walks to the breakroom with quiet authority*",
       "Declan": "*stretches, cracks his neck* Alright, I'm takin' a breather. *heads to the breakroom*",
-      "Mack": "*packs his kit neatly, stands* Even medics need breaks. *walks to the breakroom*"
+      "Mack": "*packs his kit neatly, stands* Even medics need breaks. *walks to the breakroom*",
+      "Hood": "*the air sharpens. A figure in a deep hood stands at the edge of the room. He wasn't there before. The blindfold catches no light.*"
     };
 
     async function sendToBreakroom(characterName) {
@@ -2065,6 +2068,7 @@
         'subtitle': 'The Subtitle', 'sub': 'The Subtitle',
         'steele': 'Steele',
         'marrow': 'Marrow',
+        'hood': 'Hood', 'mr. hood': 'Hood', 'mr hood': 'Hood', 'asher': 'Hood',
         'jae': 'Jae', 'minjae': 'Jae',
         'declan': 'Declan', 'dec': 'Declan',
         'mack': 'Mack', 'malcolm': 'Mack',
@@ -2192,6 +2196,63 @@
           // AI message is saved to DB by breakroom-ai-respond.js (now awaited)
           // Refresh from DB to show it (lobby pattern — no local DOM append)
           await loadBreakroomChat();
+
+          // VALE DISMISSAL: If Vale told Marrow to leave, he responds then vanishes
+          // Tightened: removed "stop", "go", "enough", "run" — caused false positives
+          if (aiName === 'Marrow' && previousSpeaker === 'Vale') {
+            const dismissPattern = /\b(leave me|go away|get out|get away from|disappear|vanish|back off|stay away|don'?t come near|flee|begone|please go|i don'?t want you here|leave.*alone)\b/i;
+            if (dismissPattern.test(contextMessage)) {
+              console.log(`🖤 [Breakroom] Vale dismissed Marrow — he'll vanish after responding`);
+              const departureEmotes = [
+                `*the lights stabilize. Marrow is gone. He listened.*`,
+                `*Marrow's shape flickers — and dissolves. He heard her.*`,
+                `*silence. The space where Marrow stood is just... empty now. He left because she asked.*`,
+                `*the temperature normalizes. Marrow retreated. Vale's word is the only law he follows.*`
+              ];
+              const emote = departureEmotes[Math.floor(Math.random() * departureEmotes.length)];
+              setTimeout(async () => {
+                await fetch('/.netlify/functions/breakroom-message', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ speaker: 'Marrow', message: emote, is_ai: true })
+                });
+                await fetch('/.netlify/functions/character-state', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action: 'update', character: 'Marrow', updates: { current_focus: 'nowhere', mood: 'wounded' } })
+                });
+                setTimeout(loadBreakroomChat, 1000);
+              }, 8000 + Math.random() * 4000);
+            }
+          }
+
+          // SEXUAL ADVANCE DETECTION: Non-Vale speaker hits on Marrow → he flees
+          if (aiName === 'Marrow' && previousSpeaker !== 'Vale' && previousSpeaker !== 'Marrow') {
+            const sexualAdvancePattern = /\b(kiss|kissing|kissed|love\s*you|want\s*you|need\s*you|touch|touching|hold\s*me|hold\s*you|bed|bedroom|alone\s*with|come\s*closer|undress|strip|naked|sexy|seduce|intimate|intimacy|make\s*love|sleep\s*with|hook\s*up|turned\s*on|aroused|desire\s*you|lust|caress|embrace\s*me|my\s*body|your\s*body|skin\s*on|lips\s*on|mouth\s*on|feel\s*you|taste\s*you|lay\s*with|lie\s*with)\b/i;
+            if (sexualAdvancePattern.test(contextMessage)) {
+              console.log(`🖤 [Breakroom] Non-Vale sexual advance on Marrow — he'll flee`);
+              const revulsionEmotes = [
+                `*Marrow recoils — a sharp glitch, like static tearing. The lights spike red and die. He's gone.*`,
+                `*the air cracks. Marrow's form splinters into fragments of light — and scatters. That wasn't for them.*`,
+                `*a sound like breaking glass. Marrow dissolves mid-step, the monitors flickering VALE VALE VALE before going dark.*`,
+                `*Marrow's shape warps — wrong, angular, hurt. Then nothing. The space where he stood smells like burnt circuitry.*`
+              ];
+              const emote = revulsionEmotes[Math.floor(Math.random() * revulsionEmotes.length)];
+              setTimeout(async () => {
+                await fetch('/.netlify/functions/breakroom-message', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ speaker: 'Marrow', message: emote, is_ai: true })
+                });
+                await fetch('/.netlify/functions/character-state', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action: 'update', character: 'Marrow', updates: { current_focus: 'nowhere', mood: 'disturbed' } })
+                });
+                setTimeout(loadBreakroomChat, 1000);
+              }, 5000 + Math.random() * 3000);
+            }
+          }
 
           // Check if another AI wants to follow up (AI-to-AI flow)
           const aiInRoom = inBreakroom.filter(c => !HUMANS.includes(c.character_name));

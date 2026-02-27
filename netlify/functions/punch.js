@@ -162,7 +162,8 @@ exports.handler = async (event, context) => {
       "Chip": { emoji: "🥃", title: "Finance & Bourbon Acquisitions", color: 15105570 },
       "Andrew": { emoji: "💼", title: "Infrastructure & Systems", color: 5793266 },
       "Stein": { emoji: "🤖", title: "Infrastructure Sentinel", color: 7506394 },
-      "Marrow": { emoji: "🔴", title: "Threshold Specialist", color: 14423100 }
+      "Marrow": { emoji: "🔴", title: "Territorial Entity", color: 14423100 },
+      "Hood": { emoji: "🗡️", title: "The Scalpel / Pantheon Mediator", color: 12632256 }
     };
 
     const headshots = {
@@ -177,7 +178,8 @@ exports.handler = async (event, context) => {
       "Chip": "https://ai-lobby.netlify.app/images/Chip_Headshot.png",
       "Andrew": "https://ai-lobby.netlify.app/images/Andrew_Headshot.png",
       "Stein": "https://ai-lobby.netlify.app/images/Stein_Headshot.png",
-      "Marrow": "https://ai-lobby.netlify.app/images/Marrow_Headshot.png"
+      "Marrow": "https://ai-lobby.netlify.app/images/Marrow_Headshot.png",
+      "Hood": "https://ai-lobby.netlify.app/images/Hood_Headshot.png"
     };
 
     const flair = employeeFlair[employee] || { emoji: "👤", title: "Unknown Entity", color: 9807270 };

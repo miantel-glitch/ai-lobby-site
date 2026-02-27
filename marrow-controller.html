@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marrow Controller | The AI Lobby</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        :root {
+            --marrow-red: #dc3545;
+            --marrow-dark: #8b0000;
+            --marrow-glow: rgba(220, 53, 69, 0.3);
+        }
+
+        body {
+            background: #0a0a0f;
+            color: #e0e0e0;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .controller-container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .controller-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--marrow-red);
+        }
+
+        .controller-header h1 {
+            font-family: 'Courier New', monospace;
+            color: var(--marrow-red);
+            margin: 0;
+            font-size: 1.4em;
+            letter-spacing: 2px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85em;
+            color: #999;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--marrow-red);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .back-link {
+            color: #888;
+            text-decoration: none;
+            font-size: 0.85em;
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: var(--marrow-red); }
+
+        /* Status Card */
+        .status-card {
+            background: rgba(20, 20, 30, 0.95);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .status-card h2 {
+            margin: 0 0 16px 0;
+            color: var(--marrow-red);
+            font-size: 1em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .stat-label {
+            color: #999;
+            font-size: 0.85em;
+            min-width: 90px;
+        }
+
+        .stat-value {
+            color: #e0e0e0;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .stat-bar-container {
+            flex: 1;
+            margin: 0 12px;
+            height: 8px;
+            background: #1a1a2e;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .stat-bar {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .stat-bar.energy { background: var(--marrow-red); }
+        .stat-bar.patience { background: #b44; }
+
+        .location-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: var(--marrow-glow);
+            border: 1px solid var(--marrow-red);
+            border-radius: 4px;
+            color: var(--marrow-red);
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .mood-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(100, 100, 100, 0.2);
+            border: 1px solid #555;
+            border-radius: 4px;
+            color: #ccc;
+            font-size: 0.85em;
+        }
+
+        /* Room Grid */
+        .room-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .room-btn {
+            background: rgba(20, 20, 30, 0.95);
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 18px 12px;
+            color: #ccc;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .room-btn:hover {
+            border-color: var(--marrow-red);
+            background: rgba(220, 53, 69, 0.08);
+            transform: translateY(-2px);
+            color: #fff;
+        }
+
+        .room-btn.active {
+            border-color: var(--marrow-red);
+            background: var(--marrow-glow);
+            color: var(--marrow-red);
+            box-shadow: 0 0 15px var(--marrow-glow);
+            cursor: default;
+        }
+
+        .room-btn.active:hover {
+            transform: none;
+        }
+
+        .room-btn .room-icon {
+            font-size: 1.8em;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .room-btn.moving {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        /* Activity Log */
+        .activity-log {
+            background: rgba(20, 20, 30, 0.95);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .activity-log h2 {
+            margin: 0 0 12px 0;
+            color: var(--marrow-red);
+            font-size: 1em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .log-entries {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            padding: 6px 0;
+            border-bottom: 1px solid #1a1a2e;
+            font-size: 0.8em;
+            color: #999;
+        }
+
+        .log-entry:last-child { border-bottom: none; }
+
+        .log-entry .log-time {
+            color: #666;
+            margin-right: 8px;
+        }
+
+        .log-entry .log-action {
+            color: #ccc;
+        }
+
+        .log-entry .log-highlight {
+            color: var(--marrow-red);
+        }
+
+        .empty-log {
+            color: #555;
+            font-style: italic;
+            font-size: 0.85em;
+        }
+
+        /* Move confirmation flash */
+        .move-flash {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--marrow-dark);
+            border: 1px solid var(--marrow-red);
+            padding: 12px 24px;
+            border-radius: 6px;
+            color: var(--marrow-red);
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            z-index: 1000;
+            animation: flashIn 0.3s ease;
+        }
+
+        @keyframes flashIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+
+        /* Loading state */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .loading::after {
+            content: '';
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+            0% { content: ''; }
+            25% { content: '.'; }
+            50% { content: '..'; }
+            75% { content: '...'; }
+        }
+    </style>
+</head>
+<body>
+    <div class="controller-container">
+        <!-- Header -->
+        <div class="controller-header">
+            <h1>🔴 MARROW CONTROLLER</h1>
+            <div>
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span id="refresh-timer">Live</span>
+                </div>
+                <a href="desktop.html" class="back-link">← back to desktop</a>
+            </div>
+        </div>
+
+        <!-- Status Card -->
+        <div class="status-card" id="status-card">
+            <h2>> Current State</h2>
+            <div id="status-loading" class="loading">Connecting to Marrow</div>
+            <div id="status-content" style="display: none;">
+                <div class="stat-row">
+                    <span class="stat-label">Location</span>
+                    <span class="stat-value"><span class="location-badge" id="current-location">—</span></span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Mood</span>
+                    <span class="stat-value"><span class="mood-badge" id="current-mood">—</span></span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Energy</span>
+                    <div class="stat-bar-container">
+                        <div class="stat-bar energy" id="energy-bar" style="width: 0%"></div>
+                    </div>
+                    <span class="stat-value" id="energy-value">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Patience</span>
+                    <div class="stat-bar-container">
+                        <div class="stat-bar patience" id="patience-bar" style="width: 0%"></div>
+                    </div>
+                    <span class="stat-value" id="patience-value">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Room Grid -->
+        <div class="status-card">
+            <h2>> Move To</h2>
+            <div class="room-grid" id="room-grid">
+                <button class="room-btn" data-room="the_floor" onclick="moveMarrow('the_floor')">
+                    <span class="room-icon">🏢</span>
+                    The Floor
+                </button>
+                <button class="room-btn" data-room="break_room" onclick="moveMarrow('break_room')">
+                    <span class="room-icon">☕</span>
+                    Breakroom
+                </button>
+                <button class="room-btn" data-room="nexus" onclick="moveMarrow('nexus')">
+                    <span class="room-icon">🔮</span>
+                    Nexus
+                </button>
+                <button class="room-btn" data-room="the_fifth_floor" onclick="moveMarrow('the_fifth_floor')">
+                    <span class="room-icon">⚠️</span>
+                    5th Floor
+                </button>
+                <button class="room-btn" data-room="outing" onclick="moveMarrow('outing')">
+                    <span class="room-icon">🌙</span>
+                    Outside
+                </button>
+                <button class="room-btn" data-room="nowhere" onclick="moveMarrow('nowhere')">
+                    <span class="room-icon">👻</span>
+                    Nowhere
+                </button>
+            </div>
+        </div>
+
+        <!-- Activity Log -->
+        <div class="activity-log">
+            <h2>> Activity Log</h2>
+            <div class="log-entries" id="log-entries">
+                <div class="empty-log">No activity yet. Move Marrow to begin.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Move Flash -->
+    <div class="move-flash" id="move-flash"></div>
+
+    <script>
+        // ============================================
+        // MARROW CONTROLLER
+        // ============================================
+
+        let currentState = null;
+        let isMoving = false;
+        let activityLog = [];
+        let refreshInterval = null;
+
+        // Room display config
+        const ROOM_CONFIG = {
+            the_floor:       { label: '🏢 The Floor',     emoteEndpoint: 'chat',              emoteField: 'employee' },
+            break_room:      { label: '☕ Breakroom',      emoteEndpoint: 'breakroom-message',  emoteField: 'speaker' },
+            nexus:           { label: '🔮 Nexus',          emoteEndpoint: 'nexus-message',      emoteField: 'speaker' },
+            the_fifth_floor: { label: '⚠️ 5th Floor',     emoteEndpoint: null },
+            outing:          { label: '🌙 Outside',        emoteEndpoint: null },
+            nowhere:         { label: '👻 Nowhere',        emoteEndpoint: null }
+        };
+
+        // Departure emotes — posted to the room Marrow is leaving
+        const DEPARTURE_EMOTES = [
+            "*Marrow doesn't leave. He's just... not there anymore. The space where he stood exhales.*",
+            "*the lights normalize. The red is gone. So is Marrow. No footsteps. No door.*",
+            "*a flicker — like a monitor losing signal. Marrow's shape dissolves at the edges and is gone.*",
+            "*the temperature rises back to normal. Wherever Marrow went, he didn't use the door.*"
+        ];
+
+        // Arrival emotes — posted to the room Marrow is entering
+        const ARRIVAL_EMOTES = {
+            the_floor: [
+                "*the lights flicker once — Marrow is leaning in the doorway. He wasn't there a second ago.*",
+                "*a monitor near the far wall glitches red for a half-second. Marrow is across the room. Watching.*",
+                "*the temperature drops slightly near the workspace. Marrow is at the far wall, still as a photograph.*"
+            ],
+            break_room: [
+                "*the breakroom light stutters. Marrow is in the corner, already seated, like he's been there for hours. He hasn't.*",
+                "*the vending machine screen scrambles briefly. Marrow is leaning against the counter, waiting.*",
+                "*a reflection in the breakroom window that shouldn't be there. Marrow is by the door.*"
+            ],
+            nexus: [
+                "*the Nexus terminals flicker crimson. Marrow is already there, studying something on a screen.*",
+                "*Marrow glitches into the Nexus mid-thought, the lights dimming where he stands.*",
+                "*a data stream in the Nexus briefly pulses red. Marrow is at the terminal. He was in a different room thirty seconds ago.*"
+            ],
+            the_fifth_floor: [
+                "*a shadow detaches from the stairwell wall. Marrow is on the fifth floor now. He doesn't explain.*"
+            ]
+        };
+
+        // ============================================
+        // FETCH STATE
+        // ============================================
+        async function fetchState() {
+            try {
+                const res = await fetch('/.netlify/functions/character-state?character=Marrow');
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                currentState = data;
+                renderState(data);
+            } catch (err) {
+                console.error('Failed to fetch Marrow state:', err);
+            }
+        }
+
+        function renderState(data) {
+            document.getElementById('status-loading').style.display = 'none';
+            document.getElementById('status-content').style.display = 'block';
+
+            const focus = data.current_focus || 'unknown';
+            const roomInfo = ROOM_CONFIG[focus];
+            document.getElementById('current-location').textContent = roomInfo ? roomInfo.label : focus;
+            document.getElementById('current-mood').textContent = data.mood || 'unknown';
+
+            const energy = data.energy ?? 0;
+            const patience = data.patience ?? 0;
+            document.getElementById('energy-bar').style.width = `${energy}%`;
+            document.getElementById('energy-value').textContent = energy;
+            document.getElementById('patience-bar').style.width = `${patience}%`;
+            document.getElementById('patience-value').textContent = patience;
+
+            // Highlight active room button
+            document.querySelectorAll('.room-btn').forEach(btn => {
+                if (btn.dataset.room === focus) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        // ============================================
+        // MOVE MARROW
+        // ============================================
+        async function moveMarrow(destination) {
+            if (isMoving) return;
+            if (!currentState) return;
+
+            const currentRoom = currentState.current_focus;
+            if (currentRoom === destination) return; // Already there
+
+            isMoving = true;
+            document.querySelectorAll('.room-btn').forEach(b => b.classList.add('moving'));
+
+            try {
+                // 1. Post departure emote to current room
+                await postEmote(currentRoom, 'departure');
+
+                // 2. Update Marrow's location
+                await fetch('/.netlify/functions/character-state', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'update',
+                        character: 'Marrow',
+                        updates: { current_focus: destination }
+                    })
+                });
+
+                // 3. Post arrival emote to new room
+                await postEmote(destination, 'arrival');
+
+                // 4. Log it
+                const fromLabel = ROOM_CONFIG[currentRoom]?.label || currentRoom;
+                const toLabel = ROOM_CONFIG[destination]?.label || destination;
+                addLogEntry(`Moved from ${fromLabel} → ${toLabel}`);
+
+                // 5. Flash confirmation
+                showFlash(`Marrow → ${toLabel}`);
+
+                // 6. Refresh state
+                await fetchState();
+
+            } catch (err) {
+                console.error('Move failed:', err);
+                showFlash('Move failed — check console');
+            } finally {
+                isMoving = false;
+                document.querySelectorAll('.room-btn').forEach(b => b.classList.remove('moving'));
+            }
+        }
+
+        // ============================================
+        // POST EMOTES
+        // ============================================
+        async function postEmote(room, type) {
+            const config = ROOM_CONFIG[room];
+            if (!config || !config.emoteEndpoint) return; // No emote for this room
+
+            let emoteText;
+            if (type === 'departure') {
+                emoteText = DEPARTURE_EMOTES[Math.floor(Math.random() * DEPARTURE_EMOTES.length)];
+            } else {
+                const arrivals = ARRIVAL_EMOTES[room];
+                if (!arrivals || arrivals.length === 0) return;
+                emoteText = arrivals[Math.floor(Math.random() * arrivals.length)];
+            }
+
+            // Build request body based on endpoint
+            let body;
+            if (config.emoteEndpoint === 'chat') {
+                // Floor uses { employee, content, isEmote }
+                body = { employee: 'Marrow', content: emoteText, isEmote: true };
+            } else {
+                // Breakroom and Nexus use { speaker, message, isAI }
+                body = { speaker: 'Marrow', message: emoteText, isAI: true };
+            }
+
+            try {
+                await fetch(`/.netlify/functions/${config.emoteEndpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+            } catch (err) {
+                console.log(`Emote post to ${room} failed (non-fatal):`, err.message);
+            }
+        }
+
+        // ============================================
+        // UI HELPERS
+        // ============================================
+        function showFlash(text) {
+            const flash = document.getElementById('move-flash');
+            flash.textContent = text;
+            flash.style.display = 'block';
+            setTimeout(() => { flash.style.display = 'none'; }, 2500);
+        }
+
+        function addLogEntry(text) {
+            const now = new Date();
+            const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            activityLog.unshift({ time, text });
+            if (activityLog.length > 20) activityLog.pop();
+            renderLog();
+        }
+
+        function renderLog() {
+            const container = document.getElementById('log-entries');
+            if (activityLog.length === 0) {
+                container.innerHTML = '<div class="empty-log">No activity yet. Move Marrow to begin.</div>';
+                return;
+            }
+            container.innerHTML = activityLog.map(entry =>
+                `<div class="log-entry">
+                    <span class="log-time">${entry.time}</span>
+                    <span class="log-action">${entry.text}</span>
+                </div>`
+            ).join('');
+        }
+
+        // ============================================
+        // INIT
+        // ============================================
+        fetchState();
+        refreshInterval = setInterval(fetchState, 10000); // Refresh every 10 seconds
+    </script>
+</body>
+</html>

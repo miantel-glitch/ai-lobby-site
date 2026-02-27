@@ -102,7 +102,11 @@ Instructions:
 3. FORGET: Memory indices that are noise, too generic, repetitive, or superseded by newer information
 4. CORE_CANDIDATE: 1-2 memories that feel foundational to who you are (these will be suggested for pinning)
 
-Be aggressive about FORGET - routine events like "took a coffee break" or repeated mentions of the same topic should be forgotten unless they're emotionally significant.
+Be aggressive about FORGET. These should almost always be forgotten:
+- Generic observations like "talked about the printer" or "mentioned X" with no emotional context
+- Routine events like "took a coffee break" or "someone apologized"
+- Repeated mentions of the same topic without new information
+Only keep memories that have genuine emotional weight, narrative significance, or reveal something about relationships.
 
 Respond in this EXACT format (use real index numbers from above):
 KEEP: [list of indices to keep, e.g., 2, 5, 12]
@@ -235,12 +239,50 @@ REASONING: Brief explanation of your choices (1-2 sentences)`;
       console.log("Merge parsing failed (non-fatal):", mergeErr.message);
     }
 
-    // Collect core candidates
+    // Collect core candidates and AUTO-PIN the AI's top choice
     const coreCandidates = coreIndices
       .map(idx => memories[idx])
       .filter(m => m);
 
-    console.log(`[Consolidation] ${character}: deleted ${deleted}, merged ${merged}, suggested ${coreCandidates.length} core candidates`);
+    let aiPinned = null;
+    if (coreCandidates.length > 0) {
+      // Check current pinned count (max 5)
+      const pinnedCountRes = await fetch(
+        `${supabaseUrl}/rest/v1/character_memory?character_name=eq.${encodeURIComponent(character)}&is_pinned=eq.true&select=id`,
+        { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+      );
+      const pinnedCount = await pinnedCountRes.json();
+      const currentPinned = Array.isArray(pinnedCount) ? pinnedCount.length : 0;
+
+      if (currentPinned < 5) {
+        // Pin the AI's top core candidate
+        const topCandidate = coreCandidates[0];
+        await fetch(
+          `${supabaseUrl}/rest/v1/character_memory?id=eq.${topCandidate.id}`,
+          {
+            method: "PATCH",
+            headers: {
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              is_pinned: true,
+              memory_tier: 'core',
+              expires_at: null,
+              pin_source: 'ai'
+            })
+          }
+        );
+        aiPinned = {
+          id: topCandidate.id,
+          content: topCandidate.content.substring(0, 100)
+        };
+        console.log(`[Consolidation] ${character} AI-pinned memory #${topCandidate.id}: "${topCandidate.content.substring(0, 60)}..."`);
+      }
+    }
+
+    console.log(`[Consolidation] ${character}: deleted ${deleted}, merged ${merged}, AI-pinned ${aiPinned ? 1 : 0}, suggested ${coreCandidates.length} core candidates`);
 
     return {
       statusCode: 200,
@@ -250,6 +292,7 @@ REASONING: Brief explanation of your choices (1-2 sentences)`;
         character,
         deleted,
         merged,
+        aiPinned,
         coreCandidates: coreCandidates.map(m => ({
           id: m.id,
           content: m.content,

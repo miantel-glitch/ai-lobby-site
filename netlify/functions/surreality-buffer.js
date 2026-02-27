@@ -94,6 +94,18 @@ exports.handler = async (event, context) => {
           };
         }
 
+        case "ops_resolved": {
+          // 5th Floor ops task resolved — adjusts buffer based on task outcome
+          // { action: 'ops_resolved', task_type, severity, resolution_type, assigned_characters }
+          const { task_type, severity, resolution_type, assigned_characters } = body;
+          const result = await handleOpsResolved(supabaseUrl, supabaseKey, task_type, severity, resolution_type, assigned_characters);
+          return {
+            statusCode: 200,
+            headers,
+            body: JSON.stringify(result)
+          };
+        }
+
         case "reset": {
           // Admin reset (for testing)
           const { level } = body;
@@ -413,6 +425,48 @@ async function handleCorridorComplete(supabaseUrl, supabaseKey, mission_type, su
     success,
     party,
     missionDescription: effect.description
+  };
+}
+
+// ============================================
+// 5TH FLOOR OPS RESOLUTION
+// ============================================
+
+const OPS_RESOLUTION_EFFECTS = {
+  // Successful ops drain buffer (stability restored)
+  security: { success: -8, partial: -3, failure: 4 },
+  infrastructure: { success: -6, partial: -2, failure: 3 },
+  crafting: { success: -4, partial: -1, failure: 1 }
+};
+
+const SEVERITY_MULTIPLIER = {
+  minor: 1.0,
+  medium: 1.5,
+  major: 2.5
+};
+
+async function handleOpsResolved(supabaseUrl, supabaseKey, taskType, severity, resolutionType, assignedCharacters) {
+  const effects = OPS_RESOLUTION_EFFECTS[taskType] || OPS_RESOLUTION_EFFECTS.infrastructure;
+  const baseDelta = effects[resolutionType] || effects.partial;
+  const multiplier = SEVERITY_MULTIPLIER[severity] || 1.0;
+
+  // Calculate final delta
+  const delta = Math.round(baseDelta * multiplier);
+
+  // Build reason string
+  const charStr = (assignedCharacters || []).join(', ') || 'unknown';
+  const reason = `5th Floor ops: ${taskType} (${severity}) ${resolutionType} by ${charStr}`;
+
+  // Adjust buffer
+  const result = await adjustBuffer(supabaseUrl, supabaseKey, delta, reason, 'fifth_floor_ops');
+
+  return {
+    ...result,
+    opsTaskType: taskType,
+    opsSeverity: severity,
+    opsResolution: resolutionType,
+    opsAssigned: assignedCharacters,
+    calculatedDelta: delta
   };
 }
 

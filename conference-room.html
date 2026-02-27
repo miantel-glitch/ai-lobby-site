@@ -1858,12 +1858,13 @@ The scariest thing about Ollie is that nothing scares him. Or if it does, he pro
       'The Subtitle': 'images/The_Subtitle_Headshot.png',
       'Steele': 'images/Steele_Headshot.png',
       'Marrow': 'images/Marrow_Headshot.png',
+      'Hood': 'images/Hood_Headshot.png',
       'Jae': 'images/Jae_Headshot.png',
       'Declan': 'images/Declan_Headshot.png',
       'Mack': 'images/Mack_Headshot.png'
     };
 
-    const aiCharacters = ['Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian', 'The Subtitle', 'Steele', 'Marrow', 'Jae', 'Declan', 'Mack'];
+    const aiCharacters = ['Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian', 'The Subtitle', 'Steele', 'Marrow', 'Hood', 'Jae', 'Declan', 'Mack'];
 
     // Helper: Check if someone is a human (not in aiCharacters)
     function isHuman(name) {
@@ -2504,8 +2505,8 @@ Don't repeat questions that have already been asked.`;
 
       try {
         // Determine which API to use
-        const isOpenRouter = ['Kevin', 'Rowena', 'Declan', 'Mack', 'Sebastian', 'Neiv', 'The Subtitle'].includes(aiName);
-        const isGrok = ['Jae', 'Steele'].includes(aiName);
+        const isOpenRouter = ['Kevin', 'Rowena', 'Declan', 'Mack', 'Sebastian', 'The Subtitle'].includes(aiName);
+        const isGrok = ['Jae', 'Steele', 'Neiv'].includes(aiName);
         const isGemini = [].includes(aiName);
 
         let endpoint = '/.netlify/functions/ai-watcher';
@@ -2907,8 +2908,8 @@ Don't repeat questions that have already been asked.`;
 
       try {
         // Use the appropriate API for the AI
-        const isOpenRouter = ['Kevin', 'Rowena', 'Declan', 'Mack', 'Sebastian', 'Neiv', 'The Subtitle'].includes(aiName);
-        const isGrok = ['Jae', 'Steele'].includes(aiName);
+        const isOpenRouter = ['Kevin', 'Rowena', 'Declan', 'Mack', 'Sebastian', 'The Subtitle'].includes(aiName);
+        const isGrok = ['Jae', 'Steele', 'Neiv'].includes(aiName);
         const isGemini = [].includes(aiName);
 
         let endpoint = '/.netlify/functions/ai-watcher';

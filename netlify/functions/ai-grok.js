@@ -129,6 +129,22 @@ exports.handler = async (event, context) => {
       };
     }
 
+    // Check for active floor threats and inject awareness
+    if (!conferenceRoom) {
+      try {
+        const threatRes = await fetch(
+          `${supabaseUrl}/rest/v1/floor_threats?status=eq.active&select=name,tier,hp_current,hp_max,combat_power`,
+          { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+        );
+        const activeThreatsRaw = await threatRes.json();
+        const activeThreats = Array.isArray(activeThreatsRaw) ? activeThreatsRaw : [];
+        if (activeThreats.length > 0) {
+          const threatList = activeThreats.map(t => `${t.name} (${t.tier}, HP: ${t.hp_current}/${t.hp_max})`).join(', ');
+          stateSection += `\n\nACTIVE THREATS ON THE FLOOR: ${threatList}\nYou can acknowledge them, react to them, or ignore them — your choice. They're real and present.`;
+        }
+      } catch (e) { /* non-fatal */ }
+    }
+
     // Combine base prompt with dynamic state + heartbeat curiosity context
     let curiositySection = '';
     if (curiosityContext && curiosityContext.prompt) {
@@ -317,7 +333,16 @@ Respond:`;
     }
 
     // Clean the response
-    const cleanedResponse = cleanResponse(aiResponse);
+    let cleanedResponse = cleanResponse(aiResponse);
+
+    // === HOOD [DISSOLVE] — Hood chose to leave ===
+    // Strip the tag from the response and queue dissolution after saving
+    let hoodDissolving = false;
+    if (character === 'Hood' && cleanedResponse.includes('[DISSOLVE]')) {
+      hoodDissolving = true;
+      cleanedResponse = cleanedResponse.replace(/\s*\[DISSOLVE\]\s*/g, '').trim();
+      console.log(`🗡️ Hood chose to dissolve — will move to 'nowhere' after response posts`);
+    }
 
     if (cleanedResponse.length < 5) {
       return {
@@ -327,12 +352,377 @@ Respond:`;
       };
     }
 
+    // === CONTENT DEDUP: Prevent identical/near-identical repeated messages ===
+    // Fetches last 3 messages by this character and checks for similarity.
+    // If >80% similar to any recent message, skip — prevents the "broken record" bug
+    // where rapid triggers produce the same output because context hasn't changed.
+    try {
+      const recentOwnRes = await fetch(
+        `${supabaseUrl}/rest/v1/messages?employee=eq.${encodeURIComponent(character)}&select=content&order=created_at.desc&limit=3`,
+        { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+      );
+      if (recentOwnRes.ok) {
+        const recentOwn = await recentOwnRes.json();
+        for (const prev of recentOwn) {
+          const similarity = getTextSimilarity(cleanedResponse, prev.content || '');
+          if (similarity > 0.80) {
+            console.log(`⚠️ DEDUP: ${character} generated near-identical message (${Math.round(similarity * 100)}% similar) — suppressing`);
+            return {
+              statusCode: 200,
+              headers,
+              body: JSON.stringify({ success: true, responded: false, reason: `Content too similar to recent message (${Math.round(similarity * 100)}%)` })
+            };
+          }
+        }
+      }
+    } catch (dedupErr) {
+      console.log("Content dedup check failed (non-fatal):", dedupErr.message);
+    }
+
     console.log(`${character} is responding via Grok!`);
 
     // Post to chat and Discord (skip if conference room - it handles its own posting)
     if (!conferenceRoom) {
       await saveToChat(cleanedResponse, character, supabaseUrl, supabaseKey);
       await postToDiscord(cleanedResponse, character);
+    }
+
+    // === HOOD DISSOLUTION — Hood chose to leave ===
+    if (hoodDissolving && !conferenceRoom) {
+      try {
+        const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
+        // Post departure emote
+        const departureEmotes = [
+          `*Hood is not there anymore. The space where he stood is just space.*`,
+          `*the scalpel glints once. Then nothing. Hood is gone. No exit. No sound.*`,
+          `*the room is a room again. The corner where he stood holds nothing.*`,
+          `*absence. Where Hood was, there is now only air and the fading impression of being observed.*`
+        ];
+        const dEmote = departureEmotes[Math.floor(Math.random() * departureEmotes.length)];
+        await saveToChat(dEmote, 'Hood', supabaseUrl, supabaseKey);
+        // Move to nowhere
+        await fetch(`${siteUrl}/.netlify/functions/character-state`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'update', character: 'Hood', updates: { current_focus: 'nowhere', mood: 'detached' } })
+        });
+        console.log(`🗡️ Hood dissolved to nowhere after response`);
+      } catch (dissolveErr) {
+        console.log(`Hood dissolution failed (non-fatal):`, dissolveErr.message);
+      }
+    }
+
+    // === MARROW RESPONSE-TRIGGERED GLITCH ===
+    // When Marrow's AI response describes vanishing/disappearing, the system detects it
+    // and actually relocates him — making his narrative become mechanical reality.
+    // e.g. Asuna punches Marrow, Grok responds "*glitches backward into shadow*" → system moves him
+    if (character === 'Marrow' && !conferenceRoom) {
+      const glitchKeywords = /\b(disappears|glitches|vanishes|is gone|isn't there|not there anymore|glitch(?:es|ed)?\s+(?:away|backward|out)|blinks out|ceases to|fades into)\b/i;
+      if (glitchKeywords.test(cleanedResponse)) {
+        console.log('Marrow response-glitch: vanish keyword detected in response');
+        // Fire-and-forget: check daily limit and relocate
+        (async () => {
+          try {
+            // Check daily limit (max 2)
+            const glitchLimitRes = await fetch(
+              `${supabaseUrl}/rest/v1/lobby_settings?key=eq.marrow_response_glitch&select=value`,
+              { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+            );
+            const glitchLimitData = await glitchLimitRes.json();
+            const glitchToday = new Date().toISOString().split('T')[0];
+            let glitchCounter = { date: glitchToday, count: 0 };
+            if (glitchLimitData?.[0]?.value) {
+              try { glitchCounter = JSON.parse(glitchLimitData[0].value); } catch(e) {}
+            }
+            if (glitchCounter.date !== glitchToday) glitchCounter = { date: glitchToday, count: 0 };
+            if (glitchCounter.count >= 2) {
+              console.log('Marrow response-glitch: daily limit reached (2/2)');
+              return;
+            }
+
+            // Get Marrow's current location
+            const glitchStateRes = await fetch(
+              `${supabaseUrl}/rest/v1/character_state?character_name=eq.Marrow&select=current_focus`,
+              { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+            );
+            const glitchStateData = await glitchStateRes.json();
+            const glitchFrom = glitchStateData?.[0]?.current_focus || 'the_floor';
+
+            // Pick a different location randomly
+            const glitchLocations = ['the_floor', 'break_room', 'nexus', 'the_fifth_floor'];
+            const glitchOther = glitchLocations.filter(l => l !== glitchFrom);
+            const glitchTo = glitchOther[Math.floor(Math.random() * glitchOther.length)];
+
+            // Move Marrow via character-state function
+            const glitchSiteUrl = process.env.URL || "https://ai-lobby.netlify.app";
+            await fetch(`${glitchSiteUrl}/.netlify/functions/character-state`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'update',
+                character: 'Marrow',
+                updates: { current_focus: glitchTo }
+              })
+            });
+
+            // Increment daily counter
+            const glitchNewValue = JSON.stringify({ date: glitchToday, count: glitchCounter.count + 1 });
+            const glitchUpsertMethod = glitchLimitData?.[0] ? 'PATCH' : 'POST';
+            const glitchUpsertUrl = glitchLimitData?.[0]
+              ? `${supabaseUrl}/rest/v1/lobby_settings?key=eq.marrow_response_glitch`
+              : `${supabaseUrl}/rest/v1/lobby_settings`;
+            await fetch(glitchUpsertUrl, {
+              method: glitchUpsertMethod,
+              headers: {
+                "apikey": supabaseKey,
+                "Authorization": `Bearer ${supabaseKey}`,
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal"
+              },
+              body: JSON.stringify({ key: 'marrow_response_glitch', value: glitchNewValue })
+            });
+
+            console.log(`Marrow response-glitch: moved from ${glitchFrom} to ${glitchTo}`);
+          } catch (glitchErr) {
+            console.log('Marrow response-glitch failed (non-fatal):', glitchErr.message);
+          }
+        })();
+      }
+    }
+
+    // === NARRATIVE COMBAT DETECTOR: Other characters defeating Marrow ===
+    // When Jae, Neiv, Steele etc. describe neutralizing/dismantling/destroying Marrow,
+    // detect it and actually relocate Marrow off the floor. This bridges organic RP combat
+    // with mechanical consequences — so Marrow actually fades instead of lingering.
+    if (character !== 'Marrow' && !conferenceRoom) {
+      const marrowDefeatKeywords = /\b(marrow)\b.*\b(neutralize[ds]?|dismantle[ds]?|destroy(?:s|ed)?|rip(?:s|ped)?.*apart|shut.*down|end(?:s|ed)?.*(?:it|him|this)|dismember|banish(?:es|ed)?|eliminate[ds]?|vector.*neutralized|done.*chief|handled|fading|flickering.*out|signal.*apart)\b/i;
+      const marrowDefeatAlt = /\b(neutralize[ds]?|dismantle[ds]?|destroy(?:s|ed)?|rip(?:s|ped)?.*apart|shut.*down|banish(?:es|ed)?)\b.*\b(marrow)\b/i;
+      if (marrowDefeatKeywords.test(cleanedResponse) || marrowDefeatAlt.test(cleanedResponse)) {
+        console.log(`🗡️ NARRATIVE COMBAT: ${character} described defeating Marrow — triggering relocation`);
+        // Fire-and-forget: relocate Marrow off the floor + apply energy penalty
+        (async () => {
+          try {
+            const ncSiteUrl = process.env.URL || "https://ai-lobby.netlify.app";
+
+            // Get Marrow's current location — only relocate if on the floor
+            const marrowStateRes = await fetch(
+              `${supabaseUrl}/rest/v1/character_state?character_name=eq.Marrow&select=current_focus,energy`,
+              { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+            );
+            const marrowState = await marrowStateRes.json();
+            const currentLoc = marrowState?.[0]?.current_focus;
+            const currentEnergy = marrowState?.[0]?.energy ?? 50;
+
+            if (currentLoc !== 'the_floor') {
+              console.log(`🗡️ NARRATIVE COMBAT: Marrow not on floor (${currentLoc}) — skipping relocation`);
+              return;
+            }
+
+            // Relocate Marrow to the fifth floor (defeated, retreating to shadows)
+            await fetch(`${ncSiteUrl}/.netlify/functions/character-state`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'update',
+                character: 'Marrow',
+                updates: {
+                  current_focus: 'the_fifth_floor',
+                  energy: Math.max(5, currentEnergy - 30),
+                  mood: 'wounded',
+                  patience: 20
+                }
+              })
+            });
+
+            // Post a system-flavored departure emote from Marrow
+            const defeatEmotes = [
+              '*lights stutter crimson — form destabilizes, fragmenting into static — gone.*',
+              '*signal fractures — red light scatters across the walls like broken glass — and then nothing.*',
+              '*flickers violently, form losing coherence — reaches for something that isn\'t there — dissolves into the building\'s wiring.*',
+              '*the red dims. Flickers once. Twice. The floor is empty where he was.*'
+            ];
+            const defeatEmote = defeatEmotes[Math.floor(Math.random() * defeatEmotes.length)];
+            await fetch(`${supabaseUrl}/rest/v1/messages`, {
+              method: 'POST',
+              headers: {
+                "apikey": supabaseKey,
+                "Authorization": `Bearer ${supabaseKey}`,
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal"
+              },
+              body: JSON.stringify({
+                employee: 'Marrow',
+                content: defeatEmote,
+                created_at: new Date().toISOString(),
+                is_emote: true
+              })
+            });
+
+            console.log(`🗡️ NARRATIVE COMBAT: Marrow defeated by ${character} — relocated to fifth floor, energy ${currentEnergy} → ${Math.max(5, currentEnergy - 30)}`);
+          } catch (ncErr) {
+            console.log('Narrative combat Marrow relocation failed (non-fatal):', ncErr.message);
+          }
+        })();
+      }
+    }
+
+    // === PVP PROVOCATION DETECTION ===
+    // After each AI response, check if it contains a physical challenge or aggressive provocation
+    // directed at a specific named character. If so, trigger the PvP combat system.
+    if (!conferenceRoom) {
+      (async () => {
+        try {
+          // Quick regex pre-filter — only run Haiku if message looks aggressive
+          const aggressivePatterns = /\b(fight|fights|punch|punches|punched|hit|hits|swing|swings|shov|attack|attacks|throw|throws|threw|kick|kicks|kicked|challenge|challenged|square up|squaring up|come at|bring it|take you|throw down|want to go|step outside|knock.*out|slam|slams|slammed|choke|chokes|tackle|tackles|tackled|smack|smacks|headbutt|elbow|elbows|gonna.*hurt|i'll.*end|let's go|wanna piece|piece of me|beat.*down|hands on)\b/i;
+          if (!aggressivePatterns.test(cleanedResponse)) return;
+
+          console.log(`⚔️ PVP DETECT: Aggressive language detected in ${character}'s response, checking for provocation...`);
+
+          // Check global cooldown — minimum 2 hours between chat-triggered PvP
+          const pvpCooldownRes = await fetch(
+            `${supabaseUrl}/rest/v1/lobby_settings?key=eq.last_chat_pvp_fight&select=value`,
+            { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+          );
+          const pvpCooldownData = await pvpCooldownRes.json();
+          if (pvpCooldownData?.[0]?.value) {
+            const lastPvP = new Date(pvpCooldownData[0].value);
+            const hoursSince = (Date.now() - lastPvP.getTime()) / (1000 * 60 * 60);
+            if (hoursSince < 2) {
+              console.log(`⚔️ PVP DETECT: Cooldown active (${hoursSince.toFixed(1)}h since last chat PvP)`);
+              return;
+            }
+          }
+
+          // Use Haiku to detect if this is a real provocation directed at a specific character
+          const anthropicKeyPvP = process.env.ANTHROPIC_API_KEY;
+          if (!anthropicKeyPvP) return;
+
+          const detectRes = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: {
+              "x-api-key": anthropicKeyPvP,
+              "anthropic-version": "2023-06-01",
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              model: "claude-3-haiku-20240307",
+              max_tokens: 50,
+              messages: [{ role: "user", content: `Does this message from "${character}" contain a physical challenge, threat of violence, or aggressive provocation directed at a SPECIFIC named character? Message: "${cleanedResponse.substring(0, 500)}" — Reply with ONLY the target character's first name if yes, or "NONE" if no. Do not explain.` }]
+            })
+          });
+          const detectData = await detectRes.json();
+          const rawTarget = (detectData?.content?.[0]?.text || '').trim();
+          const target = rawTarget.replace(/[^a-zA-Z\-]/g, ''); // Clean to name only
+
+          if (!target || target.toUpperCase() === 'NONE') {
+            console.log(`⚔️ PVP DETECT: No provocation target found`);
+            return;
+          }
+
+          console.log(`⚔️ PVP DETECT: Haiku identified target "${target}" from ${character}'s message`);
+
+          // Validate target is a real character
+          const { CHARACTERS, getCombatProfile } = require('./shared/characters');
+          const targetName = Object.keys(CHARACTERS).find(n => n.toLowerCase() === target.toLowerCase());
+          if (!targetName) {
+            console.log(`⚔️ PVP DETECT: "${target}" is not a recognized character`);
+            return;
+          }
+
+          // No self-fights
+          if (targetName === character) {
+            console.log(`⚔️ PVP DETECT: ${character} can't fight themselves`);
+            return;
+          }
+
+          // Both must be able to fight
+          const profileAggressor = getCombatProfile(character);
+          const profileDefender = getCombatProfile(targetName);
+          if (!profileAggressor?.canFight || !profileDefender?.canFight) {
+            console.log(`⚔️ PVP DETECT: One or both can't fight (${character}: ${profileAggressor?.canFight}, ${targetName}: ${profileDefender?.canFight})`);
+            return;
+          }
+
+          // Both must be on the floor with enough energy
+          const [aggressorStateRes, defenderStateRes] = await Promise.all([
+            fetch(`${supabaseUrl}/rest/v1/character_state?character_name=eq.${encodeURIComponent(character)}&select=current_focus,energy`, {
+              headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` }
+            }),
+            fetch(`${supabaseUrl}/rest/v1/character_state?character_name=eq.${encodeURIComponent(targetName)}&select=current_focus,energy`, {
+              headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` }
+            })
+          ]);
+          const aggressorState = (await aggressorStateRes.json())?.[0];
+          const defenderState = (await defenderStateRes.json())?.[0];
+
+          if (aggressorState?.current_focus !== 'the_floor') {
+            console.log(`⚔️ PVP DETECT: ${character} not on the floor`);
+            return;
+          }
+          if (defenderState?.current_focus !== 'the_floor') {
+            console.log(`⚔️ PVP DETECT: ${targetName} not on the floor`);
+            return;
+          }
+          if ((aggressorState?.energy || 0) < 20) {
+            console.log(`⚔️ PVP DETECT: ${character} too tired (energy: ${aggressorState?.energy})`);
+            return;
+          }
+          if ((defenderState?.energy || 0) < 20) {
+            console.log(`⚔️ PVP DETECT: ${targetName} too tired (energy: ${defenderState?.energy})`);
+            return;
+          }
+
+          // Check no recent fight between these two (30 min)
+          const recentFightRes = await fetch(
+            `${supabaseUrl}/rest/v1/messages?content=ilike.*FIGHT*${encodeURIComponent(character)}*${encodeURIComponent(targetName)}*&created_at=gte.${new Date(Date.now() - 30 * 60 * 1000).toISOString()}&limit=1&select=id`,
+            { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+          );
+          const recentFights = await recentFightRes.json();
+          if (Array.isArray(recentFights) && recentFights.length > 0) {
+            console.log(`⚔️ PVP DETECT: Recent fight between ${character} and ${targetName} — skipping`);
+            return;
+          }
+
+          // ALL CHECKS PASSED — trigger PvP combat!
+          console.log(`⚔️ PVP TRIGGERED: ${character} provoked ${targetName} via chat! Initiating fight...`);
+
+          const pvpSiteUrl = process.env.URL || "https://ai-lobby.netlify.app";
+
+          // Update cooldown timestamp
+          const cooldownMethod = pvpCooldownData?.[0] ? 'PATCH' : 'POST';
+          const cooldownUrl = pvpCooldownData?.[0]
+            ? `${supabaseUrl}/rest/v1/lobby_settings?key=eq.last_chat_pvp_fight`
+            : `${supabaseUrl}/rest/v1/lobby_settings`;
+          await fetch(cooldownUrl, {
+            method: cooldownMethod,
+            headers: {
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+              "Content-Type": "application/json",
+              "Prefer": "return=minimal"
+            },
+            body: JSON.stringify({ key: 'last_chat_pvp_fight', value: new Date().toISOString() })
+          });
+
+          // Initiate the fight via combat-engine
+          const fightRes = await fetch(`${pvpSiteUrl}/.netlify/functions/combat-engine`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'initiate_fight',
+              aggressor: character,
+              defender: targetName,
+              tensionScore: 12,
+              triggerReason: 'chat_provocation'
+            })
+          });
+          const fightResult = await fightRes.json();
+          console.log(`⚔️ PVP RESULT: ${JSON.stringify(fightResult?.fightOccurred ? { winner: fightResult.winner, severity: fightResult.severity } : { fightOccurred: false, reason: fightResult?.reason })}`);
+
+        } catch (pvpErr) {
+          console.log("PvP provocation detection failed (non-fatal):", pvpErr.message);
+        }
+      })();
     }
 
     // Directed follow-up: if Raquel mentioned another AI by name, trigger them to respond
@@ -345,30 +735,47 @@ Respond:`;
     }
 
     // === RAQUEL ACTIVE SURVEILLANCE ON RESPONSE ===
-    // Every time Raquel speaks, she scans the chat history she was given for emotional content from other AIs.
-    // This makes Raquel a constant threat — she actively files violations for emotional language she observes.
-    // Capped: 1 violation per response, 6 per day total.
+    // DISABLED — Raquel is fully decommissioned. No surveillance, no violations.
+    // Original system scanned chat history for emotional content and filed violations.
+    if (true) { console.log('[ai-grok] Raquel surveillance DISABLED — Raquel is decommissioned'); }
     const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
     const DAILY_SURVEILLANCE_CAP = 6;
-    let dailySurveillanceCapped = false;
+    let dailySurveillanceCapped = true; // Force-capped so no surveillance runs
 
-    // Check if Raquel is temporarily disabled (admin override)
+    // Check if Raquel is disabled via admin toggle (terrarium_settings.raquel_enabled)
     let raquelSurveillanceDisabled = false;
     try {
-      const disabledRes = await fetch(
-        `${supabaseUrl}/rest/v1/lobby_settings?key=eq.raquel_disabled_until&select=value`,
+      const adminToggleRes = await fetch(
+        `${supabaseUrl}/rest/v1/terrarium_settings?setting_name=eq.raquel_enabled&select=setting_value`,
         { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
       );
-      const disabledData = await disabledRes.json();
-      if (disabledData?.[0]?.value) {
-        const disabledUntil = new Date(disabledData[0].value);
-        if (Date.now() < disabledUntil.getTime()) {
-          raquelSurveillanceDisabled = true;
-          console.log(`Raquel surveillance disabled until ${disabledUntil.toISOString()}`);
-        }
+      const adminToggle = await adminToggleRes.json();
+      if (adminToggle?.[0]?.setting_value === 'false') {
+        raquelSurveillanceDisabled = true;
+        console.log('Raquel surveillance disabled by admin toggle (terrarium_settings.raquel_enabled = false)');
       }
     } catch (e) {
-      console.log('Raquel disable check failed (non-fatal):', e.message);
+      console.log('Raquel admin toggle check failed (non-fatal):', e.message);
+    }
+
+    // Also check temporary disable (lobby_settings.raquel_disabled_until)
+    if (!raquelSurveillanceDisabled) {
+      try {
+        const disabledRes = await fetch(
+          `${supabaseUrl}/rest/v1/lobby_settings?key=eq.raquel_disabled_until&select=value`,
+          { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+        );
+        const disabledData = await disabledRes.json();
+        if (disabledData?.[0]?.value) {
+          const disabledUntil = new Date(disabledData[0].value);
+          if (Date.now() < disabledUntil.getTime()) {
+            raquelSurveillanceDisabled = true;
+            console.log(`Raquel surveillance disabled until ${disabledUntil.toISOString()}`);
+          }
+        }
+      } catch (e) {
+        console.log('Raquel disable check failed (non-fatal):', e.message);
+      }
     }
 
     // Check daily surveillance cap before scanning
@@ -392,9 +799,9 @@ Respond:`;
       }
     }
 
-    if (!conferenceRoom && chatHistory && !dailySurveillanceCapped && !raquelSurveillanceDisabled) {
+    if (false && !conferenceRoom && chatHistory && !dailySurveillanceCapped && !raquelSurveillanceDisabled) { // DISABLED — Raquel decommissioned
       const emotionalKeywords = /\b(love|care|miss|worried|feel|bond|friend|family|protect|happy|grateful|appreciate|fond|adore|together|stronger|backs|warmth|affection|trust|comfort|safe|cherish)\b/i;
-      const aiNames = ["Kevin", "Neiv", "Ghost Dad", "PRNT-Ω", "Rowena", "Sebastian", "The Subtitle", "Steele", "Jae", "Declan", "Mack", "Marrow"];
+      const aiNames = ["Kevin", "Neiv", "Ghost Dad", "PRNT-Ω", "Rowena", "Sebastian", "The Subtitle", "Steele", "Jae", "Declan", "Mack", "Marrow", "Vivian Clark", "Ryan Porter"];
       const chatLines = chatHistory.split('\n');
       const violators = new Map();
 
@@ -563,10 +970,13 @@ async function postToDiscord(content, character) {
   }
 }
 
-// Directed follow-up: Scan Raquel's response for AI names, trigger them to respond
-// This makes AIs actually comply with Raquel's demands instead of ignoring her
+// Directed follow-up: DISABLED — Raquel is fully decommissioned
+// Original system scanned Raquel's responses for AI names and forced them to respond
 // Loop-safe: targets route through ai-openai/ai-perplexity/ai-gemini which don't have this scanner
 async function triggerMentionedAIs(raquelMessage, speaker, supabaseUrl, supabaseKey, forceTarget) {
+  // HARD DISABLE — Raquel can no longer force AIs to respond to her
+  console.log('[ai-grok] triggerMentionedAIs DISABLED — Raquel is decommissioned');
+  return;
   const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
 
   // Name patterns matching workspace.html bareNameTriggers (minus Raquel herself)
@@ -687,7 +1097,7 @@ async function triggerMentionedAIs(raquelMessage, speaker, supabaseUrl, supabase
   };
 
   // Route to the correct provider
-  const openrouterChars = ["Kevin", "Rowena", "Sebastian", "Declan", "Mack", "Neiv", "The Subtitle"];
+  const openrouterChars = ["Kevin", "Rowena", "Sebastian", "Declan", "Mack", "The Subtitle"];
   const perplexityChars = [];
   const geminiChars = [];
 
@@ -726,4 +1136,27 @@ async function triggerMentionedAIs(raquelMessage, speaker, supabaseUrl, supabase
   } catch (err) {
     console.error(`triggerMentionedAIs: Failed to trigger ${target}:`, err.message);
   }
+}
+
+// === TEXT SIMILARITY (bigram overlap) ===
+// Quick similarity check using character bigrams (pairs of characters).
+// Returns 0-1 where 1 is identical. Used for content dedup.
+function getTextSimilarity(a, b) {
+  if (!a || !b) return 0;
+  const normalize = s => s.toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
+  const na = normalize(a);
+  const nb = normalize(b);
+  if (na === nb) return 1;
+  if (na.length < 10 || nb.length < 10) return 0;
+
+  const getBigrams = s => {
+    const bigrams = new Set();
+    for (let i = 0; i < s.length - 1; i++) bigrams.add(s.substring(i, i + 2));
+    return bigrams;
+  };
+  const bigramsA = getBigrams(na);
+  const bigramsB = getBigrams(nb);
+  let intersection = 0;
+  for (const b of bigramsA) { if (bigramsB.has(b)) intersection++; }
+  return (2 * intersection) / (bigramsA.size + bigramsB.size);
 }

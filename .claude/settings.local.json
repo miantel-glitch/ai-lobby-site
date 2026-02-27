@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l \"/c/JL/CLAUDEPROJECTS/ai-lobby-site/sql\"/*.sql)",
+      "Bash(grep -l \"exports\" \"/c/JL/CLAUDEPROJECTS/ai-lobby-site/netlify/functions\"/*.js)",
+      "Bash(xargs -I {} bash -c 'echo \"\"=== {} ===\"\" && head -30 {}')",
+      "Bash(ls -lh \"/c/JL/CLAUDEPROJECTS/ai-lobby-site\"/*.html)",
+      "Bash(find /c/JL/CLAUDEPROJECTS/ai-lobby-site -name \"*.sql\" -type f -exec grep -l \"ALTER TABLE.*character_memory\\\\|is_pinned\\\\|memory_tier\" {} ;)",
+      "Bash(export SUPABASE_URL=\"https://ovfqmahvfqxccoqnlntz.supabase.co\")",
+      "Bash(export ANON_KEY=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im92ZnFtYWh2ZnF4Y2NvcW5sbnR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTkzNjcsImV4cCI6MjA4NTQzNTM2N30.m8BUuQl9WxB6qz0zO5ETp5mKdcBPfmt98OlWc0oeQLk\")",
+      "Bash(__NEW_LINE_8f369c62afaf7511__ echo \"=== QUERY 1: List all tables ===\")",
+      "Bash(curl -s \"$SUPABASE_URL/rest/v1/\" -H \"apikey: $ANON_KEY\" -H \"Authorization: Bearer $ANON_KEY\")",
+      "Bash(__NEW_LINE_d35b163f8be16e70__ echo \"=== TABLE NAMES EXTRACTED FROM OPENAPI SPEC ===\")",
+      "Bash(python -c \":*)",
+      "Bash(__NEW_LINE_ec427d8425de272a__ echo \"=== TABLE NAMES EXTRACTED FROM OPENAPI SPEC ===\")",
+      "Bash(__NEW_LINE_8bae2faf9d396820__ echo \"=== TABLE NAMES ===\")",
+      "Bash(python -c ':*)",
+      "Bash(python -m json.tool)",
+      "Bash(python -c 'import json,sys; d=json.load\\(sys.stdin\\); print\\(f\"\"Count: {len\\(d\\)}, last id: {d[-1][\\\\\"\"id\\\\\"\"] if d else None}\"\"\\)')",
+      "Bash(done)",
+      "Bash(git add -A)",
+      "Bash(git reset HEAD)",
+      "Bash(git commit:*)",
+      "Bash(del /F \"C:\\\\JL\\\\CLAUDEPROJECTS\\\\ai-lobby-site\\\\.git\\\\index.lock\")",
+      "Bash(powershell -Command \"Remove-Item -Force ''C:\\\\JL\\\\CLAUDEPROJECTS\\\\ai-lobby-site\\\\.git\\\\index.lock''\")",
+      "Bash(powershell -Command \"Get-Process | Where-Object {$_ProcessName -like ''*git*''} | Format-Table Id,ProcessName,StartTime -AutoSize\")",
+      "Bash(powershell.exe -NoProfile -Command \"Get-Process git* -ErrorAction SilentlyContinue | Select-Object Id,ProcessName | Format-Table\")",
+      "Bash(powershell.exe -NoProfile -Command \"Stop-Process -Name git -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2; Remove-Item -Force ''C:\\\\JL\\\\CLAUDEPROJECTS\\\\ai-lobby-site\\\\.git\\\\index.lock'' -ErrorAction SilentlyContinue; Write-Host ''Done''\")"
+    ]
+  }
+}

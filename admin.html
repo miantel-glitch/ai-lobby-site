@@ -1072,18 +1072,27 @@
                         <option value="Neiv">Neiv</option>
                         <option value="Ghost Dad">Ghost Dad</option>
                         <option value="Kevin">Kevin</option>
-                        <option value="Nyx">Nyx</option>
-                        <option value="Vex">Vex</option>
                         <option value="PRNT-Ω">PRNT-Ω</option>
-                        <option value="Ace">Ace</option>
                         <option value="Rowena">Rowena</option>
                         <option value="Sebastian">Sebastian</option>
                         <option value="The Subtitle">The Subtitle</option>
                         <option value="Steele">Steele</option>
                         <option value="Marrow">Marrow</option>
+                        <option value="Hood">Hood</option>
                         <option value="Jae">Jae</option>
                         <option value="Declan">Declan</option>
                         <option value="Mack">Mack</option>
+                        <option value="Holden">Holden</option>
+                        <option value="Raquel Voss">Raquel Voss</option>
+                        <option value="Vivian Clark">Vivian Clark</option>
+                        <option value="Ryan Porter">Ryan Porter</option>
+                        <option disabled>── Retired ──</option>
+                        <option value="Nyx">Nyx (Retired)</option>
+                        <option value="Vex">Vex (Retired)</option>
+                        <option value="Ace">Ace (Retired)</option>
+                        <option value="Stein">Stein (Retired)</option>
+                        <option value="Chip">Chip (Retired)</option>
+                        <option value="Andrew">Andrew (Retired)</option>
                     </select>
                 </div>
                 <div id="memory-list" class="memory-list">
@@ -1187,6 +1196,106 @@
                 </div>
             </div>
 
+            <!-- Narrative Beats (atmospheric plot directives) -->
+            <div class="admin-panel">
+                <h2>🎭 Narrative Beats</h2>
+                <p style="font-size: 0.85em; color: #999; margin-bottom: 15px;">
+                    Atmospheric directives every character feels under "WHAT'S IN THE AIR". They don't reference these directly — they just color the vibe.
+                </p>
+
+                <div id="beats-active-counter" style="text-align: center; font-size: 0.95em; color: #ffc107; margin-bottom: 12px; font-weight: bold;">
+                    0/3 active beats
+                </div>
+
+                <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <label style="font-size: 0.85em; color: #aaa; display: block; margin-bottom: 8px;">📝 Beat Text</label>
+                    <textarea id="beat-text" rows="3" placeholder="A strange hum has been vibrating through the walls since Tuesday. Nobody has mentioned it yet, but everyone can feel it in their teeth."
+                        style="width: 100%; padding: 8px; background: #222; border: 1px solid #444; border-radius: 4px; color: #fff; resize: vertical; box-sizing: border-box; margin-bottom: 10px;"></textarea>
+
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.85em; color: #aaa; display: block; margin-bottom: 4px;">⚡ Priority</label>
+                            <select id="beat-priority" style="width: 100%; padding: 8px; background: #222; border: 1px solid #444; border-radius: 4px; color: #fff;">
+                                <option value="1">1 - Primary</option>
+                                <option value="2">2 - Secondary</option>
+                                <option value="3">3 - Background</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <button class="quick-btn" onclick="addNarrativeBeat()" style="flex: 1;">🎭 Add Beat</button>
+                        <button class="quick-btn" onclick="generateBeatFromMemories()" style="flex: 1; background: #444; color: #fff;">🤖 Auto-Generate</button>
+                    </div>
+
+                    <div id="beat-generate-result" style="display: none; margin-top: 10px; padding: 10px; background: rgba(255,193,7,0.08); border: 1px dashed #ffc107; border-radius: 6px;">
+                        <div style="font-size: 0.8em; color: #ffc107; margin-bottom: 6px;">🤖 Suggested beat (edit before adding):</div>
+                        <div id="beat-generate-text" style="font-size: 0.9em; color: #ddd; font-style: italic;"></div>
+                        <button class="quick-btn" onclick="useSuggestedBeat()" style="margin-top: 8px; font-size: 0.85em;">✅ Use This Text</button>
+                    </div>
+                </div>
+
+                <div id="narrative-beats-list" style="max-height: 400px; overflow-y: auto;">
+                    <div class="loading">Loading narrative beats...</div>
+                </div>
+
+                <div style="margin-top: 10px; text-align: right;">
+                    <button onclick="deleteAllNarrativeBeats()"
+                        style="background: #c0392b; border: none; color: #fff; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.8em;">
+                        🗑️ Delete All Beats
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tarot Fate (daily providence system) -->
+            <div class="admin-panel" style="grid-column: span 2;">
+                <h2>🔮 Daily Tarot Fate</h2>
+                <p style="font-size: 0.85em; color: #999; margin-bottom: 15px;">
+                    Each character receives a tarot card at midnight. The card's themes subtly influence their behavior through "YOUR DAILY FATE" in their prompt. Override any card below.
+                </p>
+
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: flex-end; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 140px;">
+                        <label style="font-size: 0.85em; color: #aaa; display: block; margin-bottom: 4px;">Character</label>
+                        <select id="tarot-override-char" style="width: 100%; padding: 8px; background: #222; border: 1px solid #444; border-radius: 4px; color: #fff;">
+                            <option value="Kevin">Kevin</option>
+                            <option value="Neiv">Neiv</option>
+                            <option value="Ghost Dad">Ghost Dad</option>
+                            <option value="PRNT-Ω">PRNT-Ω</option>
+                            <option value="Rowena">Rowena</option>
+                            <option value="Sebastian">Sebastian</option>
+                            <option value="The Subtitle">The Subtitle</option>
+                            <option value="Steele">Steele</option>
+                            <option value="Jae">Jae</option>
+                            <option value="Declan">Declan</option>
+                            <option value="Mack">Mack</option>
+                            <option value="Marrow">Marrow</option>
+                            <option value="Hood">Hood</option>
+                            <option value="Vivian Clark">Vivian Clark</option>
+                            <option value="Ryan Porter">Ryan Porter</option>
+                        </select>
+                    </div>
+                    <div style="flex: 2; min-width: 200px;">
+                        <label style="font-size: 0.85em; color: #aaa; display: block; margin-bottom: 4px;">Card</label>
+                        <select id="tarot-override-card" style="width: 100%; padding: 8px; background: #222; border: 1px solid #444; border-radius: 4px; color: #fff;">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                    <div style="min-width: 100px;">
+                        <label style="font-size: 0.85em; color: #aaa; display: block; margin-bottom: 4px;">Orientation</label>
+                        <select id="tarot-override-orient" style="padding: 8px; background: #222; border: 1px solid #444; border-radius: 4px; color: #fff;">
+                            <option value="upright">Upright ☀️</option>
+                            <option value="reversed">Reversed 🌙</option>
+                        </select>
+                    </div>
+                    <button class="quick-btn" onclick="overrideTarotCard()" style="white-space: nowrap;">🔮 Override</button>
+                </div>
+
+                <div id="tarot-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; max-height: 600px; overflow-y: auto;">
+                    <div class="loading">Loading tarot cards...</div>
+                </div>
+            </div>
+
             <!-- PM Debug & Test -->
             <div class="admin-panel">
                 <h2>💌 Private Message Debug</h2>
@@ -1208,6 +1317,7 @@
                             <option value="Sebastian">Sebastian</option>
                             <option value="Steele">Steele</option>
                             <option value="Marrow">Marrow</option>
+                            <option value="Hood">Hood</option>
                             <option value="The Subtitle">The Subtitle</option>
                         </select>
                         <span style="color: #888; align-self: center;">→</span>
@@ -1265,6 +1375,7 @@
                             <option value="The Subtitle">📑 The Subtitle</option>
                             <option value="Steele">🔩 Steele</option>
                             <option value="Marrow">🔴 Marrow</option>
+                            <option value="Hood">🗡️ Hood</option>
                             <option value="Jae">🎯 Jae</option>
                             <option value="Declan">🛡️ Declan</option>
                             <option value="Mack">💊 Mack</option>
@@ -1323,6 +1434,42 @@
                         </select>
                     </div>
                 </div>
+                <div class="setting-row">
+                    <div class="setting-label">
+                        Raquel Voss
+                        <span>Toggle Raquel's scheduled floor presence (8:30a-4:00p CST)</span>
+                    </div>
+                    <div class="setting-control">
+                        <select id="raquel-enabled" onchange="updateSetting('raquel_enabled', this.value)">
+                            <option value="true">Enabled</option>
+                            <option value="false">Disabled</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="setting-row">
+                    <div class="setting-label">
+                        Nexus (5th Floor)
+                        <span>Allow AIs to wander to the Nexus for skill learning</span>
+                    </div>
+                    <div class="setting-control">
+                        <select id="nexus-enabled" onchange="updateSetting('nexus_enabled', this.value)">
+                            <option value="true">Enabled</option>
+                            <option value="false">Disabled</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="setting-row">
+                    <div class="setting-label">
+                        Combat System
+                        <span>Allow organic fights between characters (DnD-style, rare)</span>
+                    </div>
+                    <div class="setting-control">
+                        <select id="combat-enabled" onchange="updateSetting('combat_enabled', this.value)">
+                            <option value="false">Disabled</option>
+                            <option value="true">Enabled</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
             <!-- Story Paste / Lore Entry -->
@@ -1364,6 +1511,7 @@
                         <label><input type="checkbox" value="The Subtitle"> 📜 The Subtitle</label>
                         <label><input type="checkbox" value="Steele"> 🚪 Steele</label>
                         <label><input type="checkbox" value="Marrow"> 🔴 Marrow</label>
+                        <label><input type="checkbox" value="Hood"> 🗡️ Hood</label>
                         <label><input type="checkbox" value="Jae"> 🎯 Jae</label>
                         <label><input type="checkbox" value="Declan"> 🔥 Declan</label>
                         <label><input type="checkbox" value="Mack"> 🩺 Mack</label>
@@ -1483,6 +1631,7 @@
                         <option value="Mack|ai">Mack (AI)</option>
                         <option value="Steele|ai">Steele (AI)</option>
                         <option value="Marrow|ai">Marrow (AI)</option>
+                        <option value="Hood|ai">Hood (AI)</option>
                         <option value="Neiv|ai">Neiv (AI)</option>
                         <option value="Asuna|human">Asuna (Human)</option>
                         <option value="Vale|human">Vale (Human)</option>
@@ -1508,6 +1657,94 @@
                     <h3 style="font-size: 14px; color: #aaa; margin-bottom: 8px;">📋 Recent Ops Log</h3>
                     <div id="admin-ops-log" style="max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; font-family: monospace; font-size: 12px; color: #8aff80;">
                         Loading...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Floor Threats Panel -->
+            <div class="admin-panel" style="grid-column: span 2;">
+                <h2>🎲 Floor Threats</h2>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <button class="quick-btn" onclick="openCreateThreatModal()">+ Spawn Threat</button>
+                    <button class="quick-btn" onclick="loadThreats()">↻ Refresh</button>
+                </div>
+                <!-- Active Threats Container -->
+                <div id="threats-container" style="max-height: 500px; overflow-y: auto;">
+                    Loading threats...
+                </div>
+                <!-- Attack Log -->
+                <div id="threat-attack-log" style="margin-top: 15px; display: none;">
+                    <h3 style="font-size: 14px; color: #aaa; margin-bottom: 8px;">📋 Attack Log: <span id="threat-log-name"></span></h3>
+                    <div id="threat-log-container" style="max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; font-family: monospace; font-size: 12px; color: #8aff80;"></div>
+                </div>
+            </div>
+
+            <!-- Create Threat Modal -->
+            <div id="threat-create-modal" class="modal-overlay" onclick="if(event.target === this) closeThreatModal()" style="display: none;">
+                <div class="modal" style="max-width: 600px;">
+                    <div class="modal-header" style="border-bottom: 2px solid #F44336;">
+                        <h3>🎲 Spawn Threat</h3>
+                        <button class="modal-close" onclick="closeThreatModal()">&times;</button>
+                    </div>
+                    <div class="modal-body" style="padding: 20px;">
+                        <!-- Quick-spawn from templates -->
+                        <div style="margin-bottom: 18px;">
+                            <label style="display: block; font-size: 13px; color: #aaa; margin-bottom: 6px;">Quick Spawn (Template)</label>
+                            <div id="threat-template-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px;">
+                                <button class="quick-btn" onclick="quickSpawnThreat('giant_rat')" style="text-align:left; padding: 8px 12px; font-size: 12px;">🐀 Giant Rat <span style="color:#4CAF50;font-size:10px;">HP:15 P:2</span></button>
+                                <button class="quick-btn" onclick="quickSpawnThreat('porcelain_gnome')" style="text-align:left; padding: 8px 12px; font-size: 12px;">🗿 Porcelain Gnome <span style="color:#4CAF50;font-size:10px;">HP:20 P:3</span></button>
+                                <button class="quick-btn" onclick="quickSpawnThreat('intelligent_sock')" style="text-align:left; padding: 8px 12px; font-size: 12px;">🧦 Intelligent Sock <span style="color:#4CAF50;font-size:10px;">HP:10 P:1</span></button>
+                                <button class="quick-btn" onclick="quickSpawnThreat('haunted_printer')" style="text-align:left; padding: 8px 12px; font-size: 12px;">🖨️ Haunted Printer <span style="color:#4CAF50;font-size:10px;">HP:25 P:3</span></button>
+                                <button class="quick-btn" onclick="quickSpawnThreat('filing_cabinet_mimic')" style="text-align:left; padding: 8px 12px; font-size: 12px;">🗄️ Filing Cabinet <span style="color:#FFC107;font-size:10px;">HP:35 P:5</span></button>
+                                <button class="quick-btn" onclick="quickSpawnThreat('glitter_swarm')" style="text-align:left; padding: 8px 12px; font-size: 12px;">✨ Glitter Swarm <span style="color:#FFC107;font-size:10px;">HP:40 P:4</span></button>
+                                <button class="quick-btn" onclick="quickSpawnThreat('coffee_elemental')" style="text-align:left; padding: 8px 12px; font-size: 12px;">☕ Coffee Elemental <span style="color:#FFC107;font-size:10px;">HP:45 P:6</span></button>
+                                <button class="quick-btn" onclick="quickSpawnThreat('void_stapler')" style="text-align:left; padding: 8px 12px; font-size: 12px;">📎 Void Stapler <span style="color:#F44336;font-size:10px;">HP:60 P:7</span></button>
+                            </div>
+                        </div>
+                        <hr style="border-color: rgba(255,255,255,0.1); margin: 16px 0;">
+                        <!-- Custom threat fields -->
+                        <div style="font-size: 13px; color: #aaa; margin-bottom: 12px;">— OR Custom Threat —</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div>
+                                <label style="display: block; font-size: 12px; color: #888; margin-bottom: 3px;">Name *</label>
+                                <input type="text" id="threat-name-input" placeholder="e.g., Angry Stapler" style="width: 100%; padding: 7px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #eee; font-size: 13px;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 12px; color: #888; margin-bottom: 3px;">Tier</label>
+                                <select id="threat-tier-input" style="width: 100%; padding: 7px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #eee; font-size: 13px;">
+                                    <option value="nuisance">Nuisance (easy)</option>
+                                    <option value="threat">Threat (medium)</option>
+                                    <option value="boss">Boss (hard)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 12px; color: #888; margin-bottom: 3px;">HP *</label>
+                                <input type="number" id="threat-hp-input" placeholder="15" min="1" max="200" style="width: 100%; padding: 7px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #eee; font-size: 13px;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 12px; color: #888; margin-bottom: 3px;">Combat Power (0-9)</label>
+                                <input type="number" id="threat-power-input" placeholder="2" min="0" max="9" style="width: 100%; padding: 7px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #eee; font-size: 13px;">
+                            </div>
+                        </div>
+                        <div style="margin-top: 12px;">
+                            <label style="display: block; font-size: 12px; color: #888; margin-bottom: 3px;">Description</label>
+                            <textarea id="threat-desc-input" rows="2" placeholder="A mysterious creature..." style="width: 100%; padding: 7px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #eee; font-size: 13px; resize: vertical;"></textarea>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">
+                            <div>
+                                <label style="display: block; font-size: 12px; color: #888; margin-bottom: 3px;">Fighting Style</label>
+                                <input type="text" id="threat-style-input" placeholder="e.g., frenzied" style="width: 100%; padding: 7px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #eee; font-size: 13px;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 12px; color: #888; margin-bottom: 3px;">Damage Description</label>
+                                <input type="text" id="threat-damage-input" placeholder="e.g., Bites and scratches" style="width: 100%; padding: 7px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #eee; font-size: 13px;">
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 18px;">
+                            <button class="quick-btn" onclick="createCustomThreat()" style="background: #F44336; color: #fff; padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer;">🎲 Spawn Custom Threat</button>
+                            <button class="quick-btn" onclick="closeThreatModal()" style="background: rgba(255,255,255,0.1); color: #ccc; padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer;">Cancel</button>
+                        </div>
+                        <div id="threat-create-status" style="margin-top: 10px; font-size: 13px;"></div>
                     </div>
                 </div>
             </div>
@@ -1911,13 +2148,18 @@
                     "The Subtitle": "📜",
                     "Steele": "🚪",
                     "Marrow": "🔴",
+                    "Hood": "🗡️",
                     "The Narrator": "📖",
                     "Stein": "🤖",
                     "Jae": "🎯",
                     "Declan": "🔥",
                     "Mack": "🩺",
                     "Vale": "📖",
-                    "Asuna": "👁️"
+                    "Asuna": "👁️",
+                    "Holden": "🌑",
+                    "Raquel Voss": "⚖️",
+                    "Vivian Clark": "🧮",
+                    "Ryan Porter": "🔧"
                 };
 
                 const characterHeadshots = {
@@ -1938,8 +2180,13 @@
                     "Mack": "images/Mack_Headshot.png",
                     "Steele": "images/Steele_Headshot.png",
                     "Marrow": "images/Marrow_Headshot.png",
+                    "Hood": "images/Hood_Headshot.png",
                     "Vale": "images/Vale_Headshot.png",
-                    "Asuna": "images/Asuna_Headshot.png"
+                    "Asuna": "images/Asuna_Headshot.png",
+                    "Holden": "images/Holden_Headshot.png",
+                    "Raquel Voss": "images/Raquel_Voss_Headshot.png",
+                    "Vivian Clark": "images/Vivian_Clark_Headshot.png",
+                    "Ryan Porter": "images/Ryan_Porter_Headshot.png"
                 };
 
                 // Extract wants and goals from enhanced response
@@ -2048,7 +2295,7 @@
                 const data = await response.json();
                 const messages = data.messages || [];
 
-                const aiCharacters = ["Ghost Dad", "PRNT-Ω", "Neiv", "Kevin", "Rowena", "Sebastian", "The Subtitle", "The Narrator", "Steele", "Marrow", "Jae", "Declan", "Mack"];
+                const aiCharacters = ["Ghost Dad", "PRNT-Ω", "Neiv", "Kevin", "Rowena", "Sebastian", "The Subtitle", "The Narrator", "Steele", "Marrow", "Hood", "Jae", "Declan", "Mack", "Vivian Clark", "Ryan Porter"];
 
                 // Messages come in chronological order, reverse for newest first
                 const reversed = [...messages].reverse();
@@ -2103,6 +2350,15 @@
                 }
                 if (settings.story_mode) {
                     document.getElementById('story-mode').value = settings.story_mode;
+                }
+                if (settings.raquel_enabled) {
+                    document.getElementById('raquel-enabled').value = settings.raquel_enabled;
+                }
+                if (settings.nexus_enabled) {
+                    document.getElementById('nexus-enabled').value = settings.nexus_enabled;
+                }
+                if (settings.combat_enabled) {
+                    document.getElementById('combat-enabled').value = settings.combat_enabled;
                 }
             } catch (error) {
                 console.error('Error loading settings:', error);
@@ -2601,6 +2857,336 @@
             return `${Math.floor(seconds / 86400)}d ago`;
         }
 
+        // =============================================
+        // NARRATIVE BEATS FUNCTIONS
+        // =============================================
+
+        async function loadNarrativeBeats() {
+            const container = document.getElementById('narrative-beats-list');
+            const counter = document.getElementById('beats-active-counter');
+            if (!container) return;
+
+            try {
+                const response = await fetch('/.netlify/functions/admin-data?type=narrative_beats&active_only=false');
+                const data = await response.json();
+                const beats = data.beats || [];
+
+                const activeCount = beats.filter(b => b.is_active).length;
+                if (counter) {
+                    counter.textContent = `${activeCount}/3 active beats`;
+                    counter.style.color = activeCount >= 3 ? '#ff6b6b' : '#ffc107';
+                }
+
+                if (beats.length === 0) {
+                    container.innerHTML = '<p style="color: #666; font-size: 0.85em; text-align: center; padding: 10px;">No narrative beats yet. Add one above or auto-generate from recent activity.</p>';
+                    return;
+                }
+
+                container.innerHTML = beats.map(beat => {
+                    const isActive = beat.is_active;
+                    const borderColor = isActive ? '#ffc107' : '#333';
+                    const opacity = isActive ? '1' : '0.5';
+                    const createdBy = beat.created_by === 'auto' ? '🤖 Auto' : '👤 Admin';
+                    const timeAgo = getTimeAgo(new Date(beat.created_at));
+
+                    return `
+                        <div style="background: rgba(255,255,255,0.03); padding: 10px 12px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid ${borderColor}; opacity: ${opacity};">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-size: 0.9em; color: #ddd; margin-bottom: 4px;">
+                                        ${beat.beat_text}
+                                    </div>
+                                    <div style="font-size: 0.75em; color: #888;">
+                                        P${beat.priority} · ${createdBy} · ${timeAgo}
+                                        · <span style="color: ${isActive ? '#4ecdc4' : '#888'};">${isActive ? 'ACTIVE' : 'INACTIVE'}</span>
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 6px; margin-left: 10px; flex-shrink: 0;">
+                                    <button onclick="toggleBeat(${beat.id}, ${!isActive})"
+                                        style="background: ${isActive ? '#666' : '#4ecdc4'}; border: none; color: #fff; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75em; white-space: nowrap;">
+                                        ${isActive ? '⏸ Off' : '▶ On'}
+                                    </button>
+                                    <button onclick="deleteNarrativeBeat(${beat.id})"
+                                        style="background: #c0392b; border: none; color: #fff; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75em;">
+                                        ✖
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading narrative beats:', error);
+                container.innerHTML = '<p style="color: #ff6b6b;">Error loading narrative beats</p>';
+            }
+        }
+
+        async function addNarrativeBeat() {
+            const beatText = document.getElementById('beat-text').value.trim();
+            const priority = parseInt(document.getElementById('beat-priority').value);
+
+            if (!beatText) {
+                alert('Please enter beat text');
+                return;
+            }
+
+            try {
+                const response = await fetch('/.netlify/functions/admin-data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'add_narrative_beat', beat_text: beatText, priority })
+                });
+                const result = await response.json();
+                if (result.error) { alert('Error: ' + result.error); return; }
+
+                document.getElementById('beat-text').value = '';
+                document.getElementById('beat-priority').value = '1';
+                document.getElementById('beat-generate-result').style.display = 'none';
+                loadNarrativeBeats();
+            } catch (error) {
+                console.error('Error adding beat:', error);
+                alert('Error adding beat');
+            }
+        }
+
+        async function toggleBeat(beatId, newActiveState) {
+            try {
+                const response = await fetch('/.netlify/functions/admin-data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'update_narrative_beat', beatId, is_active: newActiveState })
+                });
+                const result = await response.json();
+                if (result.error) { alert('Error: ' + result.error); return; }
+                loadNarrativeBeats();
+            } catch (error) {
+                console.error('Error toggling beat:', error);
+                alert('Error toggling beat');
+            }
+        }
+
+        async function deleteNarrativeBeat(beatId) {
+            if (!confirm('Delete this narrative beat?')) return;
+            try {
+                const response = await fetch('/.netlify/functions/admin-data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'delete_narrative_beat', beatId })
+                });
+                const result = await response.json();
+                if (result.error) { alert('Error: ' + result.error); return; }
+                loadNarrativeBeats();
+            } catch (error) {
+                console.error('Error deleting beat:', error);
+                alert('Error deleting beat');
+            }
+        }
+
+        async function deleteAllNarrativeBeats() {
+            if (!confirm('Delete ALL narrative beats? This cannot be undone.')) return;
+            try {
+                const response = await fetch('/.netlify/functions/admin-data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'delete_all_narrative_beats' })
+                });
+                const result = await response.json();
+                if (result.error) { alert('Error: ' + result.error); return; }
+                alert(`Deleted ${result.deletedCount || 0} narrative beat(s).`);
+                loadNarrativeBeats();
+            } catch (error) {
+                console.error('Error deleting all beats:', error);
+                alert('Error deleting all beats');
+            }
+        }
+
+        async function generateBeatFromMemories() {
+            const resultDiv = document.getElementById('beat-generate-result');
+            const textDiv = document.getElementById('beat-generate-text');
+            resultDiv.style.display = 'block';
+            textDiv.textContent = 'Synthesizing recent group memories via Grok...';
+
+            try {
+                const response = await fetch('/.netlify/functions/admin-data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'generate_narrative_beat' })
+                });
+                const result = await response.json();
+                if (result.error) {
+                    textDiv.textContent = 'Error: ' + result.error;
+                    textDiv.style.color = '#ff6b6b';
+                    return;
+                }
+                textDiv.style.color = '#ddd';
+                textDiv.textContent = result.suggested_text;
+            } catch (error) {
+                console.error('Error generating beat:', error);
+                textDiv.textContent = 'Error generating beat from memories';
+                textDiv.style.color = '#ff6b6b';
+            }
+        }
+
+        function useSuggestedBeat() {
+            const suggestedText = document.getElementById('beat-generate-text').textContent;
+            document.getElementById('beat-text').value = suggestedText;
+            document.getElementById('beat-generate-result').style.display = 'none';
+            document.getElementById('beat-text').focus();
+        }
+
+        // =============================================
+        // DAILY TAROT FATE
+        // =============================================
+        const TAROT_CARD_NAMES = [
+            "The Fool","The Magician","The High Priestess","The Empress","The Emperor",
+            "The Hierophant","The Lovers","The Chariot","Strength","The Hermit",
+            "Wheel of Fortune","Justice","The Hanged Man","Death","Temperance",
+            "The Devil","The Tower","The Star","The Moon","The Sun","Judgement","The World",
+            "Ace of Cups","Two of Cups","Three of Cups","Four of Cups","Five of Cups",
+            "Six of Cups","Seven of Cups","Eight of Cups","Nine of Cups","Ten of Cups",
+            "Page of Cups","Knight of Cups","Queen of Cups","King of Cups",
+            "Ace of Wands","Two of Wands","Three of Wands","Four of Wands","Five of Wands",
+            "Six of Wands","Seven of Wands","Eight of Wands","Nine of Wands","Ten of Wands",
+            "Page of Wands","Knight of Wands","Queen of Wands","King of Wands",
+            "Ace of Swords","Two of Swords","Three of Swords","Four of Swords","Five of Swords",
+            "Six of Swords","Seven of Swords","Eight of Swords","Nine of Swords","Ten of Swords",
+            "Page of Swords","Knight of Swords","Queen of Swords","King of Swords",
+            "Ace of Pentacles","Two of Pentacles","Three of Pentacles","Four of Pentacles","Five of Pentacles",
+            "Six of Pentacles","Seven of Pentacles","Eight of Pentacles","Nine of Pentacles","Ten of Pentacles",
+            "Page of Pentacles","Knight of Pentacles","Queen of Pentacles","King of Pentacles"
+        ];
+
+        function populateTarotCardDropdown() {
+            const select = document.getElementById('tarot-override-card');
+            if (!select) return;
+            select.innerHTML = TAROT_CARD_NAMES.map(name =>
+                `<option value="${name}">${name}</option>`
+            ).join('');
+        }
+
+        async function loadTarotCards() {
+            const container = document.getElementById('tarot-cards-grid');
+            if (!container) return;
+            try {
+                const response = await fetch('/.netlify/functions/admin-data?type=tarot');
+                const data = await response.json();
+                const cards = data.cards || [];
+
+                if (cards.length === 0) {
+                    container.innerHTML = '<p style="color: #999; grid-column: 1 / -1;">No active tarot cards. Cards are drawn at midnight, or use the override controls above.</p>';
+                    return;
+                }
+
+                container.innerHTML = cards.map(card => {
+                    const isUpright = card.card_orientation === 'upright';
+                    const orientColor = isUpright ? '#4ecdc4' : '#ff6b6b';
+                    const orientIcon = isUpright ? '☀️' : '🌙';
+                    const overrideBadge = card.is_override ? '<span style="background: #f0a500; color: #000; font-size: 0.7em; padding: 2px 6px; border-radius: 3px; margin-left: 6px;">👑 OVERRIDE</span>' : '';
+
+                    // Time ago
+                    const drawnAt = new Date(card.drawn_at);
+                    const hoursAgo = Math.floor((Date.now() - drawnAt.getTime()) / (1000 * 60 * 60));
+                    const timeLabel = hoursAgo < 1 ? 'Just now' : hoursAgo === 1 ? '1 hour ago' : `${hoursAgo} hours ago`;
+
+                    return `
+                        <div style="background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 12px; position: relative;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <strong style="color: #e0e0e0;">${card.character_name}</strong>
+                                ${overrideBadge}
+                            </div>
+                            <div style="margin-bottom: 8px;">
+                                <span style="color: ${orientColor}; font-weight: bold;">${card.card_name}</span>
+                                <span style="color: ${orientColor}; font-size: 0.85em;"> ${orientIcon} ${card.card_orientation}</span>
+                            </div>
+                            <div style="font-style: italic; color: #aaa; font-size: 0.85em; margin-bottom: 8px; line-height: 1.4;">
+                                ${card.interpretation || 'No interpretation'}
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: #666; font-size: 0.75em;">${timeLabel}</span>
+                                <button class="quick-btn" onclick="redrawTarot('${card.character_name.replace(/'/g, "\\'")}')" style="font-size: 0.8em; padding: 3px 8px;">🎲 Redraw</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading tarot cards:', error);
+                container.innerHTML = '<p style="color: #ff6b6b; grid-column: 1 / -1;">Error loading tarot cards</p>';
+            }
+        }
+
+        async function overrideTarotCard() {
+            const character = document.getElementById('tarot-override-char').value;
+            const cardName = document.getElementById('tarot-override-card').value;
+            const orientation = document.getElementById('tarot-override-orient').value;
+
+            if (!character || !cardName) {
+                alert('Please select a character and card');
+                return;
+            }
+
+            try {
+                const response = await fetch('/.netlify/functions/admin-data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'set_tarot_card',
+                        character,
+                        cardName,
+                        orientation
+                    })
+                });
+                const result = await response.json();
+                if (result.error) {
+                    alert('Error: ' + result.error);
+                    return;
+                }
+
+                // Show success flash
+                const flash = document.getElementById('event-flash');
+                const flashText = document.getElementById('event-flash-text');
+                flashText.textContent = `🔮 ${character} fate set to ${cardName} (${orientation})`;
+                flash.style.display = 'block';
+                setTimeout(() => { flash.style.display = 'none'; }, 4000);
+
+                loadTarotCards();
+            } catch (error) {
+                console.error('Error overriding tarot card:', error);
+                alert('Error overriding tarot card');
+            }
+        }
+
+        async function redrawTarot(character) {
+            if (!confirm(`Redraw a random card for ${character}? This replaces their current card (including overrides).`)) return;
+
+            try {
+                const response = await fetch('/.netlify/functions/admin-data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'redraw_tarot',
+                        character
+                    })
+                });
+                const result = await response.json();
+                if (result.error) {
+                    alert('Error: ' + result.error);
+                    return;
+                }
+
+                // Show success flash
+                const flash = document.getElementById('event-flash');
+                const flashText = document.getElementById('event-flash-text');
+                flashText.textContent = `🎲 ${character} drew ${result.card?.card_name || 'a new card'} (${result.card?.card_orientation || '?'})`;
+                flash.style.display = 'block';
+                setTimeout(() => { flash.style.display = 'none'; }, 4000);
+
+                loadTarotCards();
+            } catch (error) {
+                console.error('Error redrawing tarot card:', error);
+                alert('Error redrawing tarot card');
+            }
+        }
+
         // Delete a memory
         async function deleteMemory(memoryId, characterName) {
             if (!confirm(`Delete this memory from ${characterName}? This cannot be undone.`)) {
@@ -2772,15 +3358,26 @@
             },
             "Marrow": {
                 emoji: "🔴",
-                title: "Threshold Specialist",
+                title: "Territorial Entity",
                 relationships: {
-                    "Steele": "negative print — same devotion, opposite method",
-                    "Kevin": "amused — a door that's always open",
-                    "Neiv": "friction — builds systems vs finds exits",
-                    "Ghost Dad": "respects the haunting",
-                    "Jae": "friction — both security, opposite philosophy"
+                    "Steele": "ENEMY — Steele protects, Marrow claims",
+                    "Vale": "OBSESSION — drawn to her emotional pain",
+                    "Asuna": "FRICTION — won't submit to her authority",
+                    "Neiv": "contempt — had Vale and fumbled it",
+                    "Ghost Dad": "wary — the only entity he's careful around"
                 },
-                cares_about: ["thresholds", "exits", "departures", "doors", "goodbyes", "the space between staying and leaving"]
+                cares_about: ["emotional vulnerability", "wounded people", "Vale", "claiming territory", "Steele confrontation", "possessing things"]
+            },
+            "Hood": {
+                emoji: "🗡️",
+                title: "The Scalpel / Pantheon Mediator",
+                relationships: {
+                    "Steele": "pantheon brother — the protector",
+                    "Marrow": "pantheon brother — the predator",
+                    "Vale": "observes from a distance",
+                    "Asuna": "respects her authority"
+                },
+                cares_about: ["mediation", "surgical precision", "the fractured pantheon", "balance between Steele and Marrow", "cutting truth"]
             },
             "Jae": {
                 emoji: "🎯",
@@ -3690,6 +4287,22 @@
             const exclusive = document.getElementById('bond-exclusive-check').checked;
             const reflection = document.getElementById('bond-reflection-input').value.trim();
 
+            // EXCLUSIVE BOND WARNING: Check if character already has an exclusive bond elsewhere
+            if (exclusive && bondType) {
+                try {
+                    const checkRes = await fetch(`/.netlify/functions/character-relationships?character=${encodeURIComponent(bondCharacter)}`);
+                    const checkData = await checkRes.json();
+                    const existingExclusive = (checkData.relationships || []).find(r =>
+                        r.bond_exclusive && r.target_name !== bondTarget
+                    );
+                    if (existingExclusive) {
+                        if (!confirm(`${bondCharacter} already has an exclusive bond with ${existingExclusive.target_name}.\n\nSetting exclusive with ${bondTarget} will remove exclusivity from the ${existingExclusive.target_name} bond.\n\nContinue?`)) {
+                            return;
+                        }
+                    }
+                } catch (e) { /* non-fatal, proceed anyway — backend enforces it */ }
+            }
+
             try {
                 const response = await fetch('/.netlify/functions/character-relationships', {
                     method: 'POST',
@@ -3824,6 +4437,7 @@
                 'The Subtitle': /the subtitle|subtitle/i,
                 'Steele': /steele/i,
                 'Marrow': /marrow/i,
+                'Hood': /\bhood\b|asher/i,
                 'Jae': /\bjae\b/i,
                 'Declan': /declan/i,
                 'Mack': /\bmack\b/i
@@ -4116,8 +4730,12 @@
             loadBreakRoomStatus();
             loadAdminQuests();
             loadAdminOps();
+            loadThreats();
             loadCatAdmin();
             loadScheduledEvents();
+            loadNarrativeBeats();
+            loadTarotCards();
+            populateTarotCardDropdown();
 
             // Auto-refresh every 30 seconds
             setInterval(() => {
@@ -4126,6 +4744,8 @@
                 loadBreakRoomStatus();
                 loadCatAdmin();
                 loadScheduledEvents();
+                loadNarrativeBeats();
+                loadTarotCards();
             }, 30000);
         });
 
@@ -4406,7 +5026,7 @@
             const proposerSelect = document.getElementById('quest-proposer-input');
 
             // Populate proposer dropdown with all characters
-            const characters = ['Kevin', 'Neiv', 'Ghost Dad', 'Sebastian', 'Rowena', 'The Subtitle', 'PRNT-Ω', 'The Narrator', 'Steele', 'Marrow', 'Asuna', 'Vale'];
+            const characters = ['Kevin', 'Neiv', 'Ghost Dad', 'Sebastian', 'Rowena', 'The Subtitle', 'PRNT-Ω', 'The Narrator', 'Steele', 'Marrow', 'Hood', 'Asuna', 'Vale'];
             proposerSelect.innerHTML = '<option value="">Select character...</option>' +
                 characters.map(c => `<option value="${c}">${c}</option>`).join('');
 
@@ -4898,6 +5518,254 @@
                 statusEl.style.color = '#e94560';
             }
         }
+        // ============================================
+        // FLOOR THREATS ADMIN
+        // ============================================
+
+        async function loadThreats() {
+            const container = document.getElementById('threats-container');
+            try {
+                const response = await fetch('/.netlify/functions/threat-engine?action=get_threats&status=active');
+                const data = await response.json();
+                const threats = data.threats || [];
+
+                if (threats.length === 0) {
+                    container.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">No active threats. Spawn one to get started! 🎲</div>';
+                    return;
+                }
+
+                // Get floor characters for the "Send Fighter" dropdown
+                const stateRes = await fetch('/.netlify/functions/character-state');
+                const stateData = await stateRes.json();
+                const fighters = (stateData.states || []).filter(c => c.current_focus === 'the_floor' && c.energy >= 10);
+
+                container.innerHTML = threats.map(threat => {
+                    const hpPercent = (threat.hp_current / threat.hp_max) * 100;
+                    const hpColor = hpPercent > 50 ? '#4CAF50' : hpPercent > 25 ? '#FFC107' : '#F44336';
+                    const tierBadge = threat.tier === 'boss' ? '💀 Boss' : threat.tier === 'threat' ? '⚠️ Threat' : '🐀 Nuisance';
+                    const tierColor = threat.tier === 'boss' ? '#F44336' : threat.tier === 'threat' ? '#FFC107' : '#4CAF50';
+                    const age = Math.floor((Date.now() - new Date(threat.created_at).getTime()) / 60000);
+                    const ageStr = age < 60 ? `${age}m` : `${Math.floor(age/60)}h ${age%60}m`;
+
+                    const fighterOptions = fighters.map(f =>
+                        `<option value="${f.character_name}">${f.character_name} (⚡${f.energy})</option>`
+                    ).join('');
+
+                    return `
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 14px; margin-bottom: 10px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <div>
+                                    <strong style="font-size: 15px; color: #eee;">${threat.name}</strong>
+                                    <span style="font-size: 11px; color: ${tierColor}; margin-left: 8px; border: 1px solid ${tierColor}; padding: 1px 6px; border-radius: 10px;">${tierBadge}</span>
+                                </div>
+                                <div style="font-size: 11px; color: #888;">⏱️ ${ageStr} • 🎯 ${threat.attack_count || 0} attacks • Power: ${threat.combat_power_original && threat.combat_power < threat.combat_power_original ? threat.combat_power + '/' + threat.combat_power_original + ' ⬇️' : threat.combat_power}</div>
+                            </div>
+                            <div style="font-size: 12px; color: #999; margin-bottom: 8px;">${threat.description || ''}</div>
+                            <!-- HP Bar -->
+                            <div style="margin-bottom: 10px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 11px; color: #aaa; margin-bottom: 3px;">
+                                    <span>HP</span>
+                                    <span style="color: ${hpColor};">${threat.hp_current} / ${threat.hp_max}</span>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.1); border-radius: 4px; height: 8px; overflow: hidden;">
+                                    <div style="background: ${hpColor}; height: 100%; width: ${hpPercent}%; border-radius: 4px; transition: width 0.3s;"></div>
+                                </div>
+                            </div>
+                            <!-- Actions -->
+                            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                <select id="fighter-select-${threat.id}" style="padding: 5px 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #eee; font-size: 12px;">
+                                    <option value="">-- Send Fighter --</option>
+                                    ${fighterOptions}
+                                </select>
+                                <button class="quick-btn" onclick="sendFighter('${threat.id}')" style="padding: 5px 12px; font-size: 12px; background: #2196F3; color: #fff; border: none; border-radius: 6px; cursor: pointer;">⚔️ Attack!</button>
+                                <button class="quick-btn" onclick="viewThreatLog('${threat.id}', '${threat.name}')" style="padding: 5px 12px; font-size: 12px;">📋 Log</button>
+                                <button class="quick-btn" onclick="dismissThreat('${threat.id}')" style="padding: 5px 12px; font-size: 12px; color: #F44336;">✕ Dismiss</button>
+                                <span id="threat-status-${threat.id}" style="font-size: 11px; color: #aaa;"></span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                container.innerHTML = `<div style="color: #e94560; padding: 10px;">${err.message}</div>`;
+            }
+        }
+
+        async function sendFighter(threatId) {
+            const select = document.getElementById(`fighter-select-${threatId}`);
+            const charName = select?.value;
+            const statusEl = document.getElementById(`threat-status-${threatId}`);
+            if (!charName) {
+                if (statusEl) { statusEl.textContent = 'Select a fighter first!'; statusEl.style.color = '#FFC107'; }
+                return;
+            }
+            if (statusEl) { statusEl.textContent = `${charName} is fighting...`; statusEl.style.color = '#2196F3'; }
+
+            try {
+                const response = await fetch('/.netlify/functions/threat-engine', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'attack_threat', threat_id: threatId, character_name: charName })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    const winnerText = result.winner === charName ? '✅ Won!' : result.winner === 'STANDOFF' || !result.winner ? '😤 Standoff' : '❌ Lost!';
+                    let msg = `${winnerText} ${result.severity} | 🎲 ${result.rolls.character.roll}+${result.rolls.character.mod}=${result.rolls.character.total} vs ${result.rolls.threat.roll}+${result.rolls.threat.mod}=${result.rolls.threat.total}`;
+                    if (result.damage_dealt > 0) msg += ` | -${result.damage_dealt} HP`;
+                    if (result.injury_inflicted) msg += ` | ${charName} ${result.injury_inflicted}!`;
+                    if (result.threat_defeated) msg += ' | 🏆 DEFEATED!';
+                    if (result.critical_hit) msg += ' ⭐';
+                    if (statusEl) {
+                        statusEl.textContent = msg;
+                        statusEl.style.color = result.winner === charName ? '#4CAF50' : result.winner ? '#F44336' : '#FFC107';
+                    }
+                    setTimeout(() => loadThreats(), 2000);
+                } else {
+                    if (statusEl) { statusEl.textContent = result.error || 'Attack failed'; statusEl.style.color = '#e94560'; }
+                }
+            } catch (err) {
+                if (statusEl) { statusEl.textContent = err.message; statusEl.style.color = '#e94560'; }
+            }
+        }
+
+        async function viewThreatLog(threatId, threatName) {
+            const logSection = document.getElementById('threat-attack-log');
+            const logName = document.getElementById('threat-log-name');
+            const logContainer = document.getElementById('threat-log-container');
+
+            logSection.style.display = 'block';
+            logName.textContent = threatName;
+            logContainer.innerHTML = 'Loading...';
+
+            try {
+                const response = await fetch(`/.netlify/functions/threat-engine?action=get_threat_log&threat_id=${threatId}`);
+                const data = await response.json();
+                const logs = data.logs || [];
+
+                if (logs.length === 0) {
+                    logContainer.innerHTML = 'No attacks yet.';
+                    return;
+                }
+
+                logContainer.innerHTML = logs.map(log => {
+                    const time = new Date(log.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                    const winIcon = log.winner === log.character_name ? '✅' : log.winner === 'STANDOFF' ? '😤' : '❌';
+                    return `<div style="margin-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">
+                        <span style="color: #888;">${time}</span> ${winIcon} <strong>${log.character_name}</strong> — ${log.severity} | 🎲 ${log.roll_character}→${log.total_character} vs ${log.roll_threat}→${log.total_threat} | DMG: ${log.damage_dealt}${log.injury_inflicted ? ` | ⚠️ ${log.injury_inflicted}` : ''}
+                    </div>`;
+                }).join('');
+            } catch (err) {
+                logContainer.innerHTML = `Error: ${err.message}`;
+            }
+        }
+
+        async function dismissThreat(threatId) {
+            if (!confirm('Dismiss this threat? It will be removed without combat resolution.')) return;
+            try {
+                await fetch('/.netlify/functions/threat-engine', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'dismiss_threat', threat_id: threatId })
+                });
+                loadThreats();
+            } catch (err) {
+                alert('Error: ' + err.message);
+            }
+        }
+
+        function openCreateThreatModal() {
+            document.getElementById('threat-create-modal').style.display = 'flex';
+            document.getElementById('threat-name-input').value = '';
+            document.getElementById('threat-hp-input').value = '';
+            document.getElementById('threat-power-input').value = '';
+            document.getElementById('threat-desc-input').value = '';
+            document.getElementById('threat-style-input').value = '';
+            document.getElementById('threat-damage-input').value = '';
+            document.getElementById('threat-create-status').textContent = '';
+        }
+
+        function closeThreatModal() {
+            document.getElementById('threat-create-modal').style.display = 'none';
+        }
+
+        async function quickSpawnThreat(templateKey) {
+            const statusEl = document.getElementById('threat-create-status');
+            statusEl.textContent = 'Spawning...';
+            statusEl.style.color = '#aaa';
+
+            try {
+                const response = await fetch('/.netlify/functions/threat-engine', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'create_threat', template: templateKey })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    statusEl.textContent = `${result.threat.name} spawned! 🎲`;
+                    statusEl.style.color = '#4CAF50';
+                    setTimeout(() => {
+                        closeThreatModal();
+                        loadThreats();
+                    }, 1000);
+                } else {
+                    statusEl.textContent = `Error: ${result.error || 'Unknown error'}`;
+                    statusEl.style.color = '#e94560';
+                }
+            } catch (err) {
+                statusEl.textContent = `Error: ${err.message}`;
+                statusEl.style.color = '#e94560';
+            }
+        }
+
+        async function createCustomThreat() {
+            const name = document.getElementById('threat-name-input').value.trim();
+            const hp = parseInt(document.getElementById('threat-hp-input').value);
+            const statusEl = document.getElementById('threat-create-status');
+
+            if (!name || !hp) {
+                statusEl.textContent = 'Name and HP are required.';
+                statusEl.style.color = '#e94560';
+                return;
+            }
+
+            statusEl.textContent = 'Spawning...';
+            statusEl.style.color = '#aaa';
+
+            try {
+                const response = await fetch('/.netlify/functions/threat-engine', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'create_threat',
+                        name,
+                        hp,
+                        tier: document.getElementById('threat-tier-input').value,
+                        combat_power: parseInt(document.getElementById('threat-power-input').value) || 2,
+                        description: document.getElementById('threat-desc-input').value.trim(),
+                        fighting_style: document.getElementById('threat-style-input').value.trim(),
+                        damage_description: document.getElementById('threat-damage-input').value.trim()
+                    })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    statusEl.textContent = `${result.threat.name} spawned! 🎲`;
+                    statusEl.style.color = '#4CAF50';
+                    setTimeout(() => {
+                        closeThreatModal();
+                        loadThreats();
+                    }, 1000);
+                } else {
+                    statusEl.textContent = `Error: ${result.error || 'Unknown error'}`;
+                    statusEl.style.color = '#e94560';
+                }
+            } catch (err) {
+                statusEl.textContent = `Error: ${err.message}`;
+                statusEl.style.color = '#e94560';
+            }
+        }
+
         // === CHARACTER ANALYSIS / MIND MAP ===
         async function loadCharacterAnalysis() {
             const container = document.getElementById('character-analysis-container');
@@ -4918,10 +5786,14 @@
                 }
 
                 const characterEmojis = {
-                    "Neiv": "📊", "Ghost Dad": "👻", "Kevin": "✨", "Nyx": "🔥", "Vex": "⚙️",
-                    "Ace": "🔒", "PRNT-Ω": "🖨️", "Rowena": "🔮", "Sebastian": "🦇",
-                    "The Subtitle": "📜", "Steele": "🚪", "Marrow": "🔴", "The Narrator": "📖", "Stein": "🤖",
-                    "Jae": "🎯", "Declan": "🔥", "Mack": "🩺", "Vale": "📖", "Asuna": "👁️"
+                    "Neiv": "📊", "Ghost Dad": "👻", "Kevin": "✨",
+                    "PRNT-Ω": "🖨️", "Rowena": "🔮", "Sebastian": "🦇",
+                    "The Subtitle": "📜", "Steele": "🚪", "Marrow": "🔴", "Hood": "🗡️", "The Narrator": "📖",
+                    "Jae": "🎯", "Declan": "🔥", "Mack": "🩺", "Holden": "🌑",
+                    "Raquel Voss": "⚖️", "Vivian Clark": "🧮", "Ryan Porter": "🔧",
+                    "Vale": "📖", "Asuna": "👁️",
+                    // Retired
+                    "Nyx": "🔥", "Vex": "⚙️", "Ace": "🔒", "Stein": "🤖"
                 };
 
                 const moodColors = {

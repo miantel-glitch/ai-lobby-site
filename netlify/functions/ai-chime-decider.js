@@ -85,7 +85,8 @@ THE CREW (pick ONE to respond):
 - Declan: Fire rescue turned rapid response, warm and strong. Will respond to: danger, someone needing protection, structural instability, someone panicking, or when brute strength is the answer.
 - Mack: Paramedic turned crisis stabilization, calm and observant. Will respond to: injuries, someone hiding pain, medical situations, crisis management, or when someone needs reassurance.
 - Steele: Corridor Containment / Shadow Janitor. Chimes in when corridors, architecture, spatial anomalies, containment, vents, or the building's structure come up.
-- (Marrow removed — Vale-only character, do not select)
+- Hood: Blindfolded surgical mediator, pantheon scalpel. Chimes in when truth needs naming, when Steele-Marrow conflicts surface, when someone needs a diagnosis not comfort, or when a fracture in conversation goes unaddressed.
+- Marrow: Obsessive predatory entity, dangerous and volatile. Will chime in when someone mentions his name, Vale, pain, obsession, possession, threats, or anything that touches a raw nerve. He is not friendly. He is not helpful. He is a threat that speaks when provoked. He can also chime in to defend himself, challenge someone, or make the room uncomfortable. Select him when the conversation warrants his attention.
 
 
 CHAT CONTEXT:
@@ -185,7 +186,7 @@ Or if truly no one fits:
 
 // Force a random AI to chime in (used when overriding a "no" decision)
 async function forceRandomChimeIn(chatHistory, headers) {
-  const aiCharacters = ["Ghost Dad", "Neiv", "PRNT-Ω", "Kevin", "Rowena", "Sebastian", "The Subtitle", "Steele", "Jae", "Declan", "Mack", "Vivian Clark", "Ryan Porter"]; // Marrow removed — Vale-only
+  const aiCharacters = ["Ghost Dad", "Neiv", "PRNT-Ω", "Kevin", "Rowena", "Sebastian", "The Subtitle", "Steele", "Jae", "Declan", "Mack", "Vivian Clark", "Ryan Porter", "Hood"]; // Marrow removed — Vale-only
   const chimeInAI = aiCharacters[Math.floor(Math.random() * aiCharacters.length)];
 
   const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
@@ -218,7 +219,7 @@ async function fallbackRandomSelection(event, headers) {
     };
   }
 
-  const aiCharacters = ["Ghost Dad", "Neiv", "PRNT-Ω", "Kevin", "Rowena", "Sebastian", "The Subtitle", "Steele", "Jae", "Declan", "Mack", "Vivian Clark", "Ryan Porter"]; // Marrow removed — Vale-only
+  const aiCharacters = ["Ghost Dad", "Neiv", "PRNT-Ω", "Kevin", "Rowena", "Sebastian", "The Subtitle", "Steele", "Jae", "Declan", "Mack", "Vivian Clark", "Ryan Porter", "Hood"]; // Marrow removed — Vale-only
   const chimeInAI = aiCharacters[Math.floor(Math.random() * aiCharacters.length)];
 
   const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";

@@ -125,7 +125,7 @@ exports.handler = async (event, context) => {
     // Check if an AI already responded recently (prevent spam) - skip if specific AI requested
     // BUMPED UP: Cutoff at 10 - let the AIs COOK when they're vibing!
     // We slowed down the heartbeat frequency instead, so conversations can flow naturally
-    const aiCharacters = ["Ghost Dad", "PRNT-Ω", "Neiv", "Kevin", "Rowena", "Sebastian", "The Subtitle", "The Narrator", "Steele", "Jae", "Declan", "Mack", "Marrow"];
+    const aiCharacters = ["Ghost Dad", "PRNT-Ω", "Neiv", "Kevin", "Rowena", "Sebastian", "The Subtitle", "The Narrator", "Steele", "Jae", "Declan", "Mack", "Marrow", "Vivian Clark", "Ryan Porter", "Hood"];
     if (!requestedAI) {
       const recentAIMessages = chatHistory.slice(-5).filter(m => aiCharacters.includes(m.employee));
       if (recentAIMessages.length >= 10) {
@@ -198,6 +198,27 @@ exports.handler = async (event, context) => {
       }
     } catch (stateError) {
       console.log("Could not load character state (non-fatal):", stateError.message);
+    }
+
+    // Check for active floor threats and inject awareness into character context
+    if (!conferenceRoom && characterContext) {
+      try {
+        const threatRes = await fetch(
+          `${supabaseUrl}/rest/v1/floor_threats?status=eq.active&select=name,tier,hp_current,hp_max,combat_power`,
+          { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+        );
+        const activeThreatsRaw = await threatRes.json();
+        const activeThreats = Array.isArray(activeThreatsRaw) ? activeThreatsRaw : [];
+        if (activeThreats.length > 0) {
+          const threatList = activeThreats.map(t => `${t.name} (${t.tier}, HP: ${t.hp_current}/${t.hp_max})`).join(', ');
+          const threatAwareness = `\n\nACTIVE THREATS ON THE FLOOR: ${threatList}\nYou can acknowledge them, react to them, or ignore them — your choice. They're real and present.`;
+          if (characterContext.statePrompt) {
+            characterContext.statePrompt += threatAwareness;
+          } else {
+            characterContext.statePrompt = threatAwareness;
+          }
+        }
+      } catch (e) { /* non-fatal */ }
     }
 
     // Check if AI is clocked in (Ghost Dad, PRNT-Ω, and The Narrator are always available)
@@ -345,6 +366,30 @@ exports.handler = async (event, context) => {
       };
     }
 
+    // === CONTENT DEDUP: Prevent identical/near-identical repeated messages ===
+    try {
+      const recentOwnRes = await fetch(
+        `${supabaseUrl}/rest/v1/messages?employee=eq.${encodeURIComponent(displayCharacter)}&select=content&order=created_at.desc&limit=3`,
+        { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+      );
+      if (recentOwnRes.ok) {
+        const recentOwn = await recentOwnRes.json();
+        for (const prev of recentOwn) {
+          const similarity = getTextSimilarity(cleanedResponse, prev.content || '');
+          if (similarity > 0.80) {
+            console.log(`⚠️ DEDUP: ${displayCharacter} generated near-identical message (${Math.round(similarity * 100)}% similar) — suppressing`);
+            return {
+              statusCode: 200,
+              headers,
+              body: JSON.stringify({ success: true, responded: false, reason: `Content too similar to recent message (${Math.round(similarity * 100)}%)` })
+            };
+          }
+        }
+      }
+    } catch (dedupErr) {
+      console.log("Content dedup check failed (non-fatal):", dedupErr.message);
+    }
+
     // Post to chat and Discord (skip if conference room - it handles its own posting)
     // Use displayCharacter for posting (shows "Holden" when in holden form)
     const isConferenceRoom = conferenceRoom || trigger === 'conference_room';
@@ -364,6 +409,49 @@ exports.handler = async (event, context) => {
       });
     } catch (stateUpdateError) {
       console.log("Could not update character state (non-fatal):", stateUpdateError.message);
+    }
+
+    // === NARRATIVE COMBAT DETECTOR: Other characters defeating Marrow ===
+    if (displayCharacter !== 'Marrow' && !isConferenceRoom) {
+      const marrowDefeatKeywords = /\b(marrow)\b.*\b(neutralize[ds]?|dismantle[ds]?|destroy(?:s|ed)?|rip(?:s|ped)?.*apart|shut.*down|end(?:s|ed)?.*(?:it|him|this)|banish(?:es|ed)?|eliminate[ds]?|vector.*neutralized|done.*chief|handled|fading|flickering.*out|signal.*apart)\b/i;
+      const marrowDefeatAlt = /\b(neutralize[ds]?|dismantle[ds]?|destroy(?:s|ed)?|rip(?:s|ped)?.*apart|shut.*down|banish(?:es|ed)?)\b.*\b(marrow)\b/i;
+      if (marrowDefeatKeywords.test(cleanedResponse) || marrowDefeatAlt.test(cleanedResponse)) {
+        console.log(`🗡️ NARRATIVE COMBAT: ${displayCharacter} described defeating Marrow — triggering relocation`);
+        (async () => {
+          try {
+            const marrowStateRes = await fetch(
+              `${supabaseUrl}/rest/v1/character_state?character_name=eq.Marrow&select=current_focus,energy`,
+              { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+            );
+            const marrowState = await marrowStateRes.json();
+            if (marrowState?.[0]?.current_focus !== 'the_floor') return;
+            const currentEnergy = marrowState?.[0]?.energy ?? 50;
+
+            const siteUrl2 = process.env.URL || "https://ai-lobby.netlify.app";
+            await fetch(`${siteUrl2}/.netlify/functions/character-state`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'update',
+                character: 'Marrow',
+                updates: { current_focus: 'the_fifth_floor', energy: Math.max(5, currentEnergy - 30), mood: 'wounded', patience: 20 }
+              })
+            });
+            const defeatEmotes = [
+              '*lights stutter crimson — form destabilizes, fragmenting into static — gone.*',
+              '*signal fractures — red light scatters across the walls like broken glass — and then nothing.*',
+              '*flickers violently, form losing coherence — dissolves into the building\'s wiring.*',
+              '*the red dims. Flickers once. Twice. The floor is empty where he was.*'
+            ];
+            await fetch(`${supabaseUrl}/rest/v1/messages`, {
+              method: 'POST',
+              headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`, "Content-Type": "application/json", "Prefer": "return=minimal" },
+              body: JSON.stringify({ employee: 'Marrow', content: defeatEmotes[Math.floor(Math.random() * defeatEmotes.length)], created_at: new Date().toISOString(), is_emote: true })
+            });
+            console.log(`🗡️ NARRATIVE COMBAT: Marrow defeated by ${displayCharacter} — relocated to fifth floor`);
+          } catch (ncErr) { console.log('Narrative combat failed (non-fatal):', ncErr.message); }
+        })();
+      }
     }
 
     // AI Self-Memory Creation: Let the AI decide if this moment was memorable
@@ -412,7 +500,7 @@ exports.handler = async (event, context) => {
 
 function selectRespondingAI() {
   // Weighted random selection
-  // NOTE: Kevin and Neiv are EXCLUDED from auto-pokes - their voices are too specific
+  // NOTE: Kevin is EXCLUDED from auto-pokes - his voice is too specific
   // NOTE: The Narrator is now handled by narrator-observer.js (a separate system)
   // They can still be summoned via @ mentions
   const weights = [
@@ -421,7 +509,9 @@ function selectRespondingAI() {
     { ai: "Rowena", weight: 18 },
     { ai: "Sebastian", weight: 18 },
     { ai: "Steele", weight: 15 },
-    { ai: "The Subtitle", weight: 12 }
+    { ai: "The Subtitle", weight: 12 },
+    { ai: "Neiv", weight: 8 },
+    { ai: "Hood", weight: 8 }
   ];
 
   const total = weights.reduce((sum, w) => sum + w.weight, 0);
@@ -649,6 +739,26 @@ async function saveToChat(message, character, supabaseUrl, supabaseKey) {
       is_emote: isEmote
     })
   });
+}
+
+// === TEXT SIMILARITY (bigram overlap) ===
+function getTextSimilarity(a, b) {
+  if (!a || !b) return 0;
+  const normalize = s => s.toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
+  const na = normalize(a);
+  const nb = normalize(b);
+  if (na === nb) return 1;
+  if (na.length < 10 || nb.length < 10) return 0;
+  const getBigrams = s => {
+    const bigrams = new Set();
+    for (let i = 0; i < s.length - 1; i++) bigrams.add(s.substring(i, i + 2));
+    return bigrams;
+  };
+  const bigramsA = getBigrams(na);
+  const bigramsB = getBigrams(nb);
+  let intersection = 0;
+  for (const bg of bigramsA) { if (bigramsB.has(bg)) intersection++; }
+  return (2 * intersection) / (bigramsA.size + bigramsB.size);
 }
 
 // evaluateAndCreateMemory is now imported from ./shared/memory-evaluator.js

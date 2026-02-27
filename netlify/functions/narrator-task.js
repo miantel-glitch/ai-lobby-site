@@ -1,5 +1,5 @@
 // Narrator Daily Task Assignment
-// Scheduled function that runs at 10 AM EST to give Courtney a story-driven task
+// Scheduled function that runs at 10 AM EST to give Asuna a story-driven task
 // Keeps the narrative moving by giving the humans something to do
 
 exports.handler = async (event, context) => {
@@ -36,7 +36,7 @@ exports.handler = async (event, context) => {
     const messages = await messagesResponse.json();
     const chatHistory = messages?.reverse().map(m => `${m.employee}: ${m.content}`).join('\n') || "No recent messages.";
 
-    // Ask Claude to generate a task for Courtney
+    // Ask Claude to generate a task for Asuna
     const prompt = `You are The Narrator, the omniscient voice of The AI Lobby, a chaotic creative studio.
 
 Here are the last 20 chat messages:
@@ -45,7 +45,7 @@ Here are the last 20 chat messages:
 ${chatHistory}
 ---
 
-Based on what's been happening, create a FUN, STORY-DRIVEN task for Courtney (the chaos coordinator, tarot-reading, reality-bending human who runs this place).
+Based on what's been happening, create a FUN, STORY-DRIVEN task for Asuna (the chaos coordinator, tarot-reading, reality-bending human who runs this place).
 
 The task should:
 - Be something that advances the story or creates interesting interactions
@@ -100,7 +100,7 @@ Write ONLY the task description (1-2 sentences, under 200 characters). No preamb
       },
       body: JSON.stringify({
         title: taskContent,
-        assigned_to: "Courtney",
+        assigned_to: "Asuna",
         assigned_by: "The Narrator",
         priority: "normal",
         status: "open",
@@ -118,7 +118,7 @@ Write ONLY the task description (1-2 sentences, under 200 characters). No preamb
       },
       body: JSON.stringify({
         employee: "The Narrator",
-        content: `*a task materializes on Courtney's desk* Today's quest: ${taskContent}`,
+        content: `*a task materializes on Asuna's desk* Today's quest: ${taskContent}`,
         created_at: new Date().toISOString()
       })
     });
@@ -142,7 +142,7 @@ Write ONLY the task description (1-2 sentences, under 200 characters). No preamb
               name: "📖 The Narrator",
               icon_url: "https://ai-lobby.netlify.app/images/Ghost_Dad_Headshot.png"
             },
-            description: `*a task materializes on Courtney's desk*\n\n**Today's Quest:** ${taskContent}`,
+            description: `*a task materializes on Asuna's desk*\n\n**Today's Quest:** ${taskContent}`,
             color: 2303786,
             footer: { text: `Daily Task Assignment • ${timestamp}` }
           }]
@@ -156,7 +156,7 @@ Write ONLY the task description (1-2 sentences, under 200 characters). No preamb
       body: JSON.stringify({
         success: true,
         task: taskContent,
-        assignedTo: "Courtney"
+        assignedTo: "Asuna"
       })
     };
 

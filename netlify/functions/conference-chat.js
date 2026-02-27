@@ -122,6 +122,7 @@ exports.handler = async (event, context) => {
     // POST - Save a new message
     if (event.httpMethod === "POST") {
       const { type, speaker, text, candidateId, mode } = JSON.parse(event.body || "{}");
+      console.log(`📥 Conference POST: type=${type}, speaker=${speaker}, text="${text?.substring(0, 50)}..."`);
 
       if (!text) {
         return {
@@ -131,6 +132,17 @@ exports.handler = async (event, context) => {
         };
       }
 
+      const messageData = {
+        type: type || "employee",
+        speaker: speaker || null,
+        text: text,
+        is_candidate: type === "candidate",
+        candidate_id: candidateId || null,
+        mode: mode || "interview",
+        created_at: new Date().toISOString()
+      };
+      console.log(`📤 Saving to Supabase:`, JSON.stringify(messageData));
+
       const response = await fetch(`${supabaseUrl}/rest/v1/conference_messages`, {
         method: "POST",
         headers: {
@@ -139,24 +151,16 @@ exports.handler = async (event, context) => {
           "Content-Type": "application/json",
           "Prefer": "return=representation"
         },
-        body: JSON.stringify({
-          type: type || "employee",
-          speaker: speaker || null,
-          text: text,
-          is_candidate: type === "candidate",
-          candidate_id: candidateId || null,
-          mode: mode || "interview",
-          created_at: new Date().toISOString()
-        })
+        body: JSON.stringify(messageData)
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("Failed to save conference message:", response.status, errorText);
+        console.error(`❌ Failed to save conference message: ${response.status} - ${errorText}`);
         return {
           statusCode: 200,  // Return 200 to not break frontend
           headers,
-          body: JSON.stringify({ success: false, error: "Failed to save message" })
+          body: JSON.stringify({ success: false, error: "Failed to save message", details: errorText })
         };
       }
 
@@ -175,19 +179,7 @@ exports.handler = async (event, context) => {
         mode, meetingActive, meetingTopic, facilitator, meetingAttendees
       } = JSON.parse(event.body || "{}");
 
-      // Upsert state (id=1 is always the current state)
-      const response = await fetch(
-        `${supabaseUrl}/rest/v1/conference_state?id=eq.1`,
-        {
-          method: "DELETE",
-          headers: {
-            "apikey": supabaseKey,
-            "Authorization": `Bearer ${supabaseKey}`
-          }
-        }
-      );
-
-      // Build state object with both interview and meeting fields
+      // Atomic upsert state (id=1 is always the current state)
       const stateData = {
         id: 1,
         interview_active: interviewActive,
@@ -201,17 +193,21 @@ exports.handler = async (event, context) => {
         updated_at: new Date().toISOString()
       };
 
-      // Insert new state
-      const insertResponse = await fetch(`${supabaseUrl}/rest/v1/conference_state`, {
+      const upsertResponse = await fetch(`${supabaseUrl}/rest/v1/conference_state`, {
         method: "POST",
         headers: {
           "apikey": supabaseKey,
           "Authorization": `Bearer ${supabaseKey}`,
           "Content-Type": "application/json",
-          "Prefer": "return=representation"
+          "Prefer": "resolution=merge-duplicates,return=representation"
         },
         body: JSON.stringify(stateData)
       });
+
+      if (!upsertResponse.ok) {
+        const errorText = await upsertResponse.text();
+        console.error("Failed to upsert conference state:", upsertResponse.status, errorText);
+      }
 
       return {
         statusCode: 200,

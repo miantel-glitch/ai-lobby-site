@@ -41,10 +41,10 @@ exports.handler = async (event, context) => {
   // =====================================================
   const LEVEL_THRESHOLDS = [
     { level: 'novice', minXP: 0 },
-    { level: 'apprentice', minXP: 25 },
-    { level: 'proficient', minXP: 60 },
-    { level: 'expert', minXP: 120 },
-    { level: 'master', minXP: 200 }
+    { level: 'apprentice', minXP: 100 },
+    { level: 'proficient', minXP: 300 },
+    { level: 'expert', minXP: 600 },
+    { level: 'master', minXP: 1000 }
   ];
 
   function getLevelForXP(totalXP) {
@@ -262,6 +262,39 @@ exports.handler = async (event, context) => {
       // Update existing skill
       oldXP = skillData[0].total_xp || 0;
       newXP = oldXP + xpAmount;
+
+      // === DAILY LEVEL-UP CAP: Max 1 level-up per skill per day ===
+      const wouldLevelTo = getLevelForXP(newXP);
+      const currentLevel = getLevelForXP(oldXP);
+      if (wouldLevelTo !== currentLevel) {
+        // Would level up — check if already leveled up this skill today
+        try {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const levelUpCheckRes = await fetch(
+            `${supabaseUrl}/rest/v1/nexus_messages?speaker=eq.${encodeURIComponent(character)}&message_type=eq.level_up&created_at=gte.${today.toISOString()}&select=message`,
+            { headers: sbHeaders }
+          );
+          const levelUpData = await levelUpCheckRes.json();
+          if (Array.isArray(levelUpData)) {
+            const alreadyLeveledThisSkill = levelUpData.some(m => m.message && m.message.includes(skillName));
+            if (alreadyLeveledThisSkill) {
+              // Cap XP just below the next level threshold — they'll level up tomorrow
+              const nextThreshold = LEVEL_THRESHOLDS.find(t => t.level === wouldLevelTo);
+              if (nextThreshold && nextThreshold.minXP > 0) {
+                newXP = nextThreshold.minXP - 1;
+                xpAmount = Math.max(0, newXP - oldXP);
+                console.log(`[nexus-activity] ${character}: ${skillName} XP capped at ${newXP} — already leveled up today (daily limit: 1 level per skill per day)`);
+                if (xpAmount <= 0) {
+                  return { skillName, skillCategory, oldXP, newXP: oldXP, xpAwarded: 0, levelUp: null, dailyCapped: true };
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.log('[nexus-activity] Daily level-up cap check failed (non-fatal):', e.message);
+        }
+      }
 
       await fetch(
         `${supabaseUrl}/rest/v1/character_skills?character_name=eq.${encodeURIComponent(character)}&skill_name=eq.${encodeURIComponent(skillName)}`,
@@ -520,10 +553,10 @@ exports.handler = async (event, context) => {
           return { statusCode: 400, headers, body: JSON.stringify({ error: "Session is not active", currentStatus: session.status }) };
         }
 
-        // Award XP: 5-15 based on session type
-        const baseXP = { study: 8, train: 10, research: 12, teach: 15 };
-        const xpAmount = (baseXP[session.session_type] || 8) + Math.floor(Math.random() * 6) - 2; // +/- 2 variance
-        const clampedXP = Math.max(5, Math.min(15, xpAmount));
+        // Award XP: 1-8 based on session type (slowed down for long-term progression)
+        const baseXP = { study: 2, train: 3, research: 4, teach: 5 };
+        const xpAmount = (baseXP[session.session_type] || 2) + Math.floor(Math.random() * 4) - 1; // +/- 1 variance
+        const clampedXP = Math.max(1, Math.min(8, xpAmount));
 
         // Resolve skill category from the skill target name
         const resolvedCategory = await resolveSkillCategory(session.character_name, session.skill_target);
@@ -792,10 +825,10 @@ SKILL_SCORE:N / SKILL_CATEGORY:category / SKILL_NAME:name / XP_AWARD:N / DISCOVE
 
         for (const session of activeSessions) {
           try {
-            // Award XP: 5-15 based on session type
-            const baseXP = { study: 8, train: 10, research: 12, teach: 15 };
-            const xpAmount = (baseXP[session.session_type] || 8) + Math.floor(Math.random() * 6) - 2;
-            const clampedXP = Math.max(5, Math.min(15, xpAmount));
+            // Award XP: 1-8 based on session type (slowed down for long-term progression)
+            const baseXP = { study: 2, train: 3, research: 4, teach: 5 };
+            const xpAmount = (baseXP[session.session_type] || 2) + Math.floor(Math.random() * 4) - 1;
+            const clampedXP = Math.max(1, Math.min(8, xpAmount));
 
             // Resolve skill category from the skill target name
             const resolvedCategory = await resolveSkillCategory(session.character_name, session.skill_target);
@@ -816,6 +849,33 @@ SKILL_SCORE:N / SKILL_CATEGORY:category / SKILL_NAME:name / XP_AWARD:N / DISCOVE
             );
 
             const skillDisplay = session.skill_target.replace(/_/g, ' ');
+
+            // Post visible completion message to Nexus chat
+            const completionMessages = [
+              `*closes notes on ${skillDisplay}, looking satisfied* +${clampedXP} XP`,
+              `*finishes studying ${skillDisplay}* That was productive. +${clampedXP} XP`,
+              `*wraps up ${session.session_type} session on ${skillDisplay}* +${clampedXP} XP`
+            ];
+            const completionMsg = completionMessages[Math.floor(Math.random() * completionMessages.length)];
+            try {
+              await fetch(
+                `${supabaseUrl}/rest/v1/nexus_messages`,
+                {
+                  method: "POST",
+                  headers: { ...sbHeaders, "Prefer": "return=minimal" },
+                  body: JSON.stringify({
+                    speaker: session.character_name,
+                    message: completionMsg,
+                    is_ai: true,
+                    message_type: 'study',
+                    created_at: new Date().toISOString()
+                  })
+                }
+              );
+            } catch (msgErr) {
+              console.log(`[nexus-activity] Completion message failed for ${session.character_name}:`, msgErr.message);
+            }
+
             console.log(`[nexus-activity] Heartbeat auto-completed: ${session.character_name} ${session.session_type} → +${clampedXP} XP to ${skillDisplay}`);
 
             results.push({

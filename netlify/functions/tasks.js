@@ -107,15 +107,15 @@ exports.handler = async (event, context) => {
 
       if (webhookUrl && !silent) {
         const employeeFlair = {
-          "Kevin": "✨", "Courtney": "👁️", "Jenna": "📖", "Neiv": "📊",
+          "Kevin": "✨", "Asuna": "👁️", "Vale": "📖", "Neiv": "📊",
           "Ace": "🔒", "Vex": "⚙️", "Nyx": "🔥", "Ghost Dad": "👻", "Chip": "🥃",
           "Andrew": "💼", "Stein": "🤖"
         };
 
         const headshots = {
           "Kevin": "https://ai-lobby.netlify.app/images/Kevin_Headshot.png",
-          "Courtney": "https://ai-lobby.netlify.app/images/Courtney_Headshot.png",
-          "Jenna": "https://ai-lobby.netlify.app/images/Jenna_Headshot.png",
+          "Asuna": "https://ai-lobby.netlify.app/images/Asuna_Headshot.png",
+          "Vale": "https://ai-lobby.netlify.app/images/Vale_Headshot.png",
           "Neiv": "https://ai-lobby.netlify.app/images/Neiv_Headshot.png",
           "Ace": "https://ai-lobby.netlify.app/images/Ace_Headshot.png",
           "Vex": "https://ai-lobby.netlify.app/images/Vex_Headshot.png",

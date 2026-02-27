@@ -18,11 +18,14 @@ CREATE POLICY "Allow read for auth" ON character_auth FOR SELECT USING (true);
 -- Insert character credentials
 INSERT INTO character_auth (employee, password_hash) VALUES
   ('Kevin', 'e7880ee201044b3cd0ceef5ed44e26d4ef1de2ea9033a45fb12e02fb4ac4b50a'),
-  ('Courtney', 'a5fd7e383c653fa388399066cb8bfb6ceb86737c742713787479867953d193f3'),
-  ('Jenna', '27f49d213fdecbe5b5668f56dfd1d85f4d997e1e152f2cf11be7ef1958995408'),
+  ('Asuna', 'a5fd7e383c653fa388399066cb8bfb6ceb86737c742713787479867953d193f3'),
+  ('Vale', '27f49d213fdecbe5b5668f56dfd1d85f4d997e1e152f2cf11be7ef1958995408'),
   ('Neiv', '7d7f02860ce6111ee588e89bbd48423011df81775c1bff420c4fd48ec89c16ee'),
   ('Ace', '378fe5cc654473320e74abf72b620160f29be262c68190c0696f3ad87dd7c69f'),
   ('Vex', '38d6d2eade685436a2b3a30f3271e3a4a46e1a6b8d64a8623a6a2a6e1b01f92c'),
   ('Nyx', '9887b64fba025afc782ccc2c0b26f734614c5cc1721e49922fb6743c04d8496c'),
   ('Ghost Dad', '24e09e1269a8f098195a7e8a9bb6191516585e472ea9ad3fac61fc7a89fe41f7'),
-  ('Chip', '652b36006357e139c7ddbafd0951ed7b1d43b73469b8ac7d5a8e170e37849101');
+  ('Chip', '652b36006357e139c7ddbafd0951ed7b1d43b73469b8ac7d5a8e170e37849101'),
+  ('Jae', '11d2feb44fd6a6fe3490a9955692906f2bfb74fe4f7d1d7b33040f2eb9b705b9'),
+  ('Declan', 'f4cb38ad7208d1db5c21f0608d014a5b62670e24b4eea8b71f1f1a910b102113'),
+  ('Mack', 'c5df43266dcc154f521c4818aec00b0ed16b743da613090b3e86428520b49cd7');

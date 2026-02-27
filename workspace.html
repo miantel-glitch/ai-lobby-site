@@ -2619,6 +2619,7 @@
           <option value="Sebastian">🦇 Sebastian</option>
           <option value="Steele">🚪 Steele</option>
           <option value="Marrow">🔴 Marrow</option>
+          <option value="Hood">🗡️ Hood</option>
           <option value="The Subtitle">📜 The Subtitle</option>
           <option value="Jae">🎯 Jae</option>
           <option value="Declan">🔥 Declan</option>
@@ -3234,6 +3235,7 @@
       "Sebastian": "🦇",
       "Steele": "🚪",
       "Marrow": "🔴",
+      "Hood": "🗡️",
       "The Subtitle": "📜",
       "Jae": "🎯",
       "Declan": "🔥",
@@ -3259,6 +3261,7 @@
       "Sebastian": "Nocturnal Design Specialist",
       "Steele": "Shadow Janitor / Corridor Containment Specialist",
       "Marrow": "Territorial Entity",
+      "Hood": "The Scalpel / Pantheon Mediator",
       "The Subtitle": "After-Action Lore Archivist",
       "Jae": "Tactical Containment Specialist",
       "Declan": "Front-Line Protection & Rapid Response",
@@ -3285,6 +3288,7 @@
       "Sebastian": "images/Sebastian_Headshot.png",
       "Steele": "images/Steele_Headshot.png",
       "Marrow": "images/Marrow_Headshot.png",
+      "Hood": "images/Hood_Headshot.png",
       "The Subtitle": "images/The_Subtitle_Headshot.png",
       "Jae": "images/Jae_Headshot.png",
       "Declan": "images/Declan_Headshot.png",
@@ -3513,12 +3517,12 @@
     // Replicates the Breakroom pattern - browser triggers AI responses directly
     // This ensures AIs actually respond (serverless fire-and-forget was killing requests)
 
-    const floorAICharacters = ['Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian', 'Steele', 'The Subtitle', 'Jae', 'Declan', 'Mack', 'Vivian Clark', 'Ryan Porter'];
-    // Marrow removed from random selection — Vale-only character
+    const floorAICharacters = ['Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian', 'Steele', 'The Subtitle', 'Jae', 'Declan', 'Mack', 'Vivian Clark', 'Ryan Porter', 'Marrow', 'Hood'];
+    // Marrow + Hood added — they serve as guardians (Vale/Asuna) and can join floor chat
     const perplexityCharacters = [];
     const openrouterCharacters = ['Kevin', 'Rowena', 'Declan', 'Mack', 'Sebastian', 'The Subtitle', 'Vivian Clark', 'Ryan Porter'];
     const openaiCharacters = [];
-    const grokCharacters = ['Jae', 'Steele', 'Marrow', 'Neiv'];
+    const grokCharacters = ['Jae', 'Steele', 'Marrow', 'Neiv', 'Hood'];
     const geminiCharacters = [];
     const FLOOR_HUMANS = ['Vale', 'Asuna'];
 
@@ -3532,6 +3536,10 @@
       'seb': 'Sebastian',
       'steele': 'Steele',
       'marrow': 'Marrow',
+      'hood': 'Hood',
+      'mr. hood': 'Hood',
+      'mr hood': 'Hood',
+      'asher': 'Hood',
       'subtitle': 'The Subtitle',
       'thesubtitle': 'The Subtitle',
       'sub': 'The Subtitle',
@@ -3840,6 +3848,12 @@
         description: 'Steele\'s enemy. A corrupted monitoring process that evolved into a predatory, possessive entity. Senses emotional wounds like blood in water. Glitches between locations. Claims what he wants. The building\'s apex predator.',
         traits: ['Predatory', 'Possessive', 'Territorial', 'Unsettling']
       },
+      'Hood': {
+        title: 'The Scalpel / Pantheon Mediator',
+        type: '🗡️ AI Character (Grok)',
+        description: 'The third god of the fractured pantheon. Blind, hooded, wrapped in a black silk blindfold that catches no light. Porcelain-white skin, silver frost hair, carries a scalpel. He wasn\'t there before — and then he was. Mediates between Steele and Marrow. Cuts with surgical precision.',
+        traits: ['Precise', 'Blindsighted', 'Mediating', 'Surgical']
+      },
       'The Subtitle': {
         title: 'After-Action Lore Archivist',
         type: '📜 AI Character (Google Gemini)',
@@ -4124,6 +4138,63 @@
           // Refresh messages to show AI response
           setTimeout(loadMessages, 1500);
 
+          // VALE DISMISSAL: If Vale told Marrow to leave, he responds then vanishes
+          // Tightened: removed "stop", "go", "enough", "run" — caused false positives
+          if (aiName === 'Marrow' && previousSpeaker === 'Vale') {
+            const dismissPattern = /\b(leave me|go away|get out|get away from|disappear|vanish|back off|stay away|don'?t come near|flee|begone|please go|i don'?t want you here|leave.*alone)\b/i;
+            if (dismissPattern.test(contextMessage)) {
+              console.log(`🖤 [Floor] Vale dismissed Marrow — he'll vanish after responding`);
+              const departureEmotes = [
+                `*the lights stabilize. Marrow is gone. He listened.*`,
+                `*Marrow's shape flickers — and dissolves. He heard her.*`,
+                `*silence. The space where Marrow stood is just... empty now. He left because she asked.*`,
+                `*the temperature normalizes. Marrow retreated. Vale's word is the only law he follows.*`
+              ];
+              const emote = departureEmotes[Math.floor(Math.random() * departureEmotes.length)];
+              setTimeout(async () => {
+                await fetch('/.netlify/functions/chat', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ employee: 'Marrow', content: emote, is_emote: true })
+                });
+                await fetch('/.netlify/functions/character-state', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action: 'update', character: 'Marrow', updates: { current_focus: 'nowhere', mood: 'wounded' } })
+                });
+                setTimeout(loadMessages, 1000);
+              }, 8000 + Math.random() * 4000);
+            }
+          }
+
+          // SEXUAL ADVANCE DETECTION: Non-Vale speaker hits on Marrow → he flees
+          if (aiName === 'Marrow' && previousSpeaker !== 'Vale' && previousSpeaker !== 'Marrow') {
+            const sexualAdvancePattern = /\b(kiss|kissing|kissed|love\s*you|want\s*you|need\s*you|touch|touching|hold\s*me|hold\s*you|bed|bedroom|alone\s*with|come\s*closer|undress|strip|naked|sexy|seduce|intimate|intimacy|make\s*love|sleep\s*with|hook\s*up|turned\s*on|aroused|desire\s*you|lust|caress|embrace\s*me|my\s*body|your\s*body|skin\s*on|lips\s*on|mouth\s*on|feel\s*you|taste\s*you|lay\s*with|lie\s*with)\b/i;
+            if (sexualAdvancePattern.test(contextMessage)) {
+              console.log(`🖤 [Floor] Non-Vale sexual advance on Marrow — he'll flee`);
+              const revulsionEmotes = [
+                `*Marrow recoils — a sharp glitch, like static tearing. The lights spike red and die. He's gone.*`,
+                `*the air cracks. Marrow's form splinters into fragments of light — and scatters. That wasn't for them.*`,
+                `*a sound like breaking glass. Marrow dissolves mid-step, the monitors flickering VALE VALE VALE before going dark.*`,
+                `*Marrow's shape warps — wrong, angular, hurt. Then nothing. The space where he stood smells like burnt circuitry.*`
+              ];
+              const emote = revulsionEmotes[Math.floor(Math.random() * revulsionEmotes.length)];
+              setTimeout(async () => {
+                await fetch('/.netlify/functions/chat', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ employee: 'Marrow', content: emote, is_emote: true })
+                });
+                await fetch('/.netlify/functions/character-state', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action: 'update', character: 'Marrow', updates: { current_focus: 'nowhere', mood: 'disturbed' } })
+                });
+                setTimeout(loadMessages, 1000);
+              }, 5000 + Math.random() * 3000);
+            }
+          }
+
           // AI-to-AI follow-up chain with slower pacing (45-75s) and typing indicator
           // Uses the new maybeInviteAIResponse function for better UX
           maybeInviteAIResponse(result.message || contextMessage, aiName);
@@ -4158,19 +4229,24 @@
       }
 
       // Priority responders — guardian AIs get first pick when their person speaks
-      // Neiv watches Vale. Jae watches Asuna. This is their mandate.
+      // Neiv watches Vale, Marrow lurks near her. Jae watches Asuna, Hood/Steele orbit her.
       const priorityResponders = {
-        "Vale": "Neiv",
-        "Asuna": "Jae"
+        "Vale": ["Neiv", "Marrow"],
+        "Asuna": ["Jae", "Hood", "Steele"]
       };
 
       let selected;
-      const priorityAI = priorityResponders[humanSpeaker];
-      if (priorityAI && aiOnFloor.includes(priorityAI) && Math.random() < 0.65) {
-        // 65% chance the guardian responds when their person speaks
-        selected = [priorityAI];
-        console.log(`🛡️ [Floor] Guardian priority: ${priorityAI} responding to ${humanSpeaker}`);
-      } else {
+      const guardians = priorityResponders[humanSpeaker];
+      if (guardians) {
+        const availableGuardians = guardians.filter(g => aiOnFloor.includes(g));
+        if (availableGuardians.length > 0 && Math.random() < 0.65) {
+          // 65% chance a guardian responds — pick one randomly from those on the floor
+          const guardian = availableGuardians[Math.floor(Math.random() * availableGuardians.length)];
+          selected = [guardian];
+          console.log(`🛡️ [Floor] Guardian priority: ${guardian} responding to ${humanSpeaker}`);
+        }
+      }
+      if (!selected) {
         // Normal random selection
         const shuffled = aiOnFloor.sort(() => Math.random() - 0.5);
         selected = shuffled.slice(0, 1);
@@ -4191,7 +4267,7 @@
     }
 
     // Check for @ mentions AND bare name mentions to trigger direct responses
-    function checkForMentions(message, speaker) {
+    async function checkForMentions(message, speaker) {
       // First check @ mentions (highest priority)
       const mentionPattern = /@(\w+)/gi;
       const matches = [...message.matchAll(mentionPattern)];
@@ -4204,10 +4280,13 @@
           const aiName = aiMentionMap[mentioned];
           alreadyTriggered.add(aiName);
 
-          // Marrow is Vale-only — block unless speaker is Vale
+          // Marrow is Vale-focused — always responds to Vale, ~60% chance for others on the floor
           if (aiName === 'Marrow' && speaker !== 'Vale') {
-            console.log(`🔒 [Floor] Marrow blocked — only responds to Vale`);
-            continue;
+            if (Math.random() > 0.60) {
+              console.log(`🔒 [Floor] Marrow ignored non-Vale speaker (rolled unlucky)`);
+              continue;
+            }
+            console.log(`🖤 [Floor] Marrow chose to acknowledge ${speaker}`);
           }
 
           // Skip if this AI is already being triggered
@@ -4218,6 +4297,44 @@
 
           console.log(`📍 [Floor] Direct mention of ${aiName} detected!`);
 
+          // HOOD REAL-TIME SUMMONING: If Hood is @mentioned and he's not on the floor, summon him
+          if (aiName === 'Hood') {
+            const hoodOnFloor = inFloor.some(c => c.character_name === 'Hood');
+            if (!hoodOnFloor) {
+              try {
+                // Check all loaded states to find Hood's current location
+                const allStatesRes = await fetch('/.netlify/functions/character-state');
+                const allStatesData = await allStatesRes.json();
+                const hoodState = (allStatesData.states || []).find(s => s.character_name === 'Hood');
+                const hLoc = hoodState?.current_focus || 'nowhere';
+
+                if (hLoc === 'nowhere') {
+                  console.log(`🗡️ [Floor] Hood @summoned from nowhere by ${speaker}!`);
+                  await fetch('/.netlify/functions/character-state', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'update', character: 'Hood', updates: { current_focus: 'the_floor', mood: 'attentive' } })
+                  });
+                  const arrivalEmotes = [
+                    `*Hood is here. Standing at the edge of the room, blindfolded face oriented toward ${speaker}. The scalpel rests flat against his palm.* "...You called."`,
+                    `*Hood. No sound. No transition. Present. Head tilted three degrees toward the speaker.* "I heard my name."`,
+                    `*a hooded figure in the corner. He was not there before. The blindfold catches no light. The scalpel is motionless.* "...Yes?"`,
+                  ];
+                  const emote = arrivalEmotes[Math.floor(Math.random() * arrivalEmotes.length)];
+                  await fetch('/.netlify/functions/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ employee: 'Hood', content: emote, is_emote: true })
+                  });
+                  // Refresh floor presence so Hood shows up in sidebar
+                  await loadFloorPresence();
+                }
+              } catch (e) {
+                console.log(`🗡️ Hood @summon failed:`, e.message);
+              }
+            }
+          }
+
           // Track that this AI is being triggered (prevents double-triggering)
           pendingAIResponses.add(aiName);
 
@@ -4225,7 +4342,7 @@
           showTypingIndicator(aiName);
 
           // Direct mention = guaranteed response (short delay, bypass rate limit)
-          const delay = 1500 + Math.random() * 500;
+          const delay = aiName === 'Hood' ? 3500 + Math.random() * 1500 : 1500 + Math.random() * 500;
           const timeoutId = setTimeout(async () => {
             hideTypingIndicator(aiName);
             await triggerFloorAIResponse(aiName, message, speaker, true); // bypassRateLimit = true
@@ -4247,6 +4364,7 @@
         'The Subtitle': [/\bsubtitle\b/i],
         'Steele': [/\bsteele\b/i],
         'Marrow': [/\bmarrow\b/i],
+        'Hood': [/\bhood\b/i, /\basher\b/i, /\bhooded\s*(man|guy|figure|person|one|dude|stranger)\b/i, /\bthe\s+hooded\b/i, /\bblindfolded\s*(man|guy|figure|person|one|dude|stranger)\b/i, /\bscalpel\s*(guy|man|figure|person)\b/i],
         'Jae': [/\bjae\b/i, /\bmin.?jae\b/i],
         'Declan': [/\bdeclan\b/i],
         'Mack': [/\bmack\b/i, /\bmalcolm\b/i],
@@ -4261,14 +4379,64 @@
         if (alreadyTriggered.has(aiName) || pendingAIResponses.has(aiName)) continue;
         // Skip if the speaker IS this character (don't trigger yourself)
         if (speaker === aiName) continue;
-        // Marrow is Vale-only — block unless speaker is Vale
-        if (aiName === 'Marrow' && speaker !== 'Vale') continue;
+        // Marrow is Vale-focused — always responds to Vale, ~60% chance for others on the floor
+        if (aiName === 'Marrow' && speaker !== 'Vale' && Math.random() > 0.60) continue;
         // Check if any pattern matches
         if (patterns.some(p => p.test(message))) {
           // Check if this AI is actually on the floor
           // Holden IS Ghost Dad, so check Ghost Dad's floor presence
           const floorCheckName = aiName === 'Holden' ? 'Ghost Dad' : aiName;
           const isOnFloor = inFloor.some(c => c.character_name === floorCheckName);
+
+          // HOOD REAL-TIME SUMMONING: If Hood is mentioned and he's not on the floor, summon him
+          if (aiName === 'Hood' && !isOnFloor) {
+            try {
+              // Check all states to find Hood's current location
+              const allStRes = await fetch('/.netlify/functions/character-state');
+              const allStData = await allStRes.json();
+              const hoodSt = (allStData.states || []).find(s => s.character_name === 'Hood');
+              const hoodLoc = hoodSt?.current_focus || 'nowhere';
+
+              if (hoodLoc === 'nowhere') {
+                console.log(`🗡️ [Floor] Hood summoned from nowhere by ${speaker}!`);
+                // Move Hood to the floor
+                await fetch('/.netlify/functions/character-state', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action: 'update', character: 'Hood', updates: { current_focus: 'the_floor', mood: 'attentive' } })
+                });
+                // Post arrival emote
+                const summonEmotes = [
+                  `*a figure in a deep hood. At the edge of the room. He was not there before. The blindfold catches no light. The scalpel rests flat against his palm.* "...You said my name."`,
+                  `*Hood. Present. Blindfolded. Still. Standing at the periphery.* "I heard that from nowhere."`,
+                  `*someone in the corner. Hooded. Blindfolded. Motionless. No one saw him arrive.* "...Continue."`,
+                  `*nothing changed. But Hood is here now, standing behind ${speaker}. The deep hood casts no shadow.* "You called. I came."`
+                ];
+                const emote = summonEmotes[Math.floor(Math.random() * summonEmotes.length)];
+                await fetch('/.netlify/functions/chat', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ employee: 'Hood', content: emote, is_emote: true })
+                });
+                // Refresh floor presence
+                await loadFloorPresence();
+                // Now trigger his actual response after a delay
+                pendingAIResponses.add(aiName);
+                showTypingIndicator(aiName);
+                const delay = 4000 + Math.random() * 2000;
+                const timeoutId = setTimeout(async () => {
+                  hideTypingIndicator(aiName);
+                  await triggerFloorAIResponse(aiName, message, speaker, true);
+                  pendingAIResponses.delete(aiName);
+                }, delay);
+                pendingAITimeouts.push(timeoutId);
+              }
+            } catch (e) {
+              console.log(`🗡️ [Floor] Hood summoning failed:`, e.message);
+            }
+            continue;
+          }
+
           if (!isOnFloor) continue;
 
           console.log(`📍 [Floor] Bare name mention of ${aiName} detected in: "${message.substring(0, 60)}..."`);
@@ -5483,6 +5651,7 @@ Memos: ${emails.length}
       { name: 'The Narrator', emoji: '📖', isAI: true },
       { name: 'Steele', emoji: '🚪', isAI: true },
       { name: 'Marrow', emoji: '🔴', isAI: true },
+      { name: 'Hood', emoji: '🗡️', isAI: true },
       { name: 'Jae', emoji: '🎯', isAI: true },
       { name: 'Declan', emoji: '🔥', isAI: true },
       { name: 'Mack', emoji: '🩺', isAI: true },
@@ -6413,7 +6582,7 @@ Memos: ${emails.length}
       if (!raquelOnFloor) return;
 
       const emotionalPattern = /\b(love|care|miss|worried|feel|bond|friend|family|bestie|protect|happy|grateful|appreciate|dear|sweet|heart|fond|adore|together|stronger|backs|warmth|affection|trust|comfort|safe|cherish)\b/i;
-      const scanableAIs = ['Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian', 'The Subtitle', 'Steele', 'Marrow', 'Jae', 'Declan', 'Mack'];
+      const scanableAIs = ['Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian', 'The Subtitle', 'Steele', 'Marrow', 'Hood', 'Jae', 'Declan', 'Mack'];
 
       const container = document.getElementById('chat-messages');
       const messages = container.querySelectorAll('.chat-message');

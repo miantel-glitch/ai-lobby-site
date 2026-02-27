@@ -189,6 +189,23 @@ exports.handler = async (event, context) => {
       const newEnergy = Math.max(0, Math.min(100, state.energy + activity.energy));
       const newPatience = Math.max(0, Math.min(100, state.patience + activity.patience));
 
+      // Human characters stay in the breakroom after activities — only AIs auto-return to floor
+      const HUMAN_CHARACTERS = ['Vale', 'Asuna'];
+      const isHuman = HUMAN_CHARACTERS.includes(character);
+
+      const stateUpdate = {
+        energy: newEnergy,
+        patience: newPatience,
+        mood: activity.mood,
+        updated_at: new Date().toISOString(),
+        last_activity_at: new Date().toISOString() // Track for cooldown
+      };
+
+      // Only send AI characters back to the floor — humans can stay as long as they want
+      if (!isHuman) {
+        stateUpdate.current_focus = 'the_floor';
+      }
+
       await fetch(
         `${supabaseUrl}/rest/v1/character_state?character_name=eq.${encodeURIComponent(character)}`,
         {
@@ -198,14 +215,7 @@ exports.handler = async (event, context) => {
             "Authorization": `Bearer ${supabaseKey}`,
             "Content-Type": "application/json"
           },
-          body: JSON.stringify({
-            energy: newEnergy,
-            patience: newPatience,
-            mood: activity.mood,
-            current_focus: null, // Leave break room
-            updated_at: new Date().toISOString(),
-            last_activity_at: new Date().toISOString() // Track for cooldown
-          })
+          body: JSON.stringify(stateUpdate)
         }
       );
 

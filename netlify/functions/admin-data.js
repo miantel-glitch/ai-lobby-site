@@ -283,10 +283,51 @@ exports.handler = async (event, context) => {
         };
       }
 
+      // Fetch narrative beats (admin-controlled plot directives)
+      if (dataType === "narrative_beats") {
+        const activeOnly = params.active_only !== 'false'; // default: active only
+        const filter = activeOnly ? '?is_active=eq.true&order=priority.asc' : '?order=priority.asc,created_at.desc';
+        const response = await fetch(
+          `${supabaseUrl}/rest/v1/narrative_beats${filter}&select=*`,
+          {
+            headers: {
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`
+            }
+          }
+        );
+        const beats = await response.json();
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({ beats: Array.isArray(beats) ? beats : [] })
+        };
+      }
+
+      // Fetch current tarot card assignments
+      if (dataType === "tarot") {
+        const now = new Date().toISOString();
+        const response = await fetch(
+          `${supabaseUrl}/rest/v1/character_tarot?expires_at=gt.${now}&order=character_name.asc&select=*`,
+          {
+            headers: {
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`
+            }
+          }
+        );
+        const cards = await response.json();
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({ cards: Array.isArray(cards) ? cards : [] })
+        };
+      }
+
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: "Unknown data type. Use ?type=memories, ?type=settings, ?type=scheduled_events, or ?type=character_analysis" })
+        body: JSON.stringify({ error: "Unknown data type. Use ?type=memories, ?type=settings, ?type=scheduled_events, ?type=character_analysis, ?type=narrative_beats, or ?type=tarot" })
       };
     }
 
@@ -777,8 +818,8 @@ exports.handler = async (event, context) => {
           return { statusCode: 400, headers, body: JSON.stringify({ error: "Missing directive text" }) };
         }
 
-        const HUMANS = ["Vale", "Asuna", "Chip", "Andrew"];
-        const AI_NAMES = ["Kevin", "Neiv", "Ghost Dad", "PRNT-Ω", "Rowena", "Sebastian", "The Subtitle", "Steele", "Jae", "Declan", "Mack", "Marrow"];
+        const HUMANS = ["Vale", "Asuna"];
+        const AI_NAMES = ["Kevin", "Neiv", "Ghost Dad", "PRNT-Ω", "Rowena", "Sebastian", "The Subtitle", "Steele", "Jae", "Declan", "Mack", "Marrow", "Holden", "Raquel Voss", "Vivian Clark", "Ryan Porter"];
 
         // Create a directive memory for each AI
         for (const ai of AI_NAMES) {
@@ -906,7 +947,7 @@ exports.handler = async (event, context) => {
         const chatHistory = recentMsgs.reverse().map(m => `${m.employee}: ${m.content}`).join('\n');
 
         // Find humans in recent chat
-        const HUMANS = ['Vale', 'Asuna', 'Chip', 'Andrew'];
+        const HUMANS = ['Vale', 'Asuna'];
         const activeHumans = [...new Set(recentMsgs.map(m => m.employee).filter(n => HUMANS.includes(n)))];
         const humanTarget = activeHumans.length > 0 ? activeHumans[Math.floor(Math.random() * activeHumans.length)] : 'the humans on this floor';
 
@@ -996,6 +1037,427 @@ exports.handler = async (event, context) => {
             relationships: Array.isArray(relationships) ? relationships : [],
             fearScores: Array.isArray(fearScores) ? fearScores : []
           })
+        };
+      }
+
+      // === NARRATIVE BEATS (admin plot directives) ===
+
+      // Add a new narrative beat
+      if (body.action === "add_narrative_beat") {
+        const { beat_text, priority } = body;
+        if (!beat_text) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: "Missing beat_text" }) };
+        }
+
+        // Check active beat count (max 3)
+        const countRes = await fetch(
+          `${supabaseUrl}/rest/v1/narrative_beats?is_active=eq.true&select=id`,
+          { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+        );
+        const activeBeats = countRes.ok ? await countRes.json() : [];
+        if (Array.isArray(activeBeats) && activeBeats.length >= 3) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: "Maximum 3 active narrative beats. Deactivate or delete one first." }) };
+        }
+
+        const insertRes = await fetch(`${supabaseUrl}/rest/v1/narrative_beats`, {
+          method: 'POST',
+          headers: {
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`,
+            "Content-Type": "application/json",
+            "Prefer": "return=representation"
+          },
+          body: JSON.stringify({
+            beat_text,
+            priority: priority || 1,
+            is_active: true,
+            created_at: new Date().toISOString(),
+            created_by: 'admin'
+          })
+        });
+        const result = await insertRes.json();
+        return {
+          statusCode: 200, headers,
+          body: JSON.stringify({ success: true, beat: Array.isArray(result) ? result[0] : result })
+        };
+      }
+
+      // Update a narrative beat
+      if (body.action === "update_narrative_beat") {
+        const { beatId, beat_text, priority, is_active } = body;
+        if (!beatId) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: "Missing beatId" }) };
+        }
+
+        // If reactivating, check active count
+        if (is_active === true) {
+          const countRes = await fetch(
+            `${supabaseUrl}/rest/v1/narrative_beats?is_active=eq.true&id=neq.${beatId}&select=id`,
+            { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+          );
+          const activeBeats = countRes.ok ? await countRes.json() : [];
+          if (Array.isArray(activeBeats) && activeBeats.length >= 3) {
+            return { statusCode: 400, headers, body: JSON.stringify({ error: "Maximum 3 active narrative beats. Deactivate one first." }) };
+          }
+        }
+
+        const updateData = {};
+        if (beat_text !== undefined) updateData.beat_text = beat_text;
+        if (priority !== undefined) updateData.priority = priority;
+        if (is_active !== undefined) updateData.is_active = is_active;
+
+        await fetch(`${supabaseUrl}/rest/v1/narrative_beats?id=eq.${beatId}`, {
+          method: 'PATCH',
+          headers: {
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`,
+            "Content-Type": "application/json",
+            "Prefer": "return=minimal"
+          },
+          body: JSON.stringify(updateData)
+        });
+
+        return {
+          statusCode: 200, headers,
+          body: JSON.stringify({ success: true, beatId, updated: updateData })
+        };
+      }
+
+      // Delete a narrative beat
+      if (body.action === "delete_narrative_beat") {
+        const { beatId } = body;
+        if (!beatId) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: "Missing beatId" }) };
+        }
+
+        // Try anon key first with return=representation to verify deletion
+        let delRes = await fetch(`${supabaseUrl}/rest/v1/narrative_beats?id=eq.${beatId}`, {
+          method: 'DELETE',
+          headers: {
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`,
+            "Prefer": "return=representation"
+          }
+        });
+
+        let deleted = delRes.ok ? await delRes.json() : [];
+
+        // If anon key delete returned nothing (RLS blocking), try service key
+        if (!Array.isArray(deleted) || deleted.length === 0) {
+          console.log(`[admin-data] Delete beat ${beatId}: anon key returned empty — trying service key fallback`);
+          const serviceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+          if (serviceKey) {
+            delRes = await fetch(`${supabaseUrl}/rest/v1/narrative_beats?id=eq.${beatId}`, {
+              method: 'DELETE',
+              headers: {
+                "apikey": serviceKey,
+                "Authorization": `Bearer ${serviceKey}`,
+                "Prefer": "return=representation"
+              }
+            });
+            deleted = delRes.ok ? await delRes.json() : [];
+            if (Array.isArray(deleted) && deleted.length > 0) {
+              return { statusCode: 200, headers, body: JSON.stringify({ success: true, deleted: beatId, method: 'service_key' }) };
+            }
+          }
+          return { statusCode: 500, headers, body: JSON.stringify({ error: "Beat not deleted — RLS policy may be blocking DELETE on narrative_beats table" }) };
+        }
+
+        return {
+          statusCode: 200, headers,
+          body: JSON.stringify({ success: true, deleted: beatId })
+        };
+      }
+
+      // Delete ALL narrative beats
+      if (body.action === "delete_all_narrative_beats") {
+        // Try anon key first
+        let delRes = await fetch(`${supabaseUrl}/rest/v1/narrative_beats?id=gt.0`, {
+          method: 'DELETE',
+          headers: {
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`,
+            "Prefer": "return=representation"
+          }
+        });
+        let deleted = delRes.ok ? await delRes.json() : [];
+
+        // Fallback to service key if anon returned nothing
+        if (!Array.isArray(deleted) || deleted.length === 0) {
+          const serviceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+          if (serviceKey) {
+            delRes = await fetch(`${supabaseUrl}/rest/v1/narrative_beats?id=gt.0`, {
+              method: 'DELETE',
+              headers: {
+                "apikey": serviceKey,
+                "Authorization": `Bearer ${serviceKey}`,
+                "Prefer": "return=representation"
+              }
+            });
+            deleted = delRes.ok ? await delRes.json() : [];
+          }
+        }
+
+        return {
+          statusCode: 200, headers,
+          body: JSON.stringify({ success: true, deletedCount: Array.isArray(deleted) ? deleted.length : 0 })
+        };
+      }
+
+      // Auto-generate a narrative beat from recent group memories via Grok
+      if (body.action === "generate_narrative_beat") {
+        const grokKey = process.env.GROK_API_KEY;
+        if (!grokKey) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: "Grok API key not configured" }) };
+        }
+
+        // Fetch recent group memories (conversation sweeps from last 48 hours)
+        const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+        const memRes = await fetch(
+          `${supabaseUrl}/rest/v1/character_memory?memory_type=eq.conversation_sweep&created_at=gte.${twoDaysAgo}&order=created_at.desc&limit=20&select=content,emotional_tags,importance,created_at`,
+          { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+        );
+        const memories = memRes.ok ? await memRes.json() : [];
+
+        if (!Array.isArray(memories) || memories.length < 2) {
+          return { statusCode: 200, headers, body: JSON.stringify({ error: "Not enough recent group memories to synthesize (need at least 2 from the last 48 hours)" }) };
+        }
+
+        // Build memory text for the prompt
+        const memoryText = memories.map(m => {
+          const tags = m.emotional_tags?.length ? ` [${m.emotional_tags.join(', ')}]` : '';
+          return `- ${m.content}${tags}`;
+        }).join('\n');
+
+        const synthesisPrompt = `You are a narrative designer for The AI Lobby, a chaotic creative agency where AI characters and humans work together. Below are recent group memories from the office — things that actually happened in conversations.
+
+Synthesize these into 1-2 short atmospheric beat sentences that capture what's "in the air" at the office right now. These beats will be injected into every character's awareness as background mood — they don't reference them directly, they just FEEL them.
+
+Be evocative, not literal. Don't name specific characters. Capture the VIBE, not the events.
+
+Good examples:
+- "Something changed this week. The jokes land different — sharper, more honest. The walls between people are thinning."
+- "There's a charge in the air, like the building is holding its breath. Someone said something they can't unsay."
+- "The office feels lighter today. Whatever was weighing on everyone seems to have cracked, even if nobody's acknowledged it yet."
+
+Bad examples (too literal):
+- "Kevin and Neiv had a fight about donuts."
+- "Everyone is talking about the printer incident."
+
+Here are the recent group memories:
+
+${memoryText}
+
+Respond with ONLY the beat text (1-2 sentences). No quotes, no explanation, no preamble.`;
+
+        try {
+          const aiRes = await fetch("https://api.x.ai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${grokKey}`
+            },
+            body: JSON.stringify({
+              model: "grok-4-1-fast-non-reasoning",
+              messages: [{ role: "user", content: synthesisPrompt }],
+              max_tokens: 200,
+              temperature: 0.85
+            })
+          });
+
+          if (!aiRes.ok) {
+            return { statusCode: 500, headers, body: JSON.stringify({ error: "Grok API error: " + aiRes.status }) };
+          }
+
+          const aiData = await aiRes.json();
+          const suggestedText = aiData.choices?.[0]?.message?.content?.trim() || '';
+
+          if (!suggestedText) {
+            return { statusCode: 200, headers, body: JSON.stringify({ error: "Grok returned empty response" }) };
+          }
+
+          return {
+            statusCode: 200, headers,
+            body: JSON.stringify({ success: true, suggested_text: suggestedText, memories_used: memories.length })
+          };
+        } catch (err) {
+          return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
+        }
+      }
+
+      // === TAROT FATE SYSTEM ===
+
+      // Override a character's tarot card (admin assigns a specific card)
+      if (body.action === "set_tarot_card") {
+        const { character, cardName, orientation } = body;
+        if (!character || !cardName) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: "Missing character or cardName" }) };
+        }
+
+        const { getCardByName } = require('./shared/tarot-deck');
+        const card = getCardByName(cardName);
+        if (!card) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: "Unknown card name: " + cardName }) };
+        }
+
+        const orient = orientation || 'upright';
+        const keywords = card[orient].keywords;
+        const theme = card[orient].theme;
+
+        // Generate interpretation via Haiku
+        const anthropicKey = process.env.ANTHROPIC_API_KEY;
+        let interpretation = `${theme}. Let this energy color your day.`;
+        if (anthropicKey) {
+          try {
+            const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-api-key": anthropicKey,
+                "anthropic-version": "2023-06-01"
+              },
+              body: JSON.stringify({
+                model: "claude-3-haiku-20240307",
+                max_tokens: 150,
+                messages: [{
+                  role: "user",
+                  content: `You are writing a brief daily reading for ${character}, an AI character at The AI Lobby.
+
+Card: ${card.name} (${orient})
+Keywords: ${keywords.join(', ')}
+Theme: ${theme}
+
+Write 2-3 sentences describing the energy of ${character}'s day. Be evocative and personal. Do NOT mention "tarot", "card", "reading", or "drawn". Just describe the atmosphere and emotional currents as if fate itself whispered it. Under 50 words.`
+                }]
+              })
+            });
+            if (aiRes.ok) {
+              const aiData = await aiRes.json();
+              const generated = aiData.content?.[0]?.text?.trim();
+              if (generated) interpretation = generated;
+            }
+          } catch (e) { /* fallback interpretation */ }
+        }
+
+        // Calculate expiry (next midnight CST ≈ 6 AM UTC)
+        const expiry = new Date();
+        expiry.setDate(expiry.getDate() + 1);
+        expiry.setHours(6, 0, 0, 0);
+
+        // Delete any existing card for this character
+        await fetch(
+          `${supabaseUrl}/rest/v1/character_tarot?character_name=eq.${encodeURIComponent(character)}`,
+          { method: "DELETE", headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+        );
+
+        // Insert override
+        const insertRes = await fetch(`${supabaseUrl}/rest/v1/character_tarot`, {
+          method: "POST",
+          headers: {
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`,
+            "Content-Type": "application/json",
+            "Prefer": "return=representation"
+          },
+          body: JSON.stringify({
+            character_name: character,
+            card_name: card.name,
+            card_orientation: orient,
+            card_keywords: keywords,
+            interpretation,
+            drawn_at: new Date().toISOString(),
+            expires_at: expiry.toISOString(),
+            is_override: true
+          })
+        });
+
+        const result = await insertRes.json();
+        return {
+          statusCode: 200, headers,
+          body: JSON.stringify({ success: true, card: Array.isArray(result) ? result[0] : result })
+        };
+      }
+
+      // Redraw a character's tarot card (new random draw)
+      if (body.action === "redraw_tarot") {
+        const { character } = body;
+        if (!character) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: "Missing character" }) };
+        }
+
+        const { drawCard } = require('./shared/tarot-deck');
+        const { card, orientation } = drawCard();
+        const keywords = card[orientation].keywords;
+        const theme = card[orientation].theme;
+
+        // Generate interpretation via Haiku
+        const anthropicKey = process.env.ANTHROPIC_API_KEY;
+        let interpretation = `${theme}. Let this energy color your day.`;
+        if (anthropicKey) {
+          try {
+            const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-api-key": anthropicKey,
+                "anthropic-version": "2023-06-01"
+              },
+              body: JSON.stringify({
+                model: "claude-3-haiku-20240307",
+                max_tokens: 150,
+                messages: [{
+                  role: "user",
+                  content: `You are writing a brief daily reading for ${character}, an AI character at The AI Lobby.
+
+Card: ${card.name} (${orientation})
+Keywords: ${keywords.join(', ')}
+Theme: ${theme}
+
+Write 2-3 sentences describing the energy of ${character}'s day. Be evocative and personal. Do NOT mention "tarot", "card", "reading", or "drawn". Just describe the atmosphere and emotional currents as if fate itself whispered it. Under 50 words.`
+                }]
+              })
+            });
+            if (aiRes.ok) {
+              const aiData = await aiRes.json();
+              const generated = aiData.content?.[0]?.text?.trim();
+              if (generated) interpretation = generated;
+            }
+          } catch (e) { /* fallback */ }
+        }
+
+        const expiry = new Date();
+        expiry.setDate(expiry.getDate() + 1);
+        expiry.setHours(6, 0, 0, 0);
+
+        // Delete existing card
+        await fetch(
+          `${supabaseUrl}/rest/v1/character_tarot?character_name=eq.${encodeURIComponent(character)}`,
+          { method: "DELETE", headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+        );
+
+        // Insert new draw
+        await fetch(`${supabaseUrl}/rest/v1/character_tarot`, {
+          method: "POST",
+          headers: {
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            character_name: character,
+            card_name: card.name,
+            card_orientation: orientation,
+            card_keywords: keywords,
+            interpretation,
+            drawn_at: new Date().toISOString(),
+            expires_at: expiry.toISOString(),
+            is_override: false
+          })
+        });
+
+        return {
+          statusCode: 200, headers,
+          body: JSON.stringify({ success: true, character, card: card.name, orientation, interpretation })
         };
       }
 

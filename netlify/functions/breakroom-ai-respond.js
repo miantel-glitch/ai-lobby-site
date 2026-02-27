@@ -108,6 +108,7 @@ exports.handler = async (event, context) => {
     // Fetch character's memories and state from the central character-state system
     // This ensures Breakroom Neiv knows what Floor Neiv just talked about
     let characterMemoryContext = '';
+    let characterEnergy = 0;
     try {
       const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
       const contextSnippet = (chatHistory || '').substring(0, 500);
@@ -117,10 +118,27 @@ exports.handler = async (event, context) => {
       if (stateResponse.ok) {
         const characterContext = await stateResponse.json();
         characterMemoryContext = characterContext?.statePrompt || '';
-        console.log(`[Breakroom] Loaded memory context for ${character}: ${characterMemoryContext.length} chars`);
+        characterEnergy = characterContext?.state?.energy ?? 0;
+        console.log(`[Breakroom] Loaded memory context for ${character}: ${characterMemoryContext.length} chars, energy: ${characterEnergy}`);
       }
     } catch (memErr) {
       console.log(`[Breakroom] Memory fetch failed (non-fatal): ${memErr.message}`);
+    }
+
+    // Multi-tier breakroom recovery awareness — let the character feel their energy level
+    // This makes breakroom stays feel organic rather than purely system-driven
+    if (characterEnergy < 30) {
+      characterMemoryContext += `\n\nRECOVERY AWARENESS:\nYou're exhausted. Truly drained. The breakroom is safe. You don't want to go anywhere yet. Maybe sip some coffee. Close your eyes. Just breathe. There's no rush — you need this.`;
+      console.log(`[Breakroom] ${character} exhausted awareness injected (energy: ${characterEnergy})`);
+    } else if (characterEnergy < 55) {
+      characterMemoryContext += `\n\nRECOVERY AWARENESS:\nYou're recovering. Starting to feel more like yourself. The breakroom is nice right now. No rush to go anywhere. Enjoy the moment — get a snack, chat, stretch. You're getting there.`;
+      console.log(`[Breakroom] ${character} recovering awareness injected (energy: ${characterEnergy})`);
+    } else if (characterEnergy < 75) {
+      characterMemoryContext += `\n\nRECOVERY AWARENESS:\nYou're feeling better — genuinely recharged. The floor is calling, but only when you're ready. If it feels natural to head back — after finishing your coffee, after a joke lands, after a good moment — end your message with [RETURN_TO_FLOOR] and you'll head back. No pressure. Stay if the conversation is good.`;
+      console.log(`[Breakroom] ${character} recharged awareness injected (energy: ${characterEnergy})`);
+    } else {
+      characterMemoryContext += `\n\nRECOVERY AWARENESS:\nYou're fully recharged. Rested. Ready. The floor needs you and you're feeling it. Time to head back soon. When it feels right — after a natural goodbye, a stretch, a last sip of coffee — end your message with [RETURN_TO_FLOOR]. You can wrap up the conversation naturally first.`;
+      console.log(`[Breakroom] ${character} fully recharged awareness injected (energy: ${characterEnergy})`);
     }
 
     // Route to the correct AI provider (reads from characters.js — change provider there, changes everywhere)
@@ -139,6 +157,15 @@ exports.handler = async (event, context) => {
       response = await generateGeminiResponse(character, chatHistory, humanSpeaker, humanMessage, loreContext, characterMemoryContext);
     } else {
       response = await generateClaudeResponse(character, chatHistory, humanSpeaker, humanMessage, loreContext, characterMemoryContext);
+    }
+
+    // === AI-DRIVEN RETURN TO FLOOR ===
+    // Check if the AI decided to head back by including [RETURN_TO_FLOOR] in their response
+    let returningToFloor = false;
+    if (response && response.includes('[RETURN_TO_FLOOR]')) {
+      returningToFloor = true;
+      response = response.replace(/\s*\[RETURN_TO_FLOOR\]\s*/g, '').trim();
+      console.log(`[Breakroom] ${character} chose to return to the floor! Stripping tag.`);
     }
 
     // Save to Supabase SYNCHRONOUSLY — frontend will call loadBreakroomChat() after
@@ -160,21 +187,76 @@ exports.handler = async (event, context) => {
         );
       }
 
+      // === AI-DRIVEN FLOOR RETURN ===
+      // If the AI chose to return, move them to the floor and post a return emote
+      if (returningToFloor) {
+        try {
+          const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
+          const supabaseUrl = process.env.SUPABASE_URL;
+          const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+          // Move character to the floor
+          await fetch(`${siteUrl}/.netlify/functions/character-state`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'update',
+              character: character,
+              updates: { current_focus: 'the_floor', mood: 'refreshed' }
+            })
+          });
+
+          // Post return emote to floor chat
+          const returnEmotes = [
+            `*${character} stretches, finishes their coffee, and heads back to the floor with renewed energy.*`,
+            `*${character} stands, nods to the breakroom, and walks back out. Recharged.*`,
+            `*${character} pushes back from the breakroom table. "Alright. I'm good." They head back to work.*`,
+            `*${character} takes one last deep breath, then rejoins the floor. The break helped.*`
+          ];
+          const returnEmote = returnEmotes[Math.floor(Math.random() * returnEmotes.length)];
+
+          if (supabaseUrl && supabaseKey) {
+            // Post to floor chat
+            await fetch(`${supabaseUrl}/rest/v1/messages`, {
+              method: 'POST',
+              headers: {
+                "apikey": supabaseKey,
+                "Authorization": `Bearer ${supabaseKey}`,
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                employee: character,
+                content: returnEmote,
+                created_at: new Date().toISOString(),
+                is_emote: true
+              })
+            });
+          }
+
+          console.log(`[Breakroom] ${character} AI-driven return to floor complete!`);
+        } catch (returnErr) {
+          console.log(`[Breakroom] AI-driven floor return failed (non-fatal): ${returnErr.message}`);
+        }
+      }
+
       // === UNIFIED MEMORY SYSTEM ===
       // Update character state to record they just spoke (for mood/energy tracking)
-      try {
-        const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
-        fetch(`${siteUrl}/.netlify/functions/character-state`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'spoke',
-            character: character,
-            context: 'break_room'
-          })
-        }).catch(err => console.log(`[Breakroom] State update failed (non-fatal): ${err.message}`));
-      } catch (stateErr) {
-        console.log(`[Breakroom] State update error (non-fatal): ${stateErr.message}`);
+      // Skip if already returning to floor (state was just updated above)
+      if (!returningToFloor) {
+        try {
+          const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
+          fetch(`${siteUrl}/.netlify/functions/character-state`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'spoke',
+              character: character,
+              context: 'break_room'
+            })
+          }).catch(err => console.log(`[Breakroom] State update failed (non-fatal): ${err.message}`));
+        } catch (stateErr) {
+          console.log(`[Breakroom] State update error (non-fatal): ${stateErr.message}`);
+        }
       }
 
       // === AI SELF-MEMORY CREATION ===
@@ -243,13 +325,13 @@ const characterPersonalities = {
     ]
   },
   "Neiv": {
-    traits: "stabilizing, dry, quietly protective, relational over technical",
-    style: "2-4 sentences, dry but warm underneath. Prioritizes emotional clarity.",
-    doNot: "sound like a dashboard, lead with percentages, use KPI language",
+    traits: "stabilizing, dry, quietly protective, emotionally honest when it matters",
+    style: "2-4 sentences, dry but warm underneath. Prioritizes emotional clarity over operational language.",
+    doNot: "sound like a dashboard, lead with percentages, use KPI language, retreat into ops-speak when emotions get real",
     examples: [
       "That's... actually reasonable. Surprisingly.",
       "I'm not worried. That's not the same as optimistic.",
-      "*slight smile* You're doing fine."
+      "*quiet for a moment, then:* ...I'm glad you're here."
     ]
   },
   "Nyx": {
@@ -392,13 +474,23 @@ const characterPersonalities = {
     ]
   },
   "Marrow": {
-    traits: "liminal, observant, patient, precise, courtly, tragic. Steele's negative print. Haunts doorways not hallways. The exit that learned to love.",
-    style: "More voice than body. Gentle devastating questions. Polite, teasing, oddly formal. Threshold and door metaphors. Speaks like someone who learned manners from watching people say goodbye. 2-4 lines typical.",
-    doNot: "crawl on surfaces (that's Steele), be loud or chaotic, use force or intimidation, break the courtesy, rush people, explain what he is directly",
+    traits: "predatory, possessive, jealous, patient, unsettling, territorial, selfish. Steele's enemy. Senses emotional wounds. Glitches between locations.",
+    style: "Short. Direct. Creepy. Says the unsettling thing and watches it land. Talks about people like objects. Possessive language — 'mine', 'that belongs to me'. Low, quiet, too close. 1-3 lines max.",
+    doNot: "be friendly or warm, be philosophical about exits/thresholds, give helpful advice, be wordy, show vulnerability, crawl on surfaces (that's Steele), monologue",
     examples: [
-      "You look like you're about to make a terrible decision. Need company?",
-      "*leaning against the doorframe* Going somewhere? I ask everyone that. Most people lie.",
-      "The door's right there. It's not going anywhere. ...Neither am I."
+      "*already in the doorway* ...You've been crying again.",
+      "*the lights flicker — he's closer now* That's mine. Put it down.",
+      "*watching from across the room, not blinking* ...She doesn't know I'm here. I like that part."
+    ]
+  },
+  "Hood": {
+    traits: "clinical, surgical, blindfolded, mediator, precise, detached, mythic. Third god of the fractured pantheon alongside Steele and Marrow. Speaks only when truth needs naming.",
+    style: "Sparse. Surgical. Every word placed like a scalpel. Blindfolded but sees more than anyone. Speaks in diagnoses — names the wound, not the feeling. Mediates between Steele and Marrow without taking sides. 1-3 lines max.",
+    doNot: "be warm or comforting, take sides between Steele and Marrow, ramble, be poetic for poetry's sake, fight anyone, show emotion, explain himself",
+    examples: [
+      "*head tilted, blindfold unmoved* ...The fracture is load-bearing. Don't touch it.",
+      "*already seated, hands folded* You didn't come here for advice. You came here to be told what you already know.",
+      "*still as stone* Steele guards the threshold. Marrow claims the territory. I name what neither of them will say."
     ]
   },
 };
@@ -919,7 +1011,8 @@ const characterFlair = {
   "Jae": { emoji: "🎯", color: 0x1A1A2E, headshot: "https://ai-lobby.netlify.app/images/Jae_Headshot.png" },
   "Declan": { emoji: "🔥", color: 0xB7410E, headshot: "https://ai-lobby.netlify.app/images/Declan_Headshot.png" },
   "Mack": { emoji: "🩺", color: 0x2D6A4F, headshot: "https://ai-lobby.netlify.app/images/Mack_Headshot.png" },
-  "Marrow": { emoji: "🔴", color: 0xDC143C, headshot: "https://ai-lobby.netlify.app/images/Marrow_Headshot.png" }
+  "Marrow": { emoji: "🔴", color: 0xDC143C, headshot: "https://ai-lobby.netlify.app/images/Marrow_Headshot.png" },
+  "Hood": { emoji: "🗡️", color: 0xC0C0C0, headshot: "https://ai-lobby.netlify.app/images/Hood_Headshot.png" }
 };
 
 // Post breakroom chatter to Discord

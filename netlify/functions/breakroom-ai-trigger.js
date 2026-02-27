@@ -100,6 +100,7 @@ exports.handler = async (event, context) => {
       'declan': 'Declan', 'dec': 'Declan',
       'mack': 'Mack', 'malcolm': 'Mack',
       'marrow': 'Marrow',
+      'hood': 'Hood', 'mr. hood': 'Hood', 'mr hood': 'Hood', 'asher': 'Hood',
       'raquel': 'Raquel Voss', 'raq': 'Raquel Voss', 'voss': 'Raquel Voss',
       'narrator': 'The Narrator'
     };

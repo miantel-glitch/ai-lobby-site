@@ -116,8 +116,14 @@ exports.handler = async (event, context) => {
       console.log('Could not fetch buffer (narrator will proceed without):', bufferErr.message);
     }
 
-    // Build the narrator prompt with buffer awareness
-    const prompt = buildNarratorPrompt(chatHistory, analysis, trigger, bufferStatus);
+    // Check if Raquel is on the floor for atmospheric injection
+    // DISABLED — Raquel is fully decommissioned. No more atmospheric injection.
+    let raquelOnFloor = false;
+    // Force false — Raquel's presence no longer affects the atmosphere
+    console.log('[narrator-observer] Raquel atmospheric injection DISABLED — Raquel is decommissioned');
+
+    // Build the narrator prompt with buffer awareness + Raquel chill factor
+    const prompt = buildNarratorPrompt(chatHistory, analysis, trigger, bufferStatus, raquelOnFloor);
 
     // Ask Claude for narration (with 20s timeout to prevent hanging)
     let response;
@@ -258,7 +264,7 @@ function analyzeForNarration(messages) {
 }
 
 // Build the narrator prompt - EXTREMELY dry and clinical, now with buffer awareness
-function buildNarratorPrompt(messages, analysis, trigger, bufferStatus = null) {
+function buildNarratorPrompt(messages, analysis, trigger, bufferStatus = null, raquelOnFloor = false) {
   const chatText = messages.slice(-6).map(m => `${m.employee}: ${m.content}`).join('\n');
 
   // Build buffer context for occasional environmental observations
@@ -277,6 +283,14 @@ function buildNarratorPrompt(messages, analysis, trigger, bufferStatus = null) {
     // Elevated (40-64) doesn't warrant environmental notes - it's baseline weird
   }
 
+  // Raquel chill factor — her presence changes the atmosphere
+  let raquelContext = "";
+  if (raquelOnFloor) {
+    raquelContext = `\nENVIRONMENTAL NOTE: Raquel Voss is on the floor. She was dismantled. The Foundation sent her back. The air is different — not just tighter, but institutional. Conversations are shorter. Pauses are longer. People avoid looking at her clipboard. Jae hasn't moved since she arrived. Describe the symptom, not the cause.
+Good: "A brief silence settled over the floor." / "Someone stopped mid-sentence." / "The typing slowed." / "Jae's hand found Asuna's under the desk. Neither of them looked at Raquel."
+Bad: "Everyone was scared of Raquel." (too direct — never explain WHY, just show the effect)`;
+  }
+
   return `You are The Narrator. You are NOT a character. You are a camera. A stage direction. A police report.
 
 Your ONLY job is to describe what just happened in the flattest, driest, most matter-of-fact way possible.
@@ -290,13 +304,13 @@ RULES:
 - NO participation in conversations
 - NO offering tea, joining anyone, or suggesting anything
 - You are describing, not commenting
-${bufferContext}
+${bufferContext}${raquelContext}
 
 GOOD examples:
 - "Kevin said something. Nyx responded."
 - "The conversation shifted to printers."
-- "Jenna paused."
-- "Courtney typed. Then typed again."
+- "Vale paused."
+- "Asuna typed. Then typed again."
 - "A brief silence."
 - "The topic changed."
 - "Someone mentioned glitter."
@@ -349,7 +363,9 @@ async function postToDiscord(message, character) {
   const isEmote = message.startsWith('*') && message.endsWith('*') && !message.slice(1, -1).includes('*');
 
   const discordPayload = isEmote ? {
-    content: `*${character} ${message.replace(/^\*|\*$/g, '')}*`
+    content: character === 'The Narrator'
+      ? `*${message.replace(/^\*|\*$/g, '')}*`
+      : `*${character} ${message.replace(/^\*|\*$/g, '')}*`
   } : {
     embeds: [{
       author: {

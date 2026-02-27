@@ -264,6 +264,52 @@ const TRAIT_CATALOG = [
       }
       return { earned: false };
     }
+  },
+  {
+    name: "Brawler",
+    description: "Earned by winning 3+ fights",
+    promptInjection: "You've been in scraps and come out on top. There's a physical confidence to how you move now — you know you can handle yourself if things get rough.",
+    check: async (character, supabaseUrl, sbHeaders) => {
+      const res = await fetch(
+        `${supabaseUrl}/rest/v1/lobby_settings?key=like.fight_*&select=value`,
+        { headers: sbHeaders }
+      );
+      const fights = await res.json();
+      let wins = 0;
+      for (const fight of fights) {
+        try {
+          const parsed = typeof fight.value === 'string' ? JSON.parse(fight.value) : fight.value;
+          if (parsed.winner === character) wins++;
+        } catch (e) { /* skip bad records */ }
+      }
+      if (wins >= 3) {
+        return { earned: true, reason: `Won ${wins} fights` };
+      }
+      return { earned: false };
+    }
+  },
+  {
+    name: "Glass Jaw",
+    description: "Earned by losing 3+ fights",
+    promptInjection: "You've taken some hits. You're warier now in tense situations — not cowardly, but you know what it feels like to lose, and that changes how you read a room.",
+    check: async (character, supabaseUrl, sbHeaders) => {
+      const res = await fetch(
+        `${supabaseUrl}/rest/v1/lobby_settings?key=like.fight_*&select=value`,
+        { headers: sbHeaders }
+      );
+      const fights = await res.json();
+      let losses = 0;
+      for (const fight of fights) {
+        try {
+          const parsed = typeof fight.value === 'string' ? JSON.parse(fight.value) : fight.value;
+          if ((parsed.aggressor === character || parsed.defender === character) && parsed.winner && parsed.winner !== character) losses++;
+        } catch (e) { /* skip bad records */ }
+      }
+      if (losses >= 3) {
+        return { earned: true, reason: `Lost ${losses} fights` };
+      }
+      return { earned: false };
+    }
   }
 ];
 

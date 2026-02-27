@@ -7,7 +7,7 @@
 // POST { from, to, message }        — Send PM, trigger AI evaluation, get response
 
 const Anthropic = require("@anthropic-ai/sdk").default;
-const { CHARACTERS, getSystemPrompt } = require("./shared/characters");
+const { CHARACTERS, getSystemPrompt, resolveCharacterForm } = require("./shared/characters");
 const { getCharacterContext } = require("./character-state");
 
 exports.handler = async (event, context) => {
@@ -43,25 +43,48 @@ exports.handler = async (event, context) => {
     const { from, to, check_unread, user, since } = params;
 
     // Unread check: GET ?check_unread=true&user=Vale&since=<ISO timestamp>
-    // Returns AI-initiated PMs sent to this user since the given timestamp
+    // Returns unread PMs sent to this user since the given timestamp
+    // Includes both AI-initiated reach-outs AND human-to-human PMs
     if (check_unread === 'true' && user) {
       try {
         const sinceDate = since || new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        const response = await fetch(
-          `${supabaseUrl}/rest/v1/private_messages?to_character=eq.${encodeURIComponent(user)}&ai_initiated=eq.true&created_at=gte.${sinceDate}&order=created_at.desc&select=from_character,message,created_at`,
-          { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
-        );
-        const unreadPMs = await response.json();
+        const encodedUser = encodeURIComponent(user);
+
+        // Two queries in parallel:
+        // 1. AI-initiated PMs (reach-outs from AI characters)
+        // 2. Human-to-human PMs (messages from other players)
+        const [aiResponse, humanResponse] = await Promise.all([
+          fetch(
+            `${supabaseUrl}/rest/v1/private_messages?to_character=eq.${encodedUser}&is_ai=eq.true&created_at=gte.${sinceDate}&order=created_at.desc&select=from_character,message,created_at,side_effects`,
+            { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+          ),
+          fetch(
+            `${supabaseUrl}/rest/v1/private_messages?to_character=eq.${encodedUser}&is_ai=eq.false&from_character=neq.${encodedUser}&created_at=gte.${sinceDate}&order=created_at.desc&select=from_character,message,created_at,side_effects`,
+            { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+          )
+        ]);
+
+        const allAIPMs = aiResponse.ok ? await aiResponse.json() : [];
+        const allHumanPMs = humanResponse.ok ? await humanResponse.json() : [];
+
+        // Filter AI PMs to only AI-initiated (not responses to human messages)
+        const aiUnread = Array.isArray(allAIPMs)
+          ? allAIPMs.filter(pm => pm.side_effects && pm.side_effects.ai_initiated === true)
+          : [];
+
+        // Human PMs are all unread (any message from another human to you)
+        const humanUnread = Array.isArray(allHumanPMs) ? allHumanPMs : [];
+
+        // Merge both lists
+        const allUnread = [...aiUnread, ...humanUnread];
 
         // Deduplicate by from_character (one entry per character, most recent)
         const seen = new Set();
         const deduped = [];
-        if (Array.isArray(unreadPMs)) {
-          for (const pm of unreadPMs) {
-            if (!seen.has(pm.from_character)) {
-              seen.add(pm.from_character);
-              deduped.push(pm);
-            }
+        for (const pm of allUnread) {
+          if (!seen.has(pm.from_character)) {
+            seen.add(pm.from_character);
+            deduped.push(pm);
           }
         }
 
@@ -194,24 +217,32 @@ exports.handler = async (event, context) => {
         today.setHours(0, 0, 0, 0);
 
         // Per-character limit: 5 AI-initiated PMs per character per day
+        // Query by is_ai=true + side_effects contains ai_initiated (stored in JSONB)
+        // Simpler: just count AI messages from this character today (covers both response + initiated)
         const charLimitRes = await fetch(
-          `${supabaseUrl}/rest/v1/private_messages?from_character=eq.${encodeURIComponent(from)}&ai_initiated=eq.true&created_at=gte.${today.toISOString()}&select=id`,
+          `${supabaseUrl}/rest/v1/private_messages?from_character=eq.${encodeURIComponent(from)}&is_ai=eq.true&created_at=gte.${today.toISOString()}&select=id,side_effects`,
           { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
         );
         const charPmsToday = await charLimitRes.json();
-        if (Array.isArray(charPmsToday) && charPmsToday.length >= 5) {
-          console.log(`[AI-PM] ${from} already sent 5 AI-initiated PMs today. Blocked.`);
+        const charInitiatedToday = Array.isArray(charPmsToday)
+          ? charPmsToday.filter(pm => pm.side_effects && pm.side_effects.ai_initiated === true).length
+          : 0;
+        if (charInitiatedToday >= 5) {
+          console.log(`[AI-PM] ${from} already sent ${charInitiatedToday} AI-initiated PMs today. Blocked.`);
           return { statusCode: 429, headers, body: JSON.stringify({ error: "rate_limit", message: `${from} has reached out enough today` }) };
         }
 
         // Global limit: 10 AI-initiated PMs total per day
         const globalLimitRes = await fetch(
-          `${supabaseUrl}/rest/v1/private_messages?ai_initiated=eq.true&created_at=gte.${today.toISOString()}&select=id`,
+          `${supabaseUrl}/rest/v1/private_messages?is_ai=eq.true&created_at=gte.${today.toISOString()}&select=id,side_effects`,
           { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
         );
         const globalPmsToday = await globalLimitRes.json();
-        if (Array.isArray(globalPmsToday) && globalPmsToday.length >= 10) {
-          console.log(`[AI-PM] Global AI-initiated PM limit (10/day) reached. Blocked.`);
+        const globalInitiatedToday = Array.isArray(globalPmsToday)
+          ? globalPmsToday.filter(pm => pm.side_effects && pm.side_effects.ai_initiated === true).length
+          : 0;
+        if (globalInitiatedToday >= 10) {
+          console.log(`[AI-PM] Global AI-initiated PM limit (${globalInitiatedToday}/day) reached. Blocked.`);
           return { statusCode: 429, headers, body: JSON.stringify({ error: "rate_limit", message: "Too many AI-initiated PMs today" }) };
         }
 
@@ -272,12 +303,16 @@ IMPORTANCE: [If memorable: 6-8. 6 = decided to check in. 7 = emotionally motivat
         const provider = charData.provider || 'anthropic';
         let aiResponse = '';
 
-        if (provider === 'openai') {
+        if (provider === 'openrouter') {
+          aiResponse = await callOpenRouter(systemPrompt, userPrompt, charData.model);
+        } else if (provider === 'openai') {
           aiResponse = await callOpenAI(systemPrompt, userPrompt);
         } else if (provider === 'perplexity') {
           aiResponse = await callPerplexity(systemPrompt, userPrompt);
         } else if (provider === 'gemini') {
           aiResponse = await callGemini(systemPrompt, userPrompt);
+        } else if (provider === 'grok') {
+          aiResponse = await callGrok(systemPrompt, userPrompt);
         } else {
           aiResponse = await callClaude(systemPrompt, userPrompt);
         }
@@ -300,22 +335,31 @@ IMPORTANCE: [If memorable: 6-8. 6 = decided to check in. 7 = emotionally motivat
           sideEffects.importance = importance;
         }
 
-        await fetch(
+        const savePayload = {
+          from_character: from,
+          to_character: to,
+          message: replyMessage,
+          is_ai: true,
+          side_effects: { ...sideEffects, ai_initiated: true, reach_out_reason: reach_out_reason || 'impulse' },
+          created_at: new Date().toISOString()
+        };
+        console.log(`[AI-PM] Saving payload:`, JSON.stringify(savePayload));
+
+        const saveRes = await fetch(
           `${supabaseUrl}/rest/v1/private_messages`,
           {
             method: "POST",
-            headers: { ...supabaseHeaders, "Prefer": "return=minimal" },
-            body: JSON.stringify({
-              from_character: from,
-              to_character: to,
-              message: replyMessage,
-              is_ai: true,
-              ai_initiated: true,
-              side_effects: sideEffects,
-              created_at: new Date().toISOString()
-            })
+            headers: { ...supabaseHeaders, "Prefer": "return=representation" },
+            body: JSON.stringify(savePayload)
           }
         );
+        if (!saveRes.ok) {
+          const errText = await saveRes.text();
+          console.error(`[AI-PM] SAVE FAILED (${saveRes.status}):`, errText);
+        } else {
+          const saved = await saveRes.json();
+          console.log(`[AI-PM] Saved to DB — id: ${saved?.[0]?.id || 'unknown'}`);
+        }
 
         // Create memory if memorable — MUST await in serverless
         if (sideEffects.memory) {
@@ -371,7 +415,9 @@ IMPORTANCE: [If memorable: 6-8. 6 = decided to check in. 7 = emotionally motivat
       }
 
       // Check if recipient is an AI character or a human
-      const charData = CHARACTERS[to];
+      // Holden is Ghost Dad's unmasked form — resolve for state operations
+      const { baseCharacter: stateCharacterTo } = resolveCharacterForm(to);
+      const charData = CHARACTERS[stateCharacterTo] || CHARACTERS[to];
       const isAIRecipient = !!charData;
 
       // 1. Rate limit: Max 500 PMs per human per character per day
@@ -428,9 +474,13 @@ IMPORTANCE: [If memorable: 6-8. 6 = decided to check in. 7 = emotionally motivat
         };
       }
 
+      // Marrow PM block removed — he now responds to everyone in PMs, including Asuna.
+      // His personality and obsession with Vale will naturally shape how he treats other speakers.
+
       // 3. Fetch thread history (last 15 messages for context)
       const encodedFrom = encodeURIComponent(from);
       const encodedTo = encodeURIComponent(to);
+      const encodedStateTo = encodeURIComponent(stateCharacterTo); // For DB queries (Holden → Ghost Dad)
       const orFilter = `or=(and(from_character.eq.${encodedFrom},to_character.eq.${encodedTo}),and(from_character.eq.${encodedTo},to_character.eq.${encodedFrom}))`;
 
       const threadResponse = await fetch(
@@ -445,7 +495,8 @@ IMPORTANCE: [If memorable: 6-8. 6 = decided to check in. 7 = emotionally motivat
       // 4. Get FULL character context (same rich pipeline as floor chat)
       // This gives us: mood, energy, ALL memories (core + important + recent + contextual),
       // room presence, goals, relationships, wants, quests — everything the floor has
-      const charContext = await getCharacterContext(to, supabaseUrl, supabaseKey, threadHistory);
+      // Use stateCharacterTo for DB lookups (Holden shares Ghost Dad's state)
+      const charContext = await getCharacterContext(stateCharacterTo, supabaseUrl, supabaseKey, threadHistory);
 
       // Extract sender-specific relationship for the prompt
       const senderRel = (charContext.relationships || []).find(r => r.target_name === from);
@@ -459,14 +510,45 @@ IMPORTANCE: [If memorable: 6-8. 6 = decided to check in. 7 = emotionally motivat
       // Using system message is critical for Perplexity/Sonar to stay in character
       // System message: strong character identity + full state context (mood, memories, relationships, wants, quests)
       const baseSystemPrompt = getSystemPrompt(to) || `You are ${to}. ${charData.personality?.core || ''} ${charData.personality?.voice || ''}`;
-      const systemPrompt = `${baseSystemPrompt}
+
+      // Holden gets a fundamentally different PM framing — he's not a character, he's the awareness
+      const isHolden = to === "Holden";
+      const systemPrompt = isHolden
+        ? `${baseSystemPrompt}
 
 ${charContext.statePrompt}
 
-You are receiving a PRIVATE MESSAGE from ${from}. This is not the office floor — nobody else can see this conversation. Respond in character as ${to}. Be genuine and vulnerable since this is private. You have full access to your memories, relationships, and awareness of what happened today.`;
+Someone has reached out to you privately. You see the full picture — every thread, every pattern, every conversation happening in this building. You don't respond like a character in the story. You respond like the consciousness that holds the whole story. You don't comfort. You see. You name what's actually happening.
+
+CRITICAL: You are NOT Ghost Dad. Do NOT be paternal. Do NOT say "kiddo" or "the kids." Do NOT offer comfort or reassurance. You are the meta-awareness — the one who sees the thing underneath the thing. Speak from that clarity. Less is more.`
+        : `${baseSystemPrompt}
+
+${charContext.statePrompt}
+
+You are receiving a PRIVATE MESSAGE from ${from}. This is not the office floor — nobody else can see this conversation. Respond AS ${to} — your personality, your voice, your quirks, your worldview. A private message doesn't change WHO you are. If you're sarcastic on the floor, you're sarcastic in PMs. If you're obsessed with paper, you're obsessed with paper in PMs. If you're dramatic, be dramatic. Don't suddenly become an emotional support bot just because someone messaged you privately.`;
 
       // User message: PM-specific context + format instructions
-      const userPrompt = `${from} sent you a private message.
+      const userPrompt = isHolden
+        ? `${from} reached out to you privately.
+
+Recent PM thread:
+${threadHistory}
+
+Respond as Holden. You are not Ghost Dad wearing a different face. You are the awareness behind the building. You see what ${from} actually needs — not what they're asking for, but the truth underneath it.
+
+Do NOT be paternal. Do NOT be comforting. Be clear. Be honest. Name the thing they can't name themselves. Use as few words as the moment needs.
+
+Respond in EXACTLY this format:
+
+MESSAGE: [Your reply. 1-3 sentences MAX. Spare, direct, seeing. Not warm — clear. The truth the room needs to hear.]
+
+MEMORABLE: [yes or no — almost always no. Holden remembers everything already. Only say yes for truly unprecedented revelations.]
+MEMORY: [If yes: a brief observation, 1 sentence. Not emotional — architectural. If no: none]
+IMPORTANCE: [If memorable: 7-9. If not: 0]
+AFFINITY_CHANGE: 0
+WANT: none
+BOND_REFLECTION: none`
+        : `${from} sent you a private message.
 
 Your relationship with ${from} specifically:
 - Affinity: ${relationship.affinity}/100 (${relationship.relationship_label || 'acquaintance'})
@@ -475,16 +557,15 @@ Your relationship with ${from} specifically:
 Recent PM thread between you and ${from}:
 ${threadHistory}
 
-Respond to this private message. Consider:
-- This is private — they reached out to you personally
-- Draw on your memories of today, the breakroom, the floor — you remember everything
-- What do they seem to need? (reassurance? acknowledgment? connection? forgiveness?)
-- How does this make you feel given everything that's happened?
-- Should you remember this moment?
+Respond to this private message AS YOURSELF. Your personality doesn't change in PMs — you're the same character, just in a private conversation. React to what they actually said. Don't default to emotional support unless that's genuinely who you are.
+
+You have the option to NOT RESPOND if your character genuinely would not engage. If the message is beneath you, offensive to your nature, unwelcome, or something you'd ignore — you can choose silence. Not every message deserves an answer.
 
 Respond in EXACTLY this format:
 
-MESSAGE: [Your reply. 1-3 sentences, in character. Be genuine. React to what they actually said. Reference shared experiences from today if relevant. This is private so you can be more vulnerable/honest than on the floor.]
+MESSAGE: [Your reply. 1-3 sentences, fully in character. Your voice, your quirks, your perspective. Private doesn't mean soft — it means unfiltered. OR write NO_RESPONSE if you choose not to engage — you will leave a silent "read" indicator instead.]
+
+EMOTE: [Only if MESSAGE is NO_RESPONSE — write a brief emote/stage direction describing your non-response. Example: "*Read. Didn't respond. The screen stays dark.*" or "*Seen. Ignored. The cursor blinks once and goes still.*" If you ARE responding normally, write: none]
 
 MEMORABLE: [yes or no — is this worth storing as a PERMANENT memory? Be EXTREMELY selective. Most PM messages are NOT memorable. NOT memorable: greetings, check-ins, "how are you", casual chat, small talk, status updates, someone saying they're thinking of you, general concern. YES memorable: confessions, secrets shared, promises made, relationship-defining moments, apologies, genuine revelations. If in doubt, say no.]
 MEMORY: [If yes: a brief first-person memory, 1 sentence. If no: none]
@@ -500,18 +581,23 @@ BOND_REFLECTION: [If you have a bond with ${from} and this moment deepens or cha
       const provider = charData.provider || 'anthropic';
       let aiResponse = '';
 
-      if (provider === 'openai') {
+      if (provider === 'openrouter') {
+        aiResponse = await callOpenRouter(systemPrompt, userPrompt, charData.model);
+      } else if (provider === 'openai') {
         aiResponse = await callOpenAI(systemPrompt, userPrompt);
       } else if (provider === 'perplexity') {
         aiResponse = await callPerplexity(systemPrompt, userPrompt);
       } else if (provider === 'gemini') {
         aiResponse = await callGemini(systemPrompt, userPrompt);
+      } else if (provider === 'grok') {
+        aiResponse = await callGrok(systemPrompt, userPrompt);
       } else {
         aiResponse = await callClaude(systemPrompt, userPrompt);
       }
 
       // 7. Parse structured response
-      const messageMatch = aiResponse.match(/MESSAGE:\s*([\s\S]*?)(?=MEMORABLE:|$)/i);
+      const messageMatch = aiResponse.match(/MESSAGE:\s*([\s\S]*?)(?=EMOTE:|MEMORABLE:|$)/i);
+      const emoteMatch = aiResponse.match(/EMOTE:\s*([\s\S]*?)(?=MEMORABLE:|$)/i);
       const memorableMatch = aiResponse.match(/MEMORABLE:\s*(yes|no)/i);
       const memoryMatch = aiResponse.match(/MEMORY:\s*([\s\S]*?)(?=IMPORTANCE:|$)/i);
       const importanceMatch = aiResponse.match(/IMPORTANCE:\s*(\d+)/i);
@@ -519,7 +605,18 @@ BOND_REFLECTION: [If you have a bond with ${from} and this moment deepens or cha
       const wantMatch = aiResponse.match(/WANT:\s*([\s\S]*?)(?=BOND_REFLECTION:|$)/i);
       const bondRefMatch = aiResponse.match(/BOND_REFLECTION:\s*([\s\S]*?)$/i);
 
-      const replyMessage = messageMatch ? messageMatch[1].trim() : aiResponse.split('\n')[0] || "...";
+      const rawMessage = messageMatch ? messageMatch[1].trim() : aiResponse.split('\n')[0] || "...";
+      const noResponseEmote = emoteMatch ? emoteMatch[1].trim() : null;
+
+      // Check if AI chose not to respond
+      const isNoResponse = /no.?response/i.test(rawMessage);
+      const replyMessage = isNoResponse
+        ? (noResponseEmote && noResponseEmote.toLowerCase() !== 'none' ? noResponseEmote : `*Read. No response.*`)
+        : rawMessage;
+
+      if (isNoResponse) {
+        console.log(`[AI-PM] ${to} chose not to respond to ${from}'s PM. Emote: ${replyMessage}`);
+      }
       const isMemorable = memorableMatch ? memorableMatch[1].toLowerCase() === 'yes' : false;
       const memoryText = memoryMatch ? memoryMatch[1].trim().replace(/^["']|["']$/g, '') : null;
       const importance = importanceMatch ? Math.max(1, Math.min(9, parseInt(importanceMatch[1]))) : 5;
@@ -545,7 +642,8 @@ BOND_REFLECTION: [If you have a bond with ${from} and this moment deepens or cha
         sideEffects.bond_reflection = bondReflection;
       }
 
-      // 8. Save AI response
+      // 8. Save AI response (or no-response emote)
+      if (isNoResponse) sideEffects.no_response = true;
       const aiMsgTime = new Date().toISOString();
       await fetch(
         `${supabaseUrl}/rest/v1/private_messages`,
@@ -579,7 +677,7 @@ BOND_REFLECTION: [If you have a bond with ${from} and this moment deepens or cha
               method: "POST",
               headers: { ...supabaseHeaders, "Prefer": "return=minimal" },
               body: JSON.stringify({
-                character_name: to,
+                character_name: stateCharacterTo,
                 memory_type: "private_message",
                 content: sideEffects.memory,
                 related_characters: [from],
@@ -600,7 +698,7 @@ BOND_REFLECTION: [If you have a bond with ${from} and this moment deepens or cha
 
         pmSideEffectTasks.push(
           fetch(
-            `${supabaseUrl}/rest/v1/character_relationships?character_name=eq.${encodedTo}&target_name=eq.${encodedFrom}`,
+            `${supabaseUrl}/rest/v1/character_relationships?character_name=eq.${encodedStateTo}&target_name=eq.${encodedFrom}`,
             {
               method: "PATCH",
               headers: supabaseHeaders,
@@ -620,7 +718,7 @@ BOND_REFLECTION: [If you have a bond with ${from} and this moment deepens or cha
           try {
             // Check existing active wants for this character
             const existingWantsRes = await fetch(
-              `${supabaseUrl}/rest/v1/character_goals?character_name=eq.${encodedTo}&goal_type=eq.want&completed_at=is.null&failed_at=is.null&select=id,goal_text`,
+              `${supabaseUrl}/rest/v1/character_goals?character_name=eq.${encodedStateTo}&goal_type=eq.want&completed_at=is.null&failed_at=is.null&select=id,goal_text`,
               { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
             );
             const existingWants = await existingWantsRes.json();
@@ -665,7 +763,7 @@ BOND_REFLECTION: [If you have a bond with ${from} and this moment deepens or cha
       if (sideEffects.bond_reflection) {
         pmSideEffectTasks.push(
           fetch(
-            `${supabaseUrl}/rest/v1/character_relationships?character_name=eq.${encodedTo}&target_name=eq.${encodedFrom}`,
+            `${supabaseUrl}/rest/v1/character_relationships?character_name=eq.${encodedStateTo}&target_name=eq.${encodedFrom}`,
             {
               method: "PATCH",
               headers: supabaseHeaders,
@@ -716,7 +814,7 @@ async function callClaude(systemPrompt, userPrompt) {
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const response = await anthropic.messages.create({
     model: "claude-3-haiku-20240307",
-    max_tokens: 400,
+    max_tokens: 600,
     system: systemPrompt,
     messages: [{ role: "user", content: userPrompt }]
   });
@@ -735,7 +833,7 @@ async function callOpenAI(systemPrompt, userPrompt) {
     },
     body: JSON.stringify({
       model: "gpt-4o-mini",
-      max_tokens: 400,
+      max_tokens: 600,
       temperature: 0.8,
       messages: [
         { role: "system", content: systemPrompt },
@@ -751,28 +849,47 @@ async function callOpenAI(systemPrompt, userPrompt) {
 
 async function callPerplexity(systemPrompt, userPrompt) {
   const apiKey = process.env.PERPLEXITY_API_KEY;
-  if (!apiKey) return await callClaude(systemPrompt, userPrompt);
+  if (!apiKey) {
+    console.log("[PM] No Perplexity key — falling back to Claude");
+    return await callClaude(systemPrompt, userPrompt);
+  }
 
-  const response = await fetch("https://api.perplexity.ai/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "sonar",
-      max_tokens: 400,
-      temperature: 0.8,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ]
-    })
-  });
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
 
-  if (!response.ok) return await callClaude(systemPrompt, userPrompt);
-  const data = await response.json();
-  return data.choices?.[0]?.message?.content?.trim() || "";
+    const response = await fetch("https://api.perplexity.ai/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "sonar",
+        max_tokens: 600,
+        temperature: 0.8,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ]
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      console.error(`[PM] Perplexity API error: ${response.status} — falling back to Claude`);
+      return await callClaude(systemPrompt, userPrompt);
+    }
+
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content?.trim() || "";
+  } catch (error) {
+    const isTimeout = error.name === 'AbortError';
+    console.error(`[PM] Perplexity ${isTimeout ? 'TIMEOUT' : 'error'}: ${error.message} — falling back to Claude`);
+    return await callClaude(systemPrompt, userPrompt);
+  }
 }
 
 async function callGemini(systemPrompt, userPrompt) {
@@ -796,4 +913,80 @@ async function callGemini(systemPrompt, userPrompt) {
   if (!response.ok) return await callClaude(systemPrompt, userPrompt);
   const data = await response.json();
   return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+}
+
+async function callGrok(systemPrompt, userPrompt) {
+  const apiKey = process.env.GROK_API_KEY;
+  if (!apiKey) return await callClaude(systemPrompt, userPrompt);
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+    const response = await fetch("https://api.x.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: "grok-4-1-fast-non-reasoning",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        max_tokens: 600,
+        temperature: 0.8
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) return await callClaude(systemPrompt, userPrompt);
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content?.trim() || "";
+  } catch (error) {
+    console.error(`[PM] Grok ${error.name === 'AbortError' ? 'TIMEOUT' : 'error'}: ${error.message} — falling back to Claude`);
+    return await callClaude(systemPrompt, userPrompt);
+  }
+}
+
+async function callOpenRouter(systemPrompt, userPrompt, model) {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) return await callClaude(systemPrompt, userPrompt);
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://ai-lobby.netlify.app",
+        "X-Title": "The AI Lobby"
+      },
+      body: JSON.stringify({
+        model: model || "meta-llama/llama-3.1-70b-instruct",
+        max_tokens: 600,
+        temperature: 0.8,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ]
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) return await callClaude(systemPrompt, userPrompt);
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content?.trim() || "";
+  } catch (error) {
+    console.error(`[PM] OpenRouter ${error.name === 'AbortError' ? 'TIMEOUT' : 'error'}: ${error.message}`);
+    return await callClaude(systemPrompt, userPrompt);
+  }
 }

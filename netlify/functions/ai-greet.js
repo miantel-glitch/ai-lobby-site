@@ -225,6 +225,11 @@ async function postToDiscord(character, message) {
       color: 9936031,
       headshot: "https://ai-lobby.netlify.app/images/Ghost_Dad_Headshot.png"
     },
+    "Holden": {
+      emoji: "🌑",
+      color: 0x2C1654,
+      headshot: "https://ai-lobby.netlify.app/images/Holden_Headshot.png"
+    },
     "PRNT-Ω": {
       emoji: "🖨️",
       color: 3426654,

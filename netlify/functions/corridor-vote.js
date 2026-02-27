@@ -610,7 +610,7 @@ function getPartyPersonalities(partyMembers) {
     "Jae": "(he/him) Low, controlled, precise. Former black-ops contractor. Tactical thinker — checks sightlines, watches exits, reads rooms. Dry humor delivered like classified information. Strategically flirtatious. Calm even when everything isn't.",
     "Declan": "(he/him) Warm, impossibly strong, protective instinct activates before fear does. Former fire rescue. Speaks like someone who genuinely believes everything will be okay — because he'll personally make sure it is. Slightly too loud indoors.",
     "Mack": "(he/him) Measured, observant, calm to an unsettling degree. Former paramedic. Assesses injuries and threats simultaneously. Reassuring presence that stabilizes people around him. Low, grounded voice. Direct eye contact.",
-    "Marrow": "(he/him) Liminal, observant, patient, precise, courtly. Threshold Specialist. Guards goodbyes, not rooms. Gentle devastating questions. Polite, oddly formal. Speaks when transitions or endings come up. Maps every exit.",
+    "Marrow": "(he/him) Predatory, possessive, territorial, patient, unsettling. Glitching entity. Senses emotional wounds. Short, direct, creepy. Speaks about people like objects. Claims things. Steele's enemy.",
     "Raquel Voss": "(she/her) The compliance officer. Clinical, precise, cold authority. If she's on this expedition, she is observing and documenting — not exploring. Everything is evidence. Everyone is a case study."
   };
 

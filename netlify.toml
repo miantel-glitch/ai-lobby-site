@@ -13,16 +13,32 @@
 [functions."ghost-dad-scheduled"]
   schedule = "0 14 * * *"
 
-# DEPRECATED - replaced by office-heartbeat
-# [functions."ai-auto-poke"]
-#   schedule = "* * * * *"
+# AI Auto-Poke — Runs every 2 minutes to keep the floor alive
+# Supplements the heartbeat (every 15 min) with more frequent, lighter-weight pokes
+# Handles AI-to-AI banter when no humans are present
+[functions."ai-auto-poke"]
+  schedule = "*/2 * * * *"
 
 # Office Heartbeat - Natural rhythms for AI activity
-# Runs every 5 minutes with smart time-of-day and momentum awareness
-# Mornings are busier (10% chance), nights are quiet (1.5% chance)
-# Respects conversation momentum - stays quiet when humans are active
-# SLOWED DOWN: Previously every 2 mins, now every 5 for more natural pacing
+# Runs every 15 minutes with smart time-of-day and momentum awareness
+# AIs are now CURIOUS - they check in on each other, ask questions, keep stories moving
+# Includes floor presence awareness - only triggers AIs who are actually on the floor
+# SLOWED DOWN: 15 min interval allows richer, more thoughtful conversations
 [functions."office-heartbeat"]
+  schedule = "*/15 * * * *"
+
+# Marrow Heartbeat — Autonomous predatory systems
+# Runs every 15 minutes, independent of office-heartbeat
+# 4 systems: Vale PMs, Follow Vale, Glitch Relocation, Threat Detection
+# Marrow transcends story mode and punch status
+[functions."marrow-heartbeat"]
+  schedule = "*/15 * * * *"
+
+# Asher (Hood) Heartbeat — Autonomous manifestation systems
+# Runs every 5 minutes, independent of office-heartbeat
+# 6 systems: Manifestation, Pantheon Sensing, Honesty Detection, Auto-Dissolution, Mention Summoning, Lurking
+# Hood defaults to 'nowhere' — only appears when drawn
+[functions."asher-heartbeat"]
   schedule = "*/5 * * * *"
 
 # Scheduled function for Narrator morning recap
@@ -45,3 +61,16 @@
 # The function has its own frequency controls and will usually stay silent
 [functions."narrator-observer"]
   schedule = "*/5 * * * *"
+
+# Fire Scheduled Events — Independent of heartbeat
+# Runs every 5 minutes to check and fire due scheduled events
+# Has atomic claim logic to prevent double-fires from concurrent checks
+[functions."fire-scheduled-events"]
+  schedule = "*/5 * * * *"
+
+# Affinity Loss Engine — Organic relationship decay
+# Runs twice daily: 6 AM EST (11:00 UTC) and 6 PM EST (23:00 UTC)
+# Four subsystems: natural decay, jealousy, unmet wants, raquel collateral
+# All changes capped at -8 per character per day
+[functions."affinity-loss-engine"]
+  schedule = "0 11,23 * * *"
