@@ -450,7 +450,7 @@ async function getCharacterContext(characterName, supabaseUrl, supabaseKey, conv
   } catch (e) { /* non-fatal, default to no injuries */ }
 
   // Build the context prompt (now with room awareness, goals, relationships, wants, quests, traits, compliance, breakroom context, floor context, emails, injuries, narrative beats, lore, and tarot)
-  const statePrompt = buildStatePrompt(characterName, characterInfo, state, memories, roomPresence, currentGoal, relationships, activeWants, activeQuests, activeTraits, recentBreakroomMessages, complianceData, recentEmails, recentFloorMessages, raquelAdminEnabled, activeInjuries, narrativeBeats, tarotCard, recentLore);
+  const statePrompt = buildStatePrompt(characterName, characterInfo, state, memories, roomPresence, currentGoal, relationships, activeWants, activeQuests, activeTraits, recentBreakroomMessages, complianceData, recentEmails, recentFloorMessages, raquelAdminEnabled, activeInjuries, narrativeBeats, tarotCard, recentLore, recentNexusMessages);
 
   // Scrub Raquel from returned memories when she's admin-disabled (prevents name confusion across all consumers)
   const returnMemories = !raquelAdminEnabled
@@ -538,7 +538,7 @@ function namesWithPronouns(names) {
   }).join(', ');
 }
 
-function buildStatePrompt(characterName, info, state, memories, roomPresence = null, currentGoal = null, relationships = null, activeWants = null, activeQuests = null, activeTraits = null, recentBreakroomMessages = null, complianceData = null, recentEmails = null, recentFloorMessages = null, raquelAdminEnabled = true, activeInjuries = null, narrativeBeats = null, tarotCard = null, recentLore = null) {
+function buildStatePrompt(characterName, info, state, memories, roomPresence = null, currentGoal = null, relationships = null, activeWants = null, activeQuests = null, activeTraits = null, recentBreakroomMessages = null, complianceData = null, recentEmails = null, recentFloorMessages = null, raquelAdminEnabled = true, activeInjuries = null, narrativeBeats = null, tarotCard = null, recentLore = null, recentNexusMessages = null) {
   let prompt = `\n--- HOW YOU'RE FEELING RIGHT NOW ---\n`;
 
   // Own pronoun awareness — so the character uses correct self-reference
