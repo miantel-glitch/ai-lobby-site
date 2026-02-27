@@ -299,6 +299,12 @@ exports.handler = async (event, context) => {
     } catch (e) { /* default to enabled */ }
 
     if (nexusAdminEnabled) try {
+
+      // ═══ NEXUS AUTO-WANDERING DISABLED (Phase 1: Announce Departure) ═══
+      // Characters no longer auto-travel to the Nexus on heartbeat.
+      // Nexus visits are manual only (triggered from admin or workspace).
+      // The toggle nexus_enabled still gates study/chatter/return for characters already there.
+      if (false) {
       const { CHARACTERS } = require('./shared/characters');
       const floorAIsForNexus = await getFloorPresentAIs(supabaseUrl, supabaseKey);
 
@@ -402,7 +408,12 @@ exports.handler = async (event, context) => {
           // Visit count now tracked in Phase 2 (actual entry), not here at announcement
         }
       }
+      } // end disabled Phase 1
 
+      // ═══ NEXUS AUTO-WANDERING DISABLED (Phase 2: Execute Pending Trips) ═══
+      // Pending Nexus trips no longer auto-execute on heartbeat.
+      // Nexus visits are manual only (triggered from admin or workspace).
+      if (false) {
       // === NEXUS PENDING DEPARTURES: Execute announced trips after cancel window ===
       try {
         const pendingRes = await fetch(
@@ -505,6 +516,7 @@ exports.handler = async (event, context) => {
       } catch (pendingCheckErr) {
         console.log("Nexus pending check failed (non-fatal):", pendingCheckErr.message);
       }
+      } // end disabled Phase 2
 
       // NEXUS RETURN: Uses dedicated entry timestamp (immune to state update resets)
       // Returns ALL overstaying AIs each heartbeat.
