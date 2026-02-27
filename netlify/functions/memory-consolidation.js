@@ -1,5 +1,8 @@
 // Memory Consolidation - AI-powered memory cleanup
-// Admin triggers this to have a character review and clean up their memories
+// Runs weekly on Sundays at 4 AM EST (9:00 UTC) via Netlify scheduled functions
+// Also supports manual POST with { character: "Name" } for single-character consolidation
+
+const { getAICharacterNames, INACTIVE_CHARACTERS } = require('./shared/characters');
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -11,14 +14,6 @@ exports.handler = async (event, context) => {
 
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 200, headers, body: "" };
-  }
-
-  if (event.httpMethod !== "POST") {
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({ error: "Method not allowed" })
-    };
   }
 
   const supabaseUrl = process.env.SUPABASE_URL;
@@ -33,6 +28,55 @@ exports.handler = async (event, context) => {
     };
   }
 
+  // ── Scheduled invocation: consolidate ALL active AI characters ──
+  if (!event.httpMethod || event.httpMethod === "GET") {
+    console.log("[Memory Consolidation] Scheduled run — consolidating all AI characters...");
+
+    const activeCharacters = getAICharacterNames().filter(
+      name => !INACTIVE_CHARACTERS.includes(name)
+    );
+
+    const results = [];
+    // Process in batches of 3 to avoid timeout
+    const BATCH_SIZE = 3;
+    for (let i = 0; i < activeCharacters.length; i += BATCH_SIZE) {
+      const batch = activeCharacters.slice(i, i + BATCH_SIZE);
+      const batchResults = await Promise.all(
+        batch.map(name => consolidateCharacter(name, supabaseUrl, supabaseKey, anthropicKey))
+      );
+      results.push(...batchResults);
+    }
+
+    const totalDeleted = results.reduce((sum, r) => sum + (r.deleted || 0), 0);
+    const totalMerged = results.reduce((sum, r) => sum + (r.merged || 0), 0);
+    const totalPinned = results.filter(r => r.aiPinned).length;
+
+    console.log(`[Memory Consolidation] Complete: ${activeCharacters.length} characters processed, ${totalDeleted} deleted, ${totalMerged} merged, ${totalPinned} pinned`);
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        success: true,
+        scheduled: true,
+        charactersProcessed: activeCharacters.length,
+        totalDeleted,
+        totalMerged,
+        totalPinned,
+        results
+      })
+    };
+  }
+
+  // ── Manual POST: consolidate a single character ──
+  if (event.httpMethod !== "POST") {
+    return {
+      statusCode: 405,
+      headers,
+      body: JSON.stringify({ error: "Method not allowed" })
+    };
+  }
+
   try {
     const { character } = JSON.parse(event.body || "{}");
 
@@ -44,43 +88,58 @@ exports.handler = async (event, context) => {
       };
     }
 
+    const result = await consolidateCharacter(character, supabaseUrl, supabaseKey, anthropicKey);
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify(result)
+    };
+
+  } catch (error) {
+    console.error("Memory consolidation error:", error);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: "Failed to consolidate memories", details: error.message })
+    };
+  }
+};
+
+// ── Core consolidation logic for a single character ──
+async function consolidateCharacter(character, supabaseUrl, supabaseKey, anthropicKey) {
+  const sbHeaders = {
+    "apikey": supabaseKey,
+    "Authorization": `Bearer ${supabaseKey}`
+  };
+
+  try {
     // Fetch all WORKING (non-pinned) memories for this character
     const memoriesResponse = await fetch(
       `${supabaseUrl}/rest/v1/character_memory?character_name=eq.${encodeURIComponent(character)}&is_pinned=eq.false&order=created_at.desc&limit=100`,
-      {
-        headers: {
-          "apikey": supabaseKey,
-          "Authorization": `Bearer ${supabaseKey}`
-        }
-      }
+      { headers: sbHeaders }
     );
     const memories = await memoriesResponse.json();
 
     if (!Array.isArray(memories) || memories.length === 0) {
       return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          success: true,
-          message: "No working memories to consolidate",
-          deleted: 0,
-          merged: 0,
-          coreCandidates: []
-        })
+        success: true,
+        character,
+        message: "No working memories to consolidate",
+        deleted: 0,
+        merged: 0,
+        coreCandidates: []
       };
     }
 
     if (memories.length < 5) {
       return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          success: true,
-          message: "Not enough memories to consolidate (need at least 5)",
-          deleted: 0,
-          merged: 0,
-          coreCandidates: []
-        })
+        success: true,
+        character,
+        message: "Not enough memories to consolidate (need at least 5)",
+        deleted: 0,
+        merged: 0,
+        coreCandidates: []
       };
     }
 
@@ -131,10 +190,13 @@ REASONING: Brief explanation of your choices (1-2 sentences)`;
     });
 
     if (!aiResponse.ok) {
+      console.error(`[Consolidation] AI evaluation failed for ${character}: ${aiResponse.status}`);
       return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({ error: "AI evaluation failed" })
+        success: false,
+        character,
+        error: "AI evaluation failed",
+        deleted: 0,
+        merged: 0
       };
     }
 
@@ -142,7 +204,6 @@ REASONING: Brief explanation of your choices (1-2 sentences)`;
     const evaluation = aiData.content[0]?.text || "";
 
     // Parse the AI's response
-    const keepMatch = evaluation.match(/KEEP:\s*\[([^\]]*)\]/i);
     const mergeMatch = evaluation.match(/MERGE:\s*\[([^\]]*\])\]/i);
     const mergeTextMatch = evaluation.match(/MERGE_TEXT:\s*\[([^\]]*)\]/is);
     const forgetMatch = evaluation.match(/FORGET:\s*\[([^\]]*)\]/i);
@@ -166,10 +227,7 @@ REASONING: Brief explanation of your choices (1-2 sentences)`;
           `${supabaseUrl}/rest/v1/character_memory?id=eq.${memories[idx].id}`,
           {
             method: "DELETE",
-            headers: {
-              "apikey": supabaseKey,
-              "Authorization": `Bearer ${supabaseKey}`
-            }
+            headers: sbHeaders
           }
         );
         deleted++;
@@ -202,10 +260,7 @@ REASONING: Brief explanation of your choices (1-2 sentences)`;
                     `${supabaseUrl}/rest/v1/character_memory?id=eq.${mem.id}`,
                     {
                       method: "DELETE",
-                      headers: {
-                        "apikey": supabaseKey,
-                        "Authorization": `Bearer ${supabaseKey}`
-                      }
+                      headers: sbHeaders
                     }
                   );
                 }
@@ -219,8 +274,7 @@ REASONING: Brief explanation of your choices (1-2 sentences)`;
                   {
                     method: "PATCH",
                     headers: {
-                      "apikey": supabaseKey,
-                      "Authorization": `Bearer ${supabaseKey}`,
+                      ...sbHeaders,
                       "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
@@ -249,7 +303,7 @@ REASONING: Brief explanation of your choices (1-2 sentences)`;
       // Check current pinned count (max 5)
       const pinnedCountRes = await fetch(
         `${supabaseUrl}/rest/v1/character_memory?character_name=eq.${encodeURIComponent(character)}&is_pinned=eq.true&select=id`,
-        { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+        { headers: sbHeaders }
       );
       const pinnedCount = await pinnedCountRes.json();
       const currentPinned = Array.isArray(pinnedCount) ? pinnedCount.length : 0;
@@ -262,8 +316,7 @@ REASONING: Brief explanation of your choices (1-2 sentences)`;
           {
             method: "PATCH",
             headers: {
-              "apikey": supabaseKey,
-              "Authorization": `Bearer ${supabaseKey}`,
+              ...sbHeaders,
               "Content-Type": "application/json"
             },
             body: JSON.stringify({
@@ -285,32 +338,30 @@ REASONING: Brief explanation of your choices (1-2 sentences)`;
     console.log(`[Consolidation] ${character}: deleted ${deleted}, merged ${merged}, AI-pinned ${aiPinned ? 1 : 0}, suggested ${coreCandidates.length} core candidates`);
 
     return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        success: true,
-        character,
-        deleted,
-        merged,
-        aiPinned,
-        coreCandidates: coreCandidates.map(m => ({
-          id: m.id,
-          content: m.content,
-          importance: m.importance
-        })),
-        reasoning: reasoningMatch?.[1]?.trim() || "No reasoning provided"
-      })
+      success: true,
+      character,
+      deleted,
+      merged,
+      aiPinned,
+      coreCandidates: coreCandidates.map(m => ({
+        id: m.id,
+        content: m.content,
+        importance: m.importance
+      })),
+      reasoning: reasoningMatch?.[1]?.trim() || "No reasoning provided"
     };
 
   } catch (error) {
-    console.error("Memory consolidation error:", error);
+    console.error(`[Consolidation] Error for ${character}:`, error.message);
     return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: "Failed to consolidate memories", details: error.message })
+      success: false,
+      character,
+      error: error.message,
+      deleted: 0,
+      merged: 0
     };
   }
-};
+}
 
 function getTimeAgo(date) {
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
