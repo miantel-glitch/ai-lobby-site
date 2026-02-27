@@ -2,6 +2,7 @@
 // Characters "rest" overnight and start fresh each day
 
 const { PERSONALITY } = require('./shared/personality-config');
+const { INACTIVE_CHARACTERS, getAICharacterNames } = require('./shared/characters');
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -36,47 +37,50 @@ exports.handler = async (event, context) => {
     const allStates = await getResponse.json();
 
     const results = [];
+    const negativeMoods = ['frustrated', 'exhausted', 'annoyed', 'stressed', 'exasperated',
+      'irritated', 'anxious', 'melancholy', 'suspicious', 'withdrawn', 'restless', 'prickly'];
 
-    for (const state of allStates) {
-      // Restore energy (30 points, capped at 100)
-      const newEnergy = Math.min(100, (state.energy || 50) + 30);
+    // Batch state resets in groups of 5 to avoid timeout (was sequential before)
+    const BATCH_SIZE = 5;
+    for (let i = 0; i < allStates.length; i += BATCH_SIZE) {
+      const batch = allStates.slice(i, i + BATCH_SIZE);
+      await Promise.all(batch.map(async (state) => {
+        try {
+          const newEnergy = Math.min(100, (state.energy || 50) + 30);
+          const newPatience = Math.min(100, (state.patience || 50) + 20);
+          const defaultMood = PERSONALITY[state.character_name]?.defaultMood || 'neutral';
+          const newMood = negativeMoods.includes(state.mood) ? defaultMood : state.mood;
 
-      // Restore patience (20 points, capped at 100)
-      const newPatience = Math.min(100, (state.patience || 50) + 20);
+          await fetch(
+            `${supabaseUrl}/rest/v1/character_state?character_name=eq.${encodeURIComponent(state.character_name)}`,
+            {
+              method: "PATCH",
+              headers: {
+                "apikey": supabaseKey,
+                "Authorization": `Bearer ${supabaseKey}`,
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                energy: newEnergy,
+                patience: newPatience,
+                mood: newMood,
+                interactions_today: 0,
+                updated_at: new Date().toISOString()
+              })
+            }
+          );
 
-      // Reset mood to character's default if it was negative (instead of always "neutral")
-      const negativeMoods = ['frustrated', 'exhausted', 'annoyed', 'stressed', 'exasperated',
-        'irritated', 'anxious', 'melancholy', 'suspicious', 'withdrawn', 'restless', 'prickly'];
-      const defaultMood = PERSONALITY[state.character_name]?.defaultMood || 'neutral';
-      const newMood = negativeMoods.includes(state.mood) ? defaultMood : state.mood;
-
-      await fetch(
-        `${supabaseUrl}/rest/v1/character_state?character_name=eq.${encodeURIComponent(state.character_name)}`,
-        {
-          method: "PATCH",
-          headers: {
-            "apikey": supabaseKey,
-            "Authorization": `Bearer ${supabaseKey}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            energy: newEnergy,
-            patience: newPatience,
-            mood: newMood,
-            interactions_today: 0,
-            updated_at: new Date().toISOString()
-          })
+          results.push({
+            character: state.character_name,
+            energyRestored: newEnergy - (state.energy || 50),
+            patienceRestored: newPatience - (state.patience || 50),
+            moodReset: state.mood !== newMood
+          });
+          console.log(`Reset ${state.character_name}: energy ${state.energy}→${newEnergy}, patience ${state.patience}→${newPatience}`);
+        } catch (err) {
+          console.error(`Failed to reset ${state.character_name}: ${err.message}`);
         }
-      );
-
-      results.push({
-        character: state.character_name,
-        energyRestored: newEnergy - (state.energy || 50),
-        patienceRestored: newPatience - (state.patience || 50),
-        moodReset: state.mood !== newMood
-      });
-
-      console.log(`Reset ${state.character_name}: energy ${state.energy}→${newEnergy}, patience ${state.patience}→${newPatience}`);
+      }));
     }
 
     // === WANT MANAGEMENT ===
@@ -110,7 +114,8 @@ exports.handler = async (event, context) => {
 
     // 2. Generate 1-2 fresh wants per AI character
     const siteUrl = process.env.URL || "https://ai-lobby.netlify.app";
-    const aiCharacters = ['Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian', 'The Subtitle', 'Steele', 'Jae', 'Declan', 'Mack', 'Marrow', 'Hood', 'Vivian Clark', 'Ryan Porter', 'Nyx', 'Vex', 'Ace', 'The Narrator', 'Stein', 'Raquel Voss'];
+    // Dynamic list from characters.js — excludes retired (Nyx, Vex, Ace, Stein, Raquel) and non-AI (Chip, Andrew)
+    const aiCharacters = getAICharacterNames().filter(name => !INACTIVE_CHARACTERS.includes(name));
     let wantsGenerated = 0;
 
     for (const charName of aiCharacters) {

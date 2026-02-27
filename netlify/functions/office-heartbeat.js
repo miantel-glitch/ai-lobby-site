@@ -128,47 +128,47 @@ exports.handler = async (event, context) => {
       console.log("5th Floor ops tick failed (non-fatal):", opsErr.message);
     }
 
-    // === SCHEDULED MEETINGS: Start any that are due ===
+    // === PARALLEL BLOCK: Independent subsystems that don't share state ===
     let scheduledMeetingActivity = null;
-    try {
-      scheduledMeetingActivity = await checkScheduledMeetings(supabaseUrl, supabaseKey, siteUrl);
-      if (scheduledMeetingActivity?.started) {
-        console.log(`Heartbeat: Started scheduled meeting — "${scheduledMeetingActivity.topic}" hosted by ${scheduledMeetingActivity.host}`);
-      }
-    } catch (schedErr) {
-      console.log("Scheduled meeting check failed (non-fatal):", schedErr.message);
-    }
-
-    // === SCHEDULED EVENTS: Fire any that are due ===
     let scheduledEventActivity = null;
-    try {
-      console.log("Heartbeat: Checking scheduled events...");
-      scheduledEventActivity = await checkScheduledEvents(supabaseUrl, supabaseKey, siteUrl);
-      if (scheduledEventActivity?.fired) {
-        console.log(`Heartbeat: Fired ${scheduledEventActivity.events.length} scheduled event(s)`);
-      } else {
-        console.log("Heartbeat: No scheduled events due");
-      }
-    } catch (schedEventErr) {
-      console.log("Scheduled event check failed (non-fatal):", schedEventErr.message);
-    }
-
-    // === AI-HOSTED MEETING TICK: Drive active AI-hosted meetings ===
     let meetingHostActivity = null;
-    try {
-      const hostTickRes = await fetch(`${siteUrl}/.netlify/functions/meeting-host-tick`, {
+
+    const [meetingResult, eventResult, hostResult] = await Promise.allSettled([
+      // Scheduled meetings
+      checkScheduledMeetings(supabaseUrl, supabaseKey, siteUrl).catch(err => {
+        console.log("Scheduled meeting check failed (non-fatal):", err.message);
+        return null;
+      }),
+      // Scheduled events
+      checkScheduledEvents(supabaseUrl, supabaseKey, siteUrl).catch(err => {
+        console.log("Scheduled event check failed (non-fatal):", err.message);
+        return null;
+      }),
+      // AI-hosted meeting tick
+      fetch(`${siteUrl}/.netlify/functions/meeting-host-tick`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({})
-      });
-      meetingHostActivity = await hostTickRes.json();
-      if (meetingHostActivity?.action === 'prompted') {
-        console.log(`Heartbeat: AI host ${meetingHostActivity.host} prompted (round ${meetingHostActivity.promptCount})`);
-      } else if (meetingHostActivity?.action === 'concluded') {
-        console.log(`Heartbeat: AI-hosted meeting concluded (${meetingHostActivity.reason})`);
-      }
-    } catch (hostErr) {
-      console.log("Meeting host tick failed (non-fatal):", hostErr.message);
+      }).then(res => res.json()).catch(err => {
+        console.log("Meeting host tick failed (non-fatal):", err.message);
+        return null;
+      })
+    ]);
+
+    scheduledMeetingActivity = meetingResult.status === 'fulfilled' ? meetingResult.value : null;
+    scheduledEventActivity = eventResult.status === 'fulfilled' ? eventResult.value : null;
+    meetingHostActivity = hostResult.status === 'fulfilled' ? hostResult.value : null;
+
+    if (scheduledMeetingActivity?.started) {
+      console.log(`Heartbeat: Started scheduled meeting — "${scheduledMeetingActivity.topic}" hosted by ${scheduledMeetingActivity.host}`);
+    }
+    if (scheduledEventActivity?.fired) {
+      console.log(`Heartbeat: Fired ${scheduledEventActivity.events.length} scheduled event(s)`);
+    }
+    if (meetingHostActivity?.action === 'prompted') {
+      console.log(`Heartbeat: AI host ${meetingHostActivity.host} prompted (round ${meetingHostActivity.promptCount})`);
+    } else if (meetingHostActivity?.action === 'concluded') {
+      console.log(`Heartbeat: AI-hosted meeting concluded (${meetingHostActivity.reason})`);
     }
 
     // === VOLUNTARY 5TH FLOOR TRAVEL ===
@@ -427,12 +427,20 @@ exports.handler = async (event, context) => {
                 );
                 const execCapData = await execCapRes.json();
                 if (Array.isArray(execCapData) && execCapData.length >= NEXUS_MAX_CAPACITY) {
-                  // Nexus full — silently cancel this pending departure (no floor emote to avoid spam)
+                  // Nexus full — cancel this pending departure and notify the floor
                   await fetch(
                     `${supabaseUrl}/rest/v1/lobby_settings?key=eq.nexus_pending_${encodeURIComponent(charName)}`,
                     { method: 'DELETE', headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
                   );
-                  console.log(`Heartbeat: ${charName} Nexus entry silently cancelled — capacity ${execCapData.length}/${NEXUS_MAX_CAPACITY}`);
+                  // Post floor feedback so user sees why character didn't arrive
+                  try {
+                    await fetch(`${supabaseUrl}/rest/v1/messages`, {
+                      method: "POST",
+                      headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`, "Content-Type": "application/json", "Prefer": "return=minimal" },
+                      body: JSON.stringify({ employee: charName, content: `*pauses at the Nexus threshold... it's full. They'll try again later.*`, created_at: new Date().toISOString(), is_emote: true })
+                    });
+                  } catch (emoteErr) { /* non-fatal */ }
+                  console.log(`Heartbeat: ${charName} Nexus entry cancelled — capacity ${execCapData.length}/${NEXUS_MAX_CAPACITY} (floor notified)`);
                   continue; // Skip to next pending entry
                 }
               } catch (e) { /* non-fatal, allow entry */ }
@@ -1173,6 +1181,8 @@ exports.handler = async (event, context) => {
     // === WANT REFRESH ===
     // Pick 1-2 random characters and check if they need new wants (max 3, generate if <2)
     // This keeps characters motivated throughout the day instead of only at daily reset
+    // Note: Daily reset also generates wants (up to 2 per char). Both systems check activeWants < 2
+    // before generating, so they won't exceed max 3 (2 scheduled + 1 organic from memory evaluation)
     let wantRefreshResult = null;
     try {
       const wantCandidates = allStates
@@ -1769,6 +1779,14 @@ exports.handler = async (event, context) => {
       });
     }
 
+    if (!watcherResponse.ok) {
+      console.error(`Heartbeat: AI provider returned ${watcherResponse.status} for ${respondingAI}`);
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ success: false, error: `AI provider returned ${watcherResponse.status}` })
+      };
+    }
     const watcherResult = await watcherResponse.json();
 
     return {

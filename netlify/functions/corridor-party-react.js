@@ -4,6 +4,7 @@
 
 const Anthropic = require("@anthropic-ai/sdk").default;
 const { getSystemPrompt, getModelForCharacter } = require('./shared/characters');
+const { evaluateAndCreateMemory } = require('./shared/memory-evaluator');
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
@@ -12,9 +13,9 @@ const supabaseKey = process.env.SUPABASE_ANON_KEY;
 const HUMANS = ["Vale", "Asuna"];
 
 // Character-to-provider mapping (same as breakroom)
-const OPENROUTER_CHARACTERS = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "Neiv", "The Subtitle", "Marrow"];
+const OPENROUTER_CHARACTERS = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "The Subtitle", "Marrow"];
 const OPENAI_CHARACTERS = [];
-const GROK_CHARACTERS = ["Jae", "Steele"];
+const GROK_CHARACTERS = ["Jae", "Steele", "Neiv", "Hood"];
 const PERPLEXITY_CHARACTERS = [];
 const GEMINI_CHARACTERS = [];
 
@@ -65,7 +66,8 @@ async function getCharacterMemory(character, chatContext) {
     if (stateResponse.ok) {
       const characterContext = await stateResponse.json();
       // Truncate the statePrompt to prevent token budget blowout
-      const statePrompt = (characterContext?.statePrompt || '').substring(0, 1200);
+      // Raised from 1200→3000 to preserve bonds, injuries, traits, and key memories
+      const statePrompt = (characterContext?.statePrompt || '').substring(0, 3000);
       console.log(`[Corridors] Loaded memory for ${character}: ${statePrompt.length} chars`);
       return statePrompt;
     }
@@ -217,6 +219,13 @@ const corridorModes = {
       "*stops at a junction* This one has three exits. Two are obvious. The third one is hoping you don't notice."
     ]
   },
+  "Hood": {
+    modeNote: "The corridors are symptoms. Hood walks them blindfolded, diagnosing the building's fractures by feel. He doesn't explore — he audits.",
+    examples: [
+      "*walking steadily, blindfold unmoved* The walls here are thinner. Something broke through once. It didn't come back.",
+      "*pauses at a junction* Steele sealed this corridor. Marrow found a way around it. Neither of them will tell you why."
+    ]
+  },
 };
 
 exports.handler = async (event, context) => {
@@ -333,22 +342,16 @@ exports.handler = async (event, context) => {
       console.log('Could not fetch chat history:', err.message);
     }
 
-    // Generate responses SEQUENTIALLY to stay within Netlify function timeout
-    // Parallel was hitting timeout because each AI needs: character-state fetch (9+ DB queries)
-    // + AI API call + DB save. With 4 AIs parallel = 36+ concurrent DB queries + 4 API calls.
-    // Sequential keeps total time predictable and avoids resource contention.
+    // Generate responses IN PARALLEL — all AIs fetch memory + call their API simultaneously.
+    // Memory fetches are read-only (no write contention) and each has its own 4s timeout.
+    // AI API calls go to different providers (Grok, OpenRouter, Claude) so no shared bottleneck.
+    // Total wall time = slowest single AI (~8-10s) instead of sum of all AIs (~30s+ sequential).
     const responses = [];
     const tone = adventureTone || 'spooky';
     const overallStart = Date.now();
 
-    for (const aiCharacter of respondingAIs) {
-      // Bail early if we're running long (leave 3s headroom for response)
-      const elapsed = Date.now() - overallStart;
-      if (elapsed > 20000) {
-        console.log(`[Corridor] Stopping after ${responses.length}/${respondingAIs.length} AIs — ${elapsed}ms elapsed, approaching timeout`);
-        break;
-      }
-
+    // Process all AIs in parallel, each with their own timeout
+    const aiPromises = respondingAIs.map(async (aiCharacter) => {
       const aiStart = Date.now();
       try {
         // Fetch character's unified memory (has its own 4s timeout)
@@ -368,26 +371,60 @@ exports.handler = async (event, context) => {
           responsePromise = generateClaudeResponse(aiCharacter, trigger, sceneTitle, sceneDescription, choices, recentChat, chatContext, fromAI, loreContext, memoryContext, tone);
         }
 
-        // 6s timeout per AI response (memory fetch already has 4s timeout separately)
+        // 10s timeout per AI response (memory fetch already has 4s timeout separately)
+        // Raised from 6s — some providers (OpenRouter large models) need more headroom
         const response = await Promise.race([
           responsePromise,
-          new Promise((_, reject) => setTimeout(() => reject(new Error(`${aiCharacter} timed out after 6s`)), 6000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error(`${aiCharacter} timed out after 10s`)), 10000))
         ]);
 
         if (response) {
-          // Save to corridor_messages (fire-and-forget to save time — message is already returned)
+          // Save to corridor_messages (fire-and-forget — message is already returned)
           saveMessage(sessionId, sceneId, aiCharacter, response).catch(err =>
             console.error(`[Corridor] Save failed for ${aiCharacter}:`, err.message)
           );
           // Update character state (non-blocking)
           updateCharacterState(aiCharacter);
+
+          // === CORRIDOR MEMORY CREATION ===
+          // Let the AI evaluate if this corridor moment was memorable
+          try {
+            const anthropicKey = process.env.ANTHROPIC_API_KEY;
+            if (anthropicKey && supabaseUrl && supabaseKey) {
+              evaluateAndCreateMemory(
+                aiCharacter,
+                recentChat || `${fromAI || 'someone'}: ${trigger}`,
+                response,
+                anthropicKey,
+                supabaseUrl,
+                supabaseKey,
+                {
+                  location: 'corridors',
+                  siteUrl: process.env.URL || "https://ai-lobby.netlify.app"
+                }
+              ).catch(err => console.log(`[Corridor] Memory evaluation failed (non-fatal): ${err.message}`));
+            }
+          } catch (memErr) {
+            console.log(`[Corridor] Memory creation error (non-fatal): ${memErr.message}`);
+          }
+
           console.log(`[Corridor] ${aiCharacter} responded in ${Date.now() - aiStart}ms`);
-          responses.push({ character: aiCharacter, message: response });
+          return { character: aiCharacter, message: response };
         } else {
           console.log(`[Corridor] ${aiCharacter} returned empty response after ${Date.now() - aiStart}ms`);
+          return null;
         }
       } catch (err) {
         console.error(`[Corridor] Failed for ${aiCharacter} after ${Date.now() - aiStart}ms:`, err.message);
+        return null;
+      }
+    });
+
+    // Wait for all AIs to finish (or timeout individually)
+    const results = await Promise.allSettled(aiPromises);
+    for (const result of results) {
+      if (result.status === 'fulfilled' && result.value) {
+        responses.push(result.value);
       }
     }
 

@@ -48,10 +48,10 @@ async function evaluateAndCreateMemory(character, conversationContext, aiRespons
   const location = options.location || 'floor';
   const logPrefix = `[${location}]`;
 
-  // Raquel Voss can only create memories from floor chat — not breakroom, meetings, or other contexts
-  // She monitors the floor; she doesn't get to build a dossier from every room
-  if (character === 'Raquel Voss' && location !== 'floor') {
-    console.log(`${logPrefix} Raquel Voss blocked from creating memories outside floor chat`);
+  // Skip retired/inactive characters entirely — they don't create memories anymore
+  const { INACTIVE_CHARACTERS } = require('./characters');
+  if (INACTIVE_CHARACTERS.includes(character)) {
+    console.log(`${logPrefix} ${character} is retired/inactive — skipping memory creation`);
     return null;
   }
 

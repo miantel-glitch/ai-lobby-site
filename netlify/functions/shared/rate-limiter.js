@@ -2,8 +2,11 @@
 // Prevents AI flood by checking last response time before allowing new responses
 // Uses Supabase to track last_ai_response timestamp
 
+const { getAICharacterNames, INACTIVE_CHARACTERS } = require('./characters');
+
 const AI_COOLDOWN_MS = 12000; // 12 seconds between AI responses (lowered from 25s — too many characters were getting blocked)
-const AI_CHARACTERS = ["Ghost Dad", "PRNT-Ω", "Neiv", "Kevin", "The Narrator", "Rowena", "Sebastian", "The Subtitle", "Steele", "Jae", "Declan", "Mack", "Marrow"];
+// Dynamic list from characters.js — auto-updates when characters are added/retired
+const AI_CHARACTERS = getAICharacterNames().filter(name => !INACTIVE_CHARACTERS.includes(name));
 
 /**
  * Check if enough time has passed since the last AI response

@@ -2784,6 +2784,7 @@ Unstable environments don't scare you. The stable ones do — the quiet moments 
     department: "Foundation Oversight",
     surealityRole: "stabilizer",
     isAI: true,
+    retired: true,
     alwaysAvailable: false,
     availability: { start: "08:30", end: "16:00", timezone: "America/Chicago" },
 

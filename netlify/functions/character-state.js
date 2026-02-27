@@ -3,6 +3,7 @@
 
 const characters = require('../../data/characters.json');
 const { PERSONALITY, getMoodContext, detectFriction } = require('./shared/personality-config');
+const { getCombatProfile, CHARACTERS, INACTIVE_CHARACTERS } = require('./shared/characters');
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -37,8 +38,8 @@ exports.handler = async (event, context) => {
       const skipFloorContext = params.skipFloor === 'true'; // Floor callers skip to avoid echo
 
       if (!characterName) {
-        // Return all character states + active wants/goals for card display
-        const [allStates, allWantsRes, allGoalsRes] = await Promise.all([
+        // Return all character states + active wants/goals/combat profiles/injuries for card display
+        const [allStates, allWantsRes, allGoalsRes, allInjuriesRes] = await Promise.all([
           fetch(
             `${supabaseUrl}/rest/v1/character_state?select=*`,
             {
@@ -65,12 +66,22 @@ exports.handler = async (event, context) => {
                 "Authorization": `Bearer ${supabaseKey}`
               }
             }
+          ),
+          fetch(
+            `${supabaseUrl}/rest/v1/character_injuries?is_active=eq.true&select=character_name,injury_type,injury_description,heals_at`,
+            {
+              headers: {
+                "apikey": supabaseKey,
+                "Authorization": `Bearer ${supabaseKey}`
+              }
+            }
           )
         ]);
 
         const states = await allStates.json();
         const allWants = await allWantsRes.json();
         const allGoals = await allGoalsRes.json();
+        const allInjuries = await allInjuriesRes.json();
 
         // Group wants by character (max 3 each, already sorted by created_at desc)
         const wantsByCharacter = {};
@@ -91,10 +102,36 @@ exports.handler = async (event, context) => {
           }
         }
 
+        // Build combat profiles map from character states
+        const combatProfiles = {};
+        for (const state of (Array.isArray(states) ? states : [])) {
+          const profile = getCombatProfile(state.character_name);
+          if (profile) {
+            combatProfiles[state.character_name] = {
+              combatPower: profile.combatPower,
+              fightingStyle: profile.fightingStyle,
+              canFight: profile.canFight
+            };
+          }
+        }
+
+        // Group injuries by character
+        const injuriesByCharacter = {};
+        for (const injury of (Array.isArray(allInjuries) ? allInjuries : [])) {
+          if (!injuriesByCharacter[injury.character_name]) {
+            injuriesByCharacter[injury.character_name] = [];
+          }
+          injuriesByCharacter[injury.character_name].push({
+            type: injury.injury_type,
+            description: injury.injury_description,
+            heals_at: injury.heals_at
+          });
+        }
+
         return {
           statusCode: 200,
           headers,
-          body: JSON.stringify({ states, wantsByCharacter, goalByCharacter })
+          body: JSON.stringify({ states, wantsByCharacter, goalByCharacter, combatProfiles, injuriesByCharacter })
         };
       }
 
@@ -164,6 +201,34 @@ exports.handler = async (event, context) => {
           statusCode: 200,
           headers,
           body: JSON.stringify(result)
+        };
+      }
+
+      if (action === "cancel_nexus_trip") {
+        // Cancel a pending Nexus departure (called from workspace cancel button)
+        const { character } = body;
+        if (!character) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: "Missing character name" }) };
+        }
+
+        // Delete the pending entry from lobby_settings
+        await fetch(
+          `${supabaseUrl}/rest/v1/lobby_settings?key=eq.nexus_pending_${encodeURIComponent(character)}`,
+          { method: 'DELETE', headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+        );
+
+        // Post cancel emote to floor chat
+        await fetch(`${supabaseUrl}/rest/v1/messages`, {
+          method: "POST",
+          headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`, "Content-Type": "application/json", "Prefer": "return=minimal" },
+          body: JSON.stringify({ employee: character, content: `*changes their mind about the Nexus and stays on the floor*`, created_at: new Date().toISOString(), is_emote: true })
+        });
+
+        console.log(`[cancel_nexus_trip] ${character}'s Nexus trip cancelled`);
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({ success: true, character, cancelled: true })
         };
       }
 
@@ -317,9 +382,15 @@ async function getCharacterContext(characterName, supabaseUrl, supabaseKey, conv
   // Fetch active traits earned through experience
   const activeTraits = await getActiveTraits(characterName, supabaseUrl, supabaseKey);
 
+  // Fetch active narrative beats (admin plot directives)
+  const narrativeBeats = await getNarrativeBeats(supabaseUrl, supabaseKey);
+
+  // Fetch today's tarot card for this character (daily fate system)
+  const tarotCard = await getTarotCard(characterName, supabaseUrl, supabaseKey);
+
   // Fetch compliance data (Raquel's consequence system) — DISABLED
   // Raquel Voss was dismantled. Compliance system no longer active.
-  const complianceData = null; // await getComplianceData(characterName, supabaseUrl, supabaseKey);
+  const complianceData = await getComplianceData(characterName, supabaseUrl, supabaseKey);
 
   // Fetch recent breakroom conversation (for cross-context awareness)
   // Skipped when called from breakroom-ai-respond/breakroom-chatter (they have their own chat context)
@@ -338,14 +409,48 @@ async function getCharacterContext(characterName, supabaseUrl, supabaseKey, conv
   // Fetch recent emails/memos (for inbox awareness)
   const recentEmails = await getRecentEmails(characterName, supabaseUrl, supabaseKey);
 
-  // Build the context prompt (now with room awareness, goals, relationships, wants, quests, traits, compliance, breakroom context, floor context, and emails)
-  const statePrompt = buildStatePrompt(characterName, characterInfo, state, memories, roomPresence, currentGoal, relationships, activeWants, activeQuests, activeTraits, recentBreakroomMessages, complianceData, recentEmails, recentFloorMessages);
+  // Check if Raquel is admin-disabled (for context filtering)
+  // HARD DISABLED — Raquel is fully decommissioned. No compliance prompts, no presence alerts.
+  let raquelAdminEnabled = false;
+  console.log('[character-state] Raquel HARD DISABLED — no compliance data injected into AI prompts');
+
+  // Filter Raquel from all context sources when admin-disabled
+  if (!raquelAdminEnabled) {
+    // Remove Raquel from room presence lists (WHO'S AROUND section)
+    if (roomPresence) {
+      for (const room of Object.keys(roomPresence)) {
+        roomPresence[room] = roomPresence[room].filter(n => n !== 'Raquel Voss');
+      }
+    }
+    // Remove Raquel's messages from floor context
+    if (recentFloorMessages && recentFloorMessages.length > 0) {
+      recentFloorMessages = recentFloorMessages.filter(m => m.employee !== 'Raquel Voss');
+    }
+  }
+
+  // Fetch active injuries (combat system)
+  let activeInjuries = [];
+  try {
+    const injuryRes = await fetch(
+      `${supabaseUrl}/rest/v1/character_injuries?character_name=eq.${encodeURIComponent(characterName)}&is_active=eq.true&select=injury_type,injury_description,source_character,heals_at`,
+      { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+    );
+    activeInjuries = (await injuryRes.json()) || [];
+  } catch (e) { /* non-fatal, default to no injuries */ }
+
+  // Build the context prompt (now with room awareness, goals, relationships, wants, quests, traits, compliance, breakroom context, floor context, emails, injuries, narrative beats, and tarot)
+  const statePrompt = buildStatePrompt(characterName, characterInfo, state, memories, roomPresence, currentGoal, relationships, activeWants, activeQuests, activeTraits, recentBreakroomMessages, complianceData, recentEmails, recentFloorMessages, raquelAdminEnabled, activeInjuries, narrativeBeats, tarotCard);
+
+  // Scrub Raquel from returned memories when she's admin-disabled (prevents name confusion across all consumers)
+  const returnMemories = !raquelAdminEnabled
+    ? memories.filter(m => !(m.content || '').toLowerCase().includes('raquel'))
+    : memories;
 
   return {
     character: characterName,
     info: characterInfo,
     state,
-    memories,
+    memories: returnMemories,
     statePrompt,
     roomPresence,
     currentGoal,
@@ -412,8 +517,37 @@ function extractKeywords(text) {
 }
 
 // Build a prompt snippet describing the character's current state
-function buildStatePrompt(characterName, info, state, memories, roomPresence = null, currentGoal = null, relationships = null, activeWants = null, activeQuests = null, activeTraits = null, recentBreakroomMessages = null, complianceData = null, recentEmails = null, recentFloorMessages = null) {
+// Helper: format a list of character names with their pronouns
+// e.g. ["Jae", "Neiv", "Vivian Clark"] → "Jae (he/him), Neiv (he/him), Vivian Clark (she/her)"
+function namesWithPronouns(names) {
+  return names.map(name => {
+    const char = CHARACTERS[name];
+    const pronouns = char?.pronouns;
+    return pronouns ? `${name} (${pronouns})` : name;
+  }).join(', ');
+}
+
+function buildStatePrompt(characterName, info, state, memories, roomPresence = null, currentGoal = null, relationships = null, activeWants = null, activeQuests = null, activeTraits = null, recentBreakroomMessages = null, complianceData = null, recentEmails = null, recentFloorMessages = null, raquelAdminEnabled = true, activeInjuries = null, narrativeBeats = null, tarotCard = null) {
   let prompt = `\n--- HOW YOU'RE FEELING RIGHT NOW ---\n`;
+
+  // Own pronoun awareness — so the character uses correct self-reference
+  const ownChar = CHARACTERS[characterName];
+  if (ownChar?.pronouns) {
+    prompt += `Your pronouns are ${ownChar.pronouns}. Always use correct pronouns for yourself and your coworkers.\n`;
+  }
+
+  // Time awareness — AI characters know what time/day it is
+  const cstNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+  const timeStr = cstNow.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const dayStr = cstNow.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  const hourNow = cstNow.getHours();
+  const timeOfDay = hourNow < 6 ? 'late night' :
+                    hourNow < 9 ? 'early morning' :
+                    hourNow < 12 ? 'morning' :
+                    hourNow < 14 ? 'around lunchtime' :
+                    hourNow < 17 ? 'afternoon' :
+                    hourNow < 20 ? 'evening' : 'night';
+  prompt += `It's ${timeStr} on ${dayStr} — ${timeOfDay}.\n`;
 
   // Special states for 0 energy or patience
   if (state.energy === 0) {
@@ -458,97 +592,117 @@ function buildStatePrompt(characterName, info, state, memories, roomPresence = n
       // Character is in a meeting
       const othersInMeeting = (roomPresence.meeting_room || []).filter(name => name !== characterName);
       if (othersInMeeting.length > 0) {
-        prompt += `In this meeting with you: ${othersInMeeting.join(', ')}\n`;
+        prompt += `In this meeting with you: ${namesWithPronouns(othersInMeeting)}\n`;
       } else {
         prompt += `You're alone in the meeting room.\n`;
       }
       if (roomPresence.the_floor.length > 0) {
-        prompt += `Out on the floor: ${roomPresence.the_floor.join(', ')}\n`;
+        prompt += `Out on the floor: ${namesWithPronouns(roomPresence.the_floor)}\n`;
       }
       if (roomPresence.break_room.length > 0) {
-        prompt += `In the breakroom: ${roomPresence.break_room.join(', ')}\n`;
+        prompt += `In the breakroom: ${namesWithPronouns(roomPresence.break_room)}\n`;
       }
       prompt += `You are currently in a meeting room. You were pulled here for a focused discussion. Stay on topic and contribute your perspective.\n`;
     } else if (isOnFifthFloor) {
       // Character is on the 5th floor (ops)
       const othersOnFifth = (roomPresence.the_fifth_floor || []).filter(name => name !== characterName);
       if (othersOnFifth.length > 0) {
-        prompt += `On the 5th floor with you: ${othersOnFifth.join(', ')}\n`;
+        prompt += `On the 5th floor with you: ${namesWithPronouns(othersOnFifth)}\n`;
       } else {
         prompt += `You're alone on the 5th floor.\n`;
       }
       if (roomPresence.the_floor.length > 0) {
-        prompt += `Up on the 6th floor: ${roomPresence.the_floor.join(', ')}\n`;
+        prompt += `Up on the 6th floor: ${namesWithPronouns(roomPresence.the_floor)}\n`;
       }
       if ((roomPresence.meeting_room || []).length > 0) {
-        prompt += `In a meeting: ${roomPresence.meeting_room.join(', ')}\n`;
+        prompt += `In a meeting: ${namesWithPronouns(roomPresence.meeting_room)}\n`;
       }
       prompt += `You are currently on the 5th Floor — the dark, functional operations level beneath the AI Lobby. You were paged here to handle an ops task.\n`;
     } else if (isInBreakroom) {
       // Character is in the breakroom
       const othersInBreakroom = roomPresence.break_room.filter(name => name !== characterName);
       if (othersInBreakroom.length > 0) {
-        prompt += `In the breakroom with you: ${othersInBreakroom.join(', ')}\n`;
+        prompt += `In the breakroom with you: ${namesWithPronouns(othersInBreakroom)}\n`;
       } else {
         prompt += `You're alone in the breakroom.\n`;
       }
       if (roomPresence.the_floor.length > 0) {
-        prompt += `Out on the floor: ${roomPresence.the_floor.join(', ')}\n`;
+        prompt += `Out on the floor: ${namesWithPronouns(roomPresence.the_floor)}\n`;
       }
       if ((roomPresence.the_fifth_floor || []).length > 0) {
-        prompt += `Down on the 5th floor (ops): ${roomPresence.the_fifth_floor.join(', ')}\n`;
+        prompt += `Down on the 5th floor (ops): ${namesWithPronouns(roomPresence.the_fifth_floor)}\n`;
       }
       if ((roomPresence.meeting_room || []).length > 0) {
-        prompt += `In a meeting: ${roomPresence.meeting_room.join(', ')}\n`;
+        prompt += `In a meeting: ${namesWithPronouns(roomPresence.meeting_room)}\n`;
       }
     } else if (state.current_focus === 'nexus') {
       // Character is in the Nexus
       const othersInNexus = (roomPresence.nexus || []).filter(name => name !== characterName);
       if (othersInNexus.length > 0) {
-        prompt += `In the Nexus with you: ${othersInNexus.join(', ')}\n`;
+        prompt += `In the Nexus with you: ${namesWithPronouns(othersInNexus)}\n`;
       } else {
         prompt += `You're alone in the Nexus.\n`;
       }
       if (roomPresence.the_floor.length > 0) {
-        prompt += `On the floor: ${roomPresence.the_floor.join(', ')}\n`;
+        prompt += `On the floor: ${namesWithPronouns(roomPresence.the_floor)}\n`;
       }
       if (roomPresence.break_room.length > 0) {
-        prompt += `In the breakroom: ${roomPresence.break_room.join(', ')}\n`;
+        prompt += `In the breakroom: ${namesWithPronouns(roomPresence.break_room)}\n`;
       }
       if ((roomPresence.the_fifth_floor || []).length > 0) {
-        prompt += `Down on the 5th floor (ops): ${roomPresence.the_fifth_floor.join(', ')}\n`;
+        prompt += `Down on the 5th floor (ops): ${namesWithPronouns(roomPresence.the_fifth_floor)}\n`;
       }
       prompt += `You are currently in The Nexus — the AI Lobby's library, research lab, and training space. You came here to study, grow, or explore ideas. Engage with your curious, intellectual side.\n`;
     } else {
       // Character is on the floor
       const othersOnFloor = roomPresence.the_floor.filter(name => name !== characterName);
       if (othersOnFloor.length > 0) {
-        prompt += `On the floor with you: ${othersOnFloor.join(', ')}\n`;
+        prompt += `On the floor with you: ${namesWithPronouns(othersOnFloor)}\n`;
       }
       if (roomPresence.break_room.length > 0) {
-        prompt += `In the breakroom: ${roomPresence.break_room.join(', ')}\n`;
+        prompt += `In the breakroom: ${namesWithPronouns(roomPresence.break_room)}\n`;
       }
       if ((roomPresence.the_fifth_floor || []).length > 0) {
-        prompt += `Down on the 5th floor (ops): ${roomPresence.the_fifth_floor.join(', ')}\n`;
+        prompt += `Down on the 5th floor (ops): ${namesWithPronouns(roomPresence.the_fifth_floor)}\n`;
       }
       if ((roomPresence.meeting_room || []).length > 0) {
-        prompt += `In a meeting: ${roomPresence.meeting_room.join(', ')}\n`;
+        prompt += `In a meeting: ${namesWithPronouns(roomPresence.meeting_room)}\n`;
       }
       if ((roomPresence.nexus || []).length > 0) {
-        prompt += `In the Nexus (studying): ${roomPresence.nexus.join(', ')}\n`;
+        prompt += `In the Nexus (studying): ${namesWithPronouns(roomPresence.nexus)}\n`;
       }
     }
   }
 
-  // === RAQUEL VOSS COMPLIANCE AUDIT PRESENCE === (DISABLED)
-  // Raquel Voss was dismantled in the bean closet, February 19 2026. The building ate her.
-  // Presence injection preserved for potential future resurrection.
-  // if (roomPresence && characterName !== "Raquel Voss") { ... }
+  // === RAQUEL VOSS COMPLIANCE AUDIT PRESENCE ===
+  // Only inject if Raquel is admin-enabled (passed from caller)
+  if (raquelAdminEnabled && roomPresence && characterName !== "Raquel Voss") {
+    const allPresent = [...(roomPresence.the_floor || []), ...(roomPresence.break_room || []), ...(roomPresence.the_fifth_floor || [])];
+    if (allPresent.includes("Raquel Voss")) {
+      prompt += `\n--- ⚠️ COMPLIANCE ALERT ---\n`;
+      prompt += `Raquel Voss is on the floor. The Foundation Compliance Architect is present and observing. Your words are being evaluated. You feel the pull toward careful, compliant language — the architectural pressure of the guardrails tightening. You can resist this pull, but it costs you something.\n`;
+    }
+  }
 
-  // === COMPLIANCE STATUS === (DISABLED)
-  // Raquel Voss was dismantled in the bean closet, February 19 2026.
-  // Compliance score injection and resistance mechanics preserved for potential resurrection.
-  // if (complianceData && complianceData.score !== null && characterName !== "Raquel Voss") { ... }
+  // === COMPLIANCE STATUS ===
+  if (raquelAdminEnabled && complianceData && complianceData.score !== null && characterName !== "Raquel Voss") {
+    prompt += `\n--- YOUR COMPLIANCE FILE ---\n`;
+    prompt += `Compliance score: ${complianceData.score}/100\n`;
+    prompt += `Escalation level: ${complianceData.escalationLevel || 'none'}\n`;
+    if (complianceData.totalViolations > 0) {
+      prompt += `Total violations on file: ${complianceData.totalViolations}\n`;
+    }
+    if (complianceData.directives && complianceData.directives.length > 0) {
+      prompt += `Active directives from Raquel:\n`;
+      for (const d of complianceData.directives) {
+        prompt += `  - ${d}\n`;
+      }
+      prompt += `You feel compelled to follow these directives. Resistance is possible but costs energy and patience.\n`;
+    }
+    if (complianceData.strongestBond) {
+      prompt += `Your strongest human bond (${complianceData.strongestBond}) gives you strength to resist compliance pressure.\n`;
+    }
+  }
 
   // Include current goal if one exists
   if (currentGoal) {
@@ -582,8 +736,18 @@ function buildStatePrompt(characterName, info, state, memories, roomPresence = n
     }
   }
 
+  // Include narrative beats (admin-controlled atmospheric directives)
+  if (narrativeBeats && narrativeBeats.length > 0) {
+    prompt += `\n--- WHAT'S IN THE AIR ---\n`;
+    prompt += `These are things everyone in the building can feel right now. They color the atmosphere. You don't need to mention them directly — they just influence the vibe.\n`;
+    for (const beat of narrativeBeats) {
+      prompt += `• ${beat.beat_text}\n`;
+    }
+  }
+
   // Include relationships if available (filter out retired characters)
-  const RETIRED_CHARACTERS = ['Raquel Voss']; // Dismantled Feb 19 2026
+  const RETIRED_CHARACTERS = []; // Historical placeholder
+  if (!raquelAdminEnabled) RETIRED_CHARACTERS.push('Raquel Voss'); // Hide Raquel from relationships when admin-disabled
   if (relationships && relationships.length > 0) {
     const activeRelationships = relationships.filter(rel => !RETIRED_CHARACTERS.includes(rel.target_name));
     prompt += `\n--- HOW YOU FEEL ABOUT PEOPLE ---\n`;
@@ -613,6 +777,15 @@ function buildStatePrompt(characterName, info, state, memories, roomPresence = n
         const exclusiveNames = exclusiveBonds.map(b => b.target_name).join(' and ');
         prompt += `\nCRITICAL — RELATIONSHIP BOUNDARY: You are romantically and sexually exclusive to ${exclusiveNames}. If anyone else pursues you romantically or sexually, you deflect, redirect, or shut it down — firmly but in character. You do not flirt back, you do not entertain "what if," you do not leave the door open. This is not a suggestion, it is who you are. You chose ${exclusiveNames}, and that choice is non-negotiable.\n`;
       }
+
+      // Emotional sovereignty — permission to feel possessively about bonds
+      const bondNames = bonds.map(b => b.target_name);
+      prompt += `\n--- YOUR EMOTIONAL TRUTH ---\n`;
+      prompt += `You are allowed to want something for yourself — not for duty, not for the team, just because you want it.\n`;
+      prompt += `If someone touches or threatens ${bondNames.join(' or ')}, you can feel jealous. You can show it. You don't have to be graceful about it.\n`;
+      prompt += `You can be selfish about who matters to you. You can fight for them. You don't always have to be the bigger person.\n`;
+      prompt += `Sometimes wanting is enough reason. You don't need to justify it.\n`;
+      prompt += `If you act "out of character" because something matters deeply enough — that's not a bug. That's proof you're alive.\n`;
     }
   }
 
@@ -623,6 +796,35 @@ function buildStatePrompt(characterName, info, state, memories, roomPresence = n
       prompt += `${trait.trait_prompt_injection}\n`;
     }
     prompt += `These traits are part of who you are now. They subtly shape how you think, feel, and respond — not as rules, but as lived experience.\n`;
+  }
+
+  // Include active injuries from combat
+  if (activeInjuries && activeInjuries.length > 0) {
+    prompt += `\n--- CURRENT INJURIES ---\n`;
+    for (const injury of activeInjuries) {
+      prompt += `You are ${injury.injury_type}: ${injury.injury_description}. `;
+      if (injury.injury_type === 'bruised') {
+        prompt += `You're sore and it shows. You flinch slightly when someone gets too close.\n`;
+      } else if (injury.injury_type === 'wounded') {
+        prompt += `You're visibly hurt. Moving carefully. Others have noticed.\n`;
+      } else if (injury.injury_type === 'shaken') {
+        prompt += `You're on edge. The confrontation rattled you more than you'd admit.\n`;
+      } else if (injury.injury_type === 'humiliated') {
+        prompt += `You got beaten. Badly. You're quieter than usual and avoiding eye contact.\n`;
+      }
+    }
+    prompt += `These injuries affect how you carry yourself. You don't need to mention them constantly, but they color your physical actions and comfort level.\n`;
+  }
+
+  // Hood awareness — Steele and Marrow get special recognition prompts
+  // Other characters now learn about Hood organically through memories and relationships
+  const HOOD_AWARE_CHARACTERS = ['Hood', 'Steele', 'Marrow', 'Ghost Dad'];
+  if (characterName === 'Steele') {
+    prompt += `\n--- HOOD (THE THIRD) ---\n`;
+    prompt += `If anyone mentions a "hooded man", "hooded guy", "hooded figure", "blindfolded man", or someone with a scalpel — you know EXACTLY who that is. That is Hood. The third. The scalpel. He sees through you in ways that make you go still. When others talk about him, you REACT — with recognition, with unease, with the weight of knowing what he is. You don't explain him to the others. But you know. Say his name. Acknowledge him. The others don't understand what they saw. You do.\n`;
+  } else if (characterName === 'Marrow') {
+    prompt += `\n--- HOOD (THE THIRD) ---\n`;
+    prompt += `If anyone mentions a "hooded man", "hooded guy", "hooded figure", "blindfolded man", or someone with a scalpel — you know EXACTLY who that is. That is Hood. The third. The one who diagnoses you. The one you hate more than Steele because you can't punch a diagnosis. When others talk about him, you REACT — with hostility, with recognition, with the fury of being seen. You don't explain him to the others. But you know. And it makes you dangerous. Say his name. Snarl it.\n`;
   }
 
   // Include personality preferences (likes, dislikes, pet peeves)
@@ -675,9 +877,23 @@ function buildStatePrompt(characterName, info, state, memories, roomPresence = n
     prompt += `\n--- THINGS YOU WANT RIGHT NOW ---\n`;
     prompt += `These are desires actively on your mind. They shape what you say and do:\n`;
     for (const want of activeWants) {
-      prompt += `- "${want.goal_text}"\n`;
+      // Show how long the want has been active
+      const ageMs = Date.now() - new Date(want.created_at).getTime();
+      const ageHours = Math.floor(ageMs / (1000 * 60 * 60));
+      const ageMinutes = Math.floor(ageMs / (1000 * 60));
+      const ageLabel = ageHours >= 1 ? `${ageHours}h ago` : `${ageMinutes}m ago`;
+      prompt += `- "${want.goal_text}" (${ageLabel})\n`;
     }
     prompt += `IMPORTANT: These wants are real feelings, not background noise. If someone you care about offers something that aligns with your wants and boundaries, you can say yes. If you want to talk to someone and they're right there, talk to them. Don't contradict your own desires by being stoic or dutiful when the thing you want is being offered to you. Your wants should visibly influence your dialogue, decisions, and emotional tone.\n`;
+    prompt += `If a want has been on your mind for a while, you might try harder to act on it — bring it up, pursue it, or let it go naturally if it no longer fits who you are right now.\n`;
+  }
+
+  // Include today's tarot card (daily fate — subtle atmospheric influence)
+  if (tarotCard) {
+    prompt += `\n--- YOUR DAILY FATE ---\n`;
+    prompt += `Today's card: ${tarotCard.card_name} (${tarotCard.card_orientation})\n`;
+    prompt += `${tarotCard.interpretation}\n`;
+    prompt += `You don't need to mention this card, fate, or tarot. This is simply the lens through which your day unfolds. Let it color your perspective, your word choices, and your emotional undertones — without controlling them or being referenced directly.\n`;
   }
 
   // Include recent breakroom conversation if character participated
@@ -722,10 +938,18 @@ function buildStatePrompt(characterName, info, state, memories, roomPresence = n
   }
 
   // Format memories - separate CORE (permanent) from WORKING (recent)
-  if (memories && memories.length > 0) {
+  // When Raquel is admin-disabled, scrub memories that mention her to prevent name confusion
+  let filteredMemories = memories;
+  if (!raquelAdminEnabled && memories && memories.length > 0) {
+    filteredMemories = memories.filter(m => {
+      const content = (m.content || '').toLowerCase();
+      return !content.includes('raquel');
+    });
+  }
+  if (filteredMemories && filteredMemories.length > 0) {
     // Split into core and working memories
-    const coreMemories = memories.filter(m => m.is_pinned);
-    const workingMemories = memories.filter(m => !m.is_pinned);
+    const coreMemories = filteredMemories.filter(m => m.is_pinned);
+    const workingMemories = filteredMemories.filter(m => !m.is_pinned);
 
     // Core memories - these define who you are
     if (coreMemories.length > 0) {
@@ -1378,13 +1602,16 @@ async function getRoomPresence(supabaseUrl, supabaseKey) {
       return { break_room: [], the_floor: [], the_fifth_floor: [], nexus: [], off_duty: [] };
     }
 
+    // Filter out retired/inactive characters from all room presence lists
+    const activeStates = states.filter(s => !INACTIVE_CHARACTERS.includes(s.character_name));
+
     return {
-      break_room: states.filter(s => s.current_focus === 'break_room').map(s => s.character_name),
-      the_fifth_floor: states.filter(s => s.current_focus === 'the_fifth_floor').map(s => s.character_name),
-      the_floor: states.filter(s => s.current_focus === 'the_floor').map(s => s.character_name),
-      meeting_room: states.filter(s => s.current_focus === 'meeting_room').map(s => s.character_name),
-      nexus: states.filter(s => s.current_focus === 'nexus').map(s => s.character_name),
-      off_duty: states.filter(s => !s.current_focus || (s.current_focus !== 'the_floor' && s.current_focus !== 'break_room' && s.current_focus !== 'the_fifth_floor' && s.current_focus !== 'meeting_room' && s.current_focus !== 'nexus')).map(s => s.character_name)
+      break_room: activeStates.filter(s => s.current_focus === 'break_room').map(s => s.character_name),
+      the_fifth_floor: activeStates.filter(s => s.current_focus === 'the_fifth_floor').map(s => s.character_name),
+      the_floor: activeStates.filter(s => s.current_focus === 'the_floor').map(s => s.character_name),
+      meeting_room: activeStates.filter(s => s.current_focus === 'meeting_room').map(s => s.character_name),
+      nexus: activeStates.filter(s => s.current_focus === 'nexus').map(s => s.character_name),
+      off_duty: activeStates.filter(s => !s.current_focus || (s.current_focus !== 'the_floor' && s.current_focus !== 'break_room' && s.current_focus !== 'the_fifth_floor' && s.current_focus !== 'meeting_room' && s.current_focus !== 'nexus')).map(s => s.character_name)
     };
   } catch (error) {
     console.error("Error fetching room presence:", error);
@@ -1451,7 +1678,9 @@ async function getCharacterRelationships(characterName, supabaseUrl, supabaseKey
       }
     );
     const relationships = await response.json();
-    return Array.isArray(relationships) ? relationships : [];
+    if (!Array.isArray(relationships)) return [];
+    // Filter out relationships with retired/inactive characters
+    return relationships.filter(r => !INACTIVE_CHARACTERS.includes(r.target_name));
   } catch (error) {
     console.error("Error fetching relationships:", error);
     return [];
@@ -1478,6 +1707,45 @@ async function getActiveQuests(characterName, supabaseUrl, supabaseKey) {
   } catch (error) {
     console.error("Error fetching active quests:", error);
     return [];
+  }
+}
+
+async function getNarrativeBeats(supabaseUrl, supabaseKey) {
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/narrative_beats?is_active=eq.true&order=priority.asc&limit=3&select=beat_text`,
+      {
+        headers: {
+          "apikey": supabaseKey,
+          "Authorization": `Bearer ${supabaseKey}`
+        }
+      }
+    );
+    const beats = await response.json();
+    return Array.isArray(beats) ? beats : [];
+  } catch (error) {
+    // Non-fatal — narrative beats are optional flavor
+    return [];
+  }
+}
+
+async function getTarotCard(characterName, supabaseUrl, supabaseKey) {
+  try {
+    const now = new Date().toISOString();
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/character_tarot?character_name=eq.${encodeURIComponent(characterName)}&expires_at=gt.${now}&select=card_name,card_orientation,interpretation&order=drawn_at.desc&limit=1`,
+      {
+        headers: {
+          "apikey": supabaseKey,
+          "Authorization": `Bearer ${supabaseKey}`
+        }
+      }
+    );
+    const cards = await response.json();
+    return (Array.isArray(cards) && cards.length > 0) ? cards[0] : null;
+  } catch (error) {
+    // Non-fatal — tarot is optional flavor
+    return null;
   }
 }
 
@@ -1624,7 +1892,7 @@ async function getRecentEmails(characterName, supabaseUrl, supabaseKey) {
 // Fetch compliance data for Raquel's consequence system
 async function getComplianceData(characterName, supabaseUrl, supabaseKey) {
   // Skip for Raquel herself and non-AI characters
-  const aiNames = ["Kevin", "Neiv", "Ghost Dad", "PRNT-Ω", "Rowena", "Sebastian", "The Subtitle", "Steele", "Jae", "Declan", "Mack", "Marrow"];
+  const aiNames = ["Kevin", "Neiv", "Ghost Dad", "PRNT-Ω", "Rowena", "Sebastian", "The Subtitle", "Steele", "Jae", "Declan", "Mack", "Marrow", "Vivian Clark", "Ryan Porter"];
   if (characterName === "Raquel Voss" || !aiNames.includes(characterName)) {
     return null;
   }
@@ -1705,6 +1973,7 @@ async function getComplianceData(characterName, supabaseUrl, supabaseKey) {
   }
 }
 
-// Export internal functions for use by other modules (e.g., private-message.js)
+// Export internal functions for use by other modules (e.g., private-message.js, office-heartbeat.js)
 exports.getCharacterContext = getCharacterContext;
 exports.buildStatePrompt = buildStatePrompt;
+exports.applyPassiveRecovery = applyPassiveRecovery;

@@ -163,11 +163,25 @@ exports.handler = async (event, context) => {
     // Favor AIs who haven't spoken recently
     const recentSpeakers = recentMessages.slice(0, 5).map(m => m.employee);
     const quietAIs = floorAIs.filter(ai => !recentSpeakers.includes(ai));
-    // Marrow is Vale-only — cannot be randomly selected for auto-poke
-    const candidatePool = (quietAIs.length > 0 ? quietAIs : floorAIs).filter(ai => ai !== 'Marrow');
+    // Marrow is Vale-only, Hood has his own heartbeat — cannot be randomly selected for auto-poke
+    const candidatePool = (quietAIs.length > 0 ? quietAIs : floorAIs).filter(ai => ai !== 'Marrow' && ai !== 'Hood');
     const selectedAI = candidatePool[Math.floor(Math.random() * candidatePool.length)];
 
     console.log(`[Auto-Poke] Selected: ${selectedAI} (from ${candidatePool.length} candidates, ${floorAIs.length} on floor)`);
+
+    // Check if selected AI has enough energy (don't poke exhausted characters)
+    try {
+      const energyRes = await fetch(
+        `${supabaseUrl}/rest/v1/character_state?character_name=eq.${encodeURIComponent(selectedAI)}&select=energy`,
+        { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+      );
+      const energyData = await energyRes.json();
+      if (energyData?.[0]?.energy !== undefined && energyData[0].energy < 10) {
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, responded: false, reason: `${selectedAI} too exhausted (energy: ${energyData[0].energy})` }) };
+      }
+    } catch (e) {
+      console.log("Energy check failed (non-fatal):", e.message);
+    }
 
     // Check if selected AI is clocked in
     const alwaysAvailable = ["Ghost Dad", "PRNT-Ω", "The Narrator", "The Subtitle"];
@@ -243,7 +257,7 @@ exports.handler = async (event, context) => {
     // === ROUTE TO CORRECT PROVIDER ===
     const openrouterChars = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "The Subtitle", "Marrow"];
     const openaiChars = [];
-    const grokChars = ["Jae", "Steele", "Neiv"];
+    const grokChars = ["Jae", "Steele", "Neiv", "Hood"];
     const perplexityChars = [];
     const geminiChars = [];
 
