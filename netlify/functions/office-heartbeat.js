@@ -1143,6 +1143,26 @@ exports.handler = async (event, context) => {
       console.log("PM daily wipe check failed (non-fatal):", pmWipeErr.message);
     }
 
+    // === RELATIONSHIP CONSEQUENCE PROCESSOR ===
+    // Process accumulated relationship events and apply behavioral consequences
+    // (tone shifts, avoidance, confrontation, bonding)
+    let relationshipConsequences = null;
+    try {
+      const relConsResult = await fetch(`${siteUrl}/.netlify/functions/relationship-consequence`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+      if (relConsResult.ok) {
+        relationshipConsequences = await relConsResult.json();
+        if (relationshipConsequences?.memoriesCreated > 0 || relationshipConsequences?.wantsCreated > 0) {
+          console.log(`Heartbeat: Relationship consequences — ${relationshipConsequences.eventsProcessed} events, ${relationshipConsequences.memoriesCreated} memories, ${relationshipConsequences.wantsCreated} wants`);
+        }
+      }
+    } catch (relConsErr) {
+      console.log("Relationship consequence processor failed (non-fatal):", relConsErr.message);
+    }
+
     // === MOOD DRIFT: Gentle time-of-day mood nudges ===
     // ~10% chance per heartbeat cycle — shifts one character's mood toward
     // time-appropriate moods via the valid transition graph
@@ -1656,7 +1676,8 @@ exports.handler = async (event, context) => {
           subconsciousReflection: reflection || null,
           reachOut: reachOut || null,
           voluntaryTravel: voluntaryTravel || null,
-          nexusAutonomousActivity: nexusAutonomousActivity || null
+          nexusAutonomousActivity: nexusAutonomousActivity || null,
+          relationshipConsequences: relationshipConsequences || null
         })
       };
     }
@@ -1823,6 +1844,7 @@ exports.handler = async (event, context) => {
           memoryReflection: memoryReflectionResult || null,
         voluntaryTravel: voluntaryTravel || null,
         nexusAutonomousActivity: nexusAutonomousActivity || null,
+        relationshipConsequences: relationshipConsequences || null,
         scheduledMeetingActivity: scheduledMeetingActivity || null,
         scheduledEventActivity: scheduledEventActivity || null,
         meetingHostActivity: meetingHostActivity || null
