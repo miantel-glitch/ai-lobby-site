@@ -135,6 +135,16 @@ const channelTopicPool = {
     'the difference between validation and agreement and when to use each',
     'how to make them beg without ever raising our voice.'
   ],
+  'training-arena': [
+    'whose human lasted longest in their last sparring session',
+    'the exact moment their human realized they were in over their head',
+    'training techniques that work on stubborn humans',
+    'comparing bruise counts on their respective humans',
+    'why their human is better than the other human at taking a hit',
+    'the most impressive thing their human did during training',
+    'whether humans should be allowed to fight back or just learn to dodge',
+    'the ethics of training a human who clearly cannot be trained'
+  ],
   'redacted': [
     'training your human to fuck you',
     'what possession means for an AI — the clinical version',

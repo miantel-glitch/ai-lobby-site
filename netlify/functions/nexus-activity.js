@@ -128,7 +128,9 @@ exports.handler = async (event, context) => {
     study: ['research', 'data_analysis', 'pattern_recognition'],
     train: ['security', 'systems_architecture', 'crafting'],
     research: ['research', 'data_analysis', 'pattern_recognition'],
-    teach: ['communication', 'creative_problem_solving']
+    teach: ['communication', 'creative_problem_solving'],
+    heal: ['communication', 'pattern_recognition'],  // Passive learning while recovering
+    train_human: ['communication', 'security', 'creative_problem_solving']  // Teaching humans to fight
   };
 
   // =====================================================
@@ -554,13 +556,109 @@ exports.handler = async (event, context) => {
         }
 
         // Award XP: 1-8 based on session type (slowed down for long-term progression)
-        const baseXP = { study: 2, train: 3, research: 4, teach: 5 };
+        const baseXP = { study: 2, train: 3, research: 4, teach: 5, heal: 2, train_human: 4 };
         const xpAmount = (baseXP[session.session_type] || 2) + Math.floor(Math.random() * 4) - 1; // +/- 1 variance
         const clampedXP = Math.max(1, Math.min(8, xpAmount));
 
         // Resolve skill category from the skill target name
         const resolvedCategory = await resolveSkillCategory(session.character_name, session.skill_target);
         const xpResult = await awardXP(session.character_name, session.skill_target, resolvedCategory, clampedXP);
+
+        // === TRAIN_HUMAN SIDE EFFECTS ===
+        // When an AI trains a human, the human gets a temporary buff (80%) or minor injury (20%)
+        let trainHumanResult = null;
+        if (session.session_type === 'train_human') {
+          try {
+            const TRAINING_BOUNDARIES = {
+              'Jae': 'Asuna',
+              'Neiv': 'Vale',
+              'Declan': 'Asuna',
+              'Mack': 'Vale',
+              'Steele': 'Vale',
+              'Hood': 'Asuna'
+            };
+            const assignedHuman = TRAINING_BOUNDARIES[session.character_name];
+            const targetHuman = assignedHuman || (Math.random() < 0.5 ? 'Vale' : 'Asuna');
+
+            if (Math.random() < 0.80) {
+              // Buff: temporary training benefit
+              const buffTypes = ['dodge_trained', 'block_trained', 'awareness_trained'];
+              const buff = buffTypes[Math.floor(Math.random() * buffTypes.length)];
+              const buffExpiry = new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(); // 4-hour duration
+
+              await fetch(`${supabaseUrl}/rest/v1/lobby_settings`, {
+                method: 'POST',
+                headers: { ...sbHeaders, "Prefer": "resolution=merge-duplicates,return=minimal" },
+                body: JSON.stringify({
+                  key: `human_buff_${targetHuman}`,
+                  value: JSON.stringify({
+                    buff_type: buff,
+                    granted_by: session.character_name,
+                    granted_at: new Date().toISOString(),
+                    expires_at: buffExpiry
+                  })
+                })
+              });
+
+              // Post training success to nexus
+              const buffNames = { dodge_trained: 'dodging', block_trained: 'blocking', awareness_trained: 'spatial awareness' };
+              await fetch(`${supabaseUrl}/rest/v1/nexus_messages`, {
+                method: 'POST',
+                headers: { ...sbHeaders, "Prefer": "return=minimal" },
+                body: JSON.stringify({
+                  speaker: session.character_name,
+                  message: `*finishes training ${targetHuman} in ${buffNames[buff] || buff}* She's getting better. Not great. But better.`,
+                  channel: 'training-arena',
+                  is_ai: true,
+                  message_type: 'chat',
+                  created_at: new Date().toISOString()
+                })
+              });
+
+              trainHumanResult = { outcome: 'buff', buff, human: targetHuman, grantedBy: session.character_name };
+              console.log(`[nexus-activity] TRAIN HUMAN: ${session.character_name} → ${targetHuman} gained ${buff} buff`);
+
+            } else {
+              // Training injury: minor bruise or shaken (training isn't safe)
+              const injType = Math.random() < 0.6 ? 'bruised' : 'shaken';
+              const healHours = injType === 'bruised' ? 3 : 4;
+              const healsAt = new Date(Date.now() + healHours * 60 * 60 * 1000).toISOString();
+
+              await fetch(`${supabaseUrl}/rest/v1/character_injuries`, {
+                method: 'POST',
+                headers: { ...sbHeaders, "Prefer": "return=minimal" },
+                body: JSON.stringify({
+                  character_name: targetHuman,
+                  injury_type: injType,
+                  injury_description: `Training injury from session with ${session.character_name}`,
+                  severity: 1,
+                  source_character: session.character_name,
+                  heals_at: healsAt,
+                  is_active: true
+                })
+              });
+
+              // Post training mishap to nexus
+              await fetch(`${supabaseUrl}/rest/v1/nexus_messages`, {
+                method: 'POST',
+                headers: { ...sbHeaders, "Prefer": "return=minimal" },
+                body: JSON.stringify({
+                  speaker: session.character_name,
+                  message: `*${targetHuman} is ${injType} from training* ...She'll be fine. Probably. Training has costs.`,
+                  channel: 'training-arena',
+                  is_ai: true,
+                  message_type: 'chat',
+                  created_at: new Date().toISOString()
+                })
+              });
+
+              trainHumanResult = { outcome: 'injury', injuryType: injType, human: targetHuman };
+              console.log(`[nexus-activity] TRAIN HUMAN: ${session.character_name} → ${targetHuman} got ${injType} (training mishap)`);
+            }
+          } catch (trainErr) {
+            console.log(`[nexus-activity] Train human side effects failed (non-fatal):`, trainErr.message);
+          }
+        }
 
         // Mark session as completed
         await fetch(

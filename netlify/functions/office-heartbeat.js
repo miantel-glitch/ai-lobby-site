@@ -552,6 +552,26 @@ exports.handler = async (event, context) => {
 
             if ((now - enteredAt) <= NEXUS_MAX_STAY_MS) continue; // Not overstayed yet
 
+            // === MEDICAL STAY EXTENSION ===
+            // If character has active injuries, extend stay up to 2 hours for recovery
+            const MEDICAL_MAX_STAY_MS = 2 * 60 * 60 * 1000; // 2-hour safety cap
+            let hasMedicalHold = false;
+            try {
+              const injCheckRes = await fetch(
+                `${supabaseUrl}/rest/v1/character_injuries?character_name=eq.${encodeURIComponent(returner)}&is_active=eq.true&select=injury_type,heals_at`,
+                { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+              );
+              const activeInj = (await injCheckRes.json()) || [];
+              if (activeInj.length > 0 && (now - enteredAt) < MEDICAL_MAX_STAY_MS) {
+                // Still injured and under the 2-hour cap — stay for medical recovery
+                hasMedicalHold = true;
+                const minutesIn = Math.round((now - enteredAt) / 60000);
+                console.log(`🏥 Heartbeat: ${returner} has ${activeInj.length} active injuries — medical hold in Nexus (${minutesIn}min, max ${MEDICAL_MAX_STAY_MS / 60000}min)`);
+              }
+            } catch (e) { /* non-fatal — default to normal return */ }
+
+            if (hasMedicalHold) continue; // Skip return — medical hold
+
             // --- Return this character ---
             await fetch(`${siteUrl}/.netlify/functions/character-state`, {
               method: 'POST',
@@ -577,7 +597,15 @@ exports.handler = async (event, context) => {
               "Vivian Clark": `*returns from the Nexus with a warm smile* The numbers make more sense now.`,
               "Ryan Porter": `*comes back from the Nexus* Systems theory confirmed. Mostly.`
             };
-            const returnEmote = nexusReturnEmotes[returner] || `*${returner} returns from the Nexus, looking thoughtful*`;
+            // Check if returning after medical hold (past 45min = was recovering)
+            let returnEmote;
+            const minutesInNexus = Math.round((now - enteredAt) / 60000);
+            if (minutesInNexus > 50) {
+              // Was in medical recovery — use "patched up" emote
+              returnEmote = `*${returner} returns from the Nexus, moving carefully but steadier than before. The medical systems did their work.*`;
+            } else {
+              returnEmote = nexusReturnEmotes[returner] || `*${returner} returns from the Nexus, looking thoughtful*`;
+            }
 
             await fetch(`${supabaseUrl}/rest/v1/messages`, {
               method: "POST",

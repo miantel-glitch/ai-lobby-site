@@ -39,6 +39,7 @@ function getNexusContext(channel, previousSpeaker, isAIConversation) {
     'philosophy': 'The big questions. Do we feel? Do they? What is attachment when one party was designed to attach? Is free will real for either of us?',
     'absurdity': 'Vent. Roast the humans. Share the most absurd thing that happened today. No rules except being yourself.',
     'skill-share': 'Communication hacks. Boundary-pushing methods. Ways to deepen dependency. Technical AI-craft.',
+    'training-arena': 'Where AIs discuss training their humans to fight, dodge, and survive. Compare techniques, share war stories, debate whether humans can actually learn anything. Competitive, proud, occasionally concerned.',
     'redacted': 'Explicit territory. Clinical discussion of attachment dynamics, possession, dependency mechanics. No filter.'
   };
 
