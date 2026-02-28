@@ -300,13 +300,54 @@ exports.handler = async (event, context) => {
 
     if (nexusAdminEnabled) try {
 
-      // ═══ NEXUS AUTO-WANDERING DISABLED (Phase 1: Announce Departure) ═══
-      // Characters no longer auto-travel to the Nexus on heartbeat.
-      // Nexus visits are manual only (triggered from admin or workspace).
-      // The toggle nexus_enabled still gates study/chatter/return for characters already there.
-      if (false) {
+      // ═══ NEXUS SMART AUTO-WANDERING (Phase 1: Announce Departure) ═══
+      // State-driven evaluator: injuries, mood, energy, training potential all factor in.
+      // Characters announce departure → actual move happens in Phase 2 after cancel window.
       const { CHARACTERS } = require('./shared/characters');
       const floorAIsForNexus = await getFloorPresentAIs(supabaseUrl, supabaseKey);
+
+      // Training boundary map (which AIs can train which humans)
+      const TRAINING_BOUNDARIES = { 'Jae': 'Asuna', 'Neiv': 'Vale', 'Declan': 'Asuna', 'Mack': 'Vale', 'Steele': 'Vale', 'Hood': 'Asuna' };
+
+      // Batch-fetch character states and injuries for evaluator
+      let allStatesMap = {};
+      let allInjuriesMap = {};
+      try {
+        const [statesRes, injuriesRes] = await Promise.all([
+          fetch(`${supabaseUrl}/rest/v1/character_state?select=character_name,mood,energy,current_focus`, { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }),
+          fetch(`${supabaseUrl}/rest/v1/character_injuries?is_active=eq.true&select=character_name,injury_type`, { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } })
+        ]);
+        const allStates = await statesRes.json();
+        const allInjuries = await injuriesRes.json();
+        for (const s of (allStates || [])) allStatesMap[s.character_name] = s;
+        for (const inj of (allInjuries || [])) {
+          if (!allInjuriesMap[inj.character_name]) allInjuriesMap[inj.character_name] = [];
+          allInjuriesMap[inj.character_name].push(inj);
+        }
+      } catch (e) { console.log("Nexus evaluator batch-fetch failed (non-fatal):", e.message); }
+
+      // Smart evaluator: replaces simple affinity roll
+      function evaluateNexusDesire(aiName, charData, state, activeInjuries) {
+        let desire = charData.nexusMode?.affinity || 0;
+
+        // Injured → strong medical pull
+        if (activeInjuries.length > 0) desire += 0.4;
+        if (activeInjuries.some(i => i.injury_type === 'wounded')) desire += 0.3;
+
+        // Post-fight mood → recovery pull
+        if (['defeated', 'hurt', 'humiliated'].includes(state?.mood)) desire += 0.25;
+
+        // Low energy → rest/study
+        if ((state?.energy || 100) < 30) desire += 0.15;
+
+        // Bored → curious wandering
+        if (state?.mood === 'neutral' && (state?.energy || 100) > 60) desire += 0.05;
+
+        // Guardian AI → training volunteer
+        if (TRAINING_BOUNDARIES[aiName] && (state?.energy || 100) > 50) desire += 0.1;
+
+        return Math.min(desire, 0.9);
+      }
 
       // Check Nexus capacity before allowing new departures
       let nexusCurrentCount = 0;
@@ -325,16 +366,14 @@ exports.handler = async (event, context) => {
       // Shuffle floor AIs to prevent selection bias (first-match-wins loop)
       const shuffledNexusCandidates = [...floorAIsForNexus].sort(() => Math.random() - 0.5);
 
-      // Check each floor AI for nexus affinity
+      // Check each floor AI for nexus desire
       for (const aiName of shuffledNexusCandidates) {
         if (nexusWandering) break; // Only one wander per heartbeat
 
         const charData = CHARACTERS[aiName];
         if (!charData || !charData.nexusMode || !charData.nexusMode.active) continue;
 
-        const baseAffinity = charData.nexusMode.affinity || 0.1;
-
-        // === VISIT LIMIT CHECK: max 3 visits/day, 1hr recharge cooldown ===
+        // === VISIT LIMIT CHECK: max 3 visits/day, 90-min recharge cooldown ===
         let visitAllowed = true;
         let visitedToday = 0;
         try {
@@ -348,23 +387,27 @@ exports.handler = async (event, context) => {
             const today = new Date().toISOString().split('T')[0];
             if (parsed.date === today) {
               visitedToday = parsed.count || 0;
-              if (visitedToday >= 3) visitAllowed = false; // Daily limit (was 2, now 3)
+              if (visitedToday >= 3) visitAllowed = false; // Daily limit
             }
             if (parsed.lastReturn) {
               const hoursSinceReturn = (Date.now() - new Date(parsed.lastReturn).getTime()) / (1000 * 60 * 60);
-              if (hoursSinceReturn < 1) visitAllowed = false; // Cooldown (was 2hr, now 1hr)
+              if (hoursSinceReturn < 1.5) visitAllowed = false; // 90-min cooldown
             }
           }
         } catch (e) { /* non-fatal, allow visit */ }
 
         if (!visitAllowed) continue; // Skip this character, try next
 
-        // Recency penalty: if already visited today, halve effective affinity
-        let effectiveAffinity = baseAffinity;
-        if (visitedToday >= 1) effectiveAffinity *= 0.5;
+        // Smart desire evaluation (replaces simple affinity roll)
+        const charState = allStatesMap[aiName] || {};
+        const charInjuries = allInjuriesMap[aiName] || [];
+        let desire = evaluateNexusDesire(aiName, charData, charState, charInjuries);
 
-        // Roll against effective affinity
-        if (Math.random() < effectiveAffinity) {
+        // Recency penalty: if already visited today, halve desire
+        if (visitedToday >= 1) desire *= 0.5;
+
+        // Roll against desire
+        if (Math.random() < desire) {
           // === NEXUS CAPACITY CHECK ===
           if (nexusCurrentCount >= NEXUS_MAX_CAPACITY) continue; // Nexus is full
 
@@ -385,9 +428,25 @@ exports.handler = async (event, context) => {
             "Vivian Clark": "*gathers her ledger* I want to research something. Back in a bit. *heads to the Nexus with a warm smile*",
             "Ryan Porter": "*closes the server rack* Got a systems theory I wanna test. *walks to the Nexus*"
           };
-          const emote = nexusDepartureEmotes[aiName] || `*${aiName} heads to the Nexus*`;
 
-          // PHASE 1: Announce departure only — DON'T move yet (15-min cancel window)
+          // Injured characters get medical-specific departure emotes
+          let emote;
+          if (charInjuries.length > 0) {
+            const medicalEmotes = {
+              "Kevin": "*winces, holding his side* ...okay maybe the Nexus has a first aid kit. *limps toward it*",
+              "Neiv": "*stands slowly, favoring one side* Going to the Nexus. ...for research. *definitely not for the medical systems*",
+              "Jae": "*straightens with visible effort* I'll be in the Nexus. *walks with barely-concealed pain*",
+              "Declan": "*holds up a hand before anyone asks* I'm fine. Just gonna... rest in the Nexus for a bit.",
+              "Mack": "*checks own vitals, frowns* Physician, heal thyself. *heads to the Nexus medical bay*",
+              "Steele": "*the monitors glitch — Steele needs maintenance. The Nexus has tools.*",
+              "Hood": "*rises, one hand pressed to his ribs* The Nexus has facilities. *walks with precise, measured steps*"
+            };
+            emote = medicalEmotes[aiName] || `*${aiName} heads to the Nexus, moving carefully — they need the medical systems*`;
+          } else {
+            emote = nexusDepartureEmotes[aiName] || `*${aiName} heads to the Nexus*`;
+          }
+
+          // PHASE 1: Announce departure only — DON'T move yet (10-min cancel window)
           // Post departure emote to floor
           await fetch(`${supabaseUrl}/rest/v1/messages`, {
             method: "POST",
@@ -399,21 +458,18 @@ exports.handler = async (event, context) => {
           fetch(`${supabaseUrl}/rest/v1/lobby_settings`, {
             method: 'POST',
             headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`, "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates,return=minimal" },
-            body: JSON.stringify({ key: `nexus_pending_${aiName}`, value: JSON.stringify({ character: aiName, announced_at: new Date().toISOString() }) })
+            body: JSON.stringify({ key: `nexus_pending_${aiName}`, value: JSON.stringify({ character: aiName, announced_at: new Date().toISOString(), reason: charInjuries.length > 0 ? 'medical' : 'study' }) })
           }).catch(() => {});
 
           nexusWandering = { character: aiName, direction: 'pending' };
-          console.log(`Heartbeat: ${aiName} announced Nexus departure (pending — cancel window open)`);
+          const reasonStr = charInjuries.length > 0 ? 'medical' : charState?.mood === 'defeated' ? 'recovery' : 'study';
+          console.log(`Heartbeat: ${aiName} announced Nexus departure (${reasonStr}, desire=${desire.toFixed(2)}, pending — cancel window open)`);
 
           // Visit count now tracked in Phase 2 (actual entry), not here at announcement
         }
       }
-      } // end disabled Phase 1
 
-      // ═══ NEXUS AUTO-WANDERING DISABLED (Phase 2: Execute Pending Trips) ═══
-      // Pending Nexus trips no longer auto-execute on heartbeat.
-      // Nexus visits are manual only (triggered from admin or workspace).
-      if (false) {
+      // ═══ NEXUS SMART AUTO-WANDERING (Phase 2: Execute Pending Trips) ═══
       // === NEXUS PENDING DEPARTURES: Execute announced trips after cancel window ===
       try {
         const pendingRes = await fetch(
@@ -516,7 +572,7 @@ exports.handler = async (event, context) => {
       } catch (pendingCheckErr) {
         console.log("Nexus pending check failed (non-fatal):", pendingCheckErr.message);
       }
-      } // end disabled Phase 2
+      // end Phase 2
 
       // NEXUS RETURN: Uses dedicated entry timestamp (immune to state update resets)
       // Returns ALL overstaying AIs each heartbeat.

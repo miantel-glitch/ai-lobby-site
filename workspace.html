@@ -2897,6 +2897,15 @@
             <button class="action-btn task-btn" onclick="openTaskModal()">🎫 New Task</button>
             <button class="action-btn history-btn" onclick="downloadHistory()" style="background: rgba(155, 135, 175, 0.2); border-color: rgba(155, 135, 175, 0.5); color: #d4c4e8;">💾 Save History</button>
           </div>
+          <!-- Nexus Send/Recall Controls -->
+          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 8px;">
+            <select id="nexus-char-select" style="flex: 1; min-width: 120px; padding: 4px 6px; background: rgba(10, 25, 47, 0.9); border: 1px solid rgba(126, 200, 227, 0.4); border-radius: 5px; color: #7ec8e3; font-size: 12px;">
+              <option value="">Select character...</option>
+            </select>
+            <button onclick="sendToNexus()" style="padding: 4px 10px; background: rgba(126, 200, 227, 0.15); border: 1px solid rgba(126, 200, 227, 0.4); border-radius: 5px; color: #7ec8e3; font-size: 12px; cursor: pointer; white-space: nowrap;">🔮 Send to Nexus</button>
+            <button onclick="recallFromNexus()" style="padding: 4px 10px; background: rgba(255, 193, 7, 0.15); border: 1px solid rgba(255, 193, 7, 0.4); border-radius: 5px; color: #ffd54f; font-size: 12px; cursor: pointer; white-space: nowrap;">📢 Recall</button>
+            <span id="nexus-action-result" style="font-size: 11px; color: #aaa;"></span>
+          </div>
           <!-- Threat Alert Banner -->
           <div id="threat-alert-banner" style="display: none; background: linear-gradient(135deg, rgba(244,67,54,0.15), rgba(255,193,7,0.1)); border: 1px solid rgba(244,67,54,0.3); border-radius: 8px; padding: 8px 14px; margin-bottom: 8px; font-size: 13px; color: #ff8a80; animation: threatPulse 3s ease-in-out infinite;">
             <div id="threat-alert-text"></div>
@@ -6560,6 +6569,116 @@ Memos: ${emails.length}
       }
     }
     checkActiveThreats();
+
+    // === NEXUS SEND/RECALL ===
+    async function populateNexusSelect() {
+      try {
+        const res = await fetch('/.netlify/functions/character-state?action=get_all_states');
+        const data = await res.json();
+        const select = document.getElementById('nexus-char-select');
+        if (!select || !data.states) return;
+
+        const aiChars = ['Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian', 'The Subtitle', 'Steele', 'Marrow', 'Hood', 'Jae', 'Declan', 'Mack', 'Vivian Clark', 'Ryan Porter'];
+
+        select.innerHTML = '<option value="">Select character...</option>';
+        for (const name of aiChars) {
+          const state = data.states.find(s => s.character_name === name);
+          const loc = state?.current_focus || '?';
+          const locIcon = loc === 'nexus' ? '🔮' : loc === 'the_floor' ? '🏢' : loc === 'break_room' ? '☕' : '📍';
+          const opt = document.createElement('option');
+          opt.value = name;
+          opt.textContent = `${locIcon} ${name}`;
+          select.appendChild(opt);
+        }
+      } catch (e) { console.log('Nexus select failed:', e); }
+    }
+
+    // Supabase direct access (for lobby_settings only — messages go through chat endpoint)
+    const SB_URL = 'https://ovfqmahvfqxccoqnlntz.supabase.co';
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im92ZnFtYWh2ZnF4Y2NvcW5sbnR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTkzNjcsImV4cCI6MjA4NTQzNTM2N30.m8BUuQl9WxB6qz0zO5ETp5mKdcBPfmt98OlWc0oeQLk';
+    const SB_HDRS = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
+
+    async function sendToNexus() {
+      const select = document.getElementById('nexus-char-select');
+      const result = document.getElementById('nexus-action-result');
+      const name = select?.value;
+      if (!name) { result.textContent = 'Pick a character first!'; return; }
+
+      result.textContent = `Sending ${name}...`;
+      result.style.color = '#7ec8e3';
+
+      try {
+        // Move to nexus
+        await fetch('/.netlify/functions/character-state', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'update', character: name, updates: { current_focus: 'nexus' } })
+        });
+
+        // Post departure emote via chat endpoint
+        await fetch('/.netlify/functions/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ employee: name, content: `*heads to the Nexus*`, is_emote: true })
+        });
+
+        // Store entry time in lobby_settings
+        await fetch(`${SB_URL}/rest/v1/lobby_settings`, {
+          method: 'POST',
+          headers: { ...SB_HDRS, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+          body: JSON.stringify({ key: `nexus_entered_at_${name}`, value: new Date().toISOString() })
+        });
+
+        result.textContent = `✅ ${name} → Nexus`;
+        result.style.color = '#2ecc71';
+        setTimeout(() => { loadMessages(); loadWhosIn(); populateNexusSelect(); }, 1500);
+      } catch (err) {
+        result.textContent = 'Error: ' + err.message;
+        result.style.color = '#e74c3c';
+      }
+    }
+
+    async function recallFromNexus() {
+      const select = document.getElementById('nexus-char-select');
+      const result = document.getElementById('nexus-action-result');
+      const name = select?.value;
+      if (!name) { result.textContent = 'Pick a character first!'; return; }
+
+      result.textContent = `Recalling ${name}...`;
+      result.style.color = '#ffd54f';
+
+      try {
+        // Move to floor
+        await fetch('/.netlify/functions/character-state', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'update', character: name, updates: { current_focus: 'the_floor' } })
+        });
+
+        // Post return emote via chat endpoint
+        await fetch('/.netlify/functions/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ employee: name, content: `*returns from the Nexus*`, is_emote: true })
+        });
+
+        // Clean up entry time
+        fetch(`${SB_URL}/rest/v1/lobby_settings?key=eq.nexus_entered_at_${encodeURIComponent(name)}`, {
+          method: 'DELETE',
+          headers: SB_HDRS
+        }).catch(() => {});
+
+        result.textContent = `✅ ${name} ← Recalled`;
+        result.style.color = '#2ecc71';
+        setTimeout(() => { loadMessages(); loadWhosIn(); populateNexusSelect(); }, 1500);
+      } catch (err) {
+        result.textContent = 'Error: ' + err.message;
+        result.style.color = '#e74c3c';
+      }
+    }
+
+    populateNexusSelect();
+    pollIntervals.push(setInterval(populateNexusSelect, 30000));
 
     // Auto-refresh (intervals stored for cleanup on page exit)
     pollIntervals.push(setInterval(loadMessages, 10000));       // Messages every 10s
