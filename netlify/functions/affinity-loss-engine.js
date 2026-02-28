@@ -11,6 +11,7 @@
 
 const { DECAY_CONFIG } = require('./shared/decay-config');
 const { pickEventMoodShift } = require('./shared/personality-config');
+const { jealousyRealization, neglectRealization } = require('./shared/subconscious-triggers');
 
 // ============================================================
 // HELPER: Supabase fetch wrapper
@@ -500,8 +501,131 @@ exports.handler = async (event, context) => {
 
         // 5f. Maybe trigger adjust-subconscious for deeper reflection
         if (shouldTriggerSubconscious(actualDelta)) {
-          subconsciousTriggers.push({ character, targetHuman, dominantSystem, actualDelta });
+          const daysSinceInteraction = rel.last_interaction_at
+            ? (Date.now() - new Date(rel.last_interaction_at).getTime()) / (1000 * 60 * 60 * 24)
+            : null;
+
+          subconsciousTriggers.push({
+            character,
+            targetHuman,
+            dominantSystem,
+            actualDelta,
+            jealousyResult,
+            daysSinceInteraction
+          });
         }
+      }
+    }
+
+    // ============================================================
+    // 4b. Process AI-to-AI relationships (lighter touch)
+    // ============================================================
+    if (DECAY_CONFIG.aiToAi?.enabled) {
+      console.log('[affinity-loss] Processing AI-to-AI relationships...');
+
+      // Fetch AI-to-AI relationships (exclude human targets)
+      let aiToAiRelationships = [];
+      try {
+        const aiRelsRes = await supaFetch(supabaseUrl, supabaseKey,
+          `character_relationships?target_name=not.in.(${humanFilter})&select=*`
+        );
+        if (aiRelsRes.ok) {
+          aiToAiRelationships = await aiRelsRes.json();
+        }
+      } catch (e) {
+        console.log('[affinity-loss] AI-to-AI fetch error (non-fatal):', e.message);
+      }
+
+      if (Array.isArray(aiToAiRelationships) && aiToAiRelationships.length > 0) {
+        // Filter to active characters only
+        const aiToAiFiltered = aiToAiRelationships
+          .filter(r => CHARACTERS[r.character_name] && !INACTIVE_CHARACTERS.includes(r.character_name))
+          .filter(r => !DECAY_CONFIG.excludedCharacters.includes(r.character_name))
+          .filter(r => !singleCharacter || r.character_name === singleCharacter);
+
+        // Only process relationships that have changed from seed
+        const aiToAiToProcess = DECAY_CONFIG.aiToAi.onlyChangedFromSeed
+          ? aiToAiFiltered.filter(r => r.affinity !== (r.seed_affinity || 50))
+          : aiToAiFiltered;
+
+        let aiToAiCount = 0;
+        for (const rel of aiToAiToProcess) {
+          const character = rel.character_name;
+          const targetAI = rel.target_name;
+          const key = `${character}→${targetAI}`;
+
+          // Skip if immune or zero sensitivity
+          if (DECAY_CONFIG.immuneToDecay.includes(character)) continue;
+          const baseSensitivity = DECAY_CONFIG.sensitivityMultiplier[character];
+          if (!baseSensitivity || baseSensitivity === 0) continue;
+
+          // Apply AI-to-AI multiplier
+          const aiSensitivity = baseSensitivity * DECAY_CONFIG.aiToAi.sensitivityMultiplier;
+
+          // Check AI-to-AI daily cap
+          const existingAiLoss = existingLossMap[key] || 0;
+          const aiRemainingBudget = DECAY_CONFIG.aiToAi.dailyCap - existingAiLoss;
+          if (aiRemainingBudget >= 0) continue;
+
+          // Calculate decay only (no jealousy for AI-to-AI)
+          if (!rel.last_interaction_at) continue; // No interaction ever — skip
+          const lastInteraction = new Date(rel.last_interaction_at);
+          const daysSince = (Date.now() - lastInteraction.getTime()) / (1000 * 60 * 60 * 24);
+          if (daysSince < DECAY_CONFIG.gracePeriodDays) continue;
+
+          const daysPastGrace = daysSince - DECAY_CONFIG.gracePeriodDays;
+          const rawDecay = Math.floor(-1 * aiSensitivity * Math.min(daysPastGrace, 5));
+
+          if (rawDecay === 0) continue;
+
+          // Apply AI-to-AI cap
+          const cappedDecay = Math.max(rawDecay, aiRemainingBudget);
+
+          // Floor check
+          const floor = Math.max(rel.seed_affinity || 0, 0);
+          const newAffinity = Math.max(floor, rel.affinity + cappedDecay);
+          const actualDelta = newAffinity - rel.affinity;
+
+          if (actualDelta === 0) continue;
+
+          console.log(`[affinity-loss] AI-to-AI ${key}: decay=${rawDecay}, capped=${actualDelta}`);
+
+          summary.push({
+            character,
+            target: targetAI,
+            oldAffinity: rel.affinity,
+            newAffinity,
+            delta: actualDelta,
+            breakdown: { decay: rawDecay, jealousy: 0, wants: 0 },
+            dominantSystem: 'natural_decay_ai'
+          });
+
+          if (!dryRun) {
+            // Apply the change
+            await supaFetch(supabaseUrl, supabaseKey,
+              `character_relationships?character_name=eq.${encodeURIComponent(character)}&target_name=eq.${encodeURIComponent(targetAI)}`,
+              {
+                method: 'PATCH',
+                body: JSON.stringify({ affinity: newAffinity, updated_at: new Date().toISOString() })
+              }
+            );
+
+            // Log it
+            allLogEntries.push({
+              character_name: character,
+              target_name: targetAI,
+              system: 'natural_decay_ai',
+              raw_delta: rawDecay,
+              capped_delta: actualDelta,
+              details: { days_since_interaction: Math.floor(daysSince), ai_to_ai: true },
+              run_date: today
+            });
+          }
+
+          aiToAiCount++;
+        }
+
+        console.log(`[affinity-loss] AI-to-AI: processed ${aiToAiCount} relationship changes`);
       }
     }
 
@@ -538,25 +662,37 @@ exports.handler = async (event, context) => {
     // ============================================================
     if (!dryRun && subconsciousTriggers.length > 0) {
       for (const trigger of subconsciousTriggers) {
-        const { character, targetHuman, dominantSystem, actualDelta } = trigger;
-        let narrativeContext;
+        const { character, targetHuman, dominantSystem, actualDelta, jealousyResult, daysSinceInteraction } = trigger;
 
-        if (dominantSystem === 'jealousy') {
-          narrativeContext = `You've noticed ${targetHuman} spending a lot of time with other characters lately. More time than they spend with you. How does that make you feel?`;
-        } else if (dominantSystem === 'natural_decay') {
-          narrativeContext = `It's been days since ${targetHuman} spoke to you. The silence has weight. Your affinity dropped by ${actualDelta}. How does the distance make you feel?`;
-        } else {
-          narrativeContext = `Something you wanted from ${targetHuman} never came. It's a small thing. But small things accumulate. How are you feeling about this relationship?`;
+        try {
+          if (dominantSystem === 'jealousy' && jealousyResult?.jealousOf) {
+            // Use the specific jealousy realization — character-specific narrative
+            jealousyRealization(character, targetHuman, jealousyResult.jealousOf, siteUrl)
+              .catch(err => console.log(`[affinity-loss] Jealousy realization for ${character} failed (non-fatal):`, err.message));
+            console.log(`[affinity-loss] Triggered jealousy realization: ${character} about ${targetHuman} + ${jealousyResult.jealousOf}`);
+          } else if (dominantSystem === 'natural_decay' && daysSinceInteraction) {
+            // Use the specific neglect realization
+            neglectRealization(character, targetHuman, daysSinceInteraction, actualDelta, siteUrl)
+              .catch(err => console.log(`[affinity-loss] Neglect realization for ${character} failed (non-fatal):`, err.message));
+            console.log(`[affinity-loss] Triggered neglect realization: ${character} about ${targetHuman} (${Math.floor(daysSinceInteraction)} days)`);
+          } else {
+            // Fallback: generic subconscious trigger for unmet wants or other
+            let narrativeContext;
+            if (dominantSystem === 'unmet_wants') {
+              narrativeContext = `Something you wanted from ${targetHuman} never came. It's a small thing. But small things accumulate. How are you feeling about this relationship?`;
+            } else {
+              narrativeContext = `Your relationship with ${targetHuman} shifted. Your affinity dropped by ${actualDelta}. How does that make you feel?`;
+            }
+            fetch(`${siteUrl}/.netlify/functions/adjust-subconscious`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ character, target: targetHuman, narrativeContext })
+            }).catch(err => console.log(`[affinity-loss] Subconscious trigger for ${character} failed (non-fatal):`, err.message));
+            console.log(`[affinity-loss] Triggered generic subconscious: ${character} about ${targetHuman} (${dominantSystem})`);
+          }
+        } catch (err) {
+          console.log(`[affinity-loss] Subconscious trigger error for ${character} (non-fatal):`, err.message);
         }
-
-        // Fire and forget
-        fetch(`${siteUrl}/.netlify/functions/adjust-subconscious`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ character, target: targetHuman, narrativeContext })
-        }).catch(err => console.log(`[affinity-loss] Subconscious trigger for ${character} failed (non-fatal):`, err.message));
-
-        console.log(`[affinity-loss] Triggered subconscious reflection: ${character} about ${targetHuman} (${dominantSystem})`);
       }
     }
 
