@@ -882,24 +882,43 @@ exports.handler = async (event, context) => {
           console.log(`⚔️ Heartbeat: Tension evaluated — score: ${tension.highestTension || tension.tensionScore || 0}, fightReady: ${tension.fightReady}`);
           if (tension.fightReady) {
             console.log(`⚔️ Heartbeat: COMBAT tension detected — ${tension.aggressor} vs ${tension.defender} (score: ${tension.tensionScore}, reason: ${tension.reason})`);
-            // Initiate fight
-            const fightResult = await fetch(`${siteUrl}/.netlify/functions/combat-engine`, {
+            // Phase 1: Initiate confrontation (the spark — posts provocation, stores pending fight)
+            const confrontResult = await fetch(`${siteUrl}/.netlify/functions/combat-engine`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                action: 'initiate_fight',
+                action: 'initiate_confrontation',
                 aggressor: tension.aggressor,
                 defender: tension.defender,
                 tensionScore: tension.tensionScore,
                 triggerReason: tension.reason
               })
             });
-            combatActivity = await fightResult.json();
-            if (combatActivity?.fightOccurred) {
-              console.log(`Heartbeat: FIGHT — ${tension.aggressor} vs ${tension.defender} — ${combatActivity.outcome} (winner: ${combatActivity.winner || 'standoff'})`);
+            combatActivity = await confrontResult.json();
+            if (combatActivity?.confrontationStarted) {
+              console.log(`⚔️ Heartbeat: CONFRONTATION — ${tension.aggressor} → ${tension.defender} — fight will resolve in ~45s`);
             }
           }
         }
+      }
+
+      // Phase 2: Resolve any pending fights (confrontations that have had their ~45s delay)
+      try {
+        const pendingResult = await fetch(`${siteUrl}/.netlify/functions/combat-engine`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'resolve_pending_fights' })
+        });
+        const pendingData = await pendingResult.json();
+        if (pendingData?.resolvedFights?.length > 0) {
+          for (const resolved of pendingData.resolvedFights) {
+            if (resolved.resolved) {
+              console.log(`⚔️ Heartbeat: FIGHT RESOLVED — ${resolved.pair} — ${resolved.outcome} (winner: ${resolved.winner || 'standoff'})`);
+            }
+          }
+        }
+      } catch (pendingErr) {
+        console.log("Pending fight resolution failed (non-fatal):", pendingErr.message);
       }
 
       // Settlement check: ~5% chance, check for unresolved fights

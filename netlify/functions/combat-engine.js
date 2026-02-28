@@ -817,6 +817,90 @@ Keep it grounded and visceral — this is real, not choreographed.`;
         }
       } catch (e) { /* non-fatal */ }
 
+      // 4k. Retreat decision for the loser
+      let retreated = false;
+      let retreatedTo = null;
+      if (loser && severity !== "STANDOFF") {
+        try {
+          const loserProfile = getCombatProfile(loser);
+          const loserState = loser === aggressor ? stateA : stateB;
+          const loserInjuries = loser === aggressor ? injuriesA : injuriesB;
+
+          // Calculate retreat chance based on personality + state
+          let retreatChance = loserProfile?.retreatAffinity || 0.3;
+          // Wounds increase retreat desire
+          if (loserInjuries.some(i => i.injury_type === 'wounded') || severity === "FIGHT" || severity === "BEATDOWN") retreatChance += 0.30;
+          // Humiliation drives retreat
+          if (severity === "BEATDOWN") retreatChance += 0.35;
+          // Low energy = just wants to rest
+          if ((loserState?.energy || 50) < 20) retreatChance += 0.25;
+          // Multiple injuries compound
+          if (loserInjuries.length >= 2) retreatChance += 0.20;
+
+          retreatChance = Math.min(retreatChance, 0.95);
+          console.log(`⚔️ COMBAT: Retreat check for ${loser} — chance: ${(retreatChance * 100).toFixed(0)}% (retreatAffinity: ${loserProfile?.retreatAffinity || 0.3})`);
+
+          if (Math.random() < retreatChance) {
+            retreated = true;
+            retreatedTo = 'nexus';
+
+            // Post retreat emote to floor
+            const retreatEmote = loserProfile?.combatEmotes?.retreat || `*${loser} picks themselves up and limps toward the Nexus without a word.*`;
+            await fetch(`${supabaseUrl}/rest/v1/messages`, {
+              method: "POST",
+              headers: { ...sbHeaders, "Content-Type": "application/json", "Prefer": "return=minimal" },
+              body: JSON.stringify({
+                employee: loser,
+                content: retreatEmote,
+                created_at: new Date(Date.now() + 2000).toISOString(), // 2s after fight narrative
+                is_emote: true
+              })
+            });
+
+            // Move loser to nexus
+            await fetch(`${siteUrl}/.netlify/functions/character-state`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: 'update', character: loser, updates: { current_focus: 'nexus' } })
+            });
+
+            // Post arrival message to nexus
+            const nexusArrival = `*${loser} arrives in the Nexus, ${severity === "BEATDOWN" ? "barely standing" : "moving carefully"}. The medical systems hum to life.*`;
+            await fetch(`${supabaseUrl}/rest/v1/nexus_messages`, {
+              method: "POST",
+              headers: { ...sbHeaders, "Content-Type": "application/json", "Prefer": "return=minimal" },
+              body: JSON.stringify({
+                speaker: loser,
+                message: nexusArrival,
+                channel: 'general',
+                is_ai: true,
+                message_type: 'chat',
+                created_at: new Date(Date.now() + 3000).toISOString()
+              })
+            });
+
+            // Store nexus entry time for medical stay tracking
+            await fetch(`${supabaseUrl}/rest/v1/lobby_settings`, {
+              method: "POST",
+              headers: { ...sbHeaders, "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates,return=minimal" },
+              body: JSON.stringify({
+                key: `nexus_entered_at_${loser.replace(/\s+/g, '_')}`,
+                value: JSON.stringify({
+                  entered_at: new Date().toISOString(),
+                  reason: 'medical_retreat',
+                  fight_id: fightId,
+                  injuries: severity === "BEATDOWN" ? ['wounded', 'humiliated'] : ['wounded']
+                })
+              })
+            });
+
+            console.log(`⚔️ COMBAT: ${loser} RETREATS to Nexus for medical recovery`);
+          }
+        } catch (retreatErr) {
+          console.log(`Retreat decision failed (non-fatal):`, retreatErr.message);
+        }
+      }
+
       return {
         statusCode: 200,
         headers,
@@ -828,9 +912,198 @@ Keep it grounded and visceral — this is real, not choreographed.`;
           affinityShifts: { aggressor: affinityShiftAggressor, defender: affinityShiftDefender },
           fightId,
           criticalHit,
-          criticalFail
+          criticalFail,
+          retreated,
+          retreatedTo,
+          retreatedCharacter: retreated ? loser : null
         })
       };
+    }
+
+    // ============================================
+    // ACTION: initiate_confrontation
+    // Phase 1 of two-phase fight — the spark
+    // Generates a confrontation line, posts it, stores pending state
+    // ============================================
+    if (action === "initiate_confrontation") {
+      const { aggressor, defender, tensionScore, triggerReason } = body;
+      if (!aggressor || !defender) {
+        return { statusCode: 400, headers, body: JSON.stringify({ error: "Missing aggressor or defender" }) };
+      }
+
+      const { CHARACTERS, getCombatProfile } = require('./shared/characters');
+      const profileA = getCombatProfile(aggressor);
+
+      // Check for already-pending fight between these two
+      try {
+        const existingRes = await fetch(
+          `${supabaseUrl}/rest/v1/lobby_settings?key=like.pending_fight_*&select=key,value`,
+          { headers: sbHeaders }
+        );
+        const existing = (await existingRes.json()) || [];
+        for (const e of existing) {
+          const val = typeof e.value === 'string' ? JSON.parse(e.value) : e.value;
+          if ((val.aggressor === aggressor && val.defender === defender) ||
+              (val.aggressor === defender && val.defender === aggressor)) {
+            console.log(`⚔️ COMBAT: Confrontation already pending for ${aggressor} vs ${defender} — skipping`);
+            return { statusCode: 200, headers, body: JSON.stringify({ confrontationStarted: false, reason: "already_pending" }) };
+          }
+        }
+      } catch (e) { /* non-fatal */ }
+
+      // Generate confrontation line from aggressor using Haiku
+      let confrontationLine = "";
+      try {
+        const charInfo = CHARACTERS[aggressor];
+        const confrontationPrompt = `You are ${aggressor}. You are about to confront ${defender} — tensions have been building and you've had enough.
+
+YOUR PERSONALITY: ${charInfo?.personality?.core || 'Unknown'}
+YOUR FIGHTING STYLE: ${profileA?.styleDescription || 'Unknown'}
+YOUR INITIATION STYLE: ${profileA?.combatEmotes?.initiate || 'Unknown'}
+
+THE TRIGGER: ${triggerReason || "accumulated tension and hostility"}
+
+Write a 1-2 sentence confrontation line in your voice. This is the moment BEFORE the fight — the verbal challenge, the provocation, the line in the sand. Use *asterisks* for physical actions.
+Do NOT resolve anything. Do NOT throw a punch yet. Just make it clear that something is about to happen.
+Stay in character. Be brief. Be specific to what triggered this.`;
+
+        const anthropicKey = process.env.ANTHROPIC_API_KEY;
+        const confRes = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "x-api-key": anthropicKey,
+            "anthropic-version": "2023-06-01",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "claude-3-haiku-20240307",
+            max_tokens: 150,
+            messages: [{ role: "user", content: confrontationPrompt }]
+          })
+        });
+        const confData = await confRes.json();
+        confrontationLine = confData?.content?.[0]?.text || profileA?.combatEmotes?.initiate || `*${aggressor} turns to face ${defender}, something dangerous in their expression*`;
+      } catch (e) {
+        confrontationLine = profileA?.combatEmotes?.initiate || `*${aggressor} turns to face ${defender}, something dangerous in their expression*`;
+        console.log("Confrontation generation failed:", e.message);
+      }
+
+      // Post confrontation line to floor
+      await fetch(`${supabaseUrl}/rest/v1/messages`, {
+        method: "POST",
+        headers: { ...sbHeaders, "Content-Type": "application/json", "Prefer": "return=minimal" },
+        body: JSON.stringify({
+          employee: aggressor,
+          content: confrontationLine,
+          created_at: new Date().toISOString(),
+          is_emote: true
+        })
+      });
+
+      // Store pending fight state in lobby_settings
+      const pendingKey = `pending_fight_${Date.now()}`;
+      await fetch(`${supabaseUrl}/rest/v1/lobby_settings`, {
+        method: "POST",
+        headers: { ...sbHeaders, "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates,return=minimal" },
+        body: JSON.stringify({
+          key: pendingKey,
+          value: JSON.stringify({
+            aggressor, defender, tensionScore, triggerReason,
+            confrontation_at: new Date().toISOString(),
+            confrontation_line: confrontationLine
+          })
+        })
+      });
+
+      // Update last_fight_at to prevent duplicate tension evaluations during the delay
+      await fetch(`${supabaseUrl}/rest/v1/lobby_settings`, {
+        method: "POST",
+        headers: { ...sbHeaders, "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates,return=minimal" },
+        body: JSON.stringify({ key: "last_fight_at", value: new Date().toISOString() })
+      });
+
+      console.log(`⚔️ COMBAT CONFRONTATION: ${aggressor} → ${defender} — "${confrontationLine.substring(0, 80)}..." (pending resolution in ~45s)`);
+
+      return {
+        statusCode: 200, headers,
+        body: JSON.stringify({
+          confrontationStarted: true,
+          aggressor, defender,
+          confrontationLine,
+          pendingKey,
+          resolveAfterSeconds: 45
+        })
+      };
+    }
+
+    // ============================================
+    // ACTION: resolve_pending_fights
+    // Phase 2 of two-phase fight — checks pending confrontations and resolves them
+    // ============================================
+    if (action === "resolve_pending_fights") {
+      const pendingRes = await fetch(
+        `${supabaseUrl}/rest/v1/lobby_settings?key=like.pending_fight_*&select=key,value`,
+        { headers: sbHeaders }
+      );
+      const pendingFights = (await pendingRes.json()) || [];
+
+      if (pendingFights.length === 0) {
+        return { statusCode: 200, headers, body: JSON.stringify({ resolvedFights: [], message: "no_pending" }) };
+      }
+
+      const results = [];
+      for (const record of pendingFights) {
+        try {
+          const pending = typeof record.value === "string" ? JSON.parse(record.value) : record.value;
+          if (!pending.confrontation_at) continue;
+
+          const secondsSince = (Date.now() - new Date(pending.confrontation_at).getTime()) / 1000;
+          if (secondsSince < 45) {
+            console.log(`⚔️ COMBAT: Pending fight ${pending.aggressor} vs ${pending.defender} — ${Math.round(secondsSince)}s elapsed, waiting for 45s`);
+            continue; // Not ready yet
+          }
+
+          // Stale check — if somehow older than 10 minutes, just clean up
+          if (secondsSince > 600) {
+            console.log(`⚔️ COMBAT: Stale pending fight ${pending.aggressor} vs ${pending.defender} — ${Math.round(secondsSince)}s elapsed, cleaning up`);
+            await fetch(`${supabaseUrl}/rest/v1/lobby_settings?key=eq.${encodeURIComponent(record.key)}`, {
+              method: "DELETE",
+              headers: { ...sbHeaders, "Prefer": "return=minimal" }
+            });
+            results.push({ pair: `${pending.aggressor}_${pending.defender}`, resolved: false, reason: "stale_cleaned" });
+            continue;
+          }
+
+          // Resolve the fight
+          console.log(`⚔️ COMBAT: Resolving pending fight ${pending.aggressor} vs ${pending.defender} (${Math.round(secondsSince)}s since confrontation)`);
+
+          const fightRes = await fetch(`${siteUrl}/.netlify/functions/combat-engine`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "initiate_fight",
+              aggressor: pending.aggressor,
+              defender: pending.defender,
+              tensionScore: pending.tensionScore,
+              triggerReason: pending.triggerReason
+            })
+          });
+          const fightResult = await fightRes.json();
+
+          // Clean up the pending entry
+          await fetch(`${supabaseUrl}/rest/v1/lobby_settings?key=eq.${encodeURIComponent(record.key)}`, {
+            method: "DELETE",
+            headers: { ...sbHeaders, "Prefer": "return=minimal" }
+          });
+
+          results.push({ pair: `${pending.aggressor}_${pending.defender}`, resolved: true, outcome: fightResult?.outcome, winner: fightResult?.winner });
+        } catch (e) {
+          console.log("Pending fight resolution failed:", e.message);
+          results.push({ key: record.key, resolved: false, error: e.message });
+        }
+      }
+
+      return { statusCode: 200, headers, body: JSON.stringify({ resolvedFights: results }) };
     }
 
     // ============================================
