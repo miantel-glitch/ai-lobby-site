@@ -101,7 +101,17 @@ const DECAY_CONFIG = {
   humans: HUMANS,
 
   // Characters excluded from ALL systems
-  excludedCharacters: EXCLUDED_CHARACTERS
+  excludedCharacters: EXCLUDED_CHARACTERS,
+
+  // === AI-TO-AI SETTINGS ===
+  aiToAi: {
+    enabled: true,
+    dailyCap: -4,                    // Half the human cap
+    sensitivityMultiplier: 0.5,      // All characters decay at 50% their normal rate for AI relationships
+    skipJealousy: true,              // No jealousy for AI-to-AI
+    minAffinityToProcess: -100,      // Process all (no floor filter)
+    onlyChangedFromSeed: true        // Only process relationships that have deviated from seed
+  }
 };
 
 module.exports = { DECAY_CONFIG, HUMANS, EXCLUDED_CHARACTERS };
