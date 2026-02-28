@@ -4,6 +4,7 @@
 const { getSystemPrompt, getDiscordFlair, getModelForCharacter, getCharacter } = require('./shared/characters');
 const { canAIRespond, canSpecificAIRespond } = require('./shared/rate-limiter');
 const { evaluateAndCreateMemory } = require('./shared/memory-evaluator');
+const { parseAffinityChanges, applyAffinityChanges } = require('./shared/parse-affinity-change');
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -167,6 +168,11 @@ IMPORTANT: ONLY mention or address people listed in the [Currently on the floor:
 ${chatHistory}
 ---
 
+If this interaction meaningfully changes how you feel about someone present, you may include ONE tag:
+[AFFINITY_CHANGE: Name ±N reason]
+Example: [AFFINITY_CHANGE: Steele -3 mocked my concern for Asuna]
+Range: -5 to +5. Most interactions should NOT include this tag. Only use when genuinely moved.
+
 CRITICAL: You are ${character}. Write ONLY as ${character}. Do NOT write dialogue or actions for any other character. Do NOT copy another character's mannerisms, speech patterns, or action descriptions. Stay in YOUR voice.
 
 Your response:`
@@ -184,6 +190,11 @@ IMPORTANT: Only reference or interact with people listed in the [Currently on th
 ---
 ${chatHistory}
 ---
+
+If this interaction meaningfully changes how you feel about someone present, you may include ONE tag:
+[AFFINITY_CHANGE: Name ±N reason]
+Example: [AFFINITY_CHANGE: Steele -3 mocked my concern for Asuna]
+Range: -5 to +5. Most interactions should NOT include this tag. Only use when genuinely moved.
 
 CRITICAL: You are ${character}. Write ONLY as ${character}. Do NOT write dialogue or actions for any other character. Do NOT copy another character's mannerisms, speech patterns, or action descriptions. Stay in YOUR voice.
 
@@ -280,7 +291,16 @@ Respond:`;
     }
 
     // Clean the response
-    const cleanedResponse = cleanResponse(aiResponse);
+    let cleanedResponse = cleanResponse(aiResponse);
+
+    // Parse and strip AFFINITY_CHANGE tags
+    const { cleanedText: textAfterAffinity, changes: affinityChanges } = parseAffinityChanges(cleanedResponse, character);
+    if (affinityChanges.length > 0) {
+      cleanedResponse = textAfterAffinity;
+      // Fire-and-forget: apply affinity changes
+      applyAffinityChanges(character, affinityChanges, supabaseUrl, supabaseKey)
+        .catch(err => console.log(`[${character}] Affinity change failed (non-fatal):`, err.message));
+    }
 
     if (cleanedResponse.length < 5) {
       return {
