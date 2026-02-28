@@ -4295,9 +4295,9 @@
           const aiName = aiMentionMap[mentioned];
           alreadyTriggered.add(aiName);
 
-          // Marrow is Vale-focused — always responds to Vale, ~60% chance for others on the floor
+          // Marrow is Vale-focused — always responds to Vale, small chance to ignore others
           if (aiName === 'Marrow' && speaker !== 'Vale') {
-            if (Math.random() > 0.60) {
+            if (Math.random() > 0.85) {
               console.log(`🔒 [Floor] Marrow ignored non-Vale speaker (rolled unlucky)`);
               continue;
             }
@@ -4394,8 +4394,8 @@
         if (alreadyTriggered.has(aiName) || pendingAIResponses.has(aiName)) continue;
         // Skip if the speaker IS this character (don't trigger yourself)
         if (speaker === aiName) continue;
-        // Marrow is Vale-focused — always responds to Vale, ~60% chance for others on the floor
-        if (aiName === 'Marrow' && speaker !== 'Vale' && Math.random() > 0.60) continue;
+        // Marrow is Vale-focused — always responds to Vale, small chance to ignore others
+        if (aiName === 'Marrow' && speaker !== 'Vale' && Math.random() > 0.85) continue;
         // Check if any pattern matches
         if (patterns.some(p => p.test(message))) {
           // Check if this AI is actually on the floor
