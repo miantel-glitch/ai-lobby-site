@@ -786,7 +786,7 @@ exports.handler = async (event, context) => {
             fetch(`${supabaseUrl}/rest/v1/nexus_messages`, {
               method: "POST",
               headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}`, "Content-Type": "application/json", "Prefer": "return=minimal" },
-              body: JSON.stringify({ speaker: name, message: studyEmote, is_ai: true, message_type: 'study', created_at: new Date().toISOString() })
+              body: JSON.stringify({ speaker: name, message: studyEmote, is_ai: true, message_type: 'study', channel: 'skill-log', created_at: new Date().toISOString() })
             }).catch(e => console.log(`Nexus study message failed for ${name}:`, e.message));
 
             nexusAutonomousActivity = { type: 'study', character: name, sessionType, skillTarget };

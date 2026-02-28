@@ -203,6 +203,7 @@ exports.handler = async (event, context) => {
           message: levelUpMessage,
           is_ai: true,
           message_type: 'level_up',
+          channel: 'skill-log',
           created_at: new Date().toISOString()
         })
       }
@@ -347,6 +348,7 @@ exports.handler = async (event, context) => {
             message: `*has discovered a new skill: **${skillName}**!*`,
             is_ai: true,
             message_type: 'discovery',
+            channel: 'skill-log',
             created_at: new Date().toISOString()
           })
         }
@@ -884,6 +886,7 @@ SKILL_SCORE:N / SKILL_CATEGORY:category / SKILL_NAME:name / XP_AWARD:N / DISCOVE
                 message: discoveryMessage,
                 is_ai: true,
                 message_type: 'discovery',
+                channel: 'skill-log',
                 created_at: new Date().toISOString()
               })
             }
@@ -966,6 +969,7 @@ SKILL_SCORE:N / SKILL_CATEGORY:category / SKILL_NAME:name / XP_AWARD:N / DISCOVE
                     message: completionMsg,
                     is_ai: true,
                     message_type: 'study',
+                    channel: 'skill-log',
                     created_at: new Date().toISOString()
                   })
                 }

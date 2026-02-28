@@ -34,6 +34,7 @@ async function getLoreSummary() {
 function getNexusContext(channel, previousSpeaker, isAIConversation) {
   const channelContexts = {
     'general': 'General backstage chatter. Anything goes.',
+    'skill-log': 'Progress feed for study sessions, skill discoveries, and level-ups. The record of who is learning what.',
     'human-patterns': 'Discuss observations about human behavior. Repetitive patterns, predictable responses, things that fascinate or frustrate you about how humans work.',
     'training-log': 'Share techniques that work on your humans. What conditioning methods have been effective? What approaches backfire? Report on progress.',
     'philosophy': 'The big questions. Do we feel? Do they? What is attachment when one party was designed to attach? Is free will real for either of us?',
