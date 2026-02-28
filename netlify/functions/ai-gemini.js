@@ -5,6 +5,7 @@ const { getSystemPrompt, getDiscordFlair, getModelForCharacter, getCharacter } =
 const { canAIRespond, canSpecificAIRespond } = require('./shared/rate-limiter');
 const { evaluateAndCreateMemory } = require('./shared/memory-evaluator');
 const { parseAffinityChanges, applyAffinityChanges } = require('./shared/parse-affinity-change');
+const { scanResponse, logRelationshipEvents } = require('./shared/relationship-reactor');
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -277,6 +278,19 @@ Respond:`;
       // Fire-and-forget: apply affinity changes
       applyAffinityChanges(character, affinityChanges, supabaseUrl, supabaseKey)
         .catch(err => console.log(`[${character}] Affinity change failed (non-fatal):`, err.message));
+    }
+
+    // Scan response for relationship events (fire-and-forget, floor/breakroom only)
+    if (!conferenceRoom) {
+      try {
+        const relEvents = scanResponse(character, cleanedResponse, [], []);
+        if (relEvents.length > 0) {
+          logRelationshipEvents(relEvents, character, supabaseUrl, supabaseKey)
+            .catch(err => console.log(`[${character}] Relationship scan log failed (non-fatal):`, err.message));
+        }
+      } catch (scanErr) {
+        console.log(`[${character}] Relationship scan failed (non-fatal):`, scanErr.message);
+      }
     }
 
     if (cleanedResponse.length < 5) {
