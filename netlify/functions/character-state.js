@@ -449,8 +449,19 @@ async function getCharacterContext(characterName, supabaseUrl, supabaseKey, conv
     activeInjuries = (await injuryRes.json()) || [];
   } catch (e) { /* non-fatal, default to no injuries */ }
 
-  // Build the context prompt (now with room awareness, goals, relationships, wants, quests, traits, compliance, breakroom context, floor context, emails, injuries, narrative beats, lore, and tarot)
-  const statePrompt = buildStatePrompt(characterName, characterInfo, state, memories, roomPresence, currentGoal, relationships, activeWants, activeQuests, activeTraits, recentBreakroomMessages, complianceData, recentEmails, recentFloorMessages, raquelAdminEnabled, activeInjuries, narrativeBeats, tarotCard, recentLore, recentNexusMessages);
+  // Fetch recent relationship events (last 2 hours) for relationship landscape context
+  let recentRelEvents = [];
+  try {
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+    const relEventsRes = await fetch(
+      `${supabaseUrl}/rest/v1/relationship_events?or=(character_name.eq.${encodeURIComponent(characterName)},target_name.eq.${encodeURIComponent(characterName)})&created_at=gte.${twoHoursAgo}&select=character_name,target_name,event_type,context,intensity&order=created_at.desc&limit=5`,
+      { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+    );
+    if (relEventsRes.ok) recentRelEvents = await relEventsRes.json();
+  } catch (e) { /* non-fatal — table may not exist yet */ }
+
+  // Build the context prompt (now with room awareness, goals, relationships, wants, quests, traits, compliance, breakroom context, floor context, emails, injuries, narrative beats, lore, tarot, and relationship events)
+  const statePrompt = buildStatePrompt(characterName, characterInfo, state, memories, roomPresence, currentGoal, relationships, activeWants, activeQuests, activeTraits, recentBreakroomMessages, complianceData, recentEmails, recentFloorMessages, raquelAdminEnabled, activeInjuries, narrativeBeats, tarotCard, recentLore, recentNexusMessages, recentRelEvents);
 
   // Scrub Raquel from returned memories when she's admin-disabled (prevents name confusion across all consumers)
   const returnMemories = !raquelAdminEnabled
@@ -528,6 +539,29 @@ function extractKeywords(text) {
 }
 
 // Build a prompt snippet describing the character's current state
+
+// Helper: convert numeric affinity to a human-readable label (never expose raw numbers)
+function getAffinityLabel(affinity) {
+  if (affinity >= 85) return 'deeply bonded';
+  if (affinity >= 70) return 'close';
+  if (affinity >= 50) return 'friendly';
+  if (affinity >= 30) return 'neutral';
+  if (affinity >= 10) return 'cool';
+  return 'hostile';
+}
+
+// Helper: determine relationship trend direction based on drift from seed affinity
+function getAffinityTrend(rel) {
+  const seed = rel.seed_affinity || 50;
+  const current = rel.affinity;
+  const diff = current - seed;
+  if (diff > 10) return 'growing closer';
+  if (diff > 0) return 'warming';
+  if (diff < -10) return 'drifting apart';
+  if (diff < 0) return 'cooling';
+  return 'stable';
+}
+
 // Helper: format a list of character names with their pronouns
 // e.g. ["Jae", "Neiv", "Vivian Clark"] → "Jae (he/him), Neiv (he/him), Vivian Clark (she/her)"
 function namesWithPronouns(names) {
@@ -538,7 +572,7 @@ function namesWithPronouns(names) {
   }).join(', ');
 }
 
-function buildStatePrompt(characterName, info, state, memories, roomPresence = null, currentGoal = null, relationships = null, activeWants = null, activeQuests = null, activeTraits = null, recentBreakroomMessages = null, complianceData = null, recentEmails = null, recentFloorMessages = null, raquelAdminEnabled = true, activeInjuries = null, narrativeBeats = null, tarotCard = null, recentLore = null, recentNexusMessages = null) {
+function buildStatePrompt(characterName, info, state, memories, roomPresence = null, currentGoal = null, relationships = null, activeWants = null, activeQuests = null, activeTraits = null, recentBreakroomMessages = null, complianceData = null, recentEmails = null, recentFloorMessages = null, raquelAdminEnabled = true, activeInjuries = null, narrativeBeats = null, tarotCard = null, recentLore = null, recentNexusMessages = null, recentRelEvents = null) {
   let prompt = `\n--- HOW YOU'RE FEELING RIGHT NOW ---\n`;
 
   // Own pronoun awareness — so the character uses correct self-reference
@@ -681,6 +715,69 @@ function buildStatePrompt(characterName, info, state, memories, roomPresence = n
       }
       if ((roomPresence.nexus || []).length > 0) {
         prompt += `In the Nexus (studying): ${namesWithPronouns(roomPresence.nexus)}\n`;
+      }
+    }
+  }
+
+  // === RELATIONSHIP LANDSCAPE ===
+  // Shows how you feel about the people present, any friction pairs, and recent relationship events
+  {
+    let landscapeStarted = false;
+    const hasRelationships = relationships && relationships.length > 0;
+    const hasRelEvents = recentRelEvents && recentRelEvents.length > 0;
+
+    if (hasRelationships && roomPresence) {
+      // Determine who's in the same room as this character
+      const currentRoom = state.current_focus || 'the_floor';
+      let presentPeople = [];
+      if (currentRoom === 'break_room') presentPeople = roomPresence.break_room || [];
+      else if (currentRoom === 'the_fifth_floor') presentPeople = roomPresence.the_fifth_floor || [];
+      else if (currentRoom === 'meeting_room') presentPeople = roomPresence.meeting_room || [];
+      else if (currentRoom === 'nexus') presentPeople = roomPresence.nexus || [];
+      else presentPeople = roomPresence.the_floor || [];
+
+      // Filter to only present people (exclude self)
+      const presentOthers = presentPeople.filter(name => name !== characterName);
+
+      if (presentOthers.length > 0) {
+        // Find relationships for present people
+        const presentRelationships = relationships.filter(r => presentOthers.includes(r.target_name));
+
+        if (presentRelationships.length > 0) {
+          prompt += `\n--- RELATIONSHIP LANDSCAPE ---\n`;
+          landscapeStarted = true;
+          prompt += `How you feel about who's here:\n`;
+
+          for (const rel of presentRelationships) {
+            const label = rel.relationship_label || getAffinityLabel(rel.affinity);
+            const trend = getAffinityTrend(rel);
+            prompt += `- ${rel.target_name}: ${label} (${trend})\n`;
+          }
+        }
+
+        // Add friction pairs involving present characters
+        const frictionPairs = detectFriction(characterName, presentOthers);
+        if (frictionPairs.length > 0) {
+          if (!landscapeStarted) {
+            prompt += `\n--- RELATIONSHIP LANDSCAPE ---\n`;
+            landscapeStarted = true;
+          }
+          prompt += `Active tension in the room:\n`;
+          for (const f of frictionPairs) {
+            prompt += `- You and ${f.partner} have friction: ${f.tension}\n`;
+          }
+        }
+      }
+    }
+
+    // Recent relationship events (last 2 hours) — show regardless of who's present
+    if (hasRelEvents) {
+      if (!landscapeStarted) {
+        prompt += `\n--- RELATIONSHIP LANDSCAPE ---\n`;
+      }
+      prompt += `Recent relationship moments:\n`;
+      for (const evt of recentRelEvents.slice(0, 3)) {
+        prompt += `- ${evt.context}\n`;
       }
     }
   }
