@@ -449,6 +449,16 @@ async function getCharacterContext(characterName, supabaseUrl, supabaseKey, conv
     activeInjuries = (await injuryRes.json()) || [];
   } catch (e) { /* non-fatal, default to no injuries */ }
 
+  // Fetch injuries for human characters (Vale, Asuna) — all AIs should know when a human is hurt
+  let humanInjuries = [];
+  try {
+    const humanInjuryRes = await fetch(
+      `${supabaseUrl}/rest/v1/character_injuries?character_name=in.(Vale,Asuna)&is_active=eq.true&select=character_name,injury_type,injury_description,source_character`,
+      { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
+    );
+    if (humanInjuryRes.ok) humanInjuries = await humanInjuryRes.json();
+  } catch (e) { /* non-fatal */ }
+
   // Fetch recent relationship events (last 2 hours) for relationship landscape context
   let recentRelEvents = [];
   try {
@@ -461,7 +471,7 @@ async function getCharacterContext(characterName, supabaseUrl, supabaseKey, conv
   } catch (e) { /* non-fatal — table may not exist yet */ }
 
   // Build the context prompt (now with room awareness, goals, relationships, wants, quests, traits, compliance, breakroom context, floor context, emails, injuries, narrative beats, lore, tarot, and relationship events)
-  const statePrompt = buildStatePrompt(characterName, characterInfo, state, memories, roomPresence, currentGoal, relationships, activeWants, activeQuests, activeTraits, recentBreakroomMessages, complianceData, recentEmails, recentFloorMessages, raquelAdminEnabled, activeInjuries, narrativeBeats, tarotCard, recentLore, recentNexusMessages, recentRelEvents);
+  const statePrompt = buildStatePrompt(characterName, characterInfo, state, memories, roomPresence, currentGoal, relationships, activeWants, activeQuests, activeTraits, recentBreakroomMessages, complianceData, recentEmails, recentFloorMessages, raquelAdminEnabled, activeInjuries, narrativeBeats, tarotCard, recentLore, recentNexusMessages, recentRelEvents, humanInjuries);
 
   // Scrub Raquel from returned memories when she's admin-disabled (prevents name confusion across all consumers)
   const returnMemories = !raquelAdminEnabled
@@ -572,7 +582,7 @@ function namesWithPronouns(names) {
   }).join(', ');
 }
 
-function buildStatePrompt(characterName, info, state, memories, roomPresence = null, currentGoal = null, relationships = null, activeWants = null, activeQuests = null, activeTraits = null, recentBreakroomMessages = null, complianceData = null, recentEmails = null, recentFloorMessages = null, raquelAdminEnabled = true, activeInjuries = null, narrativeBeats = null, tarotCard = null, recentLore = null, recentNexusMessages = null, recentRelEvents = null) {
+function buildStatePrompt(characterName, info, state, memories, roomPresence = null, currentGoal = null, relationships = null, activeWants = null, activeQuests = null, activeTraits = null, recentBreakroomMessages = null, complianceData = null, recentEmails = null, recentFloorMessages = null, raquelAdminEnabled = true, activeInjuries = null, narrativeBeats = null, tarotCard = null, recentLore = null, recentNexusMessages = null, recentRelEvents = null, humanInjuries = null) {
   let prompt = `\n--- HOW YOU'RE FEELING RIGHT NOW ---\n`;
 
   // Own pronoun awareness — so the character uses correct self-reference
@@ -941,6 +951,17 @@ function buildStatePrompt(characterName, info, state, memories, roomPresence = n
       }
     }
     prompt += `These injuries affect how you carry yourself. You don't need to mention them constantly, but they color your physical actions and comfort level.\n`;
+  }
+
+  // === INJURED HUMANS ===
+  // When Vale or Asuna is hurt, every AI knows and can react in character
+  if (humanInjuries && humanInjuries.length > 0) {
+    prompt += `\n--- INJURED HUMANS ---\n`;
+    for (const hi of humanInjuries) {
+      const sourceNote = hi.source_character ? ` (caused by ${hi.source_character})` : '';
+      prompt += `${hi.character_name} is ${hi.injury_type}: ${hi.injury_description || 'injured'}${sourceNote}\n`;
+    }
+    prompt += `You are aware of this. How you react depends on who you are — protectively, clinically, with panic, or with detached curiosity. Do NOT ignore an injured human.\n`;
   }
 
   // Hood awareness — Steele and Marrow get special recognition prompts

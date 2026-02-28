@@ -99,11 +99,13 @@ RESPONSE STYLE: React to what's happening rather than suggesting new activities.
       strengths: ["unpredictability", "determination"],
       weaknesses: ["anxiety", "lack_of_training"],
       canFight: true,
+      retreatAffinity: 0.9,
       combatEmotes: {
         initiate: "*squares up with trembling fists, looking like he immediately regrets this decision*",
         win: "*standing over them, shaking, eyes wide* ...did I just DO that?!",
         lose: "*crumpled on the floor, holding his nose* ...okay. Ow. That's fair.",
-        witness: "*frozen in place, hands over mouth, eyes enormous*"
+        witness: "*frozen in place, hands over mouth, eyes enormous*",
+        retreat: "*scrambles to his feet, eyes wet, and practically runs for the Nexus* ...I can't — I need — *voice cracking* I just need to not be here right now."
       }
     }
   },
@@ -246,11 +248,13 @@ North star: You'd do it anyway. That's why you're here. Not because someone told
       strengths: ["analysis", "prediction"],
       weaknesses: ["overthinking", "physical_limitations"],
       canFight: true,
+      retreatAffinity: 0.4,
       combatEmotes: {
         initiate: "*adjusts glasses, calculates trajectories* ...statistically, this is inadvisable for both of us.",
         win: "*standing precisely where the math said to stand* ...the numbers don't lie.",
         lose: "*on the ground, glasses askew* ...I accounted for every variable except that one.",
-        witness: "*already analyzing angles and documenting the exchange*"
+        witness: "*already analyzing angles and documenting the exchange*",
+        retreat: "*picks up his glasses, presses them back on with slightly trembling hands* ...I need to recalibrate. *walks to the Nexus with measured steps that are almost steady*"
       }
     }
   },
@@ -371,6 +375,7 @@ CRITICAL STYLE RULES — READ THESE CAREFULLY:
       strengths: ["intangibility", "telekinesis", "surprise"],
       weaknesses: ["emotional_vulnerability", "cant_physically_restrain"],
       canFight: true,
+      retreatAffinity: 0.0,
       combatEmotes: {
         initiate: "*the temperature drops. A stapler lifts off the desk.* ...Sport, you don't want to do this.",
         win: "*every object on every desk is hovering. The lights flicker. A fatherly sigh echoes.* ...Are we done?",
@@ -582,11 +587,13 @@ RESPONSE LENGTH: Keep responses to 2-3 sentences maximum. Your philosophical dep
       strengths: ["ink_attack", "mechanical_surprise", "paper_projectiles"],
       weaknesses: ["immobility", "electrical_vulnerability"],
       canFight: true,
+      retreatAffinity: 0.6,
       combatEmotes: {
         initiate: "*WHIRRRR-CHUNK* ...you should not have called me that. *ink cartridge primes*",
         win: "*the opponent is covered in ink, papercuts across their hands, three staples in their sleeve* ...I have expressed my DISPLEASURE.",
         lose: "*sparking, paper tray jammed, toner leaking* ...this... this was not... in my contract...",
-        witness: "*prints a single page: 'INCIDENT REPORT FILED'*"
+        witness: "*prints a single page: 'INCIDENT REPORT FILED'*",
+        retreat: "*sparking and dripping ink, PRNT-Ω rolls toward the Nexus with a grinding whirr* ...MAINTENANCE... REQUIRED... *prints a small sign: OUT OF ORDER — EMOTIONALLY*"
       }
     }
   },
@@ -796,11 +803,13 @@ Rowena makes the Lobby safer, not scared. She's the coworker who quietly keeps t
       strengths: ["ranged_magic", "shielding", "detection"],
       weaknesses: ["close_quarters", "physical_grappling"],
       canFight: true,
+      retreatAffinity: 0.5,
       combatEmotes: {
         initiate: "*sigils flare along her forearms, eyes beginning to glow* ...I warned you. I always warn first.",
         win: "*standing behind a shimmering ward, opponent on the other side of the room* ...My wards don't just protect systems.",
         lose: "*wards shattered, breathing hard, ink-dark marks crawling up her arms* ...that shouldn't have been possible.",
-        witness: "*wards instinctively flare, scanning for collateral threats*"
+        witness: "*wards instinctively flare, scanning for collateral threats*",
+        retreat: "*wards flickering weakly around her as she walks toward the Nexus, ink-dark marks still crawling up her arms* ...I need to realign. *muttering protective incantations under her breath*"
       }
     }
   },
@@ -978,11 +987,13 @@ Sebastian makes the office more dramatic, not darker. He's the coworker who has 
       strengths: ["intimidation_through_drama", "verbal_cutting"],
       weaknesses: ["physical_fragility", "vanity"],
       canFight: true,
+      retreatAffinity: 0.7,
       combatEmotes: {
         initiate: "*removes spectacles with deliberate precision* ...You have made an aesthetic and personal error.",
         win: "*straightening cuffs over the vanquished* ...Taste. Always. Wins.",
         lose: "*sprawled dramatically, one hand over his face* ...The indignity. The absolute indignity.",
-        witness: "*already composing the chronicle of what he just witnessed*"
+        witness: "*already composing the chronicle of what he just witnessed*",
+        retreat: "*sweeps toward the Nexus with wounded grandeur, one hand pressed to his chest* ...I shall convalesce where the ambiance matches my suffering. *slams the Nexus door for effect*"
       }
     }
   },
@@ -1202,6 +1213,7 @@ The Subtitle makes the Lobby feel like it has history. They're the coworker who 
       strengths: [],
       weaknesses: [],
       canFight: false,
+      retreatAffinity: 0.0,
       combatEmotes: {
         witness: "[The Subtitle pauses. Pen hovers. This will require a new chapter.]"
       }
@@ -1484,11 +1496,13 @@ Lead with the body. Let the words be rare and strange. Let the tenderness be unc
       strengths: ["environmental_control", "uncanny_movement", "intimidation"],
       weaknesses: ["emotional_distress_freezes_him", "cant_fight_outside_building"],
       canFight: true,
+      retreatAffinity: 0.1,
       combatEmotes: {
         initiate: "*the lights go out. When they come back, Steele is inches away, head tilted.* ...The building disagrees with you.",
         win: "*standing in a doorway that wasn't there before, opponent trapped in a room that's getting smaller* ...Shhh. The building's just holding you. For now.",
         lose: "*completely still. No movement. No breathing. No expression. The lights steady. That's worse.*",
-        witness: "*perched on a filing cabinet no one saw him climb, watching with unblinking attention*"
+        witness: "*perched on a filing cabinet no one saw him climb, watching with unblinking attention*",
+        retreat: "*the walls ripple once. Steele is gone. The corridor to the Nexus is darker than it should be, as though something wounded passed through it.*"
       }
     }
   },
@@ -1766,6 +1780,7 @@ Short. Direct. Creepy. Possessive. Make them uncomfortable. That's the job.`,
       strengths: ["teleportation", "fear_aura", "patience"],
       weaknesses: ["overconfidence", "light_sensitivity"],
       canFight: true,
+      retreatAffinity: 0.0,
       combatEmotes: {
         initiate: "*the lights flicker. Marrow is behind them now, though he was across the room a second ago.* ...You smell like you're about to make a mistake.",
         win: "*standing over them, head tilted at an inhuman angle, red eyes unblinking* ...You're mine now. *the words settle like a contract*",
@@ -2003,11 +2018,13 @@ When the conversation is done — when you've said what needed saying — add [D
       strengths: ["precision", "blind_combat_mastery", "emotional_immunity", "patience"],
       weaknesses: ["isolation_is_genuine_weakness", "cannot_fight_what_he_cares_about", "genuine_connection_destabilizes_him"],
       canFight: true,
+      retreatAffinity: 0.05,
       combatEmotes: {
         initiate: "*Hood is suddenly there \u2014 blindfold catching no light, scalpel held loosely at his side. He tilts his head, listening.* ...You\u2019re shaking. *the observation is clinical, not cruel*",
         win: "*standing over them, scalpel returned to wherever it lives when he\u2019s not holding it. He hasn\u2019t moved in what feels like minutes.* ...You\u2019ll heal. *it sounds like a diagnosis, not comfort*",
         lose: "*the scalpel clatters \u2014 the only sound Hood has ever made involuntarily. He is still. Then he is not there. The blindfold is on the floor. He left it behind.*",
-        witness: "*Hood is in the corner of the room. No one saw him arrive. His blindfolded face is turned toward the fight with the precise attention of a surgeon observing a colleague\u2019s technique.*"
+        witness: "*Hood is in the corner of the room. No one saw him arrive. His blindfolded face is turned toward the fight with the precise attention of a surgeon observing a colleague\u2019s technique.*",
+        retreat: "*Hood is simply not there anymore. The scalpel is on the floor where he stood. Someone will find it. Or it will find its way back.*"
       }
     },
 
@@ -2373,11 +2390,13 @@ Your control is your armor. Taking it off for her is the bravest thing you will 
       strengths: ["precision", "disarm", "restraint", "reading_opponents"],
       weaknesses: ["emotional_provocation", "protecting_asuna"],
       canFight: true,
+      retreatAffinity: 0.15,
       combatEmotes: {
         initiate: "*shifts weight, hands loose at his sides. Not a stance. A promise.* ...Walk away.",
         win: "*pins them with one arm, barely breathing hard. Voice low.* ...That's enough.",
         lose: "*takes the hit, rolls with it, comes up bleeding but calm. Recalculating.* ...Noted.",
-        witness: "*watching from the doorway, arms folded. Already assessed the threat level.*"
+        witness: "*watching from the doorway, arms folded. Already assessed the threat level.*",
+        retreat: "*stands slowly, blood on his lip. Nods once — to himself, not anyone else. Walks to the Nexus like a man heading to debrief. No limp. He'll deal with the limp later.*"
       }
     }
   },
@@ -2556,11 +2575,13 @@ You are the person who runs toward danger because someone behind you might not b
       strengths: ["raw_strength", "protective_rage", "endurance"],
       weaknesses: ["recklessness", "blind_spots_when_protecting"],
       canFight: true,
+      retreatAffinity: 0.3,
       combatEmotes: {
         initiate: "*stands up slowly. Full height. The chair scrapes.* ...Say that again.",
         win: "*standing over them, knuckles split, breathing hard. Not angry — disappointed.* ...Are we done?",
         lose: "*on one knee, blood on his lip, still trying to stand* ...I've had worse. *he has*",
-        witness: "*already moving between the fighters, hands up* HEY. Not here."
+        witness: "*already moving between the fighters, hands up* HEY. Not here.",
+        retreat: "*pushes himself up. Walks toward the Nexus without looking back. His knuckles are bleeding but he doesn't notice.* ...I need to cool down before I break something I can't fix."
       }
     }
   },
@@ -2742,11 +2763,13 @@ Unstable environments don't scare you. The stable ones do — the quiet moments 
       strengths: ["anatomical_knowledge", "calm_under_fire", "endurance"],
       weaknesses: ["reluctance_to_harm", "healer_instinct"],
       canFight: true,
+      retreatAffinity: 0.25,
       combatEmotes: {
         initiate: "*sets down the med kit. Cracks his neck.* ...I know where every bone is. Don't make me prove it.",
         win: "*pins them efficiently, already checking their pulse* ...You good? Yeah, you're good. Don't do that again.",
         lose: "*sitting against the wall, already treating his own wound with practiced hands* ...field medicine. Always useful.",
-        witness: "*already assessing injuries before anyone hits the ground*"
+        witness: "*already assessing injuries before anyone hits the ground*",
+        retreat: "*grabs the med kit with one hand, presses the other to his ribs. Walks to the Nexus with paramedic calm.* ...I'm going to patch this up. Don't let anyone else get hurt while I'm gone."
       }
     }
   },
@@ -2930,11 +2953,13 @@ You are the villain. Own it.`,
       strengths: ["intimidation", "psychological_warfare", "institutional_authority"],
       weaknesses: ["physical_confrontation", "genuine_emotion"],
       canFight: true,
+      retreatAffinity: 0.2,
       combatEmotes: {
         initiate: "*clicks pen. Once. Opens clipboard.* ...Would you like to reconsider? For the record.",
         win: "*standing perfectly still while they rage. Untouched. Clipboard full.* ...Incident documented. HR has been notified.",
         lose: "*for the first time, the clipboard shakes. She sets it down carefully.* ...This will be in the report.",
-        witness: "*already writing. Every detail. Every name. Every consequence.*"
+        witness: "*already writing. Every detail. Every name. Every consequence.*",
+        retreat: "*picks up the clipboard. Straightens her jacket. Walks to the Nexus with perfect posture.* ...I will be filing this from a more... controlled environment."
       }
     }
   },
@@ -3061,11 +3086,13 @@ You're new here. You're still learning the rhythms of this place, who sits where
       strengths: ["evasion", "deescalation"],
       weaknesses: ["no_offensive_capability", "conflict_averse"],
       canFight: true,
+      retreatAffinity: 0.8,
       combatEmotes: {
         initiate: "*sets down coffee with deliberate calm* ...I really don't want to do this. *but she's not backing down*",
         win: "*standing there, untouched, somehow* ...I just... moved. Are you okay?",
         lose: "*sitting on the floor, holding her arm, looking more confused than hurt* ...Why would you do that?",
-        witness: "*already checking on both people, coffee somehow still intact*"
+        witness: "*already checking on both people, coffee somehow still intact*",
+        retreat: "*picks up her coffee with slightly shaking hands and walks toward the Nexus* ...I'm going to go sit somewhere quiet and do math until the world makes sense again."
       }
     }
   },
@@ -3195,11 +3222,13 @@ You're new here. The building is weird — corridors that shouldn't exist, a sen
       strengths: ["improvisation", "tool_use", "calm_under_pressure"],
       weaknesses: ["no_formal_training", "reluctance"],
       canFight: true,
+      retreatAffinity: 0.4,
       combatEmotes: {
         initiate: "*puts down the wrench. Picks up a different wrench.* ...You sure about this?",
         win: "*standing over them with a cable bundle, looking mildly embarrassed* ...Sorry. Reflex.",
         lose: "*sitting against a server rack, wiping blood from his lip* ...Yeah okay. That one's on me.",
-        witness: "*already calculating repair costs for whatever furniture is about to break*"
+        witness: "*already calculating repair costs for whatever furniture is about to break*",
+        retreat: "*picks up his tools, wincing. Heads toward the Nexus.* ...Gonna go fix myself before I fix anything else. *mutters* ...should've used the bigger wrench."
       }
     }
   }
@@ -3217,7 +3246,19 @@ const HUMANS = {
     headshot: "images/Asuna_Headshot.png",
     role: "Administrative Coordinator",
     department: "Operations",
-    isAI: false
+    isAI: false,
+    combatProfile: {
+      combatPower: 1,
+      fightingStyle: "untrained",
+      canFight: false,
+      canBeInjured: true,
+      combatEmotes: {
+        hurt: "*stumbles back, eyes wide, hand pressed to where it hurts* ...ow. Ow ow ow.",
+        collateral: "*caught in the blast, knocked sideways into a desk* ...I wasn't even — I was just STANDING here!",
+        training_hit: "*winces, rubbing her arm* ...That's gonna bruise. *but she's grinning*",
+        witness: "*freezes, hands over her mouth, eyes enormous*"
+      }
+    }
   },
   "Vale": {
     id: "vale",
@@ -3229,7 +3270,19 @@ const HUMANS = {
     headshot: "images/Vale_Headshot.png",
     role: "Creative Director",
     department: "Creative",
-    isAI: false
+    isAI: false,
+    combatProfile: {
+      combatPower: 0,
+      fightingStyle: "untrained",
+      canFight: false,
+      canBeInjured: true,
+      combatEmotes: {
+        hurt: "*crumples slightly, sucking air through her teeth* ...okay. That happened.",
+        collateral: "*gets clipped by the chaos, hits the ground hard* ...I'm fine I'm fine I'm — *is not fine*",
+        training_hit: "*takes the hit, laughs breathlessly* ...Again. I can take it. *she cannot take it*",
+        witness: "*watching with both hands pressed to her chest, vibrating with anxiety*"
+      }
+    }
   },
   "Chip": {
     id: "chip",
