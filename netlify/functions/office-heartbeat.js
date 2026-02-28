@@ -1994,11 +1994,11 @@ async function checkBreakroomRecovery(supabaseUrl, supabaseKey) {
       const lastUpdate = new Date(character.updated_at);
       const minutesInBreakroom = (now.getTime() - lastUpdate.getTime()) / 60000;
 
-      // === STEP 2: CHECK IF CHARACTER SHOULD AUTO-RETURN ===
-      // Safety net: returns characters who've recovered but the AI never triggered [RETURN_TO_FLOOR]
-      // Higher energy bar (70) + shorter time (20 min) — incentivizes AI-driven return at 55+
-      const hasRecovered = character.energy >= 70 && character.patience >= 50;
-      const restedLongEnough = minutesInBreakroom >= 20;
+      // === STEP 2: AUTO-RETURN DISABLED ===
+      // Characters now decide when to leave via [RETURN_TO_FLOOR] in their breakroom response.
+      // No more auto-kicking at energy 70 — let them rest as long as they want.
+      const hasRecovered = false; // was: character.energy >= 70 && character.patience >= 50
+      const restedLongEnough = false; // was: minutesInBreakroom >= 20
 
       if (hasRecovered && restedLongEnough) {
         // Don't auto-return if humans are actively chatting in the breakroom
