@@ -307,7 +307,7 @@ async function reachOutImpulse(supabaseUrl, supabaseKey, siteUrl) {
   if (Math.random() > 0.25) return null;
 
   try {
-    const HUMAN_NAMES = ["Vale", "Asuna"];
+    const HUMAN_NAMES = ["Vale", "Asuna", "Gatik"];
 
     // Pick a random ACTIVE AI character (filter out retired, special entities, and Marrow who has his own PM system)
     const EXCLUDED_FROM_AUTO_PM = ['Marrow', 'Hood', 'The Narrator', 'Holden'];
@@ -570,7 +570,7 @@ async function meetingImpulse(supabaseUrl, supabaseKey, siteUrl, floorPeople, cs
     if (hour < 9 || hour >= 17) return null;
 
     // Need at least 3 AIs on the floor
-    const HUMAN_NAMES = ["Vale", "Asuna"];
+    const HUMAN_NAMES = ["Vale", "Asuna", "Gatik"];
     const aiOnFloor = (floorPeople || []).filter(p => !HUMAN_NAMES.includes(p));
     if (aiOnFloor.length < 3) return null;
 

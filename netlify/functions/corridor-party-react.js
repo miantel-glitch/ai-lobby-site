@@ -10,7 +10,7 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
 // Human characters - these are NEVER controlled by AI
-const HUMANS = ["Vale", "Asuna"];
+const HUMANS = ["Vale", "Asuna", "Gatik"];
 
 // Character-to-provider mapping (same as breakroom)
 const OPENROUTER_CHARACTERS = ["Kevin", "Rowena", "Declan", "Mack", "Sebastian", "The Subtitle", "Marrow"];

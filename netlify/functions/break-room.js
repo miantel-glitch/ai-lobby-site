@@ -190,7 +190,7 @@ exports.handler = async (event, context) => {
       const newPatience = Math.max(0, Math.min(100, state.patience + activity.patience));
 
       // Human characters stay in the breakroom after activities — only AIs auto-return to floor
-      const HUMAN_CHARACTERS = ['Vale', 'Asuna'];
+      const HUMAN_CHARACTERS = ['Vale', 'Asuna', 'Gatik'];
       const isHuman = HUMAN_CHARACTERS.includes(character);
 
       const stateUpdate = {

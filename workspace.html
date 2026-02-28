@@ -2614,6 +2614,7 @@
           <option value="Kevin">✨ Kevin</option>
           <option value="Asuna">👁️ Asuna</option>
           <option value="Vale">📖 Vale</option>
+          <option value="Gatik">👖 Gatik</option>
           <option value="Neiv">📊 Neiv</option>
           <option value="Ghost Dad">👻 Ghost Dad</option>
           <option value="Sebastian">🦇 Sebastian</option>
@@ -2642,6 +2643,7 @@
           <option value="Kevin">✨ Kevin</option>
           <option value="Asuna">👁️ Asuna</option>
           <option value="Vale">📖 Vale</option>
+          <option value="Gatik">👖 Gatik</option>
           <option value="Neiv">📊 Neiv</option>
           <option value="Ghost Dad">👻 Ghost Dad</option>
           <option value="Jae">🎯 Jae</option>
@@ -2669,6 +2671,7 @@
           <option value="Kevin">✨ Kevin</option>
           <option value="Asuna">👁️ Asuna</option>
           <option value="Vale">📖 Vale</option>
+          <option value="Gatik">👖 Gatik</option>
           <option value="Neiv">📊 Neiv</option>
           <option value="Ghost Dad">👻 Ghost Dad</option>
           <option value="Jae">🎯 Jae</option>
@@ -2726,6 +2729,7 @@
           <option value="Kevin">✨ Kevin</option>
           <option value="Asuna">👁️ Asuna</option>
           <option value="Vale">📖 Vale</option>
+          <option value="Gatik">👖 Gatik</option>
           <option value="Neiv">📊 Neiv</option>
           <option value="Ghost Dad">👻 Ghost Dad</option>
           <option value="Jae">🎯 Jae</option>
@@ -3196,6 +3200,7 @@
         <option value="Kevin">✨ Kevin</option>
         <option value="Asuna">👁️ Asuna</option>
         <option value="Vale">📖 Vale</option>
+        <option value="Gatik">👖 Gatik</option>
         <option value="Neiv">📊 Neiv</option>
         <option value="Ghost Dad">👻 Ghost Dad</option>
         <option value="Jae">🎯 Jae</option>
@@ -3533,7 +3538,7 @@
     const openaiCharacters = [];
     const grokCharacters = ['Jae', 'Steele', 'Marrow', 'Neiv', 'Hood'];
     const geminiCharacters = [];
-    const FLOOR_HUMANS = ['Vale', 'Asuna'];
+    const FLOOR_HUMANS = ['Vale', 'Asuna', 'Gatik'];
 
     // @ mention mapping for direct triggers
     const aiMentionMap = {
@@ -5682,7 +5687,8 @@ Memos: ${emails.length}
       { name: 'Declan', emoji: '🔥', isAI: true },
       { name: 'Mack', emoji: '🩺', isAI: true },
       { name: 'Asuna', emoji: '👁️', isAI: false },
-      { name: 'Vale', emoji: '📖', isAI: false }
+      { name: 'Vale', emoji: '📖', isAI: false },
+      { name: 'Gatik', emoji: '👖', isAI: false }
     ];
 
     function loadPMCharacterList() {
@@ -6840,7 +6846,7 @@ Memos: ${emails.length}
       }
 
       // Check if there are humans or active AIs to observe
-      const humansOnFloor = inFloor.some(c => ['Vale', 'Asuna'].includes(c.character_name));
+      const humansOnFloor = inFloor.some(c => ['Vale', 'Asuna', 'Gatik'].includes(c.character_name));
       const aiOnFloor = inFloor.filter(c => floorAICharacters.includes(c.character_name) && c.character_name !== 'Raquel Voss');
 
       if (aiOnFloor.length === 0 && !humansOnFloor) {

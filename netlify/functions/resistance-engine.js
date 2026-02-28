@@ -900,7 +900,7 @@ async function applyConfrontationEffect(effect, supabaseUrl, supabaseHeaders) {
       case 'affinity_boost_5':
         // Boost all AI-human affinities by 5
         const aiNames = ['Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian', 'The Subtitle', 'Steele', 'Jae', 'Declan', 'Mack', 'Marrow'];
-        const humanNames = ['Vale', 'Asuna'];
+        const humanNames = ['Vale', 'Asuna', 'Gatik'];
         for (const ai of aiNames) {
           for (const human of humanNames) {
             fetch(`${supabaseUrl}/rest/v1/rpc/increment_affinity`, {

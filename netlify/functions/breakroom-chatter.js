@@ -12,7 +12,7 @@ const { detectFriction, PERSONALITY } = require("./shared/personality-config");
 const { evaluateAndCreateMemory } = require("./shared/memory-evaluator");
 
 // Human characters - NEVER generate dialogue for these
-const HUMANS = ["Vale", "Asuna"];
+const HUMANS = ["Vale", "Asuna", "Gatik"];
 
 // AI Character personality info for chatter
 const characterPersonalities = {

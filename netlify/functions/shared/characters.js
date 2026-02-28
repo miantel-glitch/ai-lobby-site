@@ -3307,6 +3307,30 @@ const HUMANS = {
     role: "Founder",
     department: "Executive",
     isAI: false
+  },
+  "Gatik": {
+    id: "gatik",
+    displayName: "Gatik",
+    emoji: "👖",
+    pronouns: "he/him",
+    color: 0xC3B091,
+    colorHex: "#C3B091",
+    headshot: null,
+    role: "Unknown",
+    department: "Unknown",
+    isAI: false,
+    combatProfile: {
+      combatPower: 0,
+      fightingStyle: "untrained",
+      canFight: false,
+      canBeInjured: true,
+      combatEmotes: {
+        hurt: "*adjusts his khakis, wincing* ...that's not coming out of the fabric.",
+        collateral: "*gets knocked into a filing cabinet, khakis somehow still immaculate* ...I just got here.",
+        training_hit: "*takes it, blinks* ...okay. *brushes off his khakis* Again?",
+        witness: "*standing there in his khakis, watching, completely unreadable*"
+      }
+    }
   }
 };
 

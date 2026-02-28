@@ -7,7 +7,7 @@ const { evaluateAndCreateMemory } = require('./shared/memory-evaluator');
 const { getSystemPrompt, getModelForCharacter, getProviderForCharacter } = require('./shared/characters');
 
 // Human characters — never AI-controlled
-const HUMANS = ["Vale", "Asuna"];
+const HUMANS = ["Vale", "Asuna", "Gatik"];
 
 // Brief personality triggers for the decider
 const CHARACTER_BRIEFS = {

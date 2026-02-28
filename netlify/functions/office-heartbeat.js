@@ -2112,7 +2112,7 @@ async function checkBreakroomRecovery(supabaseUrl, supabaseKey) {
     }
 
     const now = new Date();
-    const HUMAN_CHARACTERS = ['Vale', 'Asuna']; // Human players — never auto-return them
+    const HUMAN_CHARACTERS = ['Vale', 'Asuna', 'Gatik']; // Human players — never auto-return them
 
     for (let character of breakroomOccupants) {
       // === SKIP HUMAN CHARACTERS ===
@@ -2148,7 +2148,7 @@ async function checkBreakroomRecovery(supabaseUrl, supabaseKey) {
         try {
           const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
           const humanActivityRes = await fetch(
-            `${supabaseUrl}/rest/v1/breakroom_messages?created_at=gte.${tenMinutesAgo}&speaker=in.(Vale,Asuna)&select=id&limit=1`,
+            `${supabaseUrl}/rest/v1/breakroom_messages?created_at=gte.${tenMinutesAgo}&speaker=in.(Vale,Asuna,Gatik)&select=id&limit=1`,
             {
               headers: {
                 "apikey": supabaseKey,

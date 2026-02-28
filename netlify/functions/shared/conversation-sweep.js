@@ -153,7 +153,7 @@ IMPORTANT: Only include participants who were actively involved in the memorable
   const expiresAt = new Date(now.getTime() + expiryDays * 24 * 60 * 60 * 1000).toISOString();
 
   // Create memory for each participant (only AI characters, not humans)
-  const HUMANS = ['Vale', 'Asuna', 'Vivian Clark', 'Ryan Porter']; // Will be updated if humans change
+  const HUMANS = ['Vale', 'Asuna', 'Gatik', 'Vivian Clark', 'Ryan Porter']; // Will be updated if humans change
   // Actually, Vivian and Ryan are AI characters. Let's not hardcode — check isAI from CHARACTERS
   // Simpler: create memories for ALL participants and let the system handle it
   // The memory system already handles non-AI names gracefully (they just don't get surfaced)

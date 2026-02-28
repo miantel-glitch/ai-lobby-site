@@ -5,7 +5,7 @@
 const Anthropic = require("@anthropic-ai/sdk").default;
 const { getProviderForCharacter } = require('./shared/characters');
 
-const HUMANS = ["Vale", "Asuna"];
+const HUMANS = ["Vale", "Asuna", "Gatik"];
 
 // Character personalities for host prompting
 const characterPersonalities = {

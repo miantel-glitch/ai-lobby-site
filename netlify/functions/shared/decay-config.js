@@ -4,7 +4,7 @@
 // Three subsystems: Natural Decay, Jealousy, Unmet Wants
 // All feed into a shared daily cap per character
 
-const HUMANS = ['Vale', 'Asuna'];
+const HUMANS = ['Vale', 'Asuna', 'Gatik'];
 
 // Characters excluded from ALL decay systems entirely
 const EXCLUDED_CHARACTERS = [];

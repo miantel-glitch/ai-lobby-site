@@ -818,7 +818,7 @@ exports.handler = async (event, context) => {
           return { statusCode: 400, headers, body: JSON.stringify({ error: "Missing directive text" }) };
         }
 
-        const HUMANS = ["Vale", "Asuna"];
+        const HUMANS = ["Vale", "Asuna", "Gatik"];
         const AI_NAMES = ["Kevin", "Neiv", "Ghost Dad", "PRNT-Ω", "Rowena", "Sebastian", "The Subtitle", "Steele", "Jae", "Declan", "Mack", "Marrow", "Holden", "Raquel Voss", "Vivian Clark", "Ryan Porter"];
 
         // Create a directive memory for each AI
@@ -947,7 +947,7 @@ exports.handler = async (event, context) => {
         const chatHistory = recentMsgs.reverse().map(m => `${m.employee}: ${m.content}`).join('\n');
 
         // Find humans in recent chat
-        const HUMANS = ['Vale', 'Asuna'];
+        const HUMANS = ['Vale', 'Asuna', 'Gatik'];
         const activeHumans = [...new Set(recentMsgs.map(m => m.employee).filter(n => HUMANS.includes(n)))];
         const humanTarget = activeHumans.length > 0 ? activeHumans[Math.floor(Math.random() * activeHumans.length)] : 'the humans on this floor';
 

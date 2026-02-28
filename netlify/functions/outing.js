@@ -679,7 +679,7 @@ async function endSession(body, supabaseUrl, supabaseKey, anthropicKey) {
 
     if (subjectIsAI) {
       // Reduce affinity by -10 with subject's strongest human bond
-      const HUMANS = ['Vale', 'Asuna'];
+      const HUMANS = ['Vale', 'Asuna', 'Gatik'];
       let strongestBond = { target: null, affinity: 0 };
       for (const human of HUMANS) {
         try {

@@ -194,7 +194,7 @@ Return ONLY the JSON, no other text.`
     }
 
     // === OPERATION 3: Create Memories for All AI Attendees ===
-    const HUMANS = ["Vale", "Asuna"];
+    const HUMANS = ["Vale", "Asuna", "Gatik"];
     const aiAttendees = (session.attendees || []).filter(a => !HUMANS.includes(a));
 
     // Build per-character message excerpts from the transcript for richer memories

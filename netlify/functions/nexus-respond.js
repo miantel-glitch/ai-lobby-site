@@ -7,7 +7,7 @@ const { evaluateAndCreateMemory } = require('./shared/memory-evaluator');
 const { getSystemPrompt, getModelForCharacter, getProviderForCharacter } = require('./shared/characters');
 
 // Human characters - these are NEVER controlled by AI
-const HUMANS = ["Vale", "Asuna"];
+const HUMANS = ["Vale", "Asuna", "Gatik"];
 
 // Cached lore summary (fetched once per cold start)
 let loreSummary = null;

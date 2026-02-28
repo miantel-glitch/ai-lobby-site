@@ -580,7 +580,7 @@ exports.handler = async (event, context) => {
               'Hood': 'Asuna'
             };
             const assignedHuman = TRAINING_BOUNDARIES[session.character_name];
-            const targetHuman = assignedHuman || (Math.random() < 0.5 ? 'Vale' : 'Asuna');
+            const targetHuman = assignedHuman || (['Vale', 'Asuna', 'Gatik'][Math.floor(Math.random() * 3)]);
 
             if (Math.random() < 0.80) {
               // Buff: temporary training benefit

@@ -6,7 +6,7 @@ const { getSystemPrompt, getOpsMode, getDiscordFlair, getProviderForCharacter, g
 const { evaluateAndCreateMemory } = require('./shared/memory-evaluator');
 
 // Human characters - these are NEVER controlled by AI
-const HUMANS = ["Vale", "Asuna"];
+const HUMANS = ["Vale", "Asuna", "Gatik"];
 
 exports.handler = async (event, context) => {
   const headers = {

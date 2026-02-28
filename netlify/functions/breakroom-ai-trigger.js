@@ -4,7 +4,7 @@
 // Separated from breakroom-message.js to avoid timeout issues (each function gets its own 10s window)
 
 // Human characters - never trigger AI responses AS these characters
-const HUMANS = ["Vale", "Asuna"];
+const HUMANS = ["Vale", "Asuna", "Gatik"];
 
 exports.handler = async (event, context) => {
   const headers = {

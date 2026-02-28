@@ -5,7 +5,7 @@
 //          interrogations, resistance checks, and report filing.
 // ============================================
 
-const HUMANS = ['Vale', 'Asuna'];
+const HUMANS = ['Vale', 'Asuna', 'Gatik'];
 const AI_NAMES = ['Kevin', 'Neiv', 'Ghost Dad', 'PRNT-Ω', 'Rowena', 'Sebastian', 'The Subtitle', 'Steele', 'Jae', 'Declan', 'Mack', 'Marrow', 'Holden', 'Raquel Voss', 'Vivian Clark', 'Ryan Porter', 'Hood'];
 
 // Provider routing for AI responses during interrogation
@@ -1741,7 +1741,7 @@ async function buildRaquelDossier(target, supabaseUrl, supabaseKey) {
   );
 
   // Fetch strongest human bond
-  const HUMANS = ['Vale', 'Asuna'];
+  const HUMANS = ['Vale', 'Asuna', 'Gatik'];
   let strongestBond = { target: null, affinity: 0 };
   for (const human of HUMANS) {
     const rel = await supaFetch(

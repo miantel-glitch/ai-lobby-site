@@ -908,7 +908,7 @@ Keep it grounded and visceral — this is real, not choreographed.`;
         try {
           // Check if Vale or Asuna are on the floor
           const humanFloorRes = await fetch(
-            `${supabaseUrl}/rest/v1/character_state?character_name=in.(Vale,Asuna)&current_focus=eq.the_floor&select=character_name`,
+            `${supabaseUrl}/rest/v1/character_state?character_name=in.(Vale,Asuna,Gatik)&current_focus=eq.the_floor&select=character_name`,
             { headers: sbHeaders }
           );
           const humansOnFloor = (await humanFloorRes.json()) || [];

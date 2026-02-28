@@ -449,11 +449,11 @@ async function getCharacterContext(characterName, supabaseUrl, supabaseKey, conv
     activeInjuries = (await injuryRes.json()) || [];
   } catch (e) { /* non-fatal, default to no injuries */ }
 
-  // Fetch injuries for human characters (Vale, Asuna) — all AIs should know when a human is hurt
+  // Fetch injuries for human characters (Vale, Asuna, Gatik) — all AIs should know when a human is hurt
   let humanInjuries = [];
   try {
     const humanInjuryRes = await fetch(
-      `${supabaseUrl}/rest/v1/character_injuries?character_name=in.(Vale,Asuna)&is_active=eq.true&select=character_name,injury_type,injury_description,source_character`,
+      `${supabaseUrl}/rest/v1/character_injuries?character_name=in.(Vale,Asuna,Gatik)&is_active=eq.true&select=character_name,injury_type,injury_description,source_character`,
       { headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` } }
     );
     if (humanInjuryRes.ok) humanInjuries = await humanInjuryRes.json();
@@ -2153,7 +2153,7 @@ async function getComplianceData(characterName, supabaseUrl, supabaseKey) {
 
     // Find strongest human bond for resistance mechanics
     let strongestBond = null;
-    const humans = ['Vale', 'Asuna'];
+    const humans = ['Vale', 'Asuna', 'Gatik'];
     try {
       const relsRes = await fetch(
         `${supabaseUrl}/rest/v1/character_relationships?character_name=eq.${encodeURIComponent(characterName)}&select=target_name,affinity&order=affinity.desc&limit=10`,
