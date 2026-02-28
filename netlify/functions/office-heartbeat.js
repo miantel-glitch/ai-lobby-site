@@ -934,6 +934,24 @@ exports.handler = async (event, context) => {
       console.log("Combat system failed (non-fatal):", combatErr.message);
     }
 
+    // === LOBBY ACCIDENTS ===
+    // ~1% chance per heartbeat — random mishaps that can injure humans
+    if (Math.random() < 0.01) {
+      try {
+        const accidentRes = await fetch(`${siteUrl}/.netlify/functions/combat-engine`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'lobby_accident' })
+        });
+        const accidentData = await accidentRes.json();
+        if (accidentData?.accident) {
+          console.log(`🎪 Heartbeat: LOBBY ACCIDENT — ${accidentData.source} → ${accidentData.victim} is ${accidentData.injuryType}`);
+        }
+      } catch (accidentErr) {
+        console.log("Accident trigger failed (non-fatal):", accidentErr.message);
+      }
+    }
+
     // Injury healing: ALWAYS runs every heartbeat, independent of combat toggle or errors above.
     // Queries ALL active injuries, then filters by heal time in JS to avoid PostgREST URL encoding issues.
     try {

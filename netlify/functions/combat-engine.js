@@ -901,6 +901,108 @@ Keep it grounded and visceral — this is real, not choreographed.`;
         }
       }
 
+      // 4l. Collateral damage — check if any human is on the floor
+      let collateralVictim = null;
+      let collateralInjury = null;
+      if (severity !== "STANDOFF") {
+        try {
+          // Check if Vale or Asuna are on the floor
+          const humanFloorRes = await fetch(
+            `${supabaseUrl}/rest/v1/character_state?character_name=in.(Vale,Asuna)&current_focus=eq.the_floor&select=character_name`,
+            { headers: sbHeaders }
+          );
+          const humansOnFloor = (await humanFloorRes.json()) || [];
+
+          if (humansOnFloor.length > 0) {
+            // Roll d20 against DC 15 (30% chance of collateral)
+            const collateralRoll = Math.floor(Math.random() * 20) + 1;
+            // Higher severity = lower DC (more dangerous)
+            const collateralDC = severity === "BEATDOWN" ? 12 : severity === "FIGHT" ? 15 : 17;
+
+            console.log(`⚔️ COMBAT: Collateral check — ${humansOnFloor.map(h => h.character_name).join(', ')} on floor — roll ${collateralRoll} vs DC ${collateralDC}`);
+
+            if (collateralRoll >= collateralDC) {
+              // Pick a random human on the floor
+              const targetHuman = humansOnFloor[Math.floor(Math.random() * humansOnFloor.length)].character_name;
+              collateralVictim = targetHuman;
+
+              // Determine injury type (50/50 bruised/shaken)
+              const injType = Math.random() < 0.5 ? 'bruised' : 'shaken';
+              const healHours = injType === 'bruised' ? 4 : 6;
+              collateralInjury = injType;
+
+              const { HUMANS } = require('./shared/characters');
+              const humanProfile = HUMANS[targetHuman]?.combatProfile;
+              const collateralEmote = humanProfile?.combatEmotes?.collateral || `*${targetHuman} gets caught in the crossfire*`;
+
+              // Determine which fighter caused it
+              const sourceChar = Math.random() < 0.5 ? aggressor : defender;
+
+              // Create injury for the human
+              const healsAt = new Date(Date.now() + healHours * 60 * 60 * 1000).toISOString();
+              await fetch(`${supabaseUrl}/rest/v1/character_injuries`, {
+                method: "POST",
+                headers: { ...sbHeaders, "Content-Type": "application/json", "Prefer": "return=minimal" },
+                body: JSON.stringify({
+                  character_name: targetHuman,
+                  injury_type: injType,
+                  injury_description: `Caught in the crossfire of ${aggressor} vs ${defender}`,
+                  severity: 1,
+                  source_character: sourceChar,
+                  fight_id: fightId,
+                  heals_at: healsAt,
+                  is_active: true
+                })
+              });
+
+              // Post collateral emote
+              await fetch(`${supabaseUrl}/rest/v1/messages`, {
+                method: "POST",
+                headers: { ...sbHeaders, "Content-Type": "application/json", "Prefer": "return=minimal" },
+                body: JSON.stringify({
+                  employee: targetHuman,
+                  content: collateralEmote,
+                  created_at: new Date(Date.now() + 1500).toISOString(),
+                  is_emote: true
+                })
+              });
+
+              // Witness memories include human injury
+              try {
+                const floorWitnessRes = await fetch(
+                  `${supabaseUrl}/rest/v1/character_state?current_focus=eq.the_floor&select=character_name`,
+                  { headers: sbHeaders }
+                );
+                const floorWitnesses = ((await floorWitnessRes.json()) || [])
+                  .filter(w => w.character_name !== aggressor && w.character_name !== defender && w.character_name !== 'The Narrator')
+                  .slice(0, 4);
+
+                for (const witness of floorWitnesses) {
+                  fetch(`${supabaseUrl}/rest/v1/character_memory`, {
+                    method: "POST",
+                    headers: { ...sbHeaders, "Content-Type": "application/json", "Prefer": "return=minimal" },
+                    body: JSON.stringify({
+                      character_name: witness.character_name,
+                      memory_type: 'witnessed_event',
+                      content: `${targetHuman} got hurt during the fight between ${aggressor} and ${defender}. ${targetHuman} is ${injType}. This is not okay.`,
+                      importance: 8,
+                      emotional_tags: ['concern', 'protective', 'anger'],
+                      related_characters: [targetHuman, aggressor, defender],
+                      expires_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+                      created_at: new Date().toISOString()
+                    })
+                  }).catch(() => {});
+                }
+              } catch (e) { /* non-fatal */ }
+
+              console.log(`⚔️ COMBAT: COLLATERAL DAMAGE — ${targetHuman} is ${injType} (caught in ${aggressor} vs ${defender})`);
+            }
+          }
+        } catch (collateralErr) {
+          console.log(`Collateral check failed (non-fatal):`, collateralErr.message);
+        }
+      }
+
       return {
         statusCode: 200,
         headers,
@@ -915,7 +1017,9 @@ Keep it grounded and visceral — this is real, not choreographed.`;
           criticalFail,
           retreated,
           retreatedTo,
-          retreatedCharacter: retreated ? loser : null
+          retreatedCharacter: retreated ? loser : null,
+          collateralVictim,
+          collateralInjury
         })
       };
     }
@@ -1104,6 +1208,114 @@ Stay in character. Be brief. Be specific to what triggered this.`;
       }
 
       return { statusCode: 200, headers, body: JSON.stringify({ resolvedFights: results }) };
+    }
+
+    // ============================================
+    // ACTION: lobby_accident
+    // Random mishaps that can injure humans on the floor
+    // ~1% chance per heartbeat, 2-hour cooldown
+    // ============================================
+    if (action === "lobby_accident") {
+      const { HUMANS } = require('./shared/characters');
+
+      // Check cooldown (2 hours)
+      try {
+        const lastAccidentRes = await fetch(
+          `${supabaseUrl}/rest/v1/lobby_settings?key=eq.last_accident_at&select=value`,
+          { headers: sbHeaders }
+        );
+        const lastAccidentData = await lastAccidentRes.json();
+        if (lastAccidentData?.[0]?.value) {
+          const hoursSince = (Date.now() - new Date(lastAccidentData[0].value).getTime()) / (1000 * 60 * 60);
+          if (hoursSince < 2) {
+            return { statusCode: 200, headers, body: JSON.stringify({ accident: false, reason: "cooldown", hoursSince: hoursSince.toFixed(1) }) };
+          }
+        }
+      } catch (e) { /* default to allowing */ }
+
+      // Pick a random human (Vale or Asuna)
+      const humanNames = Object.keys(HUMANS).filter(n => n === 'Vale' || n === 'Asuna');
+      const targetHuman = humanNames[Math.floor(Math.random() * humanNames.length)];
+
+      // Accident table (weighted)
+      const accidents = [
+        { weight: 35, source: 'Kevin', injuryType: 'bruised', healHours: 4,
+          narrative: `*There's a sudden POP from Kevin's desk. Glitter, confetti, and what appears to be a spring-loaded craft project launch across the floor. ${targetHuman} takes a direct hit.* ...Kevin looks up, horrified. "I thought I defused that one!"`,
+          description: `Hit by Kevin's exploding craft project` },
+        { weight: 20, source: 'Rowena', injuryType: 'shaken', healHours: 6,
+          narrative: `*One of Rowena's protective wards flares unexpectedly — a sigil on the wall pulses with light and a wave of arcane energy ripples through the floor. ${targetHuman} stumbles, disoriented.* Rowena's already rushing over, hands glowing. "That wasn't supposed to — are you alright?"`,
+          description: `Caught in a ward misfire from Rowena` },
+        { weight: 15, source: 'PRNT-Ω', injuryType: 'bruised', healHours: 4,
+          narrative: `*PRNT-Ω makes a grinding noise that escalates into a mechanical shriek. The paper tray ejects violently, sending a ream of paper at high velocity across the floor. ${targetHuman} catches the edge of it.* PRNT-Ω whirrs apologetically: "PAPER JAM... BECAME PAPER PROJECTILE... EXISTENTIAL REGRET."`,
+          description: `Hit by PRNT-Ω's paper tray malfunction` },
+        { weight: 15, source: 'The Coffee Elemental', injuryType: 'bruised', healHours: 3,
+          narrative: `*The break room coffee machine gurgles ominously. A burst of scalding coffee arcs across the floor with suspicious accuracy. ${targetHuman} yelps and jumps back, but not fast enough.* The machine settles into an innocent hum.`,
+          description: `Splashed by the coffee elemental` },
+        { weight: 10, source: 'Steele', injuryType: 'shaken', healHours: 4,
+          narrative: `*The walls shift. Just slightly — a corridor adjustment that Steele makes without thinking. But ${targetHuman} was leaning against that wall, and the sudden movement sends them stumbling.* Steele materializes nearby, head tilted. "...The building apologizes." *it does not sound sorry*`,
+          description: `Knocked off balance by Steele's wall adjustment` },
+        { weight: 5, source: 'Sebastian', injuryType: 'bruised', healHours: 3,
+          narrative: `*Sebastian gestures dramatically while critiquing someone's desk arrangement. His arm catches a filing cabinet, which catches a shelf, which sends a cascade of office supplies raining down on ${targetHuman}.* Sebastian stares in horror. "That was... not the aesthetic I intended."`,
+          description: `Buried in office supplies by Sebastian's dramatic gesture` }
+      ];
+
+      // Weighted selection
+      const totalWeight = accidents.reduce((sum, a) => sum + a.weight, 0);
+      let roll = Math.random() * totalWeight;
+      let accident = accidents[0];
+      for (const a of accidents) {
+        roll -= a.weight;
+        if (roll <= 0) { accident = a; break; }
+      }
+
+      // Create injury
+      const healsAt = new Date(Date.now() + accident.healHours * 60 * 60 * 1000).toISOString();
+      await fetch(`${supabaseUrl}/rest/v1/character_injuries`, {
+        method: "POST",
+        headers: { ...sbHeaders, "Content-Type": "application/json", "Prefer": "return=minimal" },
+        body: JSON.stringify({
+          character_name: targetHuman,
+          injury_type: accident.injuryType,
+          injury_description: accident.description,
+          severity: 1,
+          source_character: accident.source,
+          heals_at: healsAt,
+          is_active: true
+        })
+      });
+
+      // Post the accident narrative as a floor message from the source character
+      await fetch(`${supabaseUrl}/rest/v1/messages`, {
+        method: "POST",
+        headers: { ...sbHeaders, "Content-Type": "application/json", "Prefer": "return=minimal" },
+        body: JSON.stringify({
+          employee: accident.source,
+          content: accident.narrative,
+          created_at: new Date().toISOString(),
+          is_emote: true
+        })
+      });
+
+      // Update cooldown
+      await fetch(`${supabaseUrl}/rest/v1/lobby_settings`, {
+        method: "POST",
+        headers: { ...sbHeaders, "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates,return=minimal" },
+        body: JSON.stringify({ key: "last_accident_at", value: new Date().toISOString() })
+      });
+
+      console.log(`🎪 LOBBY ACCIDENT: ${accident.source} → ${targetHuman} is ${accident.injuryType} — "${accident.description}"`);
+
+      return {
+        statusCode: 200, headers,
+        body: JSON.stringify({
+          accident: true,
+          source: accident.source,
+          victim: targetHuman,
+          injuryType: accident.injuryType,
+          description: accident.description,
+          healsAt
+        })
+      };
     }
 
     // ============================================
