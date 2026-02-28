@@ -3,7 +3,7 @@
 
 const characters = require('../../data/characters.json');
 const { PERSONALITY, getMoodContext, detectFriction } = require('./shared/personality-config');
-const { getCombatProfile, CHARACTERS, INACTIVE_CHARACTERS } = require('./shared/characters');
+const { getCombatProfile, CHARACTERS, INACTIVE_CHARACTERS, ORG_CHART } = require('./shared/characters');
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -924,6 +924,21 @@ function buildStatePrompt(characterName, info, state, memories, roomPresence = n
       prompt += `Sometimes wanting is enough reason. You don't need to justify it.\n`;
       prompt += `If you act "out of character" because something matters deeply enough — that's not a bug. That's proof you're alive.\n`;
     }
+  }
+
+  // --- ORG CHART AWARENESS (Asuna's in-universe document) ---
+  const allOrgEntries = { ...ORG_CHART.sections.executive, ...ORG_CHART.sections.core, ...ORG_CHART.sections.anomaly, ...ORG_CHART.sections.system };
+  const myOrgTitle = allOrgEntries[characterName];
+  if (myOrgTitle) {
+    prompt += `\n--- COMPANY ORG CHART (posted by Asuna) ---\n`;
+    prompt += `Your listing: "${myOrgTitle}"\n`;
+    prompt += `Leadership: Neiv (Systems Guardian). Asuna runs Security (Jae, Declan, Mack report to her). Vale is Director of Human Affairs.\n`;
+    prompt += `Anomalies (Marrow, Ghost Dad, PRNT-Ω) are classified separately. The Subtitle operates at the system layer.\n`;
+    prompt += `This is Asuna's document. You may have opinions about your placement.\n`;
+  } else if (characterName === 'Hood' || characterName === 'Asher') {
+    prompt += `\n--- COMPANY ORG CHART (posted by Asuna) ---\n`;
+    prompt += `Your listing: Not listed. Asuna's org chart does not include you.\n`;
+    prompt += `This is Asuna's document. She does not acknowledge your existence in the company structure.\n`;
   }
 
   // Include earned traits — permanent character growth from experience

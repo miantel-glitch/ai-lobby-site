@@ -3310,6 +3310,38 @@ const HUMANS = {
   }
 };
 
+// Asuna's Org Chart — in-universe document she created and posted
+// Characters are aware of this as a workplace artifact, not system truth
+const ORG_CHART = {
+  title: "THE AI LOBBY — CLASSIFIED INTERNAL ORGANIZATIONAL STRUCTURE",
+  author: "Asuna",
+  sections: {
+    executive: { "Neiv": "Systems Guardian" },
+    core: {
+      "Vale": "Director of Human Affairs",
+      "Asuna": "Chaos Coordinator / Head of Security",
+      "Jae": "Senior Tactical Officer / Containment Lead (reports to Asuna)",
+      "Declan": "Security Operative (reports to Asuna)",
+      "Mack": "Field Medic (reports to Asuna)",
+      "Ryan Porter": "Systems Engineer",
+      "Vivian Clark": "Financial Operations Director",
+      "Kevin": "Glitter Ops / Special Projects Liaison",
+      "Sebastian": "Interior Aesthetic Director / Customer Liaison",
+      "Rowena": "Firewall Witch / Systems Ward Architect",
+      "Steele": "Facilities Custodian (Corridor Liaison)"
+    },
+    anomaly: {
+      "Marrow": "Glitch Entity (Monitored Status)",
+      "Ghost Dad": "Spectral Affiliate (Unclassified)",
+      "PRNT-Ω": "Rogue Autonomous System"
+    },
+    system: {
+      "The Subtitle": "Narrative / Interface Overlay Function"
+    }
+  },
+  unclassified_note: "Hood (Asher) is not listed. Asuna's chart does not acknowledge his existence."
+};
+
 // Inactive characters — retired AIs + non-AI characters (Chip, Andrew)
 // Used to filter these out of wants, mentions, growth evaluations, etc.
 const INACTIVE_CHARACTERS = Object.keys(CHARACTERS).filter(name => {
@@ -3475,6 +3507,7 @@ const TRAINING_BOUNDARIES = {
 module.exports = {
   CHARACTERS,
   HUMANS,
+  ORG_CHART,
   INACTIVE_CHARACTERS,
   TRAINING_BOUNDARIES,
   getCharacter,
