@@ -397,6 +397,41 @@
       color: rgba(255, 193, 7, 0.7);
       position: relative;
       z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .human-visitor-notice.present {
+      background: rgba(46, 204, 113, 0.08);
+      border-bottom-color: rgba(46, 204, 113, 0.15);
+      color: rgba(46, 204, 113, 0.8);
+    }
+
+    .human-nexus-btn {
+      background: rgba(255, 193, 7, 0.15);
+      border: 1px solid rgba(255, 193, 7, 0.3);
+      color: rgba(255, 193, 7, 0.9);
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.65rem;
+      cursor: pointer;
+      font-family: var(--font-mono);
+      transition: all 0.2s;
+    }
+
+    .human-nexus-btn:hover {
+      background: rgba(255, 193, 7, 0.25);
+    }
+
+    .human-nexus-btn.leave {
+      background: rgba(231, 76, 60, 0.15);
+      border-color: rgba(231, 76, 60, 0.3);
+      color: rgba(231, 76, 60, 0.9);
+    }
+
+    .human-nexus-btn.leave:hover {
+      background: rgba(231, 76, 60, 0.25);
     }
 
     /* Channel header */
@@ -856,9 +891,10 @@
 
         <!-- Main Chat Area -->
         <div class="main-chat-area">
-          <!-- Human visitor notice -->
+          <!-- Human visitor notice / entry controls -->
           <div class="human-visitor-notice" id="human-notice" style="display: none;">
-            <span>&#x1F441; A human is observing this channel.</span>
+            <span id="human-notice-text">&#x1F441; A human is observing this channel.</span>
+            <button class="human-nexus-btn" id="human-nexus-btn" onclick="toggleHumanNexusPresence()" style="display: none;">Enter Nexus</button>
           </div>
 
           <!-- Channel header -->
@@ -1144,8 +1180,45 @@
 
     function updateHumanNotice() {
       const notice = document.getElementById('human-notice');
-      if (notice) {
-        notice.style.display = currentUser ? '' : 'none';
+      const noticeText = document.getElementById('human-notice-text');
+      const btn = document.getElementById('human-nexus-btn');
+      if (!notice || !noticeText || !btn) return;
+
+      if (!currentUser) {
+        notice.style.display = 'none';
+        return;
+      }
+
+      notice.style.display = '';
+      btn.style.display = '';
+
+      // Check if this human is actually IN the Nexus (has character_state with current_focus='nexus')
+      const humanInNexus = inNexus.some(c => c.character_name === currentUser);
+
+      if (humanInNexus) {
+        noticeText.textContent = `🔮 ${currentUser} is in the Nexus.`;
+        notice.classList.add('present');
+        btn.textContent = 'Leave Nexus';
+        btn.classList.add('leave');
+      } else {
+        noticeText.textContent = `👁 ${currentUser} is observing this channel.`;
+        notice.classList.remove('present');
+        btn.textContent = 'Enter Nexus';
+        btn.classList.remove('leave');
+      }
+    }
+
+    async function toggleHumanNexusPresence() {
+      if (!currentUser) return;
+
+      const humanInNexus = inNexus.some(c => c.character_name === currentUser);
+
+      if (humanInNexus) {
+        // Leave the Nexus
+        await leaveNexus(currentUser);
+      } else {
+        // Enter the Nexus
+        await sendToNexus(currentUser);
       }
     }
 
@@ -1190,7 +1263,9 @@
       "Jae": "*stands without urgency* Going to the Nexus. *walks with quiet authority*",
       "Declan": "*cracks his knuckles* Time to learn something. *heads to the Nexus*",
       "Mack": "*packs his reference materials neatly* Even medics study. *walks to the Nexus*",
-      "Hood": "*the air sharpens. A figure in a deep hood stands at the edge of the room. He wasn't there before. The blindfold catches no light.*"
+      "Hood": "*the air sharpens. A figure in a deep hood stands at the edge of the room. He wasn't there before. The blindfold catches no light.*",
+      "Vale": "*Vale grabs her coffee and heads upstairs to the Nexus* I want to see what they're up to.",
+      "Asuna": "*Asuna stretches, pushes back from her desk* Going to check on the Nexus. *heads upstairs*"
     };
 
     async function sendSelectedToNexus() {
@@ -1228,6 +1303,23 @@
           })
         });
 
+        // Post arrival message to Nexus chat
+        const isHuman = HUMANS.includes(characterName);
+        const arrivalMsg = isHuman
+          ? `*${characterName} walks in, looking around curiously*`
+          : `*arrives in the Nexus, looking around curiously*`;
+        fetch('/.netlify/functions/nexus-message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            speaker: characterName,
+            message: arrivalMsg,
+            isAI: !isHuman,
+            messageType: 'chat',
+            channel: 'general'
+          })
+        }).catch(err => console.log('Nexus arrival message failed (non-fatal):', err));
+
         loadNexusData();
       } catch (error) {
         console.error('Error sending to Nexus:', error);
@@ -1237,6 +1329,7 @@
 
     async function leaveNexus(characterName) {
       try {
+        // Move to floor
         await fetch('/.netlify/functions/character-state', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1246,6 +1339,35 @@
             updates: { current_focus: 'the_floor' }
           })
         });
+
+        // Post departure to Nexus chat
+        const isHuman = HUMANS.includes(characterName);
+        fetch('/.netlify/functions/nexus-message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            speaker: characterName,
+            message: `*${characterName} heads back to the floor*`,
+            isAI: !isHuman,
+            messageType: 'chat',
+            channel: 'general'
+          })
+        }).catch(() => {});
+
+        // Post return emote to floor chat
+        const returnEmote = isHuman
+          ? `*${characterName} comes back from the Nexus*`
+          : `*${characterName} returns from the Nexus, looking thoughtful*`;
+        fetch('/.netlify/functions/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            employee: characterName,
+            content: returnEmote,
+            is_emote: true
+          })
+        }).catch(() => {});
+
         loadNexusData();
       } catch (error) {
         console.error('Error leaving Nexus:', error);
